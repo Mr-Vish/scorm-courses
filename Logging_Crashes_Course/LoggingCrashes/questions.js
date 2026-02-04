@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is the importance of a 'Graceful Shutdown' hook in logging?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Improves efficiency and accuracy", "Eliminates all human involvement", "Guarantees perfect results", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("It ensures all buffered logs are flushed to disk before the process exits", "It makes the application restart faster", "It deletes old log files", "It prevents users from logging in"),
+                                "It ensures all buffered logs are flushed to disk before the process exits",
                                 "obj_module_1")
                 );

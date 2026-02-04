@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is a primary benefit of using a centralized logging system like ELK or Splunk?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Improves efficiency and accuracy", "Eliminates all human involvement", "Reduces system complexity to zero", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("It allows for searching and correlating logs across multiple microservices", "It stores logs in the same database as the application", "It eliminates the need for log levels", "It makes the application run faster"),
+                                "It allows for searching and correlating logs across multiple microservices",
                                 "obj_module_1")
                 );

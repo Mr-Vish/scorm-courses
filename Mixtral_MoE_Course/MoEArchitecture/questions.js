@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "In the Mixtral 8x7B architecture, what does 'MoE' stand for?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Improves efficiency and accuracy", "Eliminates all human involvement", "Guarantees perfect results", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("Mixture of Experts", "Master of Engines", "Multi-Objective Evaluation", "Matrix of Embeddings"),
+                                "Mixture of Experts",
                                 "obj_module_1")
                 );

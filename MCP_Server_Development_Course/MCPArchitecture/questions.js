@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is the primary role of the MCP Host in the Model Context Protocol architecture?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Reduces system complexity to zero", "Improves efficiency and accuracy", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("To store the database files", "To act as the operating system", "To provide the LLM that uses the tools", "To serve the frontend web pages"),
+                                "To provide the LLM that uses the tools",
                                 "obj_module_1")
                 );

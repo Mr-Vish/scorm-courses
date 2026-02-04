@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is the primary goal of this OWASP security course?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Guarantees perfect results", "Reduces system complexity to zero", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("To teach how to become a malicious hacker", "To learn how to build a social media platform", "To understand, reproduce, and patch common web vulnerabilities in a hands-on environment", "To memorize the history of the internet"),
+                                "To understand, reproduce, and patch common web vulnerabilities in a hands-on environment",
                                 "obj_module_1")
                 );

@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What does the error 'Address already in use' typically mean when starting a web server?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Eliminates all human involvement", "Guarantees perfect results", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("The server has too many users", "The hard drive is full", "The IP address of the machine has changed", "Another process is already listening on the same port"),
+                                "Another process is already listening on the same port",
                                 "obj_module_1")
                 );

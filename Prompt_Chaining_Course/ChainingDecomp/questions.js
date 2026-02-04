@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is 'Prompt Chaining'?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Guarantees perfect results", "Improves efficiency and accuracy", "Eliminates all human involvement"),
-                                "Improves efficiency and accuracy",
+                                new Array("A method for training LLMs", "A way to encrypt prompts", "Sending the same prompt to ten different models at once", "Linking multiple LLM calls together where the output of one call becomes the input (or part of the input) for the next"),
+                                "Linking multiple LLM calls together where the output of one call becomes the input (or part of the input) for the next",
                                 "obj_module_1")
                 );

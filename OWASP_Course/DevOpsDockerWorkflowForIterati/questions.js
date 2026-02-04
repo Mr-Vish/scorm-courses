@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is a benefit of using Docker for security testing of vulnerable applications?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Improves efficiency and accuracy", "Guarantees perfect results", "Reduces system complexity to zero", "Eliminates all human involvement"),
-                                "Improves efficiency and accuracy",
+                                new Array("It provides an isolated, reproducible environment that can be easily reset", "It automatically fixes SQL injection", "It makes the application invulnerable", "It replaces the need for a compiler"),
+                                "It provides an isolated, reproducible environment that can be easily reset",
                                 "obj_module_1")
                 );

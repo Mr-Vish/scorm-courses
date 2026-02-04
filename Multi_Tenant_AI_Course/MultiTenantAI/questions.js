@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is a critical requirement for a multi-tenant AI system to ensure security?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Eliminates all human involvement", "Improves efficiency and accuracy", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("Sharing the same chat history across tenants", "Tenant data isolation", "Using the same API key for all tenants", "Running all tenants on a single shared GPU without virtualization"),
+                                "Tenant data isolation",
                                 "obj_module_1")
                 );

@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which type of resource exhaustion often leads to a 'java.lang.OutOfMemoryError'?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Improves efficiency and accuracy", "Reduces system complexity to zero", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("CPU exhaustion", "Network bandwidth saturation", "Disk space exhaustion", "Heap memory exhaustion"),
+                                "Heap memory exhaustion",
                                 "obj_module_1")
                 );

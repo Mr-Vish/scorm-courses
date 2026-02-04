@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "When is a multi-step RAG approach generally preferred over a single-step approach?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Guarantees perfect results", "Reduces system complexity to zero", "Eliminates all human involvement", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("When latency is the only concern", "When the query requires reasoning across multiple disparate information sources", "When the dataset is very small", "For simple FAQ lookups"),
+                                "When the query requires reasoning across multiple disparate information sources",
                                 "obj_module_1")
                 );

@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which log level should be used for events that are unusual but do not interrupt the application's flow?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Guarantees perfect results", "Eliminates all human involvement", "Improves efficiency and accuracy", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("DEBUG", "ERROR", "INFO", "WARN"),
+                                "WARN",
                                 "obj_module_1")
                 );

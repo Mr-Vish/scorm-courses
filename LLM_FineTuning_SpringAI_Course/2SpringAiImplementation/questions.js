@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which Spring AI interface is primarily used to interact with a fine-tuned LLM in a standardized way?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Improves efficiency and accuracy", "Reduces system complexity to zero", "Eliminates all human involvement", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("VectorStore", "ChatClient", "ModelConfig", "PromptTemplate"),
+                                "ChatClient",
                                 "obj_module_1")
                 );

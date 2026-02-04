@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "For factual extraction tasks, what is the recommended setting for Temperature to ensure consistency?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Guarantees perfect results", "Improves efficiency and accuracy", "Reduces system complexity to zero", "Eliminates all human involvement"),
-                                "Improves efficiency and accuracy",
+                                new Array("1.0", "0.0 to 0.2", "1.5", "0.7 to 0.9"),
+                                "0.0 to 0.2",
                                 "obj_module_1")
                 );

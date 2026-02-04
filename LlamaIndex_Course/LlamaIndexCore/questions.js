@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "In LlamaIndex, what is the purpose of a 'VectorStoreIndex'?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Guarantees perfect results", "Improves efficiency and accuracy", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("To provide a web-based UI", "To fine-tune the LLM weights", "To store raw images", "To index documents for efficient retrieval via semantic search"),
+                                "To index documents for efficient retrieval via semantic search",
                                 "obj_module_1")
                 );

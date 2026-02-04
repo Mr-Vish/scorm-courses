@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Why is 'Rate Limiting' a crucial feature for a private LLM gateway?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Guarantees perfect results", "Eliminates all human involvement", "Improves efficiency and accuracy", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("To prevent a single user or application from exhausting the API budget or overwhelming the backend", "To ensure the LLM doesn't get bored", "To increase the latency of the requests", "To encrypt the data in transit"),
+                                "To prevent a single user or application from exhausting the API budget or overwhelming the backend",
                                 "obj_module_1")
                 );

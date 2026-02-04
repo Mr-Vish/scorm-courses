@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which log level indicates a serious issue that prevented a specific operation from completing but left the application running?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Guarantees perfect results", "Reduces system complexity to zero", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("INFO", "ERROR", "DEBUG", "TRACE"),
+                                "ERROR",
                                 "obj_module_1")
                 );
