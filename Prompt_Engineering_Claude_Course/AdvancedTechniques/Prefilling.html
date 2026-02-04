@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prefilling and Output Control</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prefilling and Output Control</h1>
+
+
+<h2>Assistant Prefilling</h2>
+<p>When using the API, you can <strong>prefill</strong> the beginning of Claude's response to steer its output format:</p>
+<div class="code-block">
+<pre><code># API call with prefilled assistant response
+messages = [
+    {"role": "user", "content": "List the top 3 issues"},
+    {"role": "assistant", "content": "1."}
+]
+# Claude will continue from "1." in a numbered list format</code></pre>
+</div>
+
+<h2>Forcing JSON Output</h2>
+<div class="code-block">
+<pre><code>messages = [
+    {"role": "user", "content": "Extract entities from: ..."},
+    {"role": "assistant", "content": "{"}
+]
+# Claude will produce valid JSON starting with {</code></pre>
+</div>
+
+<h2>Output Constraints</h2>
+<ul>
+    <li><strong>Length control:</strong> "Respond in exactly 3 bullet points"</li>
+    <li><strong>Format enforcement:</strong> "Reply only with valid JSON, no explanation"</li>
+    <li><strong>Language restriction:</strong> "Use only Python 3.12+ syntax"</li>
+    <li><strong>Scope limitation:</strong> "Only discuss the authentication module"</li>
+</ul>
+
+<h2>Stop Sequences</h2>
+<p>Configure stop sequences in the API to make Claude halt generation at specific tokens. Useful for structured extraction where you want Claude to fill in a template.</p>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

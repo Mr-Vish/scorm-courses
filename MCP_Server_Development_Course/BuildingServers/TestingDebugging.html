@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Testing and Debugging MCP Servers</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Testing and Debugging MCP Servers</h1>
+
+
+<h2>MCP Inspector</h2>
+<p>The <strong>MCP Inspector</strong> is a visual debugging tool for testing your server:</p>
+<div class="code-block">
+<pre><code>npx @modelcontextprotocol/inspector node my-server.js</code></pre>
+</div>
+<p>This opens a web UI where you can browse tools, call them interactively, and inspect responses.</p>
+
+<h2>Logging</h2>
+<p>Since stdio transport uses stdout for messages, use <strong>stderr</strong> for debug logging:</p>
+<div class="code-block">
+<pre><code>import sys
+
+def debug_log(message):
+    print(f"[DEBUG] {message}", file=sys.stderr)</code></pre>
+</div>
+
+<h2>Common Issues</h2>
+<table>
+    <tr><th>Issue</th><th>Cause</th><th>Fix</th></tr>
+    <tr><td>Server not starting</td><td>Wrong command/path in config</td><td>Test command manually in terminal</td></tr>
+    <tr><td>No tools showing</td><td>list_tools not returning properly</td><td>Check JSON-RPC response format</td></tr>
+    <tr><td>Timeout errors</td><td>Tool execution too slow</td><td>Add async handling, increase timeout</td></tr>
+    <tr><td>Garbled output</td><td>Printing to stdout instead of stderr</td><td>Use stderr for all debug output</td></tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Clear descriptions:</strong> Tool descriptions help the AI decide when to use them</li>
+    <li><strong>Input validation:</strong> Validate all tool arguments before execution</li>
+    <li><strong>Error handling:</strong> Return helpful error messages, not stack traces</li>
+    <li><strong>Idempotency:</strong> Tools should be safe to retry on failure</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

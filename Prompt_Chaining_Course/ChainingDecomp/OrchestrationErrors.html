@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Orchestration and Error Handling</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Orchestration and Error Handling</h1>
+
+
+<h2>Orchestration Frameworks</h2>
+<p>Frameworks for building and managing prompt chains:</p>
+<table>
+    <tr><th>Framework</th><th>Approach</th><th>Best For</th></tr>
+    <tr><td>LangChain LCEL</td><td>Composable chain expressions</td><td>Flexible Python chains</td></tr>
+    <tr><td>LangGraph</td><td>State machine graphs</td><td>Complex conditional flows</td></tr>
+    <tr><td>Prefect/Airflow</td><td>DAG-based orchestration</td><td>Production data pipelines</td></tr>
+    <tr><td>Custom Python</td><td>Direct API calls</td><td>Simple chains, full control</td></tr>
+</table>
+
+<h2>Error Handling in Chains</h2>
+<div class="code-block">
+<pre><code>def robust_chain_step(prompt, max_retries=3, fallback_model=None):
+    for attempt in range(max_retries):
+        try:
+            result = call_llm(prompt, model=primary_model)
+            if validate_output(result):
+                return result
+            # Output invalid - retry with feedback
+            prompt = f"{prompt}
+
+Previous output was invalid. Please try again."
+        except RateLimitError:
+            time.sleep(2 ** attempt)  # Exponential backoff
+        except Exception as e:
+            if attempt == max_retries - 1 and fallback_model:
+                return call_llm(prompt, model=fallback_model)
+            raise</code></pre>
+</div>
+
+<h2>Intermediate State Management</h2>
+<ul>
+    <li><strong>In-memory:</strong> Simple dict/dataclass for short chains</li>
+    <li><strong>Database:</strong> Persist state for long-running or resumable chains</li>
+    <li><strong>Message queue:</strong> Decouple steps for scalability</li>
+    <li><strong>Checkpointing:</strong> Save state after each step for recovery</li>
+</ul>
+
+<h2>Evaluation and Monitoring</h2>
+<ul>
+    <li>Measure end-to-end accuracy, not just individual step accuracy</li>
+    <li>Track latency per step to identify bottlenecks</li>
+    <li>Log intermediate outputs for debugging</li>
+    <li>Monitor cost per chain execution</li>
+    <li>Set up alerts for chain failure rates exceeding thresholds</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

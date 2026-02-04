@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding MCP</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Understanding MCP</h1>
+
+
+<h2>What Is MCP?</h2>
+<p>The <strong>Model Context Protocol (MCP)</strong> is an open standard created by Anthropic that defines how AI applications connect to external data sources and tools. Think of it as a <strong>USB-C port for AI</strong> - a universal connector.</p>
+
+<h2>Architecture Overview</h2>
+<ul>
+    <li><strong>Host:</strong> The AI application (Claude Code, IDE extension, custom app)</li>
+    <li><strong>Client:</strong> Maintains a 1:1 connection to a server (managed by the host)</li>
+    <li><strong>Server:</strong> Provides tools, resources, and prompts via the MCP protocol</li>
+    <li><strong>Transport:</strong> Communication layer (stdio or SSE)</li>
+</ul>
+
+<h2>MCP Primitives</h2>
+<table>
+    <tr><th>Primitive</th><th>Purpose</th><th>Example</th></tr>
+    <tr><td>Tools</td><td>Actions the AI can execute</td><td>Query database, send email, create file</td></tr>
+    <tr><td>Resources</td><td>Data the AI can read</td><td>File contents, database records, API responses</td></tr>
+    <tr><td>Prompts</td><td>Reusable prompt templates</td><td>Code review template, analysis workflow</td></tr>
+</table>
+
+<h2>Why MCP Matters</h2>
+<ul>
+    <li><strong>Standardization:</strong> Build once, use with any MCP-compatible host</li>
+    <li><strong>Security:</strong> Explicit capability declarations, user consent for actions</li>
+    <li><strong>Composability:</strong> Connect multiple servers for combined capabilities</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

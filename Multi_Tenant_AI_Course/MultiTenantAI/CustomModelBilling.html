@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Custom Model Routing and Billing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Custom Model Routing and Billing</h1>
+
+
+<h2>Per-Tenant Model Routing</h2>
+<p>Different tenants may need different models based on their plan, use case, or regulatory requirements:</p>
+<div class="code-block">
+<pre><code>class ModelRouter:
+    '''Route LLM requests to the correct model based on tenant config.'''
+
+    def __init__(self):
+        self.clients = {
+            "openai": OpenAI(),
+            "anthropic": Anthropic(),
+            "ollama": OpenAI(base_url="http://localhost:11434/v1", api_key="ollama"),
+        }
+
+    def route(self, tenant: TenantConfig, messages: list) -&gt; str:
+        model = tenant.model
+        provider = self._get_provider(model)
+        client = self.clients[provider]
+
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": tenant.system_prompt},
+            ] + messages,
+            max_tokens=tenant.max_tokens,
+            temperature=tenant.temperature,
+        )
+        return response
+
+    def _get_provider(self, model: str) -&gt; str:
+        if model.startswith("gpt") or model.startswith("o1"):
+            return "openai"
+        elif model.startswith("claude"):
+            return "anthropic"
+        elif model.startswith("llama") or model.startswith("mistral"):
+            return "ollama"
+        return "openai"</code></pre>
+</div>
+
+<h2>Custom Fine-Tuned Models</h2>
+<table>
+    <tr><th>Feature</th><th>Shared Models</th><th>Fine-Tuned per Tenant</th></tr>
+    <tr><td>Cost</td><td>Pay per API call only</td><td>Training cost + hosting/API cost</td></tr>
+    <tr><td>Customization</td><td>System prompt only</td><td>Full behavior customization</td></tr>
+    <tr><td>Data privacy</td><td>Shared model, isolated prompts</td><td>Tenant data never leaves their model</td></tr>
+    <tr><td>Performance</td><td>Good (prompt engineering)</td><td>Best (domain-specific training)</td></tr>
+    <tr><td>Management</td><td>Simple (one model for all)</td><td>Complex (model per tenant lifecycle)</td></tr>
+</table>
+
+<h2>Usage-Based Billing</h2>
+<div class="code-block">
+<pre><code>import datetime
+import json
+
+class BillingEngine:
+    '''Track and bill tenant usage based on token consumption.'''
+
+    # Pricing per 1M tokens (input/output)
+    PRICING = {
+        "gpt-4o": {"input": 2.50, "output": 10.00},
+        "gpt-4o-mini": {"input": 0.15, "output": 0.60},
+        "claude-sonnet-4-20250514": {"input": 3.00, "output": 15.00},
+    }
+
+    def __init__(self, db):
+        self.db = db
+
+    def record_usage(self, tenant_id: str, model: str, input_tokens: int, output_tokens: int):
+        pricing = self.PRICING.get(model, {"input": 1.0, "output": 3.0})
+        cost = (
+            (input_tokens / 1_000_000) * pricing["input"] +
+            (output_tokens / 1_000_000) * pricing["output"]
+        )
+        self.db.insert("usage", {
+            "tenant_id": tenant_id,
+            "model": model,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": cost,
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+        })
+        return cost
+
+    def get_monthly_invoice(self, tenant_id: str, month: str) -&gt; dict:
+        records = self.db.query(
+            "SELECT model, SUM(input_tokens), SUM(output_tokens), SUM(cost_usd) "
+            "FROM usage WHERE tenant_id = ? AND timestamp LIKE ? GROUP BY model",
+            [tenant_id, f"{month}%"],
+        )
+        return {
+            "tenant_id": tenant_id,
+            "period": month,
+            "line_items": records,
+            "total": sum(r["cost_usd"] for r in records),
+        }</code></pre>
+</div>
+
+<h2>Tenant Onboarding Checklist</h2>
+<table>
+    <tr><th>Step</th><th>Action</th><th>Automated?</th></tr>
+    <tr><td>1</td><td>Create tenant record with plan and config</td><td>Yes</td></tr>
+    <tr><td>2</td><td>Provision isolated vector store namespace</td><td>Yes</td></tr>
+    <tr><td>3</td><td>Generate API keys</td><td>Yes</td></tr>
+    <tr><td>4</td><td>Configure rate limits and budgets</td><td>Yes</td></tr>
+    <tr><td>5</td><td>Set up billing tracking</td><td>Yes</td></tr>
+    <tr><td>6</td><td>Upload initial documents (if applicable)</td><td>Tenant self-service</td></tr>
+    <tr><td>7</td><td>Customize system prompt</td><td>Tenant self-service</td></tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Default to namespace isolation:</strong> Start with shared infrastructure and namespace prefixes - upgrade to dedicated resources only for enterprise tenants</li>
+    <li><strong>Enforce quotas at the gateway:</strong> Check rate limits and budgets before making expensive LLM calls</li>
+    <li><strong>Include tenant_id in every log:</strong> This is essential for debugging, billing, and compliance</li>
+    <li><strong>Test with multiple tenants:</strong> Verify isolation by attempting cross-tenant data access</li>
+    <li><strong>Plan for noisy neighbors:</strong> One tenant's heavy usage should not degrade service for others</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

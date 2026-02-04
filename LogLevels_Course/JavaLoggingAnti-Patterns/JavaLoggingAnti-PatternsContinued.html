@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Java Logging Anti-Patterns (Continued)</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Java Logging Anti-Patterns (Continued)</h1>
+
+<p>// Preferred approach:
+try {
+    // ... code that might throw an exception
+} catch (Exception e) {
+    logger.error(&quot;Error processing request X&quot;, e); // The &#x27;e&#x27; parameter logs the full stack trace
+}
+</p>
+
+<h3>The Problem with System.out.println()</h3>
+
+<p>Using System.out.println() for application logging is problematic because it:</p>
+
+<ol>
+    <li><strong>Writes to Standard Output Stream (System.out)</strong>: This bypasses the logging framework entirely, leading to <strong>unstructured and untagged</strong> output.</li>
+    <li><strong>No Context</strong>: The message lacks crucial metadata like the <strong>log level, timestamp, or thread name</strong>.</li>
+    <li><strong>Inflexible Configuration</strong>: You <strong>cannot easily control or filter</strong> the output without code redeployment.</li>
+</ol>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

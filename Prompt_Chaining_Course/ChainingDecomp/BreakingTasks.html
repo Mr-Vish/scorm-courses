@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Breaking Complex Tasks into Steps</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Breaking Complex Tasks into Steps</h1>
+
+
+<h2>Why Decompose Tasks?</h2>
+<p>Complex tasks that fail as a single prompt often succeed when broken into smaller, focused steps. Benefits:</p>
+<ul>
+    <li><strong>Higher accuracy:</strong> Each step focuses on one thing</li>
+    <li><strong>Better debugging:</strong> Identify which step fails</li>
+    <li><strong>Reusability:</strong> Steps can be reused across different workflows</li>
+    <li><strong>Cost control:</strong> Use cheaper models for simple steps</li>
+</ul>
+
+<h2>Prompt Chaining Patterns</h2>
+<table>
+    <tr><th>Pattern</th><th>Description</th><th>Example</th></tr>
+    <tr><td>Sequential</td><td>Output of step N feeds into step N+1</td><td>Summarize &rarr; Translate &rarr; Format</td></tr>
+    <tr><td>Parallel</td><td>Run independent steps simultaneously</td><td>Extract entities + Classify sentiment</td></tr>
+    <tr><td>Conditional</td><td>Branch based on a classification step</td><td>Classify intent &rarr; Route to handler</td></tr>
+    <tr><td>Loop</td><td>Iterate until quality threshold met</td><td>Generate &rarr; Evaluate &rarr; Refine</td></tr>
+    <tr><td>Map-Reduce</td><td>Process chunks independently, merge results</td><td>Summarize each chapter &rarr; Combine</td></tr>
+</table>
+
+<h2>Sequential Chain Example</h2>
+<div class="code-block">
+<pre><code># Step 1: Extract key information
+step1_prompt = "Extract the main claims from this article: {article}"
+claims = call_llm(step1_prompt)
+
+# Step 2: Fact-check each claim
+step2_prompt = f"For each claim, assess if it is supported by common knowledge: {claims}"
+fact_check = call_llm(step2_prompt)
+
+# Step 3: Generate summary
+step3_prompt = f"Write a 3-sentence summary noting any questionable claims: {fact_check}"
+summary = call_llm(step3_prompt)</code></pre>
+</div>
+
+<h2>Model Routing by Complexity</h2>
+<ul>
+    <li><strong>Simple steps (classification, extraction):</strong> Use Haiku/Flash (fast, cheap)</li>
+    <li><strong>Moderate steps (summarization, analysis):</strong> Use Sonnet/Pro (balanced)</li>
+    <li><strong>Complex steps (reasoning, creative):</strong> Use Opus/Ultra (highest quality)</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

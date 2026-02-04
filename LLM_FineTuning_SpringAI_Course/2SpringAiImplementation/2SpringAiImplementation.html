@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>2. Spring AI Implementation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>2. Spring AI Implementation</h1>
+
+<p>In Spring AI, you can set these parameters globally in your application.properties or per-request using ChatOptions.</p>
+
+<h3><strong>Per-Request Configuration (Recommended)</strong></h3>
+
+<p>This approach allows you to use different settings for different parts of your app (e.g., a &quot;Creative Story&quot; endpoint vs. a &quot;Data Extraction&quot; endpoint).</p>
+
+<p>Java</p>
+
+<p>@RestController</p>
+
+<p>public class ChatController {</p>
+
+<p>    private final ChatClient chatClient;</p>
+
+<p>    public ChatController(ChatClient.Builder builder) {</p>
+
+<p>        this.chatClient = builder.build();</p>
+
+<p>    }</p>
+
+<p>    @GetMapping(&quot;/creative-chat&quot;)</p>
+
+<p>    public String creativeChat(@RequestParam String message) {</p>
+
+<p>        return chatClient.prompt()</p>
+
+<p>                .user(message)</p>
+
+<p>                .options(OpenAiChatOptions.builder()</p>
+
+<p>                        .withTemperature(0.9f)   // High creativity</p>
+
+<p>                        .withTopP(0.9f)          // Diverse vocabulary</p>
+
+<p>                        .withMaxTokens(500)      // Length limit</p>
+
+<p>                        .build())</p>
+
+<p>                .call()</p>
+
+<p>                .content();</p>
+
+<p>    }</p>
+
+<p>    @GetMapping(&quot;/precise-chat&quot;)</p>
+
+<p>    public String preciseChat(@RequestParam String message) {</p>
+
+<p>        return chatClient.prompt()</p>
+
+<p>                .user(message)</p>
+
+<p>                .options(OpenAiChatOptions.builder()</p>
+
+<p>                        .withTemperature(0.1f)   // Low randomness</p>
+
+<p>                        .withFrequencyPenalty(0.5f) // Prevent repetition</p>
+
+<p>                        .build())</p>
+
+<p>                .call()</p>
+
+<p>                .content();</p>
+
+<p>    }</p>
+
+<p>}</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

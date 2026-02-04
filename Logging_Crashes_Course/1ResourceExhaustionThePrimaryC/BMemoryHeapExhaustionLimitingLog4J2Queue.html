@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>B. Memory (Heap) Exhaustion: Limiting Log4j2 Queues</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>B. Memory (Heap) Exhaustion: Limiting Log4j2 Queues</h1>
+
+<p>This is a critical concern when using <strong>asynchronous logging</strong> in Log4j2, which uses internal queues (like the LMAX Disruptor or an ArrayBlockingQueue) to separate log writing from the main application thread for performance.</p>
+
+<ul>
+    <li><strong>The Problem:</strong> If log generation outpaces the writing thread, this internal queue can grow unboundedly, consuming all available <strong>Heap Memory</strong> until an <strong>OutOfMemoryError (OOM)</strong> occurs, crashing the application.</li>
+</ul>
+
+<h3>How to Limit Queue Size in Log4j2</h3>
+
+<p>Log4j2 provides two main asynchronous mechanisms, each with a different method for queue size control:</p>
+
+<table>
+    <tr>
+        <th><strong>Async Type</strong></th>
+        <th><strong>Underlying Mechanism</strong></th>
+        <th><strong>Queue Limit Configuration</strong></th>
+        <th><strong>Default Size</strong></th>
+    </tr>
+    <tr>
+        <td><strong>Async Loggers (Global)</strong></td>
+        <td>LMAX Disruptor Ring Buffer</td>
+        <td><strong>System Property:</strong> log4j2.AsyncLoggerConfig.RingBufferSize</td>
+        <td>262,144</td>
+    </tr>
+    <tr>
+        <td><strong>Async Appender (Appender-specific)</strong></td>
+        <td>ArrayBlockingQueue</td>
+        <td><strong>Configuration Attribute:</strong> queueSize</td>
+        <td>128</td>
+    </tr>
+</table>
+
+<p><strong>1. Limiting Async Loggers (Highest Performance Mode)</strong></p>
+
+<p>When configured for <strong>Async Loggers</strong> (typically by setting log4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector), all log events pass through a single, high-performance <strong>Ring Buffer</strong> (queue).</p>
+
+<ul>
+    <li><strong>Action:</strong> The size is configured via a system property passed to the JVM or set within the Spring environment.</li>
+    <li><em>Example:</em> To limit the queue size to 4096 entries (instead of the default 262,144):
+java -Dlog4j2.AsyncLoggerConfig.RingBufferSize=4096 -jar app.jar
+
+</li>
+    <li><strong>Queue Full Policy:</strong> By default, if the Ring Buffer is full, the application thread will <strong>block</strong> until space is available. This prevents log loss but introduces latency.</li>
+</ul>
+
+<p><strong>2. Limiting Async Appenders</strong></p>
+
+<p>The &lt;Async&gt; appender wraps a synchronous appender, using a bounded ArrayBlockingQueue.</p>
+
+<ul>
+    <li><strong>Action:</strong> The size is set directly as an attribute on the &lt;Async&gt; tag in your log4j2.xml configuration file.</li>
+    <li><em>Example:</em>
+&lt;Async name=&quot;AsyncFile&quot; queueSize=&quot;4096&quot;&gt;
+    &lt;AppenderRef ref=&quot;FileAppender&quot;/&gt;
+&lt;/Async&gt;
+
+</li>
+    <li><strong>Queue Full Policy (Crucial):</strong> To maintain stability when the queue is full, you must configure the onOverflow attribute. The safest options are:</li>
+    <li>onOverflow=&quot;DISCARD&quot;: <strong>Recommended.</strong> Drops TRACE/DEBUG/INFO events while retaining WARN/ERROR, preventing memory spikes and thread blocking.</li>
+    <li>onOverflow=&quot;BLOCK&quot;: The application thread blocks, guaranteeing log delivery but risking application slowdown/unresponsiveness.</li>
+    <li><strong>Safeguard:</strong> Always implement these <strong>capacity limits</strong>. For <strong>Async Appenders</strong>, explicitly configure onOverflow=&quot;DISCARD&quot; to prioritize application stability over logging completeness during spikes.</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

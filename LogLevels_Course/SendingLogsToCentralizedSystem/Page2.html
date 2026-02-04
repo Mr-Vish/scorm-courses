@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Sending Logs to Centralized Systems (Splunk, LogicMonitor, etc.) (Continued)</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Sending Logs to Centralized Systems (Splunk, LogicMonitor, etc.) (Continued)</h1>
+
+<table>
+    <tr>
+        <th><strong>Advantage</strong></th>
+        <th><strong>Benefit for Centralized Logging</strong></th>
+    </tr>
+    <tr>
+        <td><strong>Reliability</strong></td>
+        <td>Logs are safely stored locally if the network or collector is down, ensuring no data loss.</td>
+    </tr>
+    <tr>
+        <td><strong>Performance</strong></td>
+        <td>Writing to a local file is much faster than synchronous network calls.</td>
+    </tr>
+    <tr>
+        <td><strong>Parsing</strong></td>
+        <td>The agent can standardize the data into JSON or key-value pairs before ingestion.</td>
+    </tr>
+</table>
+
+<h3>2. Direct Network Appenders</h3>
+
+<p>For specialized needs, you can configure the logging library to send logs directly over the network:</p>
+
+<ul>
+    <li><strong>Network Protocol Appender</strong>: Configure an appender to send logs via a protocol like <strong>Syslog (TCP/UDP)</strong>.</li>
+    <li><strong>HTTP/API Appender</strong>: Use a specialized appender (like SplunkHttpEventCollectorAppender) to send structured JSON data directly to the vendor&#x27;s API endpoint.</li>
+</ul>
+
+<p><strong>Crucially, no modification to the application&#x27;s core logging calls is needed.</strong> You continue to use standard calls (e.g., logger.info(...)). The logging framework handles the delivery mechanism based on the external configuration file.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>
