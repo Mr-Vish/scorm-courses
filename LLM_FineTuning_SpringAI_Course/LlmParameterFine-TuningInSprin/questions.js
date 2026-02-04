@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What does 'Top-P' (nucleus sampling) do during the token generation process?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Improves efficiency and accuracy", "Guarantees perfect results", "Reduces system complexity to zero", "Eliminates all human involvement"),
-                                "Improves efficiency and accuracy",
+                                new Array("Penalizes tokens that have appeared recently", "Increases the weight of the most frequent tokens", "Selects from the smallest set of tokens whose cumulative probability exceeds P", "Limits the total number of tokens generated"),
+                                "Selects from the smallest set of tokens whose cumulative probability exceeds P",
                                 "obj_module_1")
                 );

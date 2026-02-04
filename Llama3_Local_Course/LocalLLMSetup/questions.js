@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which tool is commonly used to run Llama 3 locally with a simple CLI and API interface?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Reduces system complexity to zero", "Improves efficiency and accuracy", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("Kubernetes", "Apache Spark", "Docker Desktop", "Ollama"),
+                                "Ollama",
                                 "obj_module_1")
                 );

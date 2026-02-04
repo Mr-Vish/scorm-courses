@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "In Natural Language Analytics, what does 'Text-to-SQL' refer to?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Improves efficiency and accuracy", "Eliminates all human involvement", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("Translating a natural language question into a valid SQL query", "Converting a database schema to a PDF", "Storing chat logs in a SQL database", "Using SQL to generate poems"),
+                                "Translating a natural language question into a valid SQL query",
                                 "obj_module_1")
                 );

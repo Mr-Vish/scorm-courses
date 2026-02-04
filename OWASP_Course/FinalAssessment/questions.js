@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "In the context of XSS (Cross-Site Scripting), what is 'input sanitization'?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Improves efficiency and accuracy", "Eliminates all human involvement", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("Removing or escaping potentially malicious HTML/JS characters from user input before displaying it", "Hiding the input field from the user", "Cleaning the physical keyboard", "Increasing the timeout of the web server"),
+                                "Removing or escaping potentially malicious HTML/JS characters from user input before displaying it",
                                 "obj_module_1")
                 );

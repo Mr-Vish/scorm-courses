@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which of the following tasks can Claude's vision capabilities perform directly?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Guarantees perfect results", "Eliminates all human involvement", "Improves efficiency and accuracy", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("Generating a 3D model from a 2D image", "Editing the pixels of an uploaded image", "Predicting future stock prices from a cat photo", "Transcribing text from an image (OCR)"),
+                                "Transcribing text from an image (OCR)",
                                 "obj_module_1")
                 );

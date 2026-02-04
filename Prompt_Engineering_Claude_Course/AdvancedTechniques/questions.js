@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is 'Chain of Thought' (CoT) prompting?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Guarantees perfect results", "Eliminates all human involvement", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("Using a chain to physically secure the server", "Encouraging the model to explain its reasoning step-by-step before giving the final answer", "Hiding the prompt from the model", "Connecting multiple models in a circle"),
+                                "Encouraging the model to explain its reasoning step-by-step before giving the final answer",
                                 "obj_module_1")
                 );

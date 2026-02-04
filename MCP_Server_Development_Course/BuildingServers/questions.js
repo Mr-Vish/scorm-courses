@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "In the Model Context Protocol (MCP), which file is typically used to define the server's entry point and capabilities in a Node.js project?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Reduces system complexity to zero", "Guarantees perfect results", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("manifest.json", "index.ts", "styles.css", "server.xml"),
+                                "index.ts",
                                 "obj_module_1")
                 );

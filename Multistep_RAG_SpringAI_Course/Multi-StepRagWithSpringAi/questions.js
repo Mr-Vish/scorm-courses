@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which Spring AI component can be used to coordinate the execution of multiple sub-tasks in a RAG pipeline?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Guarantees perfect results", "Eliminates all human involvement", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("DocumentTransformer", "Advisor", "EmbeddingModel", "ChatClient with custom logic"),
+                                "ChatClient with custom logic",
                                 "obj_module_1")
                 );

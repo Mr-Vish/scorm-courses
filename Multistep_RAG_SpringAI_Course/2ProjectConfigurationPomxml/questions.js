@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which dependency is required in a Spring Boot project to use Spring AI's Vector Store capabilities?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Guarantees perfect results", "Eliminates all human involvement", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("lombok", "spring-boot-starter-web", "spring-ai-vector-store-spring-boot-starter", "spring-boot-starter-test"),
+                                "spring-ai-vector-store-spring-boot-starter",
                                 "obj_module_1")
                 );

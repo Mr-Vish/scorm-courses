@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "When integrating DVWA with a custom Python app, why might you need to share a Docker network?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Reduces system complexity to zero", "Improves efficiency and accuracy", "Guarantees perfect results"),
-                                "Improves efficiency and accuracy",
+                                new Array("To allow the apps to communicate using container names as hostnames", "To increase the internet speed of the containers", "Docker containers cannot communicate with each other", "To encrypt the traffic between the containers"),
+                                "To allow the apps to communicate using container names as hostnames",
                                 "obj_module_1")
                 );

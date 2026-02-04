@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "How can a 'Circular Dependency' in a Spring application be identified from logs?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Guarantees perfect results", "Improves efficiency and accuracy", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("It is only visible in the browser console", "It results in a StackOverflowError during startup", "It causes a database connection timeout", "It shows up as a 404 Not Found error"),
+                                "It results in a StackOverflowError during startup",
                                 "obj_module_1")
                 );

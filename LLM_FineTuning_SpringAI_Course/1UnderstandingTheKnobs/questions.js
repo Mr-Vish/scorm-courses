@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "In LLM fine-tuning, which parameter controls the 'creativity' or randomness of the model's output?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Improves efficiency and accuracy", "Guarantees perfect results", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("Temperature", "Presence Penalty", "Top-P", "Frequency Penalty"),
+                                "Temperature",
                                 "obj_module_1")
                 );

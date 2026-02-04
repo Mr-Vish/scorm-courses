@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "Which of the following is considered a logging anti-pattern?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Reduces system complexity to zero", "Guarantees perfect results", "Eliminates all human involvement", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("Using parameterized log messages", "Centralizing logs", "Logging sensitive PII in plain text", "Setting appropriate log levels"),
+                                "Logging sensitive PII in plain text",
                                 "obj_module_1")
                 );

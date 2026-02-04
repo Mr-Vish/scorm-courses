@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is a key risk of over-tuning a model on a very small, specific dataset?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Improves efficiency and accuracy", "Guarantees perfect results", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("Catastrophic forgetting or overfitting", "Improved generalization", "Reduced token usage", "Increased latency"),
+                                "Catastrophic forgetting or overfitting",
                                 "obj_module_1")
                 );

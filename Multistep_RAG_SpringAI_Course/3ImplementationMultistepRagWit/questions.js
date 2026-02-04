@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "In a multi-step RAG workflow, what is the 'decomposition' step?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Improves efficiency and accuracy", "Eliminates all human involvement", "Guarantees perfect results", "Reduces system complexity to zero"),
-                                "Improves efficiency and accuracy",
+                                new Array("Breaking a complex query into smaller, manageable sub-questions", "Compressing the LLM model", "Converting text to speech", "Deleting old data from the index"),
+                                "Breaking a complex query into smaller, manageable sub-questions",
                                 "obj_module_1")
                 );

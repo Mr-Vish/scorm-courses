@@ -1,7 +1,7 @@
 test.AddQuestion( new Question ("q1",
-                                "What is a key benefit of using AI in this domain?",
+                                "What is the recommended way to separate different parts of a prompt (like instructions vs. data) when prompting Claude?",
                                 QUESTION_TYPE_CHOICE,
-                                new Array("Eliminates all human involvement", "Guarantees perfect results", "Reduces system complexity to zero", "Improves efficiency and accuracy"),
-                                "Improves efficiency and accuracy",
+                                new Array("Using XML tags like <instructions> and <data>", "Using only capital letters", "Using binary code", "Putting everything in a single long paragraph"),
+                                "Using XML tags like <instructions> and <data>",
                                 "obj_module_1")
                 );
