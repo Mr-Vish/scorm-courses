@@ -12,6 +12,22 @@
 <h1>Human Evaluation and Evaluation Frameworks</h1>
 
 
+<h2>Systematic Evaluation: Pros and Cons</h2>
+<table>
+    <tr><th>Approach</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td><strong>Automated Metrics</strong></td><td>Fast, inexpensive, reproducible, scalable for CI/CD.</td><td>Does not capture semantic meaning, penalizes valid paraphrases.</td></tr>
+    <tr><td><strong>LLM-as-Judge</strong></td><td>Scalable, correlates well with humans, flexible rubrics.</td><td>Suffers from model bias (e.g., favoring longer or its own outputs).</td></tr>
+    <tr><td><strong>Human Evaluation</strong></td><td>Highest accuracy for nuance, empathy, and domain expertise.</td><td>Slow, very expensive, hard to scale, prone to subjective fatigue.</td></tr>
+</table>
+
+<h2>Ethical Considerations and Bias</h2>
+<p>Evaluation is not just about performance; it is about safety and fairness. Key areas of focus include:</p>
+<ul>
+    <li><strong>Demographic Bias:</strong> Ensuring the model does not show preferential treatment or negative stereotypes based on race, gender, or age.</li>
+    <li><strong>Safety Guardrails:</strong> Testing for "jailbreaks" where a model is manipulated into bypassing its safety training.</li>
+    <li><strong>Toxicity Filtering:</strong> Using automated classifiers and human review to detect harmful or offensive content in model outputs.</li>
+</ul>
+
 <h2>When Human Evaluation is Essential</h2>
 <ul>
     <li>Evaluating tone, empathy, and cultural appropriateness</li>
@@ -50,12 +66,19 @@
     <tr><td>Braintrust</td><td>Experiment tracking and scoring</td></tr>
 </table>
 
-<h2>Continuous Evaluation</h2>
+<h2>Continuous Evaluation Workflow</h2>
+<ol>
+    <li><strong>Development Phase:</strong> Run promptfoo or DeepEval unit tests on every prompt iteration.</li>
+    <li><strong>Pre-Deployment:</strong> Execute a full evaluation sweep against a 500+ sample "golden dataset."</li>
+    <li><strong>A/B Testing:</strong> Use Pairwise Comparison (LLM-as-Judge) to compare new model versions against production.</li>
+    <li><strong>Monitoring:</strong> Randomly sample 1% of production traffic for human review to detect "drift" in quality.</li>
+</ol>
+
+<h2>Challenges and Trade-offs</h2>
 <ul>
-    <li>Run evaluations on every prompt or model change</li>
-    <li>Track metrics over time to catch regressions</li>
-    <li>Sample production traffic for ongoing quality monitoring</li>
-    <li>Set up alerts for metric drops beyond thresholds</li>
+    <li><strong>Cost vs. Quality:</strong> Investing in human eval is expensive but necessary for high-stakes applications.</li>
+    <li><strong>Latency:</strong> Running complex judge prompts adds time to the evaluation loop.</li>
+    <li><strong>Consistency:</strong> Maintaining high inter-annotator agreement requires constant rubric calibration.</li>
 </ul>
 
 

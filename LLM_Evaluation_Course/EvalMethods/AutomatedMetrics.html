@@ -25,6 +25,30 @@
     <tr><td>Pass@k</td><td>Code passes tests in k attempts</td><td>Code generation</td><td>Requires test cases</td></tr>
 </table>
 
+<h2>Standard Industry Benchmarks</h2>
+<p>Benchmarks provide a standardized baseline to compare different models across specific capabilities:</p>
+<ul>
+    <li><strong>MMLU (Massive Multitask Language Understanding):</strong> Evaluates general knowledge and problem-solving across 57 subjects (STEM, humanities, social sciences).</li>
+    <li><strong>GSM8K:</strong> A dataset of grade school math word problems that tests multi-step mathematical reasoning.</li>
+    <li><strong>HumanEval / MBPP:</strong> Benchmarks for evaluating code generation capabilities in Python and other languages.</li>
+    <li><strong>IFEval:</strong> Tests "Instruction Following" by checking if models follow strict formatting constraints (e.g., "no more than 400 words", "output in JSON").</li>
+</ul>
+
+<h2>Detecting Hallucinations</h2>
+<p>Hallucinations occur when a model generates factual errors or unverifiable claims. Automated detection strategies include:</p>
+<ul>
+    <li><strong>Self-Consistency:</strong> Generating multiple responses for the same query and checking for contradictions.</li>
+    <li><strong>NLI (Natural Language Inference):</strong> Treating the retrieved context as a "premise" and the model output as a "hypothesis" to check for entailment vs. contradiction.</li>
+    <li><strong>SelfCheckGPT:</strong> Using a second model call to verify specific facts within the initial response against a reference or through multiple sampling.</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Example: Simple NLI-based Fact Verification
+def verify_faithfulness(context, answer):
+    prompt = f"Given the context: '{context}', is the statement '{answer}' supported? Answer YES or NO."
+    return call_llm(prompt)</code></pre>
+</div>
+
 <h2>LLM-as-Judge</h2>
 <p>Use a strong LLM (like Claude) to evaluate outputs from another model:</p>
 <div class="code-block">
