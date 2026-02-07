@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
 <head>
-    <title>Global Configuration</title>
+    <title>Global Configuration for Fine-Tuned Models</title>
     <style type="text/css" media="screen">
 		@import url( ../shared/style.css );
 	</style>
@@ -9,17 +9,41 @@
 	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
 </head>
 <body>
-<h1>Global Configuration</h1>
+<h1>Global Configuration for Fine-Tuned Models</h1>
 
-<p>If you want a consistent &quot;vibe&quot; across your entire application, use application.properties:</p>
+<p>For production environments, you typically want to configure your fine-tuned model ID globally using <code>application.properties</code> or <code>application.yml</code>. This allows you to change the model version across the entire app without modifying code.</p>
 
-<p>Properties</p>
+<h3>Spring AI Properties</h3>
+<p>Configure your custom model path or ID in your configuration file:</p>
 
-<p>spring.ai.openai.chat.options.temperature=0.7</p>
+<p><strong>application.yml:</strong></p>
+<pre>
+spring:
+  ai:
+    openai:
+      chat:
+        options:
+          model: ft:gpt-4o-mini:your-org:specialized-assistant-v2
+          temperature: 0.1
+</pre>
 
-<p>spring.ai.openai.chat.options.model=gpt-4o</p>
+<p><strong>Local Models with Ollama:</strong></p>
+<p>If you are running a fine-tuned model locally, you would point Spring AI to your local Ollama instance and the name of the model you created via a <code>Modelfile</code>:</p>
+<pre>
+spring:
+  ai:
+    ollama:
+      chat:
+        options:
+          model: my-custom-llama3-ft
+</pre>
 
-<p>spring.ai.openai.chat.options.top-p=1.0</p>
+<h3>Why Global Configuration?</h3>
+<ul>
+    <li><strong>Environment Separation:</strong> Use a smaller base model in <code>dev</code> and your high-quality fine-tuned model in <code>prod</code>.</li>
+    <li><strong>Version Management:</strong> Quickly roll back to a previous model version by simply changing a property value.</li>
+    <li><strong>Security:</strong> Keep model IDs and API keys out of your source code.</li>
+</ul>
 
 <script type="text/javascript">
 </script>
