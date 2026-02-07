@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
 <head>
-    <title>1. Understanding the &quot;Knobs&quot; (Continued)</title>
+    <title>1. Fine-Tuning Fundamentals (Continued)</title>
     <style type="text/css" media="screen">
 		@import url( ../shared/style.css );
 	</style>
@@ -9,12 +9,22 @@
 	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
 </head>
 <body>
-<h1>1. Understanding the &quot;Knobs&quot; (Continued)</h1>
+<h1>1. Fine-Tuning Fundamentals: Evaluation</h1>
 
+<p>How do you know if your fine-tuned model is actually better than the base model? Evaluation is critical to prevent &quot;catastrophic forgetting&quot;—where the model gains new skills but loses its general reasoning abilities.</p>
+
+<h3>Key Evaluation Metrics</h3>
 <ul>
-    <li><strong>Top-K:</strong> The model only considers the top $K$ most likely next words. This &quot;cuts the tail&quot; of low-probability words.</li>
-    <li><strong>Frequency Penalty:</strong> Discourages the model from repeating the same words or phrases.</li>
-    <li><strong>Presence Penalty:</strong> Encourages the model to talk about new topics.</li>
+    <li><strong>Perplexity:</strong> A mathematical measure of how well the model predicts a sample. Lower perplexity generally indicates a better fit to the data, but it doesn&#x27;t always correlate with human-perceived quality.</li>
+    <li><strong>BLEU and ROUGE Scores:</strong> Common metrics for translation and summarization that compare the model&#x27;s output to a reference text based on overlapping words (n-grams).</li>
+    <li><strong>Task-Specific Metrics:</strong> For a coding model, this might be &quot;Pass@k&quot; (the probability that at least one of top k generated code samples passes unit tests).</li>
+</ul>
+
+<h3>The &quot;Golden Dataset&quot; Approach</h3>
+<p>The best way to evaluate a fine-tuned model is to create a <strong>Golden Dataset</strong>: a set of high-priority prompts and their &quot;perfect&quot; answers that were <em>not</em> included in the training set. Compare the base model&#x27;s performance against your fine-tuned model on this dataset using:</p>
+<ul>
+    <li><strong>LLM-as-a-Judge:</strong> Use a larger, more capable model (like GPT-4) to grade the outputs of your smaller fine-tuned model.</li>
+    <li><strong>Human Review:</strong> The gold standard. Have experts rank the responses for accuracy, tone, and helpfulness.</li>
 </ul>
 
 <script type="text/javascript">
