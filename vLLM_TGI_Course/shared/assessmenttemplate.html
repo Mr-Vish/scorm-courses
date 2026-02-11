@@ -297,6 +297,22 @@ for (var i=0; i<includeFiles.length; i++){
                 }
             } catch(e) {}
         }
+
+        // Send height to parent
+        function sendHeight() {
+            var height = document.body.scrollHeight;
+            parent.postMessage({height: height}, '*');
+        }
+        sendHeight();
+
+        if (typeof ResizeObserver !== 'undefined') {
+            var ro = new ResizeObserver(function() {
+                sendHeight();
+            });
+            ro.observe(document.body);
+        } else {
+            setTimeout(sendHeight, 500);
+        }
     };
     
     function RenderTest(test){
