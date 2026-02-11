@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 1: Fundamentals of A/B Testing for GenAI - Experiment Design Principles</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: Fundamentals of A/B Testing for GenAI</h1>
+<h2>Experiment Design Principles and Metric Selection</h2>
+
+<h2>Module Objectives</h2>
+<p>In this module, you will learn to:</p>
+<ul>
+    <li>Understand the unique challenges of testing non-deterministic GenAI systems</li>
+    <li>Design controlled experiments with proper variant definitions and traffic allocation</li>
+    <li>Select appropriate metrics across quality, behavior, engagement, and operational dimensions</li>
+    <li>Calculate required sample sizes for statistical validity</li>
+    <li>Implement deterministic user assignment for consistent experiences</li>
+</ul>
+
+<h2>Why A/B Testing is Critical for GenAI Features</h2>
+
+<p>Generative AI systems fundamentally differ from traditional software in their non-deterministic nature. When you deploy a GenAI feature, you're not simply releasing code with predictable behavior—you're introducing a system that can produce vastly different outputs based on subtle configuration changes. This inherent variability makes intuition-based decision making insufficient and potentially costly.</p>
+
+<p>Consider a practical scenario: Your product team debates whether to use GPT-4 or Claude for document summarization. Engineering argues that GPT-4 has better technical benchmarks, while UX research suggests Claude produces more concise outputs that users prefer. Without rigorous A/B testing, this decision becomes political rather than empirical. A/B testing transforms this debate into a data-driven investigation where actual user behavior and satisfaction metrics determine the optimal choice.</p>
+
+<p>The stakes are particularly high because GenAI features often sit at critical user interaction points. A poorly performing model can degrade user trust, increase support costs, and damage product reputation. Conversely, optimized GenAI features can dramatically improve user productivity, satisfaction, and retention.</p>
+
+<h2>Unique Challenges in GenAI Experimentation</h2>
+
+<p>Testing GenAI features introduces several challenges not present in traditional A/B testing:</p>
+
+<h3>1. Output Variability</h3>
+<p>Unlike traditional features where identical inputs produce identical outputs, GenAI systems can generate different responses to the same prompt. This variability stems from temperature settings, sampling methods, and the probabilistic nature of language models. Experimenters must account for this inherent randomness when measuring treatment effects.</p>
+
+<h3>2. Subjective Quality Assessment</h3>
+<p>Evaluating whether one AI-generated response is "better" than another often requires subjective judgment. While traditional features can be measured with objective metrics like click-through rates or conversion rates, GenAI outputs demand quality assessments that capture nuances like helpfulness, accuracy, tone, and coherence.</p>
+
+<h3>3. Context Dependency</h3>
+<p>GenAI performance varies significantly across different use cases, user segments, and input types. A model that excels at technical documentation may underperform for creative writing. Experiments must be designed to capture these contextual variations.</p>
+
+<h3>4. Latency and Cost Trade-offs</h3>
+<p>More powerful models typically deliver higher quality outputs but at the expense of increased latency and API costs. A/B tests must balance multiple competing objectives rather than optimizing for a single metric.</p>
+
+<h3>5. Safety and Alignment Concerns</h3>
+<p>GenAI systems can occasionally produce harmful, biased, or inappropriate content. Experiments must include guardrail metrics to ensure that optimizations for quality or engagement don't compromise safety.</p>
+
+<h2>What to A/B Test in GenAI Systems</h2>
+
+<p>GenAI features offer numerous experimental variables. Understanding which elements to test and how they impact user experience is fundamental to effective experimentation:</p>
+
+<table>
+    <tr>
+        <th>Variable Category</th>
+        <th>Specific Variants</th>
+        <th>Primary Metrics</th>
+        <th>Considerations</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Selection</td>
+        <td>GPT-4o vs Claude 3.5 vs Gemini Pro</td>
+        <td>User satisfaction, task completion rate, output quality score</td>
+        <td>Balance quality against latency and cost; consider model-specific strengths</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompt Engineering</td>
+        <td>Minimal vs detailed instructions, few-shot vs zero-shot</td>
+        <td>Output consistency, helpfulness ratings, error rates</td>
+        <td>Prompt changes can dramatically affect behavior; test systematically</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Temperature Settings</td>
+        <td>0.0 (deterministic) vs 0.7 (balanced) vs 1.0 (creative)</td>
+        <td>User preference, output diversity, coherence scores</td>
+        <td>Lower temperatures increase consistency; higher enable creativity</td>
+    </tr>
+    <tr>
+        <td class="rowheader">RAG Configuration</td>
+        <td>Top-3 vs top-5 chunks, chunk size variations, retrieval algorithms</td>
+        <td>Answer accuracy, relevance scores, hallucination rates</td>
+        <td>More context improves accuracy but increases latency and cost</td>
+    </tr>
+    <tr>
+        <td class="rowheader">System Prompts</td>
+        <td>Role definitions, constraint specifications, output format instructions</td>
+        <td>Output format compliance, tone consistency, task adherence</td>
+        <td>System prompts shape model behavior; changes affect all interactions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">UI Presentation</td>
+        <td>Streaming vs complete response, markdown rendering, citation display</td>
+        <td>Perceived speed, user satisfaction, engagement duration</td>
+        <td>Presentation affects perception even when underlying content is identical</td>
+    </tr>
+</table>
+
+<h2>Experiment Design Framework</h2>
+
+<p>A well-designed GenAI experiment follows a structured approach that ensures valid, actionable results:</p>
+
+<h3>Step 1: Define Clear Hypotheses</h3>
+<p>Begin with a specific, testable hypothesis. Avoid vague statements like "Model A is better than Model B." Instead, formulate precise predictions: "GPT-4 will increase user satisfaction scores by at least 10% compared to GPT-3.5 for technical documentation summarization, as measured by post-interaction surveys."</p>
+
+<h3>Step 2: Identify Primary and Secondary Metrics</h3>
+<p>Select one primary metric that directly measures your hypothesis. This is your decision criterion. Then define secondary metrics that provide additional context and guard against unintended consequences. For example, if your primary metric is user satisfaction, secondary metrics might include latency, cost per request, and safety violation rates.</p>
+
+<h3>Step 3: Determine Variant Configurations</h3>
+<p>Clearly specify what differs between control and treatment groups. Change only one variable at a time to isolate causal effects. Document all configuration parameters including model versions, prompt templates, temperature settings, and any other relevant parameters.</p>
+
+<h3>Step 4: Calculate Required Sample Size</h3>
+<p>Use statistical power analysis to determine how many users you need in each variant to detect your target effect size with adequate confidence. Underpowered experiments waste resources and produce inconclusive results.</p>
+
+<h3>Step 5: Implement Deterministic Assignment</h3>
+<p>Users must receive consistent experiences across sessions. If a user is assigned to the GPT-4 variant, they should always receive GPT-4 responses, not randomly switch between models. This requires deterministic assignment based on user identifiers.</p>
+
+<h2>Deterministic User Assignment Implementation</h2>
+
+<p>Consistent user assignment is achieved through hash-based bucketing. The core principle is to hash a combination of experiment ID and user ID, then use the hash value to deterministically assign users to variants:</p>
+
+<div class="code-block">
+<pre><code>import hashlib
+
+def assign_user_to_variant(experiment_id, user_id, traffic_splits):
+    """Deterministically assign a user to an experiment variant."""
+    hash_input = f"{experiment_id}:{user_id}"
+    hash_value = int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)
+    bucket = (hash_value % 10000) / 10000.0
+    
+    cumulative = 0.0
+    for i, split in enumerate(traffic_splits):
+        cumulative += split
+        if bucket < cumulative:
+            return i
+    return len(traffic_splits) - 1</code></pre>
+</div>
+
+<p><strong>Key Implementation Notes:</strong></p>
+<ul>
+    <li>The hash function ensures uniform distribution across variants</li>
+    <li>The same user always receives the same variant for a given experiment</li>
+    <li>Different experiments produce independent assignments for the same user</li>
+</ul>
+
+<h2>Metric Selection for GenAI Features</h2>
+
+<p>Effective GenAI experimentation requires a balanced scorecard of metrics spanning multiple dimensions:</p>
+
+<h3>Quality Metrics</h3>
+<ul>
+    <li><strong>LLM-as-Judge Scores:</strong> Use a strong model to evaluate output quality</li>
+    <li><strong>ROUGE/BLEU Scores:</strong> Automated metrics comparing generated text to reference outputs</li>
+    <li><strong>Human Rating Scores:</strong> Expert evaluators rate outputs on predefined rubrics</li>
+    <li><strong>Hallucination Rate:</strong> Percentage of responses containing factually incorrect information</li>
+</ul>
+
+<h3>User Behavior Metrics</h3>
+<ul>
+    <li><strong>Thumbs Up/Down Rates:</strong> Explicit user feedback on response quality</li>
+    <li><strong>Copy Rate:</strong> Percentage of responses users copy to clipboard</li>
+    <li><strong>Edit Rate:</strong> How often users modify AI-generated content before using it</li>
+    <li><strong>Regeneration Rate:</strong> Frequency of users requesting alternative responses</li>
+</ul>
+
+<h3>Engagement Metrics</h3>
+<ul>
+    <li><strong>Messages Per Session:</strong> Average conversation length</li>
+    <li><strong>Return Rate:</strong> Percentage of users who return within 7 days</li>
+    <li><strong>Session Duration:</strong> Time spent interacting with the feature</li>
+</ul>
+
+<h3>Operational Metrics</h3>
+<ul>
+    <li><strong>Latency (P50, P95, P99):</strong> Response time distribution</li>
+    <li><strong>Token Usage:</strong> Input and output tokens per request</li>
+    <li><strong>Cost Per Request:</strong> API costs for each interaction</li>
+    <li><strong>Error Rate:</strong> Percentage of failed requests</li>
+</ul>
+
+<h2>Sample Size Calculation</h2>
+
+<p>Statistical power analysis determines the minimum number of users needed to detect a meaningful effect:</p>
+
+<div class="code-block">
+<pre><code>from scipy import stats
+import math
+
+def calculate_sample_size(baseline_rate, minimum_detectable_effect, 
+                         alpha=0.05, power=0.80):
+    """Calculate required sample size per variant."""
+    p1 = baseline_rate
+    p2 = baseline_rate + minimum_detectable_effect
+    z_alpha = stats.norm.ppf(1 - alpha / 2)
+    z_beta = stats.norm.ppf(power)
+    p_avg = (p1 + p2) / 2
+    
+    numerator = (z_alpha * math.sqrt(2 * p_avg * (1 - p_avg)) + 
+                z_beta * math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))) ** 2
+    denominator = (p2 - p1) ** 2
+    
+    return math.ceil(numerator / denominator)</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>GenAI features require rigorous A/B testing due to their non-deterministic nature</li>
+    <li>Effective experiments test one variable at a time with clear hypotheses</li>
+    <li>Deterministic user assignment ensures consistent experiences</li>
+    <li>Metric selection should span quality, behavior, engagement, and operational dimensions</li>
+    <li>Proper sample size calculation prevents underpowered experiments</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on Exercise: SageMaker Fine-Tuning Practice</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on Exercise: Implementing Fine-Tuning</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>In this exercise, you will practice the key configuration steps for a SageMaker fine-tuning job. You will work through tasks related to data formatting, estimator configuration, and LoRA implementation.</p>
+
+<h2>Task 1: Data Formatting for Instruction Tuning</h2>
+<p>You have a raw dataset of medical Q&A. You need to convert it into the JSONL format that Llama-3 and SageMaker JumpStart expect.</p>
+<p><strong>Exercise:</strong> Convert the following raw example into a single JSON line.</p>
+
+<div class="code-block">
+<pre><code>User: "What are the common symptoms of a cold?"
+Doctor: "Common symptoms include a runny nose, sneezing, and a mild cough."
+</code></pre>
+</div>
+<p><strong>Desired Output:</strong>
+<div class="code-block">
+<pre><code># Write the JSONL string below
+# {"prompt": "...", "completion": "..."}
+</code></pre>
+</div>
+</p>
+
+<h2>Task 2: Configuring a PEFT Estimator</h2>
+<p>You want to fine-tune a Mistral-7B model using LoRA on a budget. You've decided to use a single <code>ml.g5.2xlarge</code> instance.</p>
+<p><strong>Exercise:</strong> Fill in the missing parameters in the <code>JumpStartEstimator</code> configuration below.</p>
+
+<div class="code-block">
+<pre><code>from sagemaker.jumpstart.estimator import JumpStartEstimator
+
+model_id = "mistralai-textgeneration-mistral-7b"
+
+estimator = JumpStartEstimator(
+    model_id=model_id,
+    instance_type="__________", # What instance type did we choose?
+    instance_count=____, # How many instances?
+    role=my_sagemaker_role
+)
+
+# Set the rank for LoRA to 16
+estimator.set_hyperparameters(
+    lora_r=____,
+    epochs=3
+)
+</code></pre>
+</div>
+
+<h2>Task 3: Calculating Training Cost</h2>
+<p>Your fine-tuning job takes 4 hours to complete. You are using an <code>ml.g5.2xlarge</code> instance, which costs approximately $1.21 per hour. However, you are using <strong>Managed Spot Training</strong>, which gives you a 65% discount.</p>
+<p><strong>Exercise:</strong> Calculate the final cost of your training job.</p>
+<ol>
+    <li>Base Cost: 4 hours * $1.21 = $_____</li>
+    <li>Final Cost (after 65% discount): $_____</li>
+</ol>
+
+<h2>Task 4: Deployment Strategy</h2>
+<p>You need to deploy your model for a real-time chat application that expects low latency. Which SageMaker deployment option should you choose?
+    <ul>
+        <li>A) Asynchronous Inference</li>
+        <li>B) Batch Transform</li>
+        <li>C) Real-Time Inference with Multi-Model Endpoints</li>
+        <li>D) Serverless Inference with 1GB Memory</li>
+    </ul>
+</p>
+
+<h2>Conclusion</h2>
+<p>By completing these tasks, you have simulated the decision-making process of an AI Engineer on AWS. You've handled data preparation, hardware selection, cost optimization, and deployment strategy. These skills are fundamental to building successful, enterprise-grade AI applications. Congratulations on completing the SageMaker Fine-Tuning course material! You are now ready for the final assessment.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

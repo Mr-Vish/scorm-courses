@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Tool Design and the Agent Loop</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Tool Design and the Agent Loop</h1>
+
+<h2>Lesson Objectives</h2>
+<p>In this lesson, you will:</p>
+<ul>
+    <li>Understand how to design effective tools for agents</li>
+    <li>Learn the agent loop implementation pattern</li>
+    <li>Explore tool definition best practices</li>
+    <li>Understand tool result handling and error management</li>
+</ul>
+
+<h2>What Are Tools?</h2>
+<p>Tools are functions that agents can invoke to perform actions or retrieve information. They serve as the agent's interface to the external world, enabling it to:</p>
+
+<ul>
+    <li>Query databases and APIs</li>
+    <li>Perform calculations or data transformations</li>
+    <li>Read and write files</li>
+    <li>Send notifications or messages</li>
+    <li>Control external systems</li>
+</ul>
+
+<h2>Tool Definition Structure</h2>
+<p>Each tool definition consists of three key components:</p>
+
+<blockquote>
+{
+  "name": "get_weather",
+  "description": "Get current weather for a specific location. Use this when the user asks about weather conditions.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "location": {
+        "type": "string",
+        "description": "City name or coordinates"
+      },
+      "units": {
+        "type": "string",
+        "enum": ["celsius", "fahrenheit"],
+        "description": "Temperature units"
+      }
+    },
+    "required": ["location"]
+  }
+}
+</blockquote>
+
+<h2>Tool Design Principles</h2>
+
+<h3>1. Single Responsibility</h3>
+<p>Each tool should do one thing well. Avoid creating "Swiss Army knife" tools that try to do everything.</p>
+
+<p><strong>Good:</strong> Separate tools for get_user, update_user, delete_user</p>
+<p><strong>Bad:</strong> Single manage_user tool with a "mode" parameter</p>
+
+<h3>2. Clear, Descriptive Names</h3>
+<p>Tool names should clearly indicate what the tool does using verb-noun format.</p>
+
+<p><strong>Good:</strong> search_products, calculate_shipping, send_email</p>
+<p><strong>Bad:</strong> tool1, handler, process</p>
+
+<h3>3. Comprehensive Descriptions</h3>
+<p>Descriptions should explain:</p>
+<ul>
+    <li>What the tool does</li>
+    <li>When to use it</li>
+    <li>What it returns</li>
+    <li>Any important constraints or limitations</li>
+</ul>
+
+<h3>4. Well-Defined Input Schemas</h3>
+<p>Use JSON Schema to specify:</p>
+<ul>
+    <li>Required vs optional parameters</li>
+    <li>Data types and formats</li>
+    <li>Allowed values (enums)</li>
+    <li>Validation rules</li>
+    <li>Parameter descriptions</li>
+</ul>
+
+<h3>5. Meaningful Error Messages</h3>
+<p>Return clear, actionable error messages that help the agent understand what went wrong and how to fix it.</p>
+
+<p><strong>Good:</strong> "Product ID 12345 not found. Please verify the ID and try again."</p>
+<p><strong>Bad:</strong> "Error 404" or stack traces</p>
+
+<h2>The Agent Loop Pattern</h2>
+<p>The agent loop is the core execution pattern that enables autonomous agent behavior:</p>
+
+<blockquote>
+1. Send user message + tool definitions to Claude
+2. Claude responds with either:
+   - Text response (task complete)
+   - Tool use request (needs to call a tool)
+3. If tool use requested:
+   - Execute the tool
+   - Send tool result back to Claude
+   - Go to step 2
+4. If text response, return to user and end
+</blockquote>
+
+<h2>Agent Loop Flow</h2>
+
+<table>
+    <tr>
+        <th>Step</th>
+        <th>Actor</th>
+        <th>Action</th>
+    </tr>
+    <tr>
+        <td class="rowheader">1</td>
+        <td>User</td>
+        <td>Sends initial request</td>
+    </tr>
+    <tr>
+        <td class="rowheader">2</td>
+        <td>Agent System</td>
+        <td>Sends request + tools to Claude</td>
+    </tr>
+    <tr>
+        <td class="rowheader">3</td>
+        <td>Claude</td>
+        <td>Analyzes request, decides to use tool</td>
+    </tr>
+    <tr>
+        <td class="rowheader">4</td>
+        <td>Agent System</td>
+        <td>Executes tool, gets result</td>
+    </tr>
+    <tr>
+        <td class="rowheader">5</td>
+        <td>Agent System</td>
+        <td>Sends tool result back to Claude</td>
+    </tr>
+    <tr>
+        <td class="rowheader">6</td>
+        <td>Claude</td>
+        <td>Processes result, may use more tools or finish</td>
+    </tr>
+    <tr>
+        <td class="rowheader">7</td>
+        <td>Agent System</td>
+        <td>Returns final response to user</td>
+    </tr>
+</table>
+
+<h2>Tool Result Handling</h2>
+
+<h3>Successful Tool Execution</h3>
+<p>Return structured data that Claude can understand and use:</p>
+
+<blockquote>
+{
+  "temperature": 72,
+  "condition": "partly cloudy",
+  "humidity": 65,
+  "wind_speed": 10
+}
+</blockquote>
+
+<h3>Tool Errors</h3>
+<p>Return error information in a consistent format:</p>
+
+<blockquote>
+{
+  "error": "LocationNotFound",
+  "message": "Could not find weather data for 'Atlantis'",
+  "suggestion": "Please provide a valid city name"
+}
+</blockquote>
+
+<h2>Common Tool Patterns</h2>
+
+<h3>Query Tools</h3>
+<p>Retrieve information without side effects:</p>
+<ul>
+    <li>search_database</li>
+    <li>get_user_profile</li>
+    <li>list_products</li>
+    <li>check_inventory</li>
+</ul>
+
+<h3>Action Tools</h3>
+<p>Perform operations that change state:</p>
+<ul>
+    <li>create_order</li>
+    <li>send_notification</li>
+    <li>update_record</li>
+    <li>delete_file</li>
+</ul>
+
+<h3>Computation Tools</h3>
+<p>Perform calculations or transformations:</p>
+<ul>
+    <li>calculate_total</li>
+    <li>convert_currency</li>
+    <li>analyze_sentiment</li>
+    <li>generate_summary</li>
+</ul>
+
+<h2>Tool Design Anti-Patterns</h2>
+
+<h3>Overly Complex Tools</h3>
+<p><strong>Problem:</strong> Tools that try to do too much make it hard for agents to use them correctly.</p>
+<p><strong>Solution:</strong> Break complex tools into simpler, focused tools.</p>
+
+<h3>Ambiguous Descriptions</h3>
+<p><strong>Problem:</strong> Vague descriptions lead to incorrect tool selection.</p>
+<p><strong>Solution:</strong> Be specific about what the tool does and when to use it.</p>
+
+<h3>Missing Error Handling</h3>
+<p><strong>Problem:</strong> Tools that crash or return cryptic errors confuse the agent.</p>
+<p><strong>Solution:</strong> Always catch errors and return meaningful messages.</p>
+
+<h3>Inconsistent Return Formats</h3>
+<p><strong>Problem:</strong> Different return formats for similar tools make agent reasoning harder.</p>
+<p><strong>Solution:</strong> Establish consistent patterns for tool responses.</p>
+
+<h2>Tool Security Considerations</h2>
+
+<ul>
+    <li><strong>Input Validation:</strong> Always validate tool inputs before execution</li>
+    <li><strong>Authorization:</strong> Check permissions before performing sensitive operations</li>
+    <li><strong>Rate Limiting:</strong> Prevent abuse through excessive tool calls</li>
+    <li><strong>Audit Logging:</strong> Log all tool invocations for security and debugging</li>
+    <li><strong>Sandboxing:</strong> Isolate tool execution to prevent system compromise</li>
+</ul>
+
+<h2>Example: Well-Designed Tool Set</h2>
+
+<p>For an e-commerce agent:</p>
+
+<blockquote>
+search_products(query, category, max_results)
+get_product_details(product_id)
+check_inventory(product_id, quantity)
+calculate_shipping(address, items)
+create_order(customer_id, items, shipping_address)
+get_order_status(order_id)
+process_refund(order_id, reason)
+</blockquote>
+
+<p>Each tool has a single, clear purpose and works together to enable complex workflows.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Tools are the agent's interface to external systems and actions</li>
+    <li>Good tool design follows single responsibility, clear naming, and comprehensive descriptions</li>
+    <li>The agent loop enables iterative tool use until the task is complete</li>
+    <li>Tool results should be structured, consistent, and include meaningful error messages</li>
+    <li>Security considerations are critical for production tool implementations</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

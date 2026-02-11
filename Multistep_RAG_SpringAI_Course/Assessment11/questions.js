@@ -1,0 +1,1 @@
+test.AddQuestion( new Question ("com.scorm.multistep.rag.q11_1", "In the research agent exercise, which stage follows Query Expansion?", QUESTION_TYPE_CHOICE, new Array("Synthesis", "Multi-stage Retrieval", "Re-ranking", "Evaluation"), "Multi-stage Retrieval", "obj_module_11"));

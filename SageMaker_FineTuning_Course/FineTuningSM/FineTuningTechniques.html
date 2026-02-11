@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Fine-Tuning Techniques - PEFT and LoRA</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Fine-Tuning: PEFT, LoRA, and QLoRA</h1>
+
+<div class="content-section">
+<h2>1. The Challenge of Full Fine-Tuning</h2>
+<p>In traditional fine-tuning, every single parameter of the pre-trained model is updated during training. For a model with 70 billion parameters, this is incredibly expensive, requiring multiple high-end GPU instances (like the <code>ml.p4d.24xlarge</code>) and massive amounts of VRAM. For many organizations, full fine-tuning is simply out of reach. This is where <strong>Parameter-Efficient Fine-Tuning (PEFT)</strong> comes in.</p>
+
+<h2>2. LoRA: Low-Rank Adaptation</h2>
+<p><strong>LoRA</strong> is a breakthrough technique that allows you to fine-tune massive models by updating only a tiny fraction (often < 1%) of the parameters. Instead of updating the original weight matrices of the model, LoRA freezes them and adds two much smaller matrices (the "low-rank" matrices) alongside them.</p>
+
+<h3>How LoRA Works</h3>
+<p>During the forward pass, the model's original output is combined with the output from these small matrices. During the backward pass (training), only the weights in the small matrices are updated.
+    <ul>
+        <li><strong>Drastic Memory Reduction:</strong> Since the majority of the model is frozen, the optimizer state (which takes up most of the VRAM) is only stored for the tiny LoRA matrices.</li>
+        <li><strong>No Inference Latency:</strong> After training, the LoRA matrices can be mathematically merged back into the original weights, meaning the model is exactly the same size as the original during deployment.</li>
+        <li><strong>Portability:</strong> You can save only the LoRA weights (often only a few megabytes) and swap them in and out of a frozen base model at runtime.</li>
+    </ul>
+</p>
+
+<h2>3. QLoRA: Quantized LoRA</h2>
+<p><strong>QLoRA</strong> takes the efficiency of LoRA even further by combining it with 4-bit quantization. It allows you to fine-tune a 70B parameter model on a single 48GB GPU (like an NVIDIA A6000 or a SageMaker <code>ml.g5.12xlarge</code> instance).</p>
+
+<h3>The QLoRA Innovations</h3>
+<ul>
+    <li><strong>4-bit NormalFloat (NF4):</strong> A new data type that is theoretically optimal for normally distributed weights.</li>
+    <li><strong>Double Quantization:</strong> Quantizing the quantization constants themselves to save even more memory.</li>
+    <li><strong>Paged Optimizers:</strong> Using NVIDIA unified memory to prevent out-of-memory errors by swapping data to CPU RAM when necessary.</li>
+</ul>
+
+<h2>4. Implementing LoRA on SageMaker with Hugging Face PEFT</h2>
+<p>Using the Hugging Face <code>peft</code> library on SageMaker makes implementing LoRA straightforward. Here is a conceptual snippet for your training script:</p>
+
+<div class="code-block">
+<pre><code>from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from transformers import AutoModelForCausalLM
+
+# 1. Load the model in 4-bit for QLoRA
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b",
+    load_in_4bit=True,
+    device_map="auto"
+)
+
+# 2. Prepare for training
+model = prepare_model_for_kbit_training(model)
+
+# 3. Configure LoRA
+config = LoraConfig(
+    r=16, # Rank
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM"
+)
+
+# 4. Wrap the model
+model = get_peft_model(model, config)
+model.print_trainable_parameters()
+# Output: trainable params: 4,194,304 || all params: 7,000,000,000 || trainable%: 0.0599</code></pre>
+</div>
+
+<h2>5. Choosing the Right Rank (r)</h2>
+<p>The <strong>Rank (r)</strong> determines the size of the LoRA matrices. A higher rank allows the model to learn more complex patterns but increases memory usage and the risk of overfitting.
+    <ul>
+        <li><strong>r=8 or 16:</strong> Standard for most instruction fine-tuning tasks.</li>
+        <li><strong>r=32 or 64:</strong> Used for tasks requiring deep domain knowledge (e.g., specialized medical or legal reasoning).</li>
+        <li><strong>r=1 or 2:</strong> Sometimes used for very simple style transfers.</li>
+    </ul>
+</p>
+
+<h2>6. PEFT on SageMaker: Training Configuration</h2>
+<p>When running PEFT jobs on SageMaker, you can often use cheaper <strong>G5 instance types</strong> (using NVIDIA A10G GPUs) rather than the more expensive P4 or P5 instances. This leads to a massive reduction in the cost of experimentation. Because the LoRA adapters are small, you can also use <strong>SageMaker Managed Warm Pools</strong> to speed up subsequent training runs by keeping the base model in memory.</p>
+
+<h2>Conclusion</h2>
+<p>Techniques like LoRA and QLoRA have democratized the ability to fine-tune state-of-the-art models. By updating only a tiny fraction of the parameters, you can achieve performance that rivals full fine-tuning at a fraction of the cost and compute. In our next module, we'll look at how to scale these techniques using Distributed Training for even larger workloads.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

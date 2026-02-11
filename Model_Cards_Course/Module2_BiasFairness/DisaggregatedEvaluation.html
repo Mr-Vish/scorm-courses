@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Disaggregated Evaluation and Fairness Metrics</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Disaggregated Evaluation and Fairness Metrics</h1>
+
+<h3>The Importance of Disaggregated Evaluation</h3>
+<p><strong>Disaggregated evaluation</strong> means breaking down model performance metrics by demographic groups, use cases, or other relevant dimensions rather than reporting only aggregate statistics. This practice is essential for identifying hidden biases and performance disparities.</p>
+
+<p><strong>Why Aggregate Metrics Hide Problems:</strong></p>
+<p>A model with 95% overall accuracy might have 98% accuracy for the majority group but only 85% accuracy for a minority group. Reporting only the aggregate 95% masks this significant disparity.</p>
+
+<h3>Dimensions for Disaggregation</h3>
+
+<table>
+    <tr>
+        <th>Dimension</th>
+        <th>Examples</th>
+        <th>Relevance</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Demographics</td>
+        <td>Age, gender, race, ethnicity, disability status</td>
+        <td>Protected classes under anti-discrimination law</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Geography</td>
+        <td>Country, region, urban vs. rural, zip code</td>
+        <td>Regional variations in data quality and representation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Socioeconomic</td>
+        <td>Income level, education, employment status</td>
+        <td>Access to technology and services varies</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Language</td>
+        <td>Primary language, dialect, proficiency level</td>
+        <td>NLP models often perform differently across languages</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Temporal</td>
+        <td>Time of day, season, data recency</td>
+        <td>Model performance may degrade over time</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Use Case</td>
+        <td>Different application contexts or scenarios</td>
+        <td>Performance varies by specific use case</td>
+    </tr>
+</table>
+
+<h3>Conducting Disaggregated Analysis</h3>
+
+<h4>Step 1: Identify Relevant Groups</h4>
+<p>Determine which demographic or contextual dimensions are relevant for your application:</p>
+<ul>
+    <li>Consider legal requirements (protected classes)</li>
+    <li>Identify groups that might be disproportionately affected</li>
+    <li>Consult with domain experts and affected communities</li>
+    <li>Review historical patterns of discrimination in your domain</li>
+</ul>
+
+<h4>Step 2: Ensure Adequate Sample Sizes</h4>
+<p>Each subgroup needs sufficient data for statistically meaningful analysis:</p>
+<ul>
+    <li><strong>Minimum recommended:</strong> 100+ examples per subgroup for basic analysis</li>
+    <li><strong>Preferred:</strong> 500+ examples for robust statistical testing</li>
+    <li><strong>If insufficient data:</strong> Document this limitation and plan for additional data collection</li>
+</ul>
+
+<h4>Step 3: Calculate Performance Metrics by Group</h4>
+<p>Compute standard metrics separately for each subgroup:</p>
+
+<blockquote>
+<strong>Example: Loan Approval Model</strong><br/><br/>
+<table>
+    <tr><th>Group</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1 Score</th><th>Sample Size</th></tr>
+    <tr><td>Overall</td><td>89.2%</td><td>87.5%</td><td>85.3%</td><td>86.4%</td><td>10,000</td></tr>
+    <tr><td>Male</td><td>91.3%</td><td>89.8%</td><td>88.1%</td><td>88.9%</td><td>6,000</td></tr>
+    <tr><td>Female</td><td>85.7%</td><td>83.2%</td><td>80.5%</td><td>81.8%</td><td>4,000</td></tr>
+    <tr><td>Age 18-35</td><td>87.1%</td><td>85.3%</td><td>82.7%</td><td>84.0%</td><td>3,500</td></tr>
+    <tr><td>Age 36-55</td><td>90.5%</td><td>88.9%</td><td>87.2%</td><td>88.0%</td><td>4,500</td></tr>
+    <tr><td>Age 56+</td><td>89.8%</td><td>88.1%</td><td>86.4%</td><td>87.2%</td><td>2,000</td></tr>
+</table>
+<br/>
+<strong>Finding:</strong> Model shows 5.6 percentage point accuracy gap between male and female applicants, indicating potential gender bias requiring investigation.
+</blockquote>
+
+<h4>Step 4: Analyze Intersectional Effects</h4>
+<p>Examine performance at the intersection of multiple dimensions:</p>
+
+<blockquote>
+<strong>Intersectional Analysis Example:</strong><br/><br/>
+<table>
+    <tr><th>Gender</th><th>Age Group</th><th>Accuracy</th><th>Performance Gap</th></tr>
+    <tr><td>Male</td><td>18-35</td><td>89.5%</td><td>Baseline</td></tr>
+    <tr><td>Male</td><td>56+</td><td>92.1%</td><td>+2.6%</td></tr>
+    <tr><td>Female</td><td>18-35</td><td>84.2%</td><td>-5.3%</td></tr>
+    <tr><td>Female</td><td>56+</td><td>87.3%</td><td>-2.2%</td></tr>
+</table>
+<br/>
+<strong>Finding:</strong> Young female applicants experience the largest performance gap, suggesting compound bias effects.
+</blockquote>
+
+<h3>Fairness Metrics and Definitions</h3>
+
+<p>Multiple mathematical definitions of fairness exist, each capturing different intuitions about what "fair" means. Understanding these metrics and their trade-offs is essential for responsible AI development.</p>
+
+<h4>1. Demographic Parity (Statistical Parity)</h4>
+<p><strong>Definition:</strong> The proportion of positive predictions should be equal across groups.</p>
+
+<p><strong>Mathematical Formulation:</strong> P(Ŷ=1|A=a) = P(Ŷ=1|A=b) for all groups a, b</p>
+
+<p><strong>Example:</strong> A hiring model satisfies demographic parity if it recommends 30% of male applicants and 30% of female applicants for interviews.</p>
+
+<p><strong>When Appropriate:</strong> When equal representation in outcomes is the primary goal</p>
+
+<p><strong>Limitations:</strong> May require accepting different accuracy levels across groups if base rates differ</p>
+
+<h4>2. Equal Opportunity</h4>
+<p><strong>Definition:</strong> True positive rates (recall/sensitivity) should be equal across groups.</p>
+
+<p><strong>Mathematical Formulation:</strong> P(Ŷ=1|Y=1,A=a) = P(Ŷ=1|Y=1,A=b)</p>
+
+<p><strong>Example:</strong> Among qualified candidates, the model should identify them at equal rates regardless of group membership.</p>
+
+<p><strong>When Appropriate:</strong> When false negatives are particularly harmful and should be distributed equally</p>
+
+<h4>3. Equalized Odds</h4>
+<p><strong>Definition:</strong> Both true positive rates and false positive rates should be equal across groups.</p>
+
+<p><strong>Mathematical Formulation:</strong> P(Ŷ=1|Y=y,A=a) = P(Ŷ=1|Y=y,A=b) for y ∈ {0,1}</p>
+
+<p><strong>Example:</strong> The model should have equal accuracy for both positive and negative cases across all groups.</p>
+
+<p><strong>When Appropriate:</strong> When both false positives and false negatives matter equally</p>
+
+<h4>4. Predictive Parity</h4>
+<p><strong>Definition:</strong> Precision (positive predictive value) should be equal across groups.</p>
+
+<p><strong>Mathematical Formulation:</strong> P(Y=1|Ŷ=1,A=a) = P(Y=1|Ŷ=1,A=b)</p>
+
+<p><strong>Example:</strong> Among applicants predicted to succeed, the actual success rate should be equal across groups.</p>
+
+<p><strong>When Appropriate:</strong> When decision-makers need equal confidence in positive predictions across groups</p>
+
+<h4>5. Calibration</h4>
+<p><strong>Definition:</strong> Predicted probabilities should match actual outcomes across groups.</p>
+
+<p><strong>Mathematical Formulation:</strong> P(Y=1|Ŷ=p,A=a) = p for all groups a and probabilities p</p>
+
+<p><strong>Example:</strong> If the model assigns 70% probability, approximately 70% of those cases should be positive, regardless of group.</p>
+
+<p><strong>When Appropriate:</strong> When probability estimates are used for decision-making</p>
+
+<h3>The Impossibility Theorem</h3>
+
+<p><strong>Critical Insight:</strong> Research has proven that except in special cases, it is mathematically impossible to satisfy multiple fairness criteria simultaneously.</p>
+
+<p><strong>Example Conflict:</strong> A model cannot generally satisfy both demographic parity and equal opportunity when base rates differ across groups.</p>
+
+<p><strong>Implication:</strong> Organizations must make explicit choices about which fairness criteria to prioritize based on their values, legal requirements, and context.</p>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Prioritized Metric</th>
+        <th>Rationale</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Medical Diagnosis</td>
+        <td>Equal Opportunity</td>
+        <td>Missing a disease (false negative) is particularly harmful; should occur at equal rates</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Credit Lending</td>
+        <td>Equalized Odds</td>
+        <td>Both wrongly denying credit and wrongly approving it have significant consequences</td>
+    </tr>
+    <tr>
+        <td class="rowheader">University Admissions</td>
+        <td>Demographic Parity</td>
+        <td>Equal representation in educational opportunities is a societal goal</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Risk Assessment</td>
+        <td>Calibration</td>
+        <td>Accurate probability estimates are essential for informed decision-making</td>
+    </tr>
+</table>
+
+<h3>Measuring Fairness Gaps</h3>
+
+<p>Quantify the magnitude of fairness violations:</p>
+
+<h4>Disparate Impact Ratio</h4>
+<p>Ratio of positive prediction rates between groups:</p>
+<blockquote>
+Disparate Impact = (Positive Rate for Group A) / (Positive Rate for Group B)<br/><br/>
+<strong>80% Rule:</strong> US Equal Employment Opportunity Commission considers ratios below 0.8 as evidence of adverse impact<br/><br/>
+<strong>Example:</strong> If 40% of male applicants are approved but only 28% of female applicants, the ratio is 0.7, indicating potential discrimination.
+</blockquote>
+
+<h4>Difference in Performance Metrics</h4>
+<p>Absolute difference in accuracy, precision, or recall between groups:</p>
+<blockquote>
+Accuracy Gap = |Accuracy(Group A) - Accuracy(Group B)|<br/><br/>
+<strong>Example:</strong> 91% accuracy for Group A vs. 85% for Group B = 6 percentage point gap
+</blockquote>
+
+<h3>Documenting Fairness Analysis in Model Cards</h3>
+
+<p>Model cards should include comprehensive fairness documentation:</p>
+
+<blockquote>
+<strong>Fairness Assessment Section Example:</strong><br/><br/>
+
+<strong>Evaluation Approach:</strong> Disaggregated evaluation across gender, age, and race/ethnicity<br/><br/>
+
+<strong>Fairness Metrics:</strong> Evaluated using Equal Opportunity (primary) and Equalized Odds (secondary)<br/><br/>
+
+<strong>Findings:</strong>
+<ul>
+    <li>Equal Opportunity: True positive rates vary by 4.2 percentage points across gender groups (Male: 88.1%, Female: 83.9%)</li>
+    <li>Equalized Odds: False positive rates show 2.1 percentage point variation</li>
+    <li>Disparate Impact Ratio: 0.87 (above 0.8 threshold but warrants monitoring)</li>
+</ul>
+
+<strong>Mitigation Actions:</strong>
+<ul>
+    <li>Implemented threshold adjustment to equalize true positive rates</li>
+    <li>Collecting additional training data for underrepresented groups</li>
+    <li>Quarterly fairness audits to monitor for drift</li>
+</ul>
+
+<strong>Limitations:</strong> Analysis limited to binary gender categories due to data availability; working to expand demographic data collection with appropriate privacy protections.
+</blockquote>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Disaggregated evaluation reveals performance disparities hidden by aggregate metrics</li>
+    <li>Multiple dimensions should be analyzed, including demographics, geography, and intersectional effects</li>
+    <li>Multiple mathematical definitions of fairness exist, each capturing different intuitions</li>
+    <li>It is mathematically impossible to satisfy all fairness criteria simultaneously</li>
+    <li>Organizations must make explicit choices about which fairness metrics to prioritize</li>
+    <li>Fairness gaps should be quantified using metrics like disparate impact ratio</li>
+    <li>Model cards must document fairness analysis methods, findings, and mitigation actions</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

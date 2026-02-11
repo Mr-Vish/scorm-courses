@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-Modal Document Processing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Multi-Modal Document Processing</h1>
+
+<h2>Understanding Multi-Modal Processing</h2>
+<p>Multi-modal processing combines multiple input types (text, images, tables) to extract comprehensive information from documents.</p>
+
+<h2>Supported Document Formats</h2>
+<table>
+    <tr>
+        <th>Format</th>
+        <th>Processing Approach</th>
+        <th>Challenges</th>
+        <th>Best Practices</th>
+    </tr>
+    <tr>
+        <td class="rowheader">PDF</td>
+        <td>Direct vision model processing</td>
+        <td>Embedded images, complex layouts</td>
+        <td>Use native PDF support, avoid conversion</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Images (JPG/PNG)</td>
+        <td>Vision model with OCR fallback</td>
+        <td>Resolution, compression artifacts</td>
+        <td>Minimum 300 DPI, lossless compression</td>
+    </tr>
+    <tr>
+        <td class="rowheader">DOCX</td>
+        <td>Extract text + embedded images</td>
+        <td>Formatting, embedded objects</td>
+        <td>Convert to PDF for consistent processing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Scanned Documents</td>
+        <td>Vision model with preprocessing</td>
+        <td>Skew, noise, low quality</td>
+        <td>Image enhancement before processing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Email Attachments</td>
+        <td>Extract attachments, process individually</td>
+        <td>Multiple formats, embedded content</td>
+        <td>Parse email metadata, process attachments</td>
+    </tr>
+</table>
+
+<h2>Image Preprocessing Techniques</h2>
+<blockquote>
+from PIL import Image, ImageEnhance
+import cv2
+import numpy as np
+
+def preprocess_document_image(image_path):
+    # Load image
+    img = cv2.imread(image_path)
+    
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Deskew
+    coords = np.column_stack(np.where(gray > 0))
+    angle = cv2.minAreaRect(coords)[-1]
+    if angle < -45:
+        angle = -(90 + angle)
+    else:
+        angle = -angle
+    (h, w) = gray.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated = cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    
+    # Denoise
+    denoised = cv2.fastNlMeansDenoising(rotated)
+    
+    # Enhance contrast
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    enhanced = clahe.apply(denoised)
+    
+    # Binarization
+    _, binary = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    return binary
+</blockquote>
+
+<h2>Handling Mixed Content Documents</h2>
+<p>Documents often contain multiple content types requiring different processing strategies:</p>
+
+<ul>
+    <li><strong>Text + Tables:</strong> Extract text narratively, tables structurally</li>
+    <li><strong>Text + Images:</strong> Describe images, extract text separately</li>
+    <li><strong>Forms with Handwriting:</strong> Process printed and handwritten text differently</li>
+    <li><strong>Multi-Language:</strong> Detect language per section, process accordingly</li>
+    <li><strong>Embedded Charts:</strong> Extract data points or describe visually</li>
+</ul>
+
+<h2>Complex Table Extraction</h2>
+<blockquote>
+Prompt for Complex Tables:
+
+"Extract the table from this document with the following requirements:
+1. Identify all column headers
+2. Extract all rows, preserving row order
+3. Handle merged cells by repeating values
+4. For multi-line cells, concatenate with space
+5. Output as JSON array of objects
+6. Flag any uncertain or illegible cells"
+
+Example Output:
+{
+  "table_name": "Line Items",
+  "headers": ["Item", "Quantity", "Unit Price", "Total"],
+  "rows": [
+    {"Item": "Widget A", "Quantity": 10, "Unit Price": 5.00, "Total": 50.00},
+    {"Item": "Widget B", "Quantity": 5, "Unit Price": 10.00, "Total": 50.00}
+  ],
+  "uncertain_cells": []
+}
+</blockquote>
+
+<h2>Multi-Page Document Strategies</h2>
+<table>
+    <tr>
+        <th>Document Type</th>
+        <th>Processing Strategy</th>
+        <th>Context Handling</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Invoices (2-3 pages)</td>
+        <td>Process as single unit</td>
+        <td>Maintain full context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Contracts (10-50 pages)</td>
+        <td>Section-by-section extraction</td>
+        <td>Track section relationships</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Forms (5-10 pages)</td>
+        <td>Page-by-page with field mapping</td>
+        <td>Merge fields across pages</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Reports (50+ pages)</td>
+        <td>Chunked processing with summaries</td>
+        <td>Hierarchical context</td>
+    </tr>
+</table>
+
+<h2>Handling Signatures and Stamps</h2>
+<ul>
+    <li><strong>Signature Detection:</strong> Identify presence and location</li>
+    <li><strong>Signature Extraction:</strong> Isolate signature image</li>
+    <li><strong>Verification:</strong> Compare against known signatures (if available)</li>
+    <li><strong>Stamp Recognition:</strong> Extract text from stamps (dates, approval codes)</li>
+    <li><strong>Metadata:</strong> Record signature/stamp locations for audit</li>
+</ul>
+
+<h2>Batch Processing Optimization</h2>
+<blockquote>
+Efficient Batch Processing:
+
+1. Group Similar Documents:
+   - Same type, same vendor
+   - Process together for consistency
+
+2. Parallel Processing:
+   - Multiple workers processing simultaneously
+   - Queue management for load balancing
+
+3. Batch API Usage:
+   - Submit multiple documents in single request
+   - Reduce API overhead
+
+4. Caching:
+   - Cache vendor information
+   - Reuse extraction schemas
+
+5. Priority Queues:
+   - High-priority documents first
+   - Time-sensitive processing
+
+Throughput: 1000-5000 documents/hour depending on complexity
+</blockquote>
+
+<h2>Error Recovery Strategies</h2>
+<table>
+    <tr>
+        <th>Error Type</th>
+        <th>Detection</th>
+        <th>Recovery Action</th>
+    </tr>
+    <tr>
+        <td class="rowheader">API Timeout</td>
+        <td>No response within 30s</td>
+        <td>Retry with exponential backoff</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Malformed Output</td>
+        <td>JSON parsing fails</td>
+        <td>Re-extract with stricter schema</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Missing Fields</td>
+        <td>Required fields null</td>
+        <td>Targeted re-extraction for missing fields</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Low Confidence</td>
+        <td>Confidence score &lt; threshold</td>
+        <td>Human review queue</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Corrupted Document</td>
+        <td>Cannot open/parse file</td>
+        <td>Request re-upload</td>
+    </tr>
+</table>
+
+<h2>Quality Assurance Checks</h2>
+<ul>
+    <li><strong>Completeness:</strong> All required fields extracted</li>
+    <li><strong>Consistency:</strong> Related fields match (e.g., dates in order)</li>
+    <li><strong>Format:</strong> Data types and formats correct</li>
+    <li><strong>Reasonableness:</strong> Values within expected ranges</li>
+    <li><strong>Duplication:</strong> No duplicate extractions from same document</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Evaluation and Hallucination</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Evaluation and Hallucination</h1>
+<div class="container">
+<h2>Evaluation and Hallucination Detection in Claude RAG</h2>
+<p>No RAG system is perfect. Even with Claude's advanced reasoning, the risk of hallucinations—where the model makes up information not found in the source documents—remains. To build a reliable production system, you must implement rigorous evaluation and proactive hallucination detection.</p>
+
+<h3>What is a Hallucination in RAG?</h3>
+<p>In the context of RAG, a hallucination is specifically "un-grounded" information. This can take several forms:
+<ul>
+    <li><strong>Extrinsic Hallucination:</strong> Adding facts that aren't in the context (even if those facts are actually true in the real world). In a strict RAG system, this is often considered an error.</li>
+    <li><strong>Intrinsic Hallucination:</strong> Contradicting the information provided in the context.</li>
+    <li><strong>Logic Hallucination:</strong> Drawing a conclusion that isn't supported by the facts in the documents.</li>
+</ul></p>
+
+<h3>Detecting Hallucinations with Claude</h3>
+<p>Ironically, one of the best tools for detecting hallucinations in an LLM is another LLM (or even a second call to the same model).
+<ol>
+    <li><strong>The 'NLI' (Natural Language Inference) Check:</strong> For each claim in the answer, ask Claude: "Does Document X logically entail Claim Y? Answer only Yes or No."</li>
+    <li><strong>The 'Quote Verification' Check:</strong> Ask Claude: "Find the exact quote in the source documents that supports the following claim: [Claim]. If you cannot find a near-exact match, mark the claim as un-grounded."</li>
+    <li><strong>The 'Self-Critique' Prompt:</strong> Before showing the final answer, ask the model: "Review your answer. Are there any parts that are NOT directly supported by the provided documents? If so, remove or rewrite them."</li>
+</ol></p>
+
+<h3>Automated Evaluation Frameworks</h3>
+<p>For large-scale evaluation, use frameworks like <strong>RAGAS</strong> or <strong>TruLens</strong>. These tools calculate quantitative scores for your Claude-based RAG pipeline:
+<ul>
+    <li><strong>Faithfulness Score:</strong> How well the answer is grounded in the context.</li>
+    <li><strong>Relevance Score:</strong> How well the answer addresses the user's question.</li>
+    <li><strong>Context Precision:</strong> How relevant the retrieved documents are to the query.</li>
+</ul></p>
+
+<h3>The 'Golden Dataset' for Claude</h3>
+<p>To improve your pipeline, you need a "Golden Dataset" of 50-100 questions with human-verified "Ground Truth" answers and the correct source documents. Run every change to your prompt or retrieval engine against this dataset to see if your scores improve.</p>
+
+<h3>Practical Strategy: Confidence Scoring</h3>
+<p>Ask Claude to provide a confidence score for its answer. "On a scale of 1-5, how confident are you that the provided documents contain the complete answer to the question?"
+<ul>
+    <li>If the score is a 1 or 2, you might want to escalate to a human or try a different retrieval strategy.</li>
+    <li>Note: LLMs are notoriously "overconfident," so take these scores with a grain of salt and combine them with other detection methods.</li>
+</ul></p>
+
+<h3>Handling the 'I Don't Know' Case</h3>
+<p>One of the best defenses against hallucination is a strong "I don't know" instruction.
+"If the answer is not in the documents, say 'I cannot find the answer in the provided documents.' Do NOT use your own knowledge to answer."
+A system that admits its limitations is far more valuable than one that provides confident but wrong information.</p>
+
+<h3>Summary</h3>
+<p>Evaluation is the "feedback loop" that allows you to move from an experimental prototype to a reliable production service. By using Claude's own intelligence to verify its work and measuring your performance against a Golden Dataset, you can build a RAG pipeline that is both powerful and trustworthy.</p>
+
+</div>
+</body>
+</html>

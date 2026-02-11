@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Optimizing for Long Context</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Optimizing for Long Context</h1>
+<div class="container">
+<h2>Optimizing for Claude's 200k Context Window</h2>
+<p>Claude's massive 200,000 token context window is a game-changer for RAG pipelines. It allows us to move beyond retrieving small "snippets" and towards retrieving entire documents or large sections. This capability, however, requires a different approach to pipeline design and prompt engineering.</p>
+
+<h3>The 'Stuffing' Strategy</h3>
+<p>In traditional RAG, you might retrieve the top 5 most relevant 500-word chunks. With Claude, you can "stuff" the top 5 most relevant 10,000-word documents. This provides the model with much more nuance and reduces the chance that vital information was "cut off" during the chunking process.</p>
+
+<h3>Handling the 'Lost in the Middle' Phenomenon</h3>
+<p>While Claude is highly optimized for long context, performance can still vary based on where information is placed.
+<ul>
+    <li><strong>Place Instructions at the End:</strong> Some researchers find that for very long prompts (100k+ tokens), repeating the core instructions at the very end of the prompt can improve the model's focus and adherence to constraints.</li>
+    <li><strong>Structured Document Ordering:</strong> If you have a primary document and several supporting documents, place the primary document first. Clearly label the relationship between the documents using XML tags.</li>
+</ul></p>
+
+<h3>The Cost of Long Context</h3>
+<p>Sending 200k tokens with every message is expensive and increases latency. To optimize your Claude RAG pipeline, you should:
+<ol>
+    <li><strong>Use Prompt Caching:</strong> This is the single most important optimization. Cache the large body of retrieved documents so that subsequent questions about the same data are faster and much cheaper.</li>
+    <li><strong>Dynamic Context Sizing:</strong> Only send as much context as you need. If the answer is clearly in the first 1,000 tokens, don't send 200,000. Use a "Reranker" to decide which documents are truly essential.</li>
+</ol></p>
+
+<h3>Long Context vs. High-Precision Retrieval</h3>
+<p>Just because you *can* fit 200k tokens doesn't mean you should ignore retrieval quality. Sending irrelevant data still "distracts" the model and increases the risk of hallucination. The best Claude RAG pipelines combine a high-quality retriever with the model's ability to process large amounts of the *best* information.</p>
+
+<h3>Use Case: Multi-Document Analysis</h3>
+<p>Imagine you are comparing five different annual reports. Each report is 50 pages long.
+- <strong>Small-Chunk RAG:</strong> Might find mentions of "profit" in all five reports but will struggle to compare the specific calculation methods used in each.
+- <strong>Claude Long-Context RAG:</strong> You can provide all five full reports in the context. Claude can then perform a deep, cross-document analysis, identifying subtle differences in accounting practices that a chunk-based system would never see.</p>
+
+<h3>Best Practices for Long Context Prompts</h3>
+<ul>
+    <li><strong>Clear Delimiters:</strong> Use XML tags consistently to separate the documents.</li>
+    <li><strong>Index the Documents:</strong> Number your documents (Document 1, Document 2, etc.) to make it easier for Claude to refer to them and for you to verify citations.</li>
+    <li><strong>Explicit Retrieval Instructions:</strong> Tell Claude to "Scan the entirety of the provided text before formulating your answer." This encourages the model to use its full context window effectively.</li>
+</ul>
+
+<h3>Summary</h3>
+<p>Claude's long context window transforms RAG from a search problem into a reasoning problem. By providing the model with complete documents instead of fragments, you unlock its full potential for synthesis, analysis, and accurate information retrieval. When combined with prompt caching, this approach becomes both powerful and cost-effective.</p>
+
+</div>
+</body>
+</html>

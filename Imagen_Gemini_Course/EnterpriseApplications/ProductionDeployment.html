@@ -1,0 +1,447 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Deployment and Architecture</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production Deployment and Architecture</h1>
+
+<h2>Production Architecture Patterns</h2>
+<p>Deploying Imagen and Gemini Vision in production requires careful architectural planning to ensure scalability,
+reliability, and cost-effectiveness. This section covers proven patterns for enterprise deployments.</p>
+
+<h2>Microservices Architecture</h2>
+<blockquote>
+# Image Generation Service
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from pydantic import BaseModel
+import vertexai
+from vertexai.preview.vision_models import ImageGenerationModel
+import google.generativeai as genai
+from typing import Optional, List
+import uuid
+import redis
+import json
+
+app = FastAPI(title="Image AI Service")
+
+# Initialize models
+vertexai.init(project="your-project-id", location="us-central1")
+imagen_model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+genai.configure(api_key="your-api-key")
+gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+
+# Redis for job tracking
+redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
+
+class GenerationRequest(BaseModel):
+    prompt: str
+    number_of_images: int = 1
+    aspect_ratio: str = "1:1"
+    validate: bool = True
+    callback_url: Optional[str] = None
+
+class GenerationResponse(BaseModel):
+    job_id: str
+    status: str
+    message: str
+
+@app.post("/generate", response_model=GenerationResponse)
+async def generate_image(request: GenerationRequest, background_tasks: BackgroundTasks):
+    """Async image generation endpoint"""
+    job_id = str(uuid.uuid4())
+    
+    # Store job in Redis
+    redis_client.setex(
+        f"job:{job_id}",
+        3600,  # 1 hour TTL
+        json.dumps({"status": "pending", "request": request.dict()})
+    )
+    
+    # Process in background
+    background_tasks.add_task(process_generation, job_id, request)
+    
+    return GenerationResponse(
+        job_id=job_id,
+        status="pending",
+        message="Image generation started"
+    )
+
+async def process_generation(job_id: str, request: GenerationRequest):
+    """Background task for image generation"""
+    try:
+        # Update status
+        redis_client.setex(
+            f"job:{job_id}",
+            3600,
+            json.dumps({"status": "processing"})
+        )
+        
+        # Generate images
+        response = imagen_model.generate_images(
+            prompt=request.prompt,
+            number_of_images=request.number_of_images,
+            aspect_ratio=request.aspect_ratio
+        )
+        
+        # Save images to Cloud Storage
+        image_urls = []
+        for idx, image in enumerate(response.images):
+            url = upload_to_gcs(image, f"{job_id}_{idx}.png")
+            image_urls.append(url)
+        
+        # Validate if requested
+        validation_results = []
+        if request.validate:
+            for url in image_urls:
+                validation = validate_image(url, request.prompt)
+                validation_results.append(validation)
+        
+        # Update job with results
+        redis_client.setex(
+            f"job:{job_id}",
+            3600,
+            json.dumps({
+                "status": "completed",
+                "images": image_urls,
+                "validation": validation_results
+            })
+        )
+        
+        # Call webhook if provided
+        if request.callback_url:
+            notify_completion(request.callback_url, job_id, image_urls)
+            
+    except Exception as e:
+        redis_client.setex(
+            f"job:{job_id}",
+            3600,
+            json.dumps({"status": "failed", "error": str(e)})
+        )
+
+@app.get("/status/{job_id}")
+async def get_status(job_id: str):
+    """Check job status"""
+    job_data = redis_client.get(f"job:{job_id}")
+    if not job_data:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return json.loads(job_data)
+
+def upload_to_gcs(image, filename: str) -> str:
+    """Upload image to Google Cloud Storage"""
+    from google.cloud import storage
+    
+    bucket_name = "your-image-bucket"
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(f"generated/{filename}")
+    
+    # Save image to bytes
+    import io
+    img_bytes = io.BytesIO()
+    image._pil_image.save(img_bytes, format='PNG')
+    img_bytes.seek(0)
+    
+    blob.upload_from_file(img_bytes, content_type='image/png')
+    blob.make_public()
+    
+    return blob.public_url
+
+def validate_image(image_url: str, original_prompt: str) -> dict:
+    """Validate generated image using Gemini"""
+    from PIL import Image
+    import requests
+    
+    # Download image
+    response = requests.get(image_url)
+    image = Image.open(io.BytesIO(response.content))
+    
+    # Validate with Gemini
+    validation_prompt = f"""
+    Analyze this image generated from prompt: "{original_prompt}"
+    Rate 1-10 for: prompt adherence, quality, composition.
+    Provide JSON: {{"scores": {{"adherence": X, "quality": Y, "composition": Z}}, "notes": "..."}}
+    """
+    
+    result = gemini_model.generate_content([validation_prompt, image])
+    return {"validation": result.text}
+
+def notify_completion(callback_url: str, job_id: str, image_urls: List[str]):
+    """Send webhook notification"""
+    import requests
+    requests.post(callback_url, json={
+        "job_id": job_id,
+        "status": "completed",
+        "images": image_urls
+    })
+</blockquote>
+
+<h2>Scalability Patterns</h2>
+<table>
+    <tr><th>Pattern</th><th>Implementation</th><th>Benefit</th></tr>
+    <tr><td class="rowheader">Load Balancing</td><td>Cloud Load Balancer + multiple service instances</td><td>Distribute traffic, handle spikes</td></tr>
+    <tr><td class="rowheader">Queue-Based Processing</td><td>Cloud Tasks or Pub/Sub for async jobs</td><td>Decouple generation from API response</td></tr>
+    <tr><td class="rowheader">Caching</td><td>Redis/Memorystore for results</td><td>Reduce redundant API calls</td></tr>
+    <tr><td class="rowheader">CDN Distribution</td><td>Cloud CDN for generated images</td><td>Fast global delivery</td></tr>
+    <tr><td class="rowheader">Auto-scaling</td><td>GKE or Cloud Run with auto-scaling</td><td>Handle variable load efficiently</td></tr>
+</table>
+
+<h2>Cloud Run Deployment</h2>
+<blockquote>
+# Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Use gunicorn for production
+CMD exec gunicorn --bind :$PORT --workers 4 --worker-class uvicorn.workers.UvicornWorker --timeout 300 main:app
+
+# requirements.txt
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+gunicorn==21.2.0
+google-cloud-aiplatform==1.38.0
+google-generativeai==0.3.1
+google-cloud-storage==2.10.0
+redis==5.0.1
+pydantic==2.5.0
+
+# Deploy to Cloud Run
+gcloud run deploy image-ai-service \
+  --source . \
+  --region us-central1 \
+  --memory 2Gi \
+  --cpu 2 \
+  --timeout 300 \
+  --min-instances 1 \
+  --max-instances 10 \
+  --concurrency 80 \
+  --allow-unauthenticated
+</blockquote>
+
+<h2>Monitoring and Observability</h2>
+<blockquote>
+from google.cloud import monitoring_v3
+from google.cloud import logging
+import time
+from functools import wraps
+
+# Initialize clients
+metrics_client = monitoring_v3.MetricServiceClient()
+logging_client = logging.Client()
+logger = logging_client.logger("image-ai-service")
+
+def track_metrics(func):
+    """Decorator to track API metrics"""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        start_time = time.time()
+        
+        try:
+            result = await func(*args, **kwargs)
+            
+            # Log success
+            duration = time.time() - start_time
+            logger.log_struct({
+                "function": func.__name__,
+                "status": "success",
+                "duration_seconds": duration
+            }, severity="INFO")
+            
+            # Send metric to Cloud Monitoring
+            send_metric("api_call_duration", duration, {"endpoint": func.__name__})
+            send_metric("api_call_count", 1, {"endpoint": func.__name__, "status": "success"})
+            
+            return result
+            
+        except Exception as e:
+            # Log error
+            duration = time.time() - start_time
+            logger.log_struct({
+                "function": func.__name__,
+                "status": "error",
+                "error": str(e),
+                "duration_seconds": duration
+            }, severity="ERROR")
+            
+            send_metric("api_call_count", 1, {"endpoint": func.__name__, "status": "error"})
+            raise
+    
+    return wrapper
+
+def send_metric(metric_name: str, value: float, labels: dict):
+    """Send custom metric to Cloud Monitoring"""
+    project_name = f"projects/your-project-id"
+    series = monitoring_v3.TimeSeries()
+    series.metric.type = f"custom.googleapis.com/{metric_name}"
+    series.resource.type = "global"
+    
+    for key, val in labels.items():
+        series.metric.labels[key] = val
+    
+    point = monitoring_v3.Point()
+    point.value.double_value = value
+    point.interval.end_time.seconds = int(time.time())
+    series.points = [point]
+    
+    metrics_client.create_time_series(name=project_name, time_series=[series])
+
+# Usage in endpoints
+@app.post("/generate")
+@track_metrics
+async def generate_image(request: GenerationRequest):
+    # Implementation
+    pass
+</blockquote>
+
+<h2>Cost Management Strategies</h2>
+<ul>
+    <li><strong>Request Deduplication:</strong> Hash prompts and cache results to avoid regenerating identical images</li>
+    <li><strong>Quota Management:</strong> Implement rate limiting per user/tenant to control costs</li>
+    <li><strong>Model Selection:</strong> Route requests to fast models for non-critical use cases</li>
+    <li><strong>Batch Processing:</strong> Combine multiple requests to optimize API usage</li>
+    <li><strong>Budget Alerts:</strong> Set up Cloud Billing alerts for spending thresholds</li>
+</ul>
+
+<h2>Security Best Practices</h2>
+<table>
+    <tr><th>Security Layer</th><th>Implementation</th><th>Purpose</th></tr>
+    <tr><td class="rowheader">Authentication</td><td>Cloud Identity-Aware Proxy (IAP)</td><td>Verify user identity</td></tr>
+    <tr><td class="rowheader">Authorization</td><td>IAM roles and service accounts</td><td>Control resource access</td></tr>
+    <tr><td class="rowheader">API Keys</td><td>Secret Manager for key storage</td><td>Secure credential management</td></tr>
+    <tr><td class="rowheader">Network Security</td><td>VPC Service Controls</td><td>Isolate resources</td></tr>
+    <tr><td class="rowheader">Content Filtering</td><td>Safety filters + custom validation</td><td>Prevent harmful content</td></tr>
+    <tr><td class="rowheader">Audit Logging</td><td>Cloud Audit Logs</td><td>Track all API calls</td></tr>
+</table>
+
+<h2>Disaster Recovery and Backup</h2>
+<blockquote>
+# Backup strategy for generated images
+from google.cloud import storage
+import datetime
+
+def backup_generated_images():
+    """Daily backup of generated images to separate bucket"""
+    client = storage.Client()
+    source_bucket = client.bucket("your-image-bucket")
+    backup_bucket = client.bucket("your-backup-bucket")
+    
+    # Get today's date for organization
+    today = datetime.date.today().isoformat()
+    
+    # Copy all images from last 24 hours
+    blobs = source_bucket.list_blobs(prefix="generated/")
+    
+    for blob in blobs:
+        # Check if created in last 24 hours
+        if (datetime.datetime.now(datetime.timezone.utc) - blob.time_created).days < 1:
+            # Copy to backup bucket with date prefix
+            backup_blob_name = f"backup/{today}/{blob.name}"
+            source_bucket.copy_blob(blob, backup_bucket, backup_blob_name)
+    
+    print(f"Backup completed for {today}")
+
+# Schedule with Cloud Scheduler
+# gcloud scheduler jobs create http backup-images \
+#   --schedule="0 2 * * *" \
+#   --uri="https://your-service.run.app/backup" \
+#   --http-method=POST
+</blockquote>
+
+<h2>Multi-Region Deployment</h2>
+<blockquote>
+# Traffic routing based on user location
+from fastapi import Request
+import httpx
+
+REGIONS = {
+    "us": "https://us-central1-service.run.app",
+    "eu": "https://europe-west1-service.run.app",
+    "asia": "https://asia-northeast1-service.run.app"
+}
+
+async def route_to_nearest_region(request: Request, generation_request: dict):
+    """Route request to nearest regional endpoint"""
+    # Get user location from request headers or IP
+    user_region = get_user_region(request)
+    
+    # Select nearest endpoint
+    endpoint = REGIONS.get(user_region, REGIONS["us"])
+    
+    # Forward request
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{endpoint}/generate",
+            json=generation_request,
+            timeout=300.0
+        )
+        return response.json()
+
+def get_user_region(request: Request) -> str:
+    """Determine user region from request"""
+    # Check CloudFront or Cloud CDN headers
+    cf_region = request.headers.get("CloudFront-Viewer-Country")
+    if cf_region:
+        return map_country_to_region(cf_region)
+    
+    # Default to US
+    return "us"
+</blockquote>
+
+<h2>Performance Optimization</h2>
+<ul>
+    <li><strong>Connection Pooling:</strong> Reuse HTTP connections to Vertex AI endpoints</li>
+    <li><strong>Parallel Processing:</strong> Generate multiple images concurrently</li>
+    <li><strong>Image Compression:</strong> Optimize image sizes before storage</li>
+    <li><strong>Lazy Loading:</strong> Load images on-demand rather than pre-generating</li>
+    <li><strong>Edge Caching:</strong> Cache frequently requested images at CDN edge locations</li>
+</ul>
+
+<h2>Testing in Production</h2>
+<blockquote>
+# Canary deployment pattern
+import random
+
+def should_use_canary() -> bool:
+    """Route 10% of traffic to canary version"""
+    return random.random() < 0.10
+
+@app.post("/generate")
+async def generate_image(request: GenerationRequest):
+    if should_use_canary():
+        # Use new model version
+        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002")
+        logger.info("Using canary model version")
+    else:
+        # Use stable model version
+        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+    
+    # Continue with generation
+    response = model.generate_images(prompt=request.prompt)
+    return response
+</blockquote>
+
+<h2>Best Practices Summary</h2>
+<ul>
+    <li><strong>Design for Failure:</strong> Implement retries, circuit breakers, and fallbacks</li>
+    <li><strong>Monitor Everything:</strong> Track latency, errors, costs, and quality metrics</li>
+    <li><strong>Secure by Default:</strong> Use IAM, Secret Manager, and VPC controls</li>
+    <li><strong>Optimize Costs:</strong> Cache results, deduplicate requests, use appropriate models</li>
+    <li><strong>Scale Horizontally:</strong> Use stateless services that can scale independently</li>
+    <li><strong>Test Thoroughly:</strong> Implement comprehensive testing including load tests</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

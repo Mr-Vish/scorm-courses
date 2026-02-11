@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Schema Design and Ontology</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Schema Design and Ontology</h1>
+
+<h2>Understanding Ontologies</h2>
+<p>An ontology defines the types of entities, their properties, and the relationships that can exist in a knowledge graph. It serves as the conceptual schema that gives structure and meaning to your data. A well-designed ontology ensures consistency, enables reasoning, and facilitates data integration.</p>
+
+<h2>Entity Type Hierarchy</h2>
+<p>Organizing entity types in a hierarchy enables inheritance and classification:</p>
+<div class="code-block">
+<pre><code>Thing
+├── Person
+│   ├── Scientist
+│   ├── Artist
+│   └── Athlete
+├── Organization
+│   ├── Company
+│   ├── University
+│   └── Government
+├── Location
+│   ├── Country
+│   ├── City
+│   └── Building
+└── CreativeWork
+    ├── Book
+    ├── Article
+    └── Patent
+</code></pre>
+</div>
+
+<h2>Relationship Types</h2>
+<p>Define clear, consistent relationship types with specific semantics:</p>
+<table>
+    <tr><th>Relationship</th><th>Domain</th><th>Range</th><th>Example</th></tr>
+    <tr>
+        <td class="rowheader">WORKS_AT</td>
+        <td>Person</td>
+        <td>Organization</td>
+        <td>(Alice, WORKS_AT, TechCorp)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LOCATED_IN</td>
+        <td>Organization | Person</td>
+        <td>Location</td>
+        <td>(TechCorp, LOCATED_IN, San Francisco)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AUTHORED</td>
+        <td>Person</td>
+        <td>CreativeWork</td>
+        <td>(Alice, AUTHORED, Research Paper)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">CITES</td>
+        <td>CreativeWork</td>
+        <td>CreativeWork</td>
+        <td>(Paper A, CITES, Paper B)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SUBSIDIARY_OF</td>
+        <td>Organization</td>
+        <td>Organization</td>
+        <td>(Instagram, SUBSIDIARY_OF, Meta)</td>
+    </tr>
+</table>
+
+<h2>Schema Design Principles</h2>
+
+<h3>1. Controlled Vocabulary</h3>
+<p>Maintain a fixed set of entity and relationship types to prevent proliferation of synonyms:</p>
+<div class="code-block">
+<pre><code># Good: Consistent relationship naming
+EMPLOYED_BY, WORKS_AT, EMPLOYED_AT → Choose one: WORKS_AT
+
+# Good: Clear entity types
+Person, Organization, Location
+
+# Avoid: Ambiguous or overlapping types
+Entity, Thing, Item, Object
+</code></pre>
+</div>
+
+<h3>2. Bidirectional Relationships</h3>
+<p>Consider whether relationships should be directional or bidirectional:</p>
+<div class="code-block">
+<pre><code># Directional (asymmetric)
+(Person)-[:MANAGES]->(Person)
+(Company)-[:ACQUIRED]->(Company)
+
+# Bidirectional (symmetric)
+(Person)-[:COLLABORATES_WITH]-(Person)
+(City)-[:CONNECTED_TO]-(City)
+</code></pre>
+</div>
+
+<h3>3. Property Constraints</h3>
+<p>Define expected properties and their data types for each entity type:</p>
+<div class="code-block">
+<pre><code>Person:
+  - name: string (required)
+  - birthDate: date (optional)
+  - email: string (optional, format: email)
+  - nationality: string (optional)
+
+Organization:
+  - name: string (required)
+  - foundedYear: integer (optional)
+  - industry: string (optional)
+  - website: string (optional, format: url)
+</code></pre>
+</div>
+
+<h2>Designing for LLM Extraction</h2>
+<p>When using LLMs to populate knowledge graphs, design your schema with extraction in mind:</p>
+
+<h3>Entity Type Definitions</h3>
+<div class="code-block">
+<pre><code>entity_types = {
+    "Person": "An individual human being",
+    "Organization": "A company, institution, or formal group",
+    "Location": "A geographical place or address",
+    "Product": "A commercial good or service",
+    "Event": "A specific occurrence at a time and place",
+    "Technology": "A tool, framework, or technical system"
+}
+</code></pre>
+</div>
+
+<h3>Relationship Type Definitions</h3>
+<div class="code-block">
+<pre><code>relationship_types = {
+    "WORKS_AT": "Person is employed by Organization",
+    "FOUNDED": "Person established Organization",
+    "LOCATED_IN": "Entity is physically situated in Location",
+    "PRODUCES": "Organization creates Product",
+    "USES": "Entity utilizes Technology",
+    "ATTENDED": "Person participated in Event"
+}
+</code></pre>
+</div>
+
+<h2>Schema Evolution Strategies</h2>
+<ul>
+    <li><strong>Versioning:</strong> Track schema versions and maintain backward compatibility</li>
+    <li><strong>Additive Changes:</strong> Prefer adding new types over modifying existing ones</li>
+    <li><strong>Deprecation:</strong> Mark obsolete types as deprecated before removal</li>
+    <li><strong>Migration Scripts:</strong> Automate transformation of existing data to new schema</li>
+    <li><strong>Validation:</strong> Implement schema validation to catch inconsistencies early</li>
+</ul>
+
+<h2>Common Schema Patterns</h2>
+
+<h3>Temporal Relationships</h3>
+<p>Capture time-dependent information:</p>
+<div class="code-block">
+<pre><code>(Person)-[:WORKS_AT {
+  startDate: "2020-01-15",
+  endDate: "2023-06-30",
+  position: "Senior Engineer"
+}]->(Company)
+</code></pre>
+</div>
+
+<h3>Qualified Relationships</h3>
+<p>Add context to relationships through properties:</p>
+<div class="code-block">
+<pre><code>(Author)-[:CONTRIBUTED_TO {
+  role: "Lead Author",
+  contribution: "Methodology and Analysis"
+}]->(Paper)
+</code></pre>
+</div>
+
+<h3>Reified Relationships</h3>
+<p>Convert relationships into entities when they need their own properties and relationships:</p>
+<div class="code-block">
+<pre><code># Instead of: (Person)-[:PURCHASED]->(Product)
+# Use:
+(Person)-[:MADE]->(Purchase)-[:OF]->(Product)
+(Purchase {
+  date: "2024-01-15",
+  price: 299.99,
+  quantity: 2
+})
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building End-to-End DLP Pipelines</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building End-to-End DLP Pipelines</h1>
+
+<h2>DLP Pipeline Architecture</h2>
+<p>A comprehensive Data Loss Prevention pipeline for GenAI applications consists of multiple stages that intercept, inspect, and control data flow:</p>
+
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; color: white; margin: 20px 0;">
+    <h3 style="color: white; margin-top: 0;">GenAI DLP Pipeline Flow</h3>
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #F16F00;">
+            <strong>Stage 1: Input Scanning</strong><br/>
+            User Input → PII Detection → Risk Assessment → Block/Redact/Allow
+        </div>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #e91e63;">
+            <strong>Stage 2: Context Filtering</strong><br/>
+            RAG Documents → Access Control → PII Scanning → Redaction
+        </div>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #9c27b0;">
+            <strong>Stage 3: LLM Processing</strong><br/>
+            Clean Prompt + Context → LLM API → Response Generation
+        </div>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #673ab7;">
+            <strong>Stage 4: Output Scanning</strong><br/>
+            LLM Response → PII Detection → Redaction → User Response
+        </div>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #3f51b5;">
+            <strong>Stage 5: Audit Logging</strong><br/>
+            All Stages → Redacted Logs → Compliance Reporting
+        </div>
+    </div>
+</div>
+
+<h2>Complete DLP Pipeline Implementation</h2>
+<div class="code-block">
+<pre><code>from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+from typing import Dict, List, Optional
+import logging
+from datetime import datetime
+
+class GenAIDLPPipeline:
+    """Production-grade DLP pipeline for GenAI applications"""
+    
+    def __init__(self, config: dict):
+        self.analyzer = AnalyzerEngine()
+        self.anonymizer = AnonymizerEngine()
+        self.config = config
+        self.logger = logging.getLogger(__name__)
+        
+        # Define critical PII that blocks requests
+        self.critical_pii = ["US_SSN", "CREDIT_CARD", "US_PASSPORT"]
+        
+        # Define PII to redact before LLM
+        self.redact_pii = [
+            "PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER",
+            "LOCATION", "US_DRIVER_LICENSE"
+        ]
+    
+    def process_request(
+        self,
+        user_message: str,
+        context_documents: List[str],
+        user_id: str
+    ) -> Dict:
+        """Process GenAI request through DLP pipeline"""
+        
+        request_id = self._generate_request_id()
+        self.logger.info(f"Processing request {request_id} for user {user_id}")
+        
+        # Stage 1: Input Scanning
+        input_scan = self._scan_input(user_message, request_id)
+        if input_scan["blocked"]:
+            return {
+                "status": "blocked",
+                "reason": "Critical PII detected in input",
+                "request_id": request_id,
+                "detected_types": input_scan["critical_types"]
+            }
+        
+        # Stage 2: Context Filtering
+        clean_context = self._filter_context(context_documents, user_id, request_id)
+        
+        # Stage 3: Prepare clean prompt
+        clean_message = input_scan["clean_text"]
+        
+        # Stage 4: Call LLM (placeholder - integrate your LLM client)
+        llm_response = self._call_llm(clean_message, clean_context)
+        
+        # Stage 5: Output Scanning
+        output_scan = self._scan_output(llm_response, request_id)
+        
+        # Stage 6: Audit Logging
+        self._audit_log(request_id, user_id, input_scan, output_scan)
+        
+        return {
+            "status": "success",
+            "response": output_scan["clean_text"],
+            "request_id": request_id,
+            "pii_detected": {
+                "input": len(input_scan["entities"]),
+                "output": len(output_scan["entities"])
+            }
+        }
+    
+    def _scan_input(self, text: str, request_id: str) -> Dict:
+        """Stage 1: Scan user input for PII"""
+        
+        results = self.analyzer.analyze(text=text, language="en")
+        
+        # Check for critical PII
+        critical_entities = [
+            r for r in results if r.entity_type in self.critical_pii
+        ]
+        
+        if critical_entities:
+            self.logger.warning(
+                f"Request {request_id}: Critical PII detected - {[e.entity_type for e in critical_entities]}"
+            )
+            return {
+                "blocked": True,
+                "critical_types": [e.entity_type for e in critical_entities],
+                "entities": results,
+                "clean_text": None
+            }
+        
+        # Redact non-critical PII
+        clean_text = self._redact_entities(text, results)
+        
+        return {
+            "blocked": False,
+            "critical_types": [],
+            "entities": results,
+            "clean_text": clean_text
+        }
+    
+    def _filter_context(
+        self,
+        documents: List[str],
+        user_id: str,
+        request_id: str
+    ) -> List[str]:
+        """Stage 2: Filter and redact context documents"""
+        
+        clean_docs = []
+        
+        for i, doc in enumerate(documents):
+            # Check access permissions (placeholder)
+            if not self._check_access(user_id, doc):
+                self.logger.warning(
+                    f"Request {request_id}: Access denied to document {i}"
+                )
+                continue
+            
+            # Scan for PII
+            results = self.analyzer.analyze(text=doc, language="en")
+            
+            # Redact PII
+            clean_doc = self._redact_entities(doc, results)
+            clean_docs.append(clean_doc)
+        
+        return clean_docs
+    
+    def _scan_output(self, text: str, request_id: str) -> Dict:
+        """Stage 5: Scan LLM output for leaked PII"""
+        
+        results = self.analyzer.analyze(text=text, language="en")
+        
+        if results:
+            self.logger.warning(
+                f"Request {request_id}: PII detected in output - {[e.entity_type for e in results]}"
+            )
+        
+        # Redact any PII in output
+        clean_text = self._redact_entities(text, results)
+        
+        return {
+            "entities": results,
+            "clean_text": clean_text
+        }
+    
+    def _redact_entities(self, text: str, entities: list) -> str:
+        """Redact detected PII entities"""
+        
+        if not entities:
+            return text
+        
+        operators = {
+            entity_type: {"type": "replace", "new_value": f"[{entity_type}]"}
+            for entity_type in set(e.entity_type for e in entities)
+        }
+        
+        result = self.anonymizer.anonymize(
+            text=text,
+            analyzer_results=entities
+        )
+        
+        return result.text
+    
+    def _call_llm(self, message: str, context: List[str]) -> str:
+        """Stage 4: Call LLM with clean data (placeholder)"""
+        # Integrate with your LLM client (OpenAI, Anthropic, etc.)
+        return f"LLM response to: {message}"
+    
+    def _check_access(self, user_id: str, document: str) -> bool:
+        """Check if user has access to document (placeholder)"""
+        return True  # Implement your access control logic
+    
+    def _audit_log(
+        self,
+        request_id: str,
+        user_id: str,
+        input_scan: Dict,
+        output_scan: Dict
+    ):
+        """Stage 6: Create audit log entry"""
+        
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "request_id": request_id,
+            "user_id": user_id,
+            "input_pii_count": len(input_scan["entities"]),
+            "output_pii_count": len(output_scan["entities"]),
+            "input_pii_types": [e.entity_type for e in input_scan["entities"]],
+            "output_pii_types": [e.entity_type for e in output_scan["entities"]],
+            "blocked": input_scan["blocked"]
+        }
+        
+        self.logger.info(f"Audit log: {log_entry}")
+        # Store in audit database
+    
+    def _generate_request_id(self) -> str:
+        """Generate unique request ID"""
+        import uuid
+        return str(uuid.uuid4())
+
+# Usage
+config = {
+    "enable_input_scanning": True,
+    "enable_output_scanning": True,
+    "enable_context_filtering": True,
+    "block_critical_pii": True
+}
+
+dlp = GenAIDLPPipeline(config)
+
+result = dlp.process_request(
+    user_message="My SSN is 123-45-6789. Can you help me?",
+    context_documents=["Document with customer data..."],
+    user_id="user_12345"
+)
+
+print(result)
+</code></pre>
+</div>
+
+<h2>RAG Pipeline with DLP Integration</h2>
+<div class="code-block">
+<pre><code>class RAGWithDLP:
+    """RAG pipeline with integrated DLP controls"""
+    
+    def __init__(self, vector_db, llm_client, dlp_pipeline):
+        self.vector_db = vector_db
+        self.llm_client = llm_client
+        self.dlp = dlp_pipeline
+    
+    def query(self, user_query: str, user_id: str) -> Dict:
+        """Process RAG query with DLP"""
+        
+        # Step 1: Scan user query
+        query_scan = self.dlp._scan_input(user_query, "rag_query")
+        if query_scan["blocked"]:
+            return {"error": "Query contains critical PII"}
+        
+        # Step 2: Retrieve relevant documents
+        clean_query = query_scan["clean_text"]
+        retrieved_docs = self.vector_db.search(clean_query, top_k=5)
+        
+        # Step 3: Filter documents by access control
+        accessible_docs = [
+            doc for doc in retrieved_docs
+            if self._check_document_access(user_id, doc)
+        ]
+        
+        # Step 4: Scan and redact retrieved documents
+        clean_docs = []
+        for doc in accessible_docs:
+            doc_scan = self.dlp.analyzer.analyze(text=doc["content"], language="en")
+            clean_content = self.dlp._redact_entities(doc["content"], doc_scan)
+            clean_docs.append(clean_content)
+        
+        # Step 5: Generate response
+        context = "\n\n".join(clean_docs)
+        prompt = f"Context:\n{context}\n\nQuestion: {clean_query}\n\nAnswer:"
+        
+        response = self.llm_client.generate(prompt)
+        
+        # Step 6: Scan response
+        response_scan = self.dlp._scan_output(response, "rag_response")
+        
+        return {
+            "answer": response_scan["clean_text"],
+            "sources": len(clean_docs),
+            "pii_redacted": len(response_scan["entities"])
+        }
+    
+    def _check_document_access(self, user_id: str, document: dict) -> bool:
+        """Check if user can access document"""
+        # Implement role-based access control
+        return True
+</code></pre>
+</div>
+
+<h2>Performance Optimization</h2>
+<table>
+    <tr>
+        <th>Optimization</th>
+        <th>Technique</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Caching</td>
+        <td>Cache analyzer results for repeated text</td>
+        <td>50-70% latency reduction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batch Processing</td>
+        <td>Process multiple documents in parallel</td>
+        <td>3-5x throughput</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Async Operations</td>
+        <td>Non-blocking I/O for scanning</td>
+        <td>Better scalability</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Selective Scanning</td>
+        <td>Scan only high-risk fields</td>
+        <td>30-40% faster</td>
+    </tr>
+</table>
+
+<h2>Monitoring and Alerting</h2>
+<div class="code-block">
+<pre><code>class DLPMonitoring:
+    """Monitor DLP pipeline performance and security"""
+    
+    def __init__(self):
+        self.metrics = {
+            "total_requests": 0,
+            "blocked_requests": 0,
+            "pii_detections": 0,
+            "false_positives": 0
+        }
+    
+    def track_request(self, result: Dict):
+        """Track request metrics"""
+        self.metrics["total_requests"] += 1
+        
+        if result.get("blocked"):
+            self.metrics["blocked_requests"] += 1
+        
+        pii_count = result.get("pii_detected", {})
+        self.metrics["pii_detections"] += pii_count.get("input", 0)
+        self.metrics["pii_detections"] += pii_count.get("output", 0)
+    
+    def alert_on_anomaly(self):
+        """Detect and alert on anomalies"""
+        block_rate = self.metrics["blocked_requests"] / max(self.metrics["total_requests"], 1)
+        
+        if block_rate > 0.1:  # More than 10% blocked
+            self._send_alert(f"High block rate: {block_rate:.2%}")
+    
+    def _send_alert(self, message: str):
+        """Send alert to security team"""
+        print(f"ALERT: {message}")
+        # Integrate with alerting system (PagerDuty, Slack, etc.)
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Defense in depth:</strong> Scan at multiple stages (input, context, output)</li>
+    <li><strong>Fail secure:</strong> Block requests when DLP pipeline fails</li>
+    <li><strong>Monitor performance:</strong> Track latency impact of DLP scanning</li>
+    <li><strong>Regular testing:</strong> Test with known PII samples to verify detection</li>
+    <li><strong>Audit everything:</strong> Log all PII detections for compliance</li>
+    <li><strong>User feedback:</strong> Allow users to report false positives</li>
+    <li><strong>Gradual rollout:</strong> Start with logging mode before blocking</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

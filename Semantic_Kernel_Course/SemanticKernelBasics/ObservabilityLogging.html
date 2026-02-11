@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Observability and Logging in Semantic Kernel</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Observability: Monitoring and Debugging AI Agents</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>In a traditional application, you can step through your code with a debugger. In an AI agent, the "logic" is often happening inside the model's head, making it much harder to understand why it made a specific choice or why a planner picked a wrong tool. <strong>Observability</strong> is the practice of instrumenting your application so you can see exactly what's happening inside the kernel in real-time.</p>
+
+<h2>2. The Three Pillars of SK Observability</h2>
+<p>To have a complete picture of your agent's health, you need to track three types of data:</p>
+
+<h3>A. Logs (The "What")</h3>
+<p>Detailed textual records of every action taken by the kernel.
+    <ul>
+        <li>Function start and end times.</li>
+        <li>Prompts sent to the LLM.</li>
+        <li>Raw outputs from the LLM.</li>
+        <li>Tool call requests and their results.</li>
+    </ul>
+</p>
+
+<h3>B. Metrics (The "How Much")</h3>
+<p>Quantitative data about the performance and cost of your application.
+    <ul>
+        <li><strong>Token Count:</strong> Total input and output tokens per request.</li>
+        <li><strong>Latency:</strong> How long each model call and native function takes.</li>
+        <li><strong>Error Rates:</strong> Percentage of requests that fail due to rate limits or model timeouts.</li>
+    </ul>
+</p>
+
+<h3>C. Traces (The "Where")</h3>
+<p>A "timeline" view of a single request as it moves through various functions, planners, and model calls. This is essential for understanding the "Chain of Thought" and identifying bottlenecks.</p>
+
+<h2>3. Using Python Logging with Semantic Kernel</h2>
+<p>Semantic Kernel integrates with the standard Python <code>logging</code> module. You can configure it to output detailed information about the kernel's execution.</p>
+
+<div class="code-block">
+<pre><code>import logging
+
+# 1. Configure the logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("semantic_kernel")
+
+# 2. The kernel will now automatically log its activities
+result = await kernel.invoke(...)</code></pre>
+</div>
+
+<h2>4. Advanced Observability with OpenTelemetry</h2>
+<p>For production environments, simple text logs are not enough. Semantic Kernel supports <strong>OpenTelemetry</strong>, a global standard for observability. This allows you to export your logs, metrics, and traces to professional tools like <strong>Azure Monitor, Application Insights, Honeycomb, or Jaeger</strong>.</p>
+<p>Using OpenTelemetry, you can create dashboards that show:
+    <ul>
+        <li><strong>Total Spend:</strong> Real-time cost calculation based on token usage.</li>
+        <li><strong>Success Rate by Model:</strong> Comparing the reliability of GPT-4 vs. GPT-3.5 in your specific application.</li>
+        <li><strong>Prompt Performance:</strong> Tracking which system prompts lead to the highest user satisfaction.</li>
+    </ul>
+</p>
+
+<h2>5. The Role of Function Filters</h2>
+<p>As discussed in the architecture module, <strong>Function Filters</strong> are a key tool for observability. You can create a filter that automatically logs the prompt and response for every single semantic function call, without having to add logging code to every plugin.</p>
+
+<div class="code-block">
+<pre><code># A simple logging filter
+class LoggingFilter:
+    async def on_function_invocation(self, context, next):
+        print(f"Calling function: {context.function.name}")
+        await next() # Execute the function
+        print(f"Function {context.function.name} returned: {context.result}")</code></pre>
+</div>
+
+<h2>6. Debugging Planners</h2>
+<p>Planners can be particularly difficult to debug. To see "why" a planner made a specific decision, you should:
+    <ol>
+        <li><strong>Increase Log Verbosity:</strong> Set the log level to <code>DEBUG</code> to see the internal "thought process" prompts the planner sends to the model.</li>
+        <li><strong>Inspect the Plan:</strong> Before executing a plan, print it out to a file or the console. Does the sequence of steps make sense?</li>
+        <li><strong>Use the "Plan Review" pattern:</strong> Have a separate, simpler script that validates the generated plan against a set of business rules.</li>
+    </ol>
+</p>
+
+<h2>7. Cost and Token Monitoring</h2>
+<p>A resilient AI application must be financially sustainable. You should implement <strong>Budget Guardrails</strong> that automatically terminate an agent's execution if it exceeds a certain number of tokens or steps in a single request. This prevents "infinite loops" where two agents might talk to each other indefinitely.</p>
+
+<h2>Conclusion</h2>
+<p>Observability turns a "black box" agent into a transparent, professional software component. By implementing robust logging, tracking metrics, and using distributed tracing, you can build AI applications that are easy to debug, optimize, and scale in an enterprise environment. In our next module, we'll look at the future of orchestration and what's next for Semantic Kernel.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Core Concepts - Dependency Injection</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Dependency Injection in Spring Boot</h1>
+
+<h2>What is Dependency Injection?</h2>
+<p>Dependency Injection (DI) is a design pattern where objects receive their dependencies from external sources rather than creating them internally. Spring Boot's IoC (Inversion of Control) container manages these dependencies.</p>
+
+<h2>Types of Dependency Injection</h2>
+
+<h3>Constructor Injection</h3>
+<p>Dependencies are provided through the class constructor (recommended approach):</p>
+<blockquote>
+@Service<br/>
+public class UserService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final UserRepository userRepository;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public UserService(UserRepository userRepository) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.userRepository = userRepository;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h3>Field Injection</h3>
+<p>Dependencies are injected directly into fields using @Autowired:</p>
+<blockquote>
+@Service<br/>
+public class UserService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Autowired<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private UserRepository userRepository;<br/>
+}
+</blockquote>
+
+<h3>Setter Injection</h3>
+<p>Dependencies are provided through setter methods:</p>
+<blockquote>
+@Service<br/>
+public class UserService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private UserRepository userRepository;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Autowired<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public void setUserRepository(UserRepository userRepository) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.userRepository = userRepository;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Bean Scopes</h2>
+<p>Spring Boot supports different bean scopes:</p>
+<ul>
+    <li><strong>Singleton:</strong> One instance per Spring container (default)</li>
+    <li><strong>Prototype:</strong> New instance every time it's requested</li>
+    <li><strong>Request:</strong> One instance per HTTP request (web applications)</li>
+    <li><strong>Session:</strong> One instance per HTTP session (web applications)</li>
+</ul>
+
+<h2>@Component Stereotype Annotations</h2>
+<p>Spring Boot provides specialized @Component annotations:</p>
+<ul>
+    <li><strong>@Service:</strong> Business logic layer</li>
+    <li><strong>@Repository:</strong> Data access layer</li>
+    <li><strong>@Controller:</strong> Presentation layer</li>
+    <li><strong>@RestController:</strong> RESTful web services</li>
+</ul>
+
+<h2>Benefits of Dependency Injection</h2>
+<ul>
+    <li><strong>Loose Coupling:</strong> Classes depend on abstractions, not concrete implementations</li>
+    <li><strong>Testability:</strong> Easy to mock dependencies for unit testing</li>
+    <li><strong>Maintainability:</strong> Changes to dependencies don't affect dependent classes</li>
+    <li><strong>Flexibility:</strong> Easy to swap implementations</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li>Prefer constructor injection over field injection</li>
+    <li>Use interfaces for dependencies when possible</li>
+    <li>Keep constructors simple and avoid business logic</li>
+    <li>Use @Qualifier when multiple beans of the same type exist</li>
+</ul>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Mixtral and Mixture-of-Experts Architecture - Course Introduction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Mixtral and Mixture-of-Experts Architecture</h1>
+
+<div class="intro-section">
+
+<h2>Course Overview</h2>
+<p>Welcome to the comprehensive course on <strong>Mixtral and Mixture-of-Experts (MoE) Architecture</strong>. This enterprise-level training program explores one of the most significant innovations in large language model design: the Mixture-of-Experts architecture, with a specific focus on Mistral AI's Mixtral models.</p>
+
+<p>Mixture-of-Experts represents a paradigm shift in how we build and deploy large-scale AI models. By activating only a subset of model parameters for each input, MoE architectures achieve the performance of much larger dense models while maintaining computational efficiency comparable to smaller models. This course will equip you with deep theoretical understanding and practical knowledge to work with these cutting-edge architectures.</p>
+
+<h2>Purpose and Relevance</h2>
+<p>As organizations increasingly adopt large language models for production applications, understanding efficient architectures becomes critical. Traditional dense models face a fundamental trade-off: larger models perform better but require prohibitive computational resources. MoE architectures break this trade-off by:</p>
+<ul>
+    <li>Enabling models with billions of parameters to run with the speed of much smaller models</li>
+    <li>Reducing inference costs by 5-10x compared to equivalent dense models</li>
+    <li>Allowing specialized expert networks to develop domain-specific knowledge</li>
+    <li>Making state-of-the-art AI accessible to organizations with limited infrastructure</li>
+</ul>
+
+<p>Mixtral 8x7B, released by Mistral AI, demonstrates these advantages in practice: it matches or exceeds the performance of models 5x its active parameter count while maintaining inference speeds comparable to 13B parameter models. Understanding this architecture is essential for AI engineers, ML researchers, and technical leaders making infrastructure decisions.</p>
+
+<h2>Learning Objectives</h2>
+<p>By the end of this course, you will be able to:</p>
+<ul>
+    <li>Explain the fundamental principles of Mixture-of-Experts architecture and how it differs from dense neural networks</li>
+    <li>Describe the role of router networks, expert selection mechanisms, and load balancing strategies</li>
+    <li>Analyze the Mixtral 8x7B architecture including its parameter distribution, routing strategy, and performance characteristics</li>
+    <li>Evaluate the computational and memory requirements for deploying MoE models in production environments</li>
+    <li>Compare MoE models with dense alternatives across dimensions of performance, cost, and operational complexity</li>
+    <li>Identify appropriate use cases for MoE architectures versus traditional dense models</li>
+    <li>Understand optimization techniques for inference including quantization, batching, and hardware selection</li>
+    <li>Assess the trade-offs and limitations of MoE architectures in real-world deployments</li>
+</ul>
+
+<h2>Expected Learner Outcomes</h2>
+<p>Upon successful completion of this course, learners will:</p>
+<ul>
+    <li><strong>Conceptual Mastery:</strong> Possess a deep understanding of MoE principles, routing mechanisms, and architectural design decisions</li>
+    <li><strong>Technical Evaluation:</strong> Be able to evaluate whether MoE models are appropriate for specific use cases and infrastructure constraints</li>
+    <li><strong>Performance Analysis:</strong> Understand how to analyze and optimize MoE model performance in production environments</li>
+    <li><strong>Strategic Decision-Making:</strong> Make informed decisions about model selection, deployment strategies, and resource allocation</li>
+    <li><strong>Industry Readiness:</strong> Be prepared to work with MoE models in enterprise AI applications and contribute to technical discussions about model architecture</li>
+</ul>
+
+<h2>Target Audience</h2>
+<p>This course is designed for:</p>
+<ul>
+    <li><strong>Machine Learning Engineers:</strong> Professionals implementing and deploying large language models in production</li>
+    <li><strong>AI Researchers:</strong> Individuals exploring efficient model architectures and seeking to understand state-of-the-art approaches</li>
+    <li><strong>Technical Architects:</strong> Leaders making infrastructure and technology decisions for AI systems</li>
+    <li><strong>Data Scientists:</strong> Practitioners who need to understand model capabilities and limitations for application development</li>
+    <li><strong>Software Engineers:</strong> Developers integrating LLMs into applications and optimizing inference performance</li>
+    <li><strong>Graduate Students:</strong> Advanced students in computer science, AI, or related fields studying modern neural network architectures</li>
+</ul>
+
+<h2>Prerequisites</h2>
+
+<h3>Technical Prerequisites</h3>
+<ul>
+    <li><strong>Neural Networks Fundamentals:</strong> Understanding of feedforward networks, backpropagation, and training processes</li>
+    <li><strong>Transformer Architecture:</strong> Familiarity with attention mechanisms, encoder-decoder structures, and modern LLM architectures</li>
+    <li><strong>Deep Learning Concepts:</strong> Knowledge of activation functions, loss functions, optimization algorithms, and regularization</li>
+    <li><strong>Python Programming:</strong> Ability to read and understand Python code (minimal coding required in this course)</li>
+    <li><strong>Linear Algebra:</strong> Basic understanding of matrices, vectors, and tensor operations</li>
+</ul>
+
+<h3>Conceptual Prerequisites</h3>
+<ul>
+    <li>Awareness of large language models (GPT, LLaMA, etc.) and their applications</li>
+    <li>Understanding of model parameters, inference, and computational complexity</li>
+    <li>Familiarity with concepts like model size, throughput, and latency</li>
+</ul>
+
+<h3>Recommended (Not Required)</h3>
+<ul>
+    <li>Experience with PyTorch or TensorFlow</li>
+    <li>Understanding of distributed computing and GPU architecture</li>
+    <li>Exposure to model deployment and serving infrastructure</li>
+</ul>
+
+<h2>Course Structure</h2>
+<p>This course is organized into <strong>3 comprehensive modules</strong> with <strong>10 content pages</strong> and <strong>4 assessments</strong>:</p>
+
+<table>
+    <tr>
+        <th>Module</th>
+        <th>Topics</th>
+        <th>Pages</th>
+        <th>Assessment</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Module 1: MoE Fundamentals</td>
+        <td>Architecture principles, sparse routing, expert specialization</td>
+        <td>3</td>
+        <td>8 questions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Module 2: Mixtral Implementation</td>
+        <td>Mixtral 8x7B architecture, performance analysis, benchmarking</td>
+        <td>3</td>
+        <td>8 questions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Module 3: Production Deployment</td>
+        <td>Deployment strategies, optimization, operational considerations</td>
+        <td>3</td>
+        <td>8 questions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Final Assessment</td>
+        <td>Comprehensive evaluation across all modules</td>
+        <td>-</td>
+        <td>25 questions</td>
+    </tr>
+</table>
+
+<h2>Assessment Requirements</h2>
+<p>To successfully complete this course:</p>
+<ul>
+    <li>You must achieve <strong>70% or higher</strong> on each module assessment to proceed to the next module</li>
+    <li>Module assessments contain 8 questions each, testing your understanding of that module's content</li>
+    <li>The final comprehensive assessment contains 25 unique questions covering all course material</li>
+    <li>You may retake assessments if needed to achieve the passing score</li>
+    <li>All questions are aligned with the learning objectives and course content</li>
+</ul>
+
+<h2>How to Navigate This Course</h2>
+<p>Use the <strong>Next</strong> and <strong>Previous</strong> buttons at the bottom right to move through the course content. Your progress is automatically saved, allowing you to resume where you left off if you exit and return later.</p>
+
+<p><strong>Important:</strong> You must pass each module assessment before proceeding to the next module. This ensures you have mastered the foundational concepts before advancing to more complex topics.</p>
+
+<h2>Time Commitment</h2>
+<p>This course is designed to be completed in approximately <strong>4-6 hours</strong>, depending on your prior knowledge and learning pace:</p>
+<ul>
+    <li>Module 1: 60-90 minutes</li>
+    <li>Module 2: 60-90 minutes</li>
+    <li>Module 3: 60-90 minutes</li>
+    <li>Assessments: 60-90 minutes total</li>
+</ul>
+
+<h2>Learning Approach</h2>
+<p>This course emphasizes <strong>conceptual understanding and theoretical depth</strong> over hands-on coding. You will:</p>
+<ul>
+    <li>Explore architectural diagrams and conceptual models</li>
+    <li>Analyze performance metrics and comparative benchmarks</li>
+    <li>Study real-world deployment scenarios and case studies</li>
+    <li>Examine minimal code examples to illustrate key concepts (theory-focused)</li>
+</ul>
+
+<h2>Ready to Begin?</h2>
+<p>Click <strong>Next</strong> to begin Module 1: MoE Architecture Fundamentals, where you'll explore the core principles that make Mixture-of-Experts one of the most exciting developments in modern AI.</p>
+
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

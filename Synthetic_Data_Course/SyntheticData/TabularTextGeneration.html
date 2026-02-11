@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Tabular and Text Data Generation</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>Tabular and Text Data Generation</h1>
+
+<h2>Why Synthetic Data?</h2>
+<p>
+Synthetic data is artificially generated data that reproduces the statistical structure,
+relationships, and semantic characteristics of real-world data without directly copying it.
+Its importance has grown rapidly with the rise of machine learning systems that require
+large, diverse, and privacy-safe datasets.
+</p>
+
+<p>
+In traditional data pipelines, teams rely heavily on production data. This approach creates
+significant challenges: legal and regulatory constraints, limited coverage of edge cases,
+class imbalance, and slow iteration cycles. Synthetic data addresses these issues by enabling
+data generation on demand.
+</p>
+
+<p>
+When implemented correctly, synthetic data can accelerate model development, improve
+robustness, and reduce risk. However, careless generation can introduce bias, unrealistic
+patterns, or misleading correlations. Understanding both the power and the limitations of
+synthetic data is critical.
+</p>
+
+<h2>Key Problems Synthetic Data Solves</h2>
+<ul>
+    <li>Insufficient volume of labeled training data</li>
+    <li>Restrictions on using sensitive or personal data</li>
+    <li>Rare events that are underrepresented in real datasets</li>
+    <li>Need for stress testing and edge-case validation</li>
+    <li>Fast creation of demo and sandbox environments</li>
+</ul>
+
+<h2>Use Cases for Synthetic Data</h2>
+<table>
+    <tr><th>Use Case</th><th>Problem Solved</th><th>Example</th></tr>
+    <tr>
+        <td>ML training augmentation</td>
+        <td>Not enough real training examples</td>
+        <td>Generate thousands of synthetic product reviews to improve sentiment coverage</td>
+    </tr>
+    <tr>
+        <td>Privacy-safe development</td>
+        <td>Production data cannot be shared</td>
+        <td>Synthetic patient records for healthcare application testing</td>
+    </tr>
+    <tr>
+        <td>Class balancing</td>
+        <td>Rare events are underrepresented</td>
+        <td>Synthetic fraud transactions for fraud detection models</td>
+    </tr>
+    <tr>
+        <td>Software testing</td>
+        <td>Limited coverage of edge cases</td>
+        <td>Stress-test APIs with extreme but valid inputs</td>
+    </tr>
+    <tr>
+        <td>Demo environments</td>
+        <td>No real customer data allowed</td>
+        <td>Populate CRM demos with realistic companies and contacts</td>
+    </tr>
+</table>
+
+<h2>Types of Synthetic Data</h2>
+<p>
+Synthetic data can be broadly categorized based on structure and generation technique.
+</p>
+
+<ul>
+    <li><strong>Rule-based synthetic data:</strong> Deterministic generation using predefined rules</li>
+    <li><strong>Statistical synthetic data:</strong> Data sampled from learned distributions</li>
+    <li><strong>ML-generated synthetic data:</strong> Data generated using models such as GANs or LLMs</li>
+</ul>
+
+<p>
+Each approach has trade-offs in realism, scalability, explainability, and cost.
+</p>
+
+<h2>Tabular Data Generation</h2>
+<p>
+Tabular data is among the most common data types in enterprise systems. It includes structured
+records such as customer profiles, transactions, logs, and metrics.
+</p>
+
+<p>
+Generating high-quality synthetic tabular data is challenging because tabular datasets often
+contain complex dependencies between columns. For example, income may correlate with age,
+region, and occupation. Preserving these relationships is critical.
+</p>
+
+<h3>Designing a Tabular Schema</h3>
+<p>
+Before generating synthetic data, the schema must be carefully designed. A schema defines:
+</p>
+
+<ul>
+    <li>Column names and data types</li>
+    <li>Valid ranges and constraints</li>
+    <li>Relationships between fields</li>
+    <li>Distribution assumptions</li>
+</ul>
+
+<p>
+Clear schemas help LLMs generate more consistent and realistic data.
+</p>
+
+<h3>LLM-Based Tabular Generation</h3>
+<p>
+Large language models can generate tabular data by reasoning over schema descriptions and
+constraints expressed in natural language. This approach is flexible and fast, making it
+ideal for prototyping and moderate-scale generation.
+</p>
+
+<div class="code-block">
+<pre><code>
+from openai import OpenAI
+import json
+import pandas as pd
+
+client = OpenAI()
+
+def generate_tabular_data(
+    schema: dict,
+    num_rows: int,
+    constraints: str = "",
+    examples: list[dict] = None,
+) -> pd.DataFrame:
+    '''Generate synthetic tabular data using an LLM.'''
+    examples_text = ""
+    if examples:
+        examples_text = f"Example rows:\n{json.dumps(examples[:3], indent=2)}\n\n"
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Generate {num_rows} rows of realistic synthetic data.\n\n"
+                f"Schema: {json.dumps(schema)}\n"
+                f"{examples_text}"
+                f"Constraints: {constraints}\n\n"
+                "Return JSON: {\"rows\": [...]}"
+
+            ),
+        }],
+    )
+    data = json.loads(response.choices[0].message.content)
+    return pd.DataFrame(data["rows"])
+</code></pre>
+</div>
+
+<h3>Strengths of LLM-Based Tabular Generation</h3>
+<ul>
+    <li>Highly flexible and expressive</li>
+    <li>Easy to incorporate business rules</li>
+    <li>No training required</li>
+</ul>
+
+<h3>Limitations and Risks</h3>
+<ul>
+    <li>Not statistically rigorous by default</li>
+    <li>Harder to scale to millions of rows</li>
+    <li>Potential for subtle inconsistencies</li>
+</ul>
+
+<p>
+For large-scale production use, LLMs are often combined with statistical or ML-based tools.
+</p>
+
+<h2>Text Data Generation</h2>
+<p>
+Text data is central to many AI applications, including classification, search, summarization,
+and conversational agents. Synthetic text generation enables rapid creation of labeled
+datasets without manual annotation.
+</p>
+
+<h3>Use Cases for Synthetic Text</h3>
+<ul>
+    <li>Training classifiers</li>
+    <li>Evaluating moderation systems</li>
+    <li>Testing chatbots</li>
+    <li>Stress-testing NLP pipelines</li>
+</ul>
+
+<h3>Generating Labeled Text Datasets</h3>
+<p>
+LLMs excel at generating diverse and realistic text across many domains and writing styles.
+They can simulate user behavior, tone, and errors such as typos or informal language.
+</p>
+
+<div class="code-block">
+<pre><code>
+def generate_text_dataset(
+    task: str,
+    labels: list[str],
+    per_label: int = 50,
+    style_notes: str = "",
+) -> list[dict]:
+    '''Generate a labeled text dataset for training classifiers.'''
+    dataset = []
+    for label in labels:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            response_format={"type": "json_object"},
+            messages=[{
+                "role": "user",
+                "content": (
+                    f"Generate {per_label} diverse, realistic examples for "
+                    f"the '{label}' class of {task}.\n"
+                    f"Style: {style_notes}\n"
+                    "Vary length, complexity, and phrasing.\n"
+                    "Return JSON: {\"examples\": [\"text1\", \"text2\", ...]}"
+                ),
+            }],
+        )
+        examples = json.loads(response.choices[0].message.content)["examples"]
+        for text in examples:
+            dataset.append({"text": text, "label": label})
+    return dataset
+</code></pre>
+</div>
+
+<h3>Quality Control for Synthetic Text</h3>
+<p>
+Synthetic text must be evaluated carefully to avoid overfitting models to artificial patterns.
+</p>
+
+<ul>
+    <li>Manually review samples</li>
+    <li>Mix real and synthetic data</li>
+    <li>Test generalization on real-world data</li>
+</ul>
+
+<h2>Evaluation and Validation</h2>
+<p>
+Synthetic data should never be assumed to be correct by default. Validation techniques include:
+</p>
+
+<ul>
+    <li>Statistical similarity metrics</li>
+    <li>Downstream model performance</li>
+    <li>Human expert review</li>
+    <li>Privacy leakage testing</li>
+</ul>
+
+<h2>When Not to Use Synthetic Data</h2>
+<p>
+Synthetic data is not a silver bullet. It should not be used when:
+</p>
+
+<ul>
+    <li>Ground truth accuracy is critical</li>
+    <li>Regulatory approval requires real data</li>
+    <li>Subtle real-world correlations matter</li>
+</ul>
+
+<h2>Specialized Libraries</h2>
+<ul>
+    <li><strong>Faker:</strong> Deterministic, rule-based generation for simple fields</li>
+    <li><strong>SDV (Synthetic Data Vault):</strong> Learns statistical properties from real data</li>
+    <li><strong>Gretel:</strong> Enterprise-grade synthetic data with privacy metrics</li>
+    <li><strong>CTGAN:</strong> GAN-based generation for complex tabular datasets</li>
+</ul>
+
+<h2>Operational Best Practices</h2>
+<ul>
+    <li>Document synthetic data assumptions</li>
+    <li>Track provenance of generated datasets</li>
+    <li>Version schemas and prompts</li>
+    <li>Monitor downstream model drift</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Escalation Strategies and Action Engines</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Escalation Strategies and Action Engines</h1>
+
+<h2>Intelligent Escalation Triggers</h2>
+<p>Knowing when to escalate to human agents is critical for customer satisfaction:</p>
+
+<table>
+    <tr>
+        <th>Trigger Type</th>
+        <th>Condition</th>
+        <th>Action</th>
+        <th>Priority</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Low Confidence</td>
+        <td>AI confidence &lt; 70%</td>
+        <td>Offer human connection</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Customer Frustration</td>
+        <td>Negative sentiment detected</td>
+        <td>Prioritize human handoff</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Complex Issue</td>
+        <td>3+ failed resolution attempts</td>
+        <td>Auto-escalate with context</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Sensitive Topic</td>
+        <td>Legal, safety, financial decisions</td>
+        <td>Mandatory human review</td>
+        <td>Critical</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Explicit Request</td>
+        <td>Customer asks for human agent</td>
+        <td>Immediate transfer</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">VIP Customer</td>
+        <td>High-value account detected</td>
+        <td>Offer premium support option</td>
+        <td>High</td>
+    </tr>
+</table>
+
+<h2>Escalation Context Handoff</h2>
+<p>When escalating, provide human agents with comprehensive context:</p>
+
+<blockquote>
+Escalation Package Contents:
+
+1. Customer Information:
+   - Name, account ID, tier/status
+   - Previous interaction history
+   - Lifetime value, tenure
+
+2. Current Issue Context:
+   - Original query and intent
+   - Conversation transcript
+   - AI-attempted solutions
+   - Failure reasons
+
+3. Technical Context:
+   - System state at escalation
+   - Relevant account data
+   - Recent transactions/activities
+   - Known issues or outages
+
+4. Sentiment Analysis:
+   - Current emotional state
+   - Frustration indicators
+   - Urgency level
+</blockquote>
+
+<h2>Graceful Escalation Messaging</h2>
+<ul>
+    <li><strong>Proactive:</strong> "This seems like a complex situation. Let me connect you with a specialist who can help."</li>
+    <li><strong>Empathetic:</strong> "I understand this is frustrating. I'm transferring you to an agent who can resolve this immediately."</li>
+    <li><strong>Transparent:</strong> "For account security, I need to connect you with our verification team."</li>
+    <li><strong>Value-adding:</strong> "While I prepare your case for our specialist, here's what I've gathered so far..."</li>
+</ul>
+
+<h2>Action Engine Architecture</h2>
+<p>The Action Engine enables the AI to perform operations beyond answering questions:</p>
+
+<h2>Common Action Types</h2>
+<table>
+    <tr>
+        <th>Action Category</th>
+        <th>Examples</th>
+        <th>Authorization Required</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Information Retrieval</td>
+        <td>Check order status, view account balance</td>
+        <td>Customer authentication</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Account Modifications</td>
+        <td>Update email, change password, modify preferences</td>
+        <td>Customer authentication + verification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Transaction Processing</td>
+        <td>Process refund, apply discount, cancel order</td>
+        <td>Customer auth + business rules</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Ticket Management</td>
+        <td>Create ticket, update status, add notes</td>
+        <td>System authentication</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Notification Triggers</td>
+        <td>Send confirmation email, schedule callback</td>
+        <td>Customer consent</td>
+    </tr>
+</table>
+
+<h2>Function Calling Implementation</h2>
+<blockquote>
+Example: Order Status Lookup
+
+Function Definition:
+{
+  "name": "get_order_status",
+  "description": "Retrieve current status of customer order",
+  "parameters": {
+    "order_id": {
+      "type": "string",
+      "description": "The order ID to look up"
+    },
+    "include_tracking": {
+      "type": "boolean",
+      "description": "Include tracking information",
+      "default": true
+    }
+  },
+  "required": ["order_id"]
+}
+
+LLM Response:
+{
+  "function_call": {
+    "name": "get_order_status",
+    "arguments": {
+      "order_id": "ORD-12345",
+      "include_tracking": true
+    }
+  }
+}
+
+System executes function → Returns result → LLM formats response
+</blockquote>
+
+<h2>Action Safety and Validation</h2>
+<ul>
+    <li><strong>Pre-execution Validation:</strong> Verify parameters, check permissions, validate business rules</li>
+    <li><strong>Confirmation for Destructive Actions:</strong> Require explicit customer confirmation for cancellations, deletions, refunds</li>
+    <li><strong>Rollback Capability:</strong> Implement undo mechanisms for reversible actions</li>
+    <li><strong>Audit Logging:</strong> Log all actions with timestamp, user, parameters, and results</li>
+    <li><strong>Rate Limiting:</strong> Prevent abuse with per-customer action limits</li>
+</ul>
+
+<h2>Multi-Step Action Workflows</h2>
+<blockquote>
+Example: Return and Refund Process
+
+Step 1: Validate return eligibility
+  → Check order date (within 30 days?)
+  → Check product category (returnable?)
+  → Check condition requirements
+
+Step 2: Generate return label
+  → Call shipping API
+  → Create return authorization
+  → Send label to customer email
+
+Step 3: Process refund
+  → Wait for return confirmation
+  → Inspect returned item
+  → Issue refund to original payment method
+
+Step 4: Update records
+  → Close support ticket
+  → Update inventory
+  → Log transaction
+</blockquote>
+
+<h2>Error Handling in Actions</h2>
+<table>
+    <tr>
+        <th>Error Type</th>
+        <th>Handling Strategy</th>
+        <th>Customer Message</th>
+    </tr>
+    <tr>
+        <td class="rowheader">API Timeout</td>
+        <td>Retry with exponential backoff</td>
+        <td>"Processing your request, one moment..."</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Invalid Parameters</td>
+        <td>Request clarification from customer</td>
+        <td>"Could you provide your order number?"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Permission Denied</td>
+        <td>Escalate to human agent</td>
+        <td>"I need to verify your identity first..."</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Business Rule Violation</td>
+        <td>Explain constraint, offer alternatives</td>
+        <td>"This order is outside the return window, but..."</td>
+    </tr>
+    <tr>
+        <td class="rowheader">System Unavailable</td>
+        <td>Graceful degradation, create ticket</td>
+        <td>"Our system is temporarily unavailable..."</td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

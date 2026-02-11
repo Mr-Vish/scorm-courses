@@ -1,0 +1,51 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM10: Model Theft</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM10: Model Theft and Intellectual Property Protection</h1>
+
+<p>Model Theft occurs when an attacker gains unauthorized access to your proprietary LLM, its weights, or the specialized data and prompts used to train or configure it. This can lead to a loss of competitive advantage, financial damage, and the risk of your model being used for malicious purposes.</p>
+
+<h2>10.1 What Can Be Stolen?</h2>
+<ul>
+    <li><strong>Model Weights:</strong> The core "brain" of the LLM. If an attacker gets these, they can run their own instance of your model without paying you.</li>
+    <li><strong>Training and Fine-tuning Datasets:</strong> The unique data that makes your model perform better than the base model.</li>
+    <li><strong>Proprietary System Prompts:</strong> The "secret sauce" of your AI application's personality and logic.</li>
+    <li><strong>Architecture and Configuration:</strong> The specific way you've designed your AI pipeline.</li>
+</ul>
+
+<h2>10.2 Attack Vectors for Model Theft</h2>
+<ul>
+    <li><strong>Direct Exfiltration:</strong> Compromising the servers or cloud accounts where model weights and datasets are stored.</li>
+    <li><strong>Model Inversion/Extraction Attacks:</strong> Using high volumes of queries to "probe" the model and reconstruct its weights or training data through its outputs.</li>
+    <li><strong>Insider Threats:</strong> Disgruntled employees or contractors with access to the model's source code or infrastructure.</li>
+    <li><strong>Supply Chain Attacks:</strong> Compromising a third-party library or service used to serve the model.</li>
+</ul>
+
+<h2>10.3 Remediation Strategies</h2>
+<p>Protecting your AI intellectual property requires a robust "Defensive Infrastructure":
+<ul>
+    <li><strong>Strict Access Control (IAM):</strong> Limiting access to model weights and training infrastructure to the absolute minimum set of authenticated users and services.</li>
+    <li><strong>Encryption at Rest and in Transit:</strong> Ensuring all model-related data is encrypted and that keys are managed securely.</li>
+    <li><strong>Rate Limiting and Anomaly Detection:</strong> Monitoring API usage for signs of model extraction attacks (e.g., thousands of queries designed to probe the model's decision boundaries).</li>
+    <li><strong>Watermarking and Fingerprinting:</strong> Embedding subtle, unique identifiers into the model's weights or outputs to track and prove ownership in case of theft.</li>
+    <li><strong>Adversarial Robustness Training:</strong> Training the model to be more resilient to inversion and extraction attacks.</li>
+    <li><strong>API Guardrails:</strong> Limiting the amount of "raw" confidence data (logprobs) returned by the API, making it harder for attackers to reconstruct the model's internal state.</li>
+</ul></p>
+
+<h2>10.4 The Legal and Ethical Dimension</h2>
+<p>In addition to technical defenses, ensure that your Terms of Service and contracts clearly define your ownership of the model and prohibit extraction or unauthorized use. While legal protections are not a complete solution, they provide a necessary framework for responding to theft if it occurs.</p>
+
+<p>By treating your LLM as your most valuable digital asset, you can build a sustainable business while protecting your hard-earned innovations from theft and misuse.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

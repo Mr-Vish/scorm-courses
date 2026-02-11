@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 1: Fundamentals of Log Levels - Part 2</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: Fundamentals of Log Levels (Continued)</h1>
+
+<h2>INFO Level: Operational Visibility</h2>
+<p>INFO level represents the baseline for production logging, capturing significant operational events that describe the normal functioning of the application. INFO messages tell the story of what the application is doing during normal operation, providing visibility without overwhelming operators with implementation details.</p>
+
+<p><strong>Appropriate Uses for INFO:</strong></p>
+<ul>
+    <li>Application startup and shutdown events with version information</li>
+    <li>Successful completion of significant business operations (order placed, payment processed, report generated)</li>
+    <li>Configuration changes or feature flag evaluations</li>
+    <li>Scheduled job execution start and completion</li>
+    <li>Connection establishment to external systems (databases, message queues, APIs)</li>
+    <li>User authentication and authorization events (successful logins, permission grants)</li>
+    <li>State transitions in long-running processes or workflows</li>
+</ul>
+
+<p><strong>Characteristics of INFO Logging:</strong></p>
+<ul>
+    <li>Enabled in all environments including production</li>
+    <li>Provides operational visibility without exposing implementation details</li>
+    <li>Generates moderate message volume that can be sustained in production</li>
+    <li>Focuses on business-level events rather than technical implementation</li>
+    <li>Should be meaningful to operations teams who may not understand code internals</li>
+</ul>
+
+<p><strong>The INFO Litmus Test:</strong> A useful test for whether a message belongs at INFO level is to ask: "Would an operations engineer monitoring this application in production want to see this message to understand what the system is doing?" If the answer is yes, INFO is appropriate. If the message is only useful to developers debugging code, it belongs at DEBUG.</p>
+
+<h2>WARN Level: Attention Without Alarm</h2>
+<p>WARN level occupies a critical middle ground in the logging hierarchy, indicating situations that are unusual, potentially problematic, or worthy of attention, but do not prevent the application from continuing normal operation. WARN messages serve as early warning indicators that something may require investigation or future action.</p>
+
+<p><strong>Appropriate Uses for WARN:</strong></p>
+<ul>
+    <li>Use of deprecated features or APIs that still function but should be replaced</li>
+    <li>Fallback to default values when preferred configuration is unavailable</li>
+    <li>Retry attempts after transient failures (before exhausting retry budget)</li>
+    <li>Resource utilization approaching configured thresholds (80% memory usage, connection pool nearly full)</li>
+    <li>Unexpected but handleable data conditions (missing optional fields, out-of-range values that can be clamped)</li>
+    <li>Timeout events that don't cause operation failure (cache timeout with fallback to database)</li>
+    <li>Security-relevant events that don't constitute breaches (repeated failed login attempts below lockout threshold)</li>
+</ul>
+
+<p><strong>Characteristics of WARN Logging:</strong></p>
+<ul>
+    <li>Indicates potential problems that warrant investigation but don't require immediate action</li>
+    <li>Helps identify degrading conditions before they become critical failures</li>
+    <li>Provides context for understanding ERROR messages that may follow</li>
+    <li>Should be actionable - each WARN should suggest what might need attention</li>
+    <li>Generates low to moderate message volume in healthy systems</li>
+</ul>
+
+<p><strong>The WARN Decision Framework:</strong> Use WARN when the application successfully handles an unexpected situation but the situation itself indicates something that may need attention. The key question is: "Did something unexpected happen that we handled gracefully, but someone should probably know about?" If yes, use WARN. If the situation is completely normal and expected, use INFO. If the situation prevents successful completion, use ERROR.</p>
+
+<h2>ERROR Level: Operational Failures</h2>
+<p>ERROR level indicates that something has gone wrong and a specific operation has failed, but the application as a whole continues to function. ERROR messages represent failures that require attention and potentially corrective action, but don't necessarily threaten the entire application's viability.</p>
+
+<p><strong>Appropriate Uses for ERROR:</strong></p>
+<ul>
+    <li>Exceptions that prevent completion of a user request or business operation</li>
+    <li>Failed attempts to connect to required external systems after exhausting retries</li>
+    <li>Data validation failures that prevent processing (malformed input, constraint violations)</li>
+    <li>Resource exhaustion that prevents operation completion (out of memory for specific operation, disk full)</li>
+    <li>Security violations (authentication failures, authorization denials, detected intrusion attempts)</li>
+    <li>Data integrity issues (corrupted files, inconsistent database state)</li>
+    <li>Unhandled exceptions caught by global exception handlers</li>
+</ul>
+
+<p><strong>Characteristics of ERROR Logging:</strong></p>
+<ul>
+    <li>Indicates definite problems requiring investigation and potential remediation</li>
+    <li>Should include sufficient context to understand what failed and why</li>
+    <li>Often includes exception stack traces and relevant state information</li>
+    <li>Typically triggers alerts or monitoring notifications in production</li>
+    <li>Should be rare in healthy, well-functioning systems</li>
+</ul>
+
+<p><strong>ERROR Best Practices:</strong> ERROR messages should be actionable and include sufficient context for diagnosis. Include relevant identifiers (user ID, transaction ID, resource name), the operation being attempted, and the specific failure reason. Avoid logging the same error multiple times as it propagates up the call stack - log once at the appropriate level where the error is handled or where it exits the application boundary.</p>
+
+<h2>FATAL Level: Catastrophic Failures</h2>
+<p>FATAL level represents the most severe category of errors - those that prevent the application from continuing operation and typically result in application termination. FATAL errors indicate catastrophic failures from which the application cannot recover.</p>
+
+<p><strong>Appropriate Uses for FATAL:</strong></p>
+<ul>
+    <li>Inability to load critical configuration required for application startup</li>
+    <li>Failure to establish connections to essential infrastructure (primary database, message broker)</li>
+    <li>Corrupted or missing critical application files or resources</li>
+    <li>Unrecoverable system resource exhaustion (out of memory, no available file handles)</li>
+    <li>Critical security component initialization failures</li>
+    <li>Violations of fundamental application invariants that indicate severe bugs</li>
+</ul>
+
+<p><strong>Characteristics of FATAL Logging:</strong></p>
+<ul>
+    <li>Indicates the application cannot continue and will terminate</li>
+    <li>Should be extremely rare - most applications should run for extended periods without FATAL errors</li>
+    <li>Typically followed immediately by application shutdown or crash</li>
+    <li>Requires immediate human intervention to resolve</li>
+    <li>Often indicates environmental problems rather than application bugs</li>
+</ul>
+
+<p><strong>FATAL vs. ERROR:</strong> The distinction is whether the application can continue operating. If a single request fails but the application continues serving other requests, use ERROR. If the failure prevents the application from functioning at all, use FATAL. Many applications use ERROR for nearly all failures and reserve FATAL for true application-terminating events.</p>
+
+<h2>Module Summary</h2>
+<p>Understanding log levels is fundamental to effective application logging. The hierarchy from TRACE through FATAL provides a structured vocabulary for categorizing events by severity and intended audience. Key takeaways:</p>
+
+<ul>
+    <li>Log levels form a hierarchy where each level includes all more severe levels</li>
+    <li>TRACE and DEBUG are primarily for development and troubleshooting</li>
+    <li>INFO provides operational visibility in production environments</li>
+    <li>WARN indicates potential problems that warrant attention</li>
+    <li>ERROR represents operational failures that prevent specific operations</li>
+    <li>FATAL indicates catastrophic failures requiring application termination</li>
+    <li>Choosing the appropriate level requires understanding both the event's severity and its operational context</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Detection Tools and Content Provenance</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Detection Tools and Content Provenance</h1>
+
+
+<h2>AI Text Detection</h2>
+<p>AI text detectors attempt to classify text as human-written or AI-generated. They work by analyzing statistical patterns that differ between human and machine text:</p>
+<table>
+    <tr><th>Detector</th><th>Method</th><th>Accuracy</th><th>Limitations</th></tr>
+    <tr><td>GPTZero</td><td>Perplexity and burstiness analysis</td><td>~85-95%</td><td>Lower accuracy on edited AI text</td></tr>
+    <tr><td>Originality.ai</td><td>Trained classifier model</td><td>~90-96%</td><td>Requires subscription, false positives on non-native English</td></tr>
+    <tr><td>Watermark detectors</td><td>Check for embedded watermark signal</td><td>~99%+ (if watermarked)</td><td>Only works if the source model applied a watermark</td></tr>
+    <tr><td>Binoculars</td><td>Cross-model perplexity comparison</td><td>~90%</td><td>Requires running two models</td></tr>
+</table>
+
+<h2>Limitations of Detection</h2>
+<ul>
+    <li><strong>Paraphrasing defeats most detectors:</strong> Rewriting AI text with minor changes often fools statistical detectors</li>
+    <li><strong>False positives on non-native English:</strong> Detectors may flag human text written by non-native speakers as AI-generated</li>
+    <li><strong>Mixed content is hard:</strong> Documents with both human and AI text are difficult to classify</li>
+    <li><strong>Adversarial evasion:</strong> Simple techniques like adding typos or using specific vocabularies can bypass detectors</li>
+    <li><strong>No detector is reliable enough for high-stakes decisions:</strong> Academic integrity, legal evidence, etc.</li>
+</ul>
+
+<h2>Implementing Detection</h2>
+<div class="code-block">
+<pre><code># Using perplexity-based detection
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+import math
+
+def compute_perplexity(text, model, tokenizer):
+    '''Compute perplexity of text under a language model.
+    AI text typically has lower perplexity (more predictable).'''
+    inputs = tokenizer(text, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model(**inputs, labels=inputs["input_ids"])
+    return math.exp(outputs.loss.item())
+
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+
+human_text = "The quick brown fox jumps over the lazy dog in the park."
+ai_text = "The implementation of sustainable practices requires commitment."
+
+human_ppl = compute_perplexity(human_text, model, tokenizer)
+ai_ppl = compute_perplexity(ai_text, model, tokenizer)
+
+print(f"Human text perplexity: {human_ppl:.1f}")
+print(f"AI text perplexity: {ai_ppl:.1f}")
+# AI text tends to have lower perplexity (more "expected" by models)</code></pre>
+</div>
+
+<h2>Content Provenance Best Practices</h2>
+<table>
+    <tr><th>Practice</th><th>Implementation</th></tr>
+    <tr><td>Label AI outputs</td><td>Add metadata or visible labels to AI-generated content</td></tr>
+    <tr><td>Implement C2PA</td><td>Adopt content credentials for images and documents</td></tr>
+    <tr><td>Watermark at generation</td><td>Apply watermarks during model inference, not after</td></tr>
+    <tr><td>Maintain audit trails</td><td>Log which content was AI-generated and by which model</td></tr>
+    <tr><td>Disclose AI use</td><td>Be transparent with users about AI involvement in content</td></tr>
+</table>
+
+<h2>The Road Ahead</h2>
+<ul>
+    <li><strong>Regulatory pressure:</strong> EU AI Act requires labeling AI-generated content in many contexts</li>
+    <li><strong>Technical standards:</strong> C2PA and similar standards are becoming industry norms</li>
+    <li><strong>Arms race:</strong> Detection and evasion will continue to evolve; no single solution is permanent</li>
+    <li><strong>Watermarking adoption:</strong> Major providers (Google, Meta, OpenAI) are implementing watermarking in their models</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

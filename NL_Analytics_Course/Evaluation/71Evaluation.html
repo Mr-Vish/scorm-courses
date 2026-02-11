@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 7: Evaluation and Self-Correction</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 7: Ensuring Accuracy through Evaluation and Self-Correction</h1>
+
+<p>How do you know if your natural language analytics system is giving correct answers? Measuring the accuracy of text-to-code pipelines is challenging. This module explores the techniques for automated evaluation and the power of "self-correcting" pipelines.</p>
+
+<h2>7.1 Metrics for NL Analytics</h2>
+<p>Unlike simple chat, NLA has objective measures of success:
+<ul>
+    <li><strong>Execution Rate:</strong> What percentage of the generated SQL/Python scripts actually run without errors?</li>
+    <li><strong>Result Consistency:</strong> If we ask the same question in three different ways, do we get the same data back?</li>
+    <li><strong>Exact Set Match (for SQL):</strong> Does the generated SQL return the exact same rows and columns as a "ground-truth" query written by a human?</li>
+    <li><strong>Semantic Correctness (for Python):</strong> Even if the code runs, did it perform the correct statistical analysis? This often requires a second LLM to "review" the code.</li>
+</ul></p>
+
+<h2>7.2 Automated Evaluation Pipelines</h2>
+<ol>
+    <li><strong>Golden Dataset:</strong> A collection of 100-500 questions across various levels of complexity (Simple, Moderate, Hard, Extra Hard).</li>
+    <li><strong>Test Runner:</strong> A script that sends each question through the NLA pipeline, executes the resulting code, and compares the output to the expected result.</li>
+    <li><strong>Regression Testing:</strong> Running the entire dataset every time you update the prompt, the model, or the schema to ensure accuracy hasn't dropped.</li>
+</ol>
+
+<h2>7.3 The Self-Correction Loop</h2>
+<p>One of the most powerful patterns in NLA is the ability for the system to fix its own mistakes.
+<ol>
+    <li><strong>Initial Generation:</strong> The model generates a SQL query.</li>
+    <li><strong>Execution Attempt:</strong> The query is run against the database.</li>
+    <li><strong>Error Capture:</strong> If it fails, the database returns a specific error message (e.g., "column 'user_id' does not exist").</li>
+    <li><strong>Feedback Loop:</strong> The error message is sent *back* to the LLM along with the original query and the schema.</li>
+    <li><strong>Regeneration:</strong> The LLM analyzes the error and generates a corrected query.</li>
+</ol>
+<p>This simple loop can significantly improve the success rate of complex queries.</p>
+
+<h2>7.4 Human-in-the-Loop Feedback</h2>
+<p>Automated metrics are great, but real user feedback is invaluable.
+<ul>
+    <li><strong>Feedback Buttons:</strong> Allowing users to mark an answer as "helpful" or "incorrect."</li>
+    <li><strong>Correction Interface:</strong> Letting technical users "edit" the generated SQL, which then becomes a new training example for the model.</li>
+    <li><strong>Audit Queues:</strong> Flagging high-value or high-risk queries for manual review by a data analyst.</li>
+</ul></p>
+
+<h2>7.5 Continuous Improvement</h2>
+<p>By continuously collecting data from evaluation, self-correction, and user feedback, you can iteratively refine your prompts, tune your models, and improve your database schema (e.g., by adding more descriptive column names) to create an increasingly powerful and reliable analytics platform.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

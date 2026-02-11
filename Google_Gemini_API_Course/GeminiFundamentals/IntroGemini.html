@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to Google Gemini</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Introduction to Google Gemini</h1>
+
+<h2>What Is Gemini?</h2>
+<p>Gemini is Google's most capable family of <strong>multi-modal AI models</strong>, representing a fundamental shift in how AI systems process information. Unlike traditional text-only large language models (LLMs), Gemini is natively multi-modal, meaning it can understand and reason across text, images, video, audio, and code simultaneously within a single unified model architecture.</p>
+
+<p>This native multi-modality enables Gemini to perform tasks that were previously impossible or required multiple specialized models, such as analyzing video content while understanding spoken dialogue, or examining code alongside architectural diagrams.</p>
+
+<h2>Key Capabilities</h2>
+<ul>
+    <li><strong>Multi-Modal Understanding:</strong> Process text, images, video, audio, and code in a single request</li>
+    <li><strong>Long Context Windows:</strong> Handle up to 2 million tokens, enabling analysis of entire codebases or lengthy videos</li>
+    <li><strong>Structured Output:</strong> Generate JSON responses with schema validation for reliable integration</li>
+    <li><strong>Function Calling:</strong> Integrate with external tools and APIs through structured function invocation</li>
+    <li><strong>Search Grounding:</strong> Access real-time information from Google Search to reduce hallucinations</li>
+    <li><strong>Code Generation:</strong> Generate, explain, and debug code across multiple programming languages</li>
+</ul>
+
+<h2>Model Variants and Selection</h2>
+<p>Gemini offers multiple model variants optimized for different use cases. Selecting the right model depends on your specific requirements for speed, cost, context length, and reasoning capability.</p>
+
+<table>
+    <tr>
+        <th>Model</th>
+        <th>Context Window</th>
+        <th>Best For</th>
+        <th>Key Characteristics</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Gemini 2.0 Flash</td>
+        <td>1M tokens</td>
+        <td>Fast, cost-effective tasks</td>
+        <td>Latest generation, optimized for speed and efficiency</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Gemini 1.5 Pro</td>
+        <td>2M tokens</td>
+        <td>Complex reasoning, long documents</td>
+        <td>Largest context window, best for comprehensive analysis</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Gemini 1.5 Flash</td>
+        <td>1M tokens</td>
+        <td>High-volume, low-latency</td>
+        <td>Balanced performance and cost for production workloads</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Gemini Nano</td>
+        <td>On-device</td>
+        <td>Mobile/edge AI</td>
+        <td>Runs locally on devices, no internet required</td>
+    </tr>
+</table>
+
+<h2>Model Selection Guidelines</h2>
+<blockquote>
+<strong>Use Gemini 2.0 Flash when:</strong>
+<ul>
+    <li>You need the latest features and improvements</li>
+    <li>Speed and cost-efficiency are priorities</li>
+    <li>Your context fits within 1M tokens</li>
+</ul>
+
+<strong>Use Gemini 1.5 Pro when:</strong>
+<ul>
+    <li>Processing extremely long documents or videos</li>
+    <li>Complex reasoning and analysis are required</li>
+    <li>You need the maximum context window (2M tokens)</li>
+</ul>
+
+<strong>Use Gemini 1.5 Flash when:</strong>
+<ul>
+    <li>Building high-throughput production applications</li>
+    <li>Balancing performance with cost</li>
+    <li>Processing moderate-length multi-modal inputs</li>
+</ul>
+
+<strong>Use Gemini Nano when:</strong>
+<ul>
+    <li>Building mobile or edge applications</li>
+    <li>Privacy requires on-device processing</li>
+    <li>Internet connectivity is unreliable</li>
+</ul>
+</blockquote>
+
+<h2>Access Options: Google AI Studio vs Vertex AI</h2>
+<p>Gemini can be accessed through two primary platforms, each designed for different use cases and organizational needs.</p>
+
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Google AI Studio</th>
+        <th>Vertex AI</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Pricing</td>
+        <td>Free tier available</td>
+        <td>Pay-as-you-go, enterprise pricing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Authentication</td>
+        <td>API key</td>
+        <td>IAM (Identity and Access Management)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Best For</td>
+        <td>Prototyping, development, small projects</td>
+        <td>Production workloads, enterprise applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Rate Limits</td>
+        <td>Generous for development</td>
+        <td>Configurable, higher limits available</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SLA</td>
+        <td>No SLA</td>
+        <td>Enterprise SLA available</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Governance</td>
+        <td>Standard</td>
+        <td>Advanced compliance and security controls</td>
+    </tr>
+</table>
+
+<h2>Getting Your API Key (Google AI Studio)</h2>
+<p>For this course, we'll use Google AI Studio, which provides a free tier perfect for learning and development.</p>
+
+<h3>Step-by-Step Setup:</h3>
+<ol>
+    <li>Visit <strong>https://aistudio.google.com</strong></li>
+    <li>Sign in with your Google account</li>
+    <li>Click on <strong>"Get API Key"</strong> in the navigation menu</li>
+    <li>Create a new API key or use an existing one</li>
+    <li>Copy the API key and store it securely (never commit to version control)</li>
+</ol>
+
+<h2>Rate Limits and Quotas</h2>
+<p>Understanding rate limits is crucial for production applications:</p>
+
+<blockquote>
+<strong>Free Tier Limits (Google AI Studio):</strong>
+<ul>
+    <li>15 requests per minute (RPM)</li>
+    <li>1 million tokens per minute (TPM)</li>
+    <li>1,500 requests per day (RPD)</li>
+</ul>
+
+<strong>Note:</strong> These limits are subject to change. Check the official documentation for current quotas.
+</blockquote>
+
+<h2>Security Best Practices</h2>
+<ul>
+    <li><strong>Never Hardcode API Keys:</strong> Use environment variables or secure secret management</li>
+    <li><strong>Restrict API Key Scope:</strong> Limit keys to specific APIs and domains when possible</li>
+    <li><strong>Rotate Keys Regularly:</strong> Implement key rotation policies for production systems</li>
+    <li><strong>Monitor Usage:</strong> Track API usage to detect anomalies or unauthorized access</li>
+    <li><strong>Use HTTPS:</strong> Always make API calls over secure connections</li>
+</ul>
+
+<h2>Understanding Context Windows</h2>
+<p>The context window determines how much information the model can process in a single request. Gemini's large context windows enable unique use cases:</p>
+
+<blockquote>
+<strong>1 Million Tokens &asymp;</strong>
+<ul>
+    <li>750,000 words</li>
+    <li>A novel of approximately 1,500 pages</li>
+    <li>30,000 lines of code</li>
+    <li>1 hour of video content</li>
+</ul>
+
+<strong>2 Million Tokens &asymp;</strong>
+<ul>
+    <li>1.5 million words</li>
+    <li>Multiple books or entire codebases</li>
+    <li>Several hours of video content</li>
+    <li>Comprehensive document analysis</li>
+</ul>
+</blockquote>
+
+<h2>Real-World Applications</h2>
+<ul>
+    <li><strong>Content Analysis:</strong> Analyze videos, extract insights, generate summaries</li>
+    <li><strong>Code Review:</strong> Review entire codebases, identify bugs, suggest improvements</li>
+    <li><strong>Document Processing:</strong> Extract structured data from complex documents</li>
+    <li><strong>Customer Support:</strong> Build intelligent chatbots with multi-modal understanding</li>
+    <li><strong>Education:</strong> Create interactive learning experiences with image and video analysis</li>
+    <li><strong>Healthcare:</strong> Analyze medical images alongside patient records (with proper compliance)</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

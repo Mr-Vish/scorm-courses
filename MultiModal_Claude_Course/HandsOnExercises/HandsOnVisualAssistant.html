@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on Exercise: Building a Visual Assistant</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on Exercise: Building a Multi-modal Visual Assistant</h1>
+
+<p>In this exercise, you will walk through the steps of creating a Python application that uses Claude's multi-modal capabilities to identify objects in an image and provide detailed information about them.</p>
+
+<h2>Prerequisites</h2>
+<ul>
+    <li>Python 3.7+ installed.</li>
+    <li>An Anthropic API key.</li>
+    <li>The <code>anthropic</code> Python library installed (<code>pip install anthropic</code>).</li>
+</ul>
+
+<h2>Step 1: Set up your environment</h2>
+<p>Create a new file named <code>visual_assistant.py</code> and add your API key as an environment variable or directly in the script (not recommended for production).</p>
+
+<h2>Step 2: Basic Image Identification</h2>
+<p>This script will load a local image and send it to Claude with a prompt to identify the main objects.</p>
+<pre>
+import anthropic
+import base64
+
+client = anthropic.Anthropic()
+
+def get_base64_encoded_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+def identify_image(image_path):
+    base64_image = get_base64_encoded_image(image_path)
+
+    message = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": base64_image,
+                        },
+                    },
+                    {"type": "text", "text": "Describe the main objects in this image and their likely purpose."}
+                ],
+            }
+        ],
+    )
+    print(message.content[0].text)
+
+# Replace with the path to your image
+identify_image("my_image.jpg")
+</pre>
+
+<h2>Step 3: Advanced Task - Data Extraction</h2>
+<p>Now, let's modify the script to extract data from a chart. Change the prompt to:</p>
+<pre>
+"text": "Analyze the chart in this image. Extract the data points and return them in a clean JSON format."
+</pre>
+
+<h2>Step 4: Chaining Vision and Reasoning</h2>
+<p>Ask Claude to not only identify the object but also provide instructions on how to use it. For example, if the image is of a complex espresso machine, the prompt could be:</p>
+<pre>
+"text": "Identify this appliance. Provide a step-by-step guide on how to perform its daily cleaning routine based on its visible components."
+</pre>
+
+<h2>Challenge: Multi-image Comparison</h2>
+<p>Modify your script to accept two images and ask Claude to identify the differences between them. This is a common task in industrial quality control or construction monitoring.</p>
+
+<p>By completing this exercise, you've gained practical experience in integrating vision into your AI applications, opening up a world of multi-modal possibilities.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

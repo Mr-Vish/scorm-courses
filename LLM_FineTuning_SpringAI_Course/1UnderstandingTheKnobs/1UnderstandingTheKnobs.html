@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding the "Knobs" - Core Parameters</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Understanding the "Knobs" - Core Parameters</h1>
+
+<h2>Introduction to LLM Parameters</h2>
+<p>Large Language Models generate text by predicting the next token (word or word fragment) based on probability distributions. At each step, the model calculates probabilities for thousands of possible next tokens. Parameters control how the model selects from these probabilities, fundamentally affecting output characteristics.</p>
+
+<p>Think of these parameters as "knobs" on a control panel—each adjusts a different aspect of the model's behavior. Understanding these knobs is essential for achieving desired outcomes.</p>
+
+<h2>Temperature: Controlling Randomness</h2>
+
+<h3>What is Temperature?</h3>
+<p>Temperature controls the randomness of token selection by scaling the probability distribution. It's the most influential parameter for controlling output creativity.</p>
+
+<h3>How Temperature Works</h3>
+<p>Before temperature is applied, the model produces a probability distribution over all possible next tokens. Temperature modifies this distribution:</p>
+<ul>
+    <li><strong>Low Temperature (0.0 - 0.3):</strong> Sharpens the distribution, making high-probability tokens even more likely</li>
+    <li><strong>Medium Temperature (0.4 - 0.9):</strong> Maintains balanced probability distribution</li>
+    <li><strong>High Temperature (1.0+):</strong> Flattens the distribution, giving lower-probability tokens more chance</li>
+</ul>
+
+<h3>Temperature Values and Effects</h3>
+<table>
+    <tr>
+        <th>Temperature</th>
+        <th>Behavior</th>
+        <th>Use Cases</th>
+        <th>Risks</th>
+    </tr>
+    <tr>
+        <td class="rowheader">0.0</td>
+        <td>Deterministic - always picks highest probability token</td>
+        <td>JSON generation, data extraction, classification</td>
+        <td>Repetitive, rigid output</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.1 - 0.3</td>
+        <td>Very low randomness, highly consistent</td>
+        <td>Code generation, technical documentation, factual Q&A</td>
+        <td>Limited vocabulary, predictable phrasing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.4 - 0.7</td>
+        <td>Balanced creativity and consistency</td>
+        <td>General chatbots, customer support, explanations</td>
+        <td>Occasional inconsistencies</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.8 - 1.0</td>
+        <td>High creativity, diverse outputs</td>
+        <td>Creative writing, brainstorming, marketing copy</td>
+        <td>Potential factual errors</td>
+    </tr>
+    <tr>
+        <td class="rowheader">1.1+</td>
+        <td>Very high randomness, unpredictable</td>
+        <td>Experimental creative tasks, poetry</td>
+        <td>Incoherent or nonsensical output</td>
+    </tr>
+</table>
+
+<h3>Practical Example: Temperature Impact</h3>
+<p>Given the prompt: "The capital of France is"</p>
+<ul>
+    <li><strong>Temperature 0.0:</strong> "Paris." (always the same)</li>
+    <li><strong>Temperature 0.7:</strong> "Paris, a beautiful city known for..." (varied but accurate)</li>
+    <li><strong>Temperature 1.5:</strong> "Paris, though some might argue Lyon..." (creative but potentially misleading)</li>
+</ul>
+
+<h2>Top-P (Nucleus Sampling): Dynamic Token Selection</h2>
+
+<h3>What is Top-P?</h3>
+<p>Top-P (also called nucleus sampling) dynamically selects from the smallest set of tokens whose cumulative probability exceeds the threshold P. Unlike Top-K which uses a fixed number, Top-P adapts to the probability distribution.</p>
+
+<h3>How Top-P Works</h3>
+<p>The model:</p>
+<ol>
+    <li>Sorts all possible tokens by probability (highest to lowest)</li>
+    <li>Accumulates probabilities until reaching the P threshold</li>
+    <li>Randomly selects from only those tokens</li>
+    <li>Ignores all tokens outside the nucleus</li>
+</ol>
+
+<h3>Top-P Values and Effects</h3>
+<table>
+    <tr>
+        <th>Top-P Value</th>
+        <th>Behavior</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">0.1</td>
+        <td>Very narrow selection, only highest probability tokens</td>
+        <td>Structured data, deterministic outputs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.5</td>
+        <td>Moderate selection, balanced vocabulary</td>
+        <td>Technical writing, documentation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.9</td>
+        <td>Broad selection, diverse vocabulary</td>
+        <td>Creative writing, conversational AI</td>
+    </tr>
+    <tr>
+        <td class="rowheader">1.0</td>
+        <td>All tokens considered (no filtering)</td>
+        <td>Maximum creativity, experimental use</td>
+    </tr>
+</table>
+
+<h3>Top-P vs Temperature</h3>
+<p>While both control randomness, they work differently:</p>
+<ul>
+    <li><strong>Temperature:</strong> Modifies the probability distribution itself</li>
+    <li><strong>Top-P:</strong> Filters which tokens are considered after probabilities are calculated</li>
+    <li><strong>Recommendation:</strong> Most AI providers suggest adjusting one OR the other, not both simultaneously</li>
+</ul>
+
+<h2>Top-K: Fixed Token Selection</h2>
+
+<h3>What is Top-K?</h3>
+<p>Top-K limits selection to the K most probable tokens, regardless of their cumulative probability. It's a simpler alternative to Top-P.</p>
+
+<h3>How Top-K Works</h3>
+<p>The model:</p>
+<ol>
+    <li>Identifies the K most probable tokens</li>
+    <li>Sets probability of all other tokens to zero</li>
+    <li>Renormalizes probabilities among the K tokens</li>
+    <li>Samples from this restricted set</li>
+</ol>
+
+<h3>Top-K Values and Effects</h3>
+<table>
+    <tr>
+        <th>Top-K Value</th>
+        <th>Behavior</th>
+        <th>Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">1</td>
+        <td>Deterministic (equivalent to Temperature 0)</td>
+        <td>Structured outputs, classification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">10-20</td>
+        <td>Limited vocabulary, consistent style</td>
+        <td>Technical content, formal writing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">40-50</td>
+        <td>Balanced vocabulary, natural variation</td>
+        <td>General purpose applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">100+</td>
+        <td>Broad vocabulary, high diversity</td>
+        <td>Creative writing, brainstorming</td>
+    </tr>
+</table>
+
+<h3>Top-K Limitations</h3>
+<ul>
+    <li><strong>Context Insensitive:</strong> Uses same K value regardless of probability distribution shape</li>
+    <li><strong>Potential Quality Issues:</strong> May include low-quality tokens when high-probability options are limited</li>
+    <li><strong>Less Popular:</strong> Top-P is generally preferred in modern implementations</li>
+</ul>
+
+<h2>Key Insights</h2>
+<ul>
+    <li>Temperature is the primary control for output randomness</li>
+    <li>Top-P provides dynamic, context-aware token filtering</li>
+    <li>Top-K offers simpler but less flexible control</li>
+    <li>These parameters work together but should be adjusted carefully</li>
+    <li>Start with one parameter and adjust incrementally</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

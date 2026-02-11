@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Optimizing for Claude 3.5 Sonnet</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Optimizing for Claude 3.5 Sonnet</h1>
+<div class="container">
+<h2>Optimizing RAG for Claude 3.5 Sonnet</h2>
+<p>Claude 3.5 Sonnet is Anthropic's most advanced model to date, offering significant improvements in reasoning, speed, and coding capabilities. To get the most out of your RAG pipeline with this model, you should leverage its specific strengths and new features.</p>
+
+<h3>Strength 1: High Recall in Large Contexts</h3>
+<p>Claude 3.5 Sonnet has been specifically benchmarked for its ability to find "needles in a haystack" across its entire 200k context window. This means you can be much more confident when providing many documents at once. You are less likely to experience the "lost in the middle" degradation found in other models.</p>
+
+<h3>Strength 2: Superior Instruction Following</h3>
+<p>Sonnet is extremely good at following complex, multi-layered instructions. This makes it the ideal model for:
+<ul>
+    <li><strong>Complex Citations:</strong> Asking for citations in specific JSON formats or with direct quotes.</li>
+    <li><strong>Multi-Step Reasoning:</strong> Handling RAG tasks that require multiple logical steps or tool calls.</li>
+    <li><strong>Negative Constraints:</strong> Strictly adhering to rules like "Use ONLY the provided documents" or "Do not mention specific competitors."</li>
+</ul></p>
+
+<h3>Optimizing with 'Artifacts'</h3>
+<p>If you are building a RAG application for developers or researchers, leverage the <strong>Artifacts</strong> feature. You can prompt Claude to output the retrieved information as a structured document, a piece of code, or a diagram.
+<blockquote>
+"Analyze these three architectural diagrams and provide a consolidated system design as a Mermaid.js diagram in an Artifact."
+</blockquote>
+This allows the user to interact with the RAG output in a dedicated, high-fidelity window separate from the chat.</p>
+
+<h3>Strength 3: Native Tool Use Efficiency</h3>
+<p>Claude 3.5 Sonnet is significantly faster and more accurate at generating tool calls than previous versions. It can handle more tools and more complex parameter schemas without getting confused. This makes it perfect for "Agentic RAG" systems that need to navigate diverse data sources.</p>
+
+<h3>Cost and Performance Management</h3>
+<p>Despite its power, Claude 3.5 Sonnet is priced competitively. To maximize your ROI:
+<ol>
+    <li><strong>Use Prompt Caching:</strong> As discussed, this is vital for long-context RAG.</li>
+    <li><strong>Batch Processing:</strong> For tasks like evaluating a large dataset of RAG outputs, use the <strong>Message Batches API</strong> to get a 50% discount on costs.</li>
+    <li><strong>Select the Right Model for the Task:</strong> While Sonnet is great for the final reasoning step, consider using the smaller and cheaper <strong>Claude 3 Haiku</strong> for simpler tasks like query expansion or initial document filtering.</li>
+</ol></p>
+
+<h3>Refining Your XML for Sonnet</h3>
+<p>Because Sonnet is so sensitive to structure, ensure your XML tags are perfect. Use nesting to show hierarchy:
+<blockquote>
+&lt;retrieved_knowledge&gt;<br/>
+&lt;category name="Security"&gt;<br/>
+&lt;doc id="1"&gt;...&lt;/doc&gt;<br/>
+&lt;/category&gt;<br/>
+&lt;/retrieved_knowledge&gt;
+</blockquote>
+Sonnet will leverage this hierarchy to provide much more structured and relevant answers.</p>
+
+<h3>Summary</h3>
+<p>Claude 3.5 Sonnet is a powerful engine for RAG. By understanding its specific capabilities—from high-recall context to native tool use and Artifacts—you can build retrieval systems that are not only more accurate but also more interactive and useful for your end users.</p>
+
+</div>
+</body>
+</html>

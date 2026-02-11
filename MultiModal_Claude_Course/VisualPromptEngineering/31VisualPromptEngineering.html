@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 3: Visual Prompt Engineering</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Visual Prompt Engineering Techniques</h1>
+
+<p>Just as text-based models require well-crafted prompts to perform optimally, multi-modal models like Claude benefit significantly from "Visual Prompt Engineering." This field involves techniques for presenting visual information and associated instructions in a way that maximizes the model's accuracy and reliability.</p>
+
+<h2>3.1 Optimizing Image Quality and Resolution</h2>
+<p>While Claude is robust, the quality of the input image directly impacts the results. Here are some key considerations:</p>
+<ul>
+    <li><strong>Resolution:</strong> Ensure the image is clear and that text or small details are legible to a human. Extremely low-resolution images may lead to hallucinations or missed details.</li>
+    <li><strong>Aspect Ratio:</strong> Avoid extreme aspect ratios (very long and thin) as they may be distorted during processing. Standard ratios like 4:3 or 16:9 work best.</li>
+    <li><strong>File Format:</strong> Use standard formats like JPEG, PNG, or WEBP. Ensure the file size is within the API limits (typically 5MB per image).</li>
+    <li><strong>Clutter:</strong> If you want Claude to focus on a specific part of a complex image, crop the image or use "visual cues" (see below).</li>
+</ul>
+
+<h2>3.2 Using Visual Cues: Highlighting and Redlining</h2>
+<p>One of the most effective techniques in visual prompt engineering is to modify the image to help the model "focus." This is often called "Redlining."</p>
+<ul>
+    <li><strong>Bounding Boxes:</strong> Draw a red box around an object you want Claude to identify or describe.</li>
+    <li><strong>Arrows and Pointers:</strong> Use arrows to point at specific parts of a diagram or a piece of text.</li>
+    <li><strong>Labels:</strong> Add text labels directly to the image to provide additional context for Claude.</li>
+</ul>
+<p>In your prompt, you can then refer to these cues: <em>"Look at the object inside the red box. What is its function?"</em> or <em>"Follow the arrow labeled 'Data Flow' and describe where it leads."</em></p>
+
+<h2>3.3 Few-shot Multi-modal Prompting</h2>
+<p>Similar to few-shot prompting in text, you can provide Claude with examples of image-answer pairs to guide its behavior. This is particularly useful for consistent formatting or specialized tasks.</p>
+<p><strong>Example Prompt Structure:</strong></p>
+<pre>
+User: [Image 1: A simple bar chart]
+User: Please extract the data from this chart.
+Claude: {"Q1": 10, "Q2": 20, "Q3": 15, "Q4": 25}
+
+User: [Image 2: A different bar chart]
+User: Please extract the data from this chart.
+Claude:
+</pre>
+<p>By providing the first example, you've "shown" Claude the exact JSON format you expect, making it much more likely to follow that format for the second image.</p>
+
+<h2>3.4 Chain of Thought for Vision</h2>
+<p>Encourage Claude to "think step-by-step" about what it sees. This reduces errors in complex tasks like counting objects or interpreting multi-step processes.</p>
+<p><em>"Analyze this architectural drawing. First, identify all the external walls. Then, find the main entrance. Finally, calculate the total number of windows on the south-facing side."</em></p>
+
+<p>By mastering these visual prompt engineering techniques, you can unlock much higher levels of performance and reliability from Claude's multi-modal capabilities.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

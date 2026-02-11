@@ -1,0 +1,406 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Dynamic Retrieval and Advanced Search Features</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Dynamic Retrieval and Advanced Search Features</h1>
+
+<h2>What is Dynamic Retrieval?</h2>
+<p><strong>Dynamic retrieval</strong> allows Gemini to autonomously decide whether to perform a search based on the query's characteristics. Instead of searching for every query, the model evaluates whether external information would improve the response quality.</p>
+
+<blockquote>
+<strong>Key Benefit:</strong> Dynamic retrieval optimizes both cost and latency by only searching when necessary, while still ensuring accuracy for queries that require current information.
+</blockquote>
+
+<h2>How Dynamic Retrieval Works</h2>
+<p>The model evaluates several factors to decide whether to search:</p>
+
+<table>
+    <tr>
+        <th>Factor</th>
+        <th>Evaluation</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Query Recency</td>
+        <td>Does the query ask about recent events?</td>
+        <td>"What happened in the 2024 Olympics?" → Search</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Knowledge Confidence</td>
+        <td>Is the model confident in its existing knowledge?</td>
+        <td>"Explain photosynthesis" → No search needed</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Factual Requirements</td>
+        <td>Does the query require verifiable facts?</td>
+        <td>"Current inflation rate" → Search</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Temporal Indicators</td>
+        <td>Does the query contain time-related keywords?</td>
+        <td>"Latest", "current", "today", "recent" → Search</td>
+    </tr>
+</table>
+
+<h2>Implementing Dynamic Retrieval</h2>
+<blockquote>
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+# Enable dynamic retrieval
+config = types.GenerateContentConfig(
+    tools=[types.Tool(google_search=types.GoogleSearch())],
+    # Dynamic retrieval is enabled by default when google_search is configured
+    # The model decides when to search
+)
+
+# Test with different query types
+queries = [
+    "What is the capital of France?",  # Static knowledge - may not search
+    "What is the current weather in Paris?",  # Real-time data - will search
+    "Explain how neural networks work",  # General knowledge - may not search
+    "What are the latest AI breakthroughs?"  # Recent events - will search
+]
+
+for query in queries:
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=query,
+        config=config
+    )
+    
+    metadata = response.candidates[0].grounding_metadata
+    searched = metadata is not None and len(metadata.grounding_chunks) > 0
+    
+    print(f"Query: {query}")
+    print(f"Search performed: {searched}")
+    if searched:
+        print(f"Sources: {len(metadata.grounding_chunks)}")
+    print()
+</blockquote>
+
+<h2>Configuring Dynamic Retrieval Behavior</h2>
+<p>You can influence dynamic retrieval through prompt engineering:</p>
+
+<blockquote>
+# Encourage searching with explicit instructions
+prompt_with_search_hint = """
+Based on the most current information available, what are the latest 
+developments in renewable energy technology?
+"""
+
+# Discourage searching for general knowledge
+prompt_without_search_hint = """
+Explain the basic principles of renewable energy technology.
+"""
+
+# Force search consideration with temporal keywords
+prompt_with_temporal = """
+What are today's top news stories about renewable energy?
+"""
+</blockquote>
+
+<h2>Monitoring Dynamic Retrieval Decisions</h2>
+<blockquote>
+class DynamicRetrievalAnalyzer:
+    """
+    Analyze when and why dynamic retrieval triggers searches.
+    """
+    def __init__(self):
+        self.queries = []
+    
+    def analyze_query(self, query, response):
+        """
+        Analyze whether search was performed and why.
+        """
+        metadata = response.candidates[0].grounding_metadata
+        searched = metadata is not None and metadata.grounding_chunks
+        
+        # Detect temporal keywords
+        temporal_keywords = ['latest', 'current', 'today', 'recent', 'now', 
+                            'this year', '2024', 'breaking']
+        has_temporal = any(keyword in query.lower() for keyword in temporal_keywords)
+        
+        # Detect factual queries
+        factual_keywords = ['what is', 'how much', 'when did', 'price', 
+                           'cost', 'rate', 'statistics']
+        has_factual = any(keyword in query.lower() for keyword in factual_keywords)
+        
+        analysis = {
+            'query': query,
+            'searched': searched,
+            'has_temporal_keywords': has_temporal,
+            'has_factual_keywords': has_factual,
+            'source_count': len(metadata.grounding_chunks) if searched else 0
+        }
+        
+        self.queries.append(analysis)
+        return analysis
+    
+    def get_search_rate(self):
+        """
+        Calculate percentage of queries that triggered searches.
+        """
+        if not self.queries:
+            return 0.0
+        
+        searched_count = sum(1 for q in self.queries if q['searched'])
+        return searched_count / len(self.queries)
+    
+    def get_insights(self):
+        """
+        Generate insights about search patterns.
+        """
+        if not self.queries:
+            return "No queries analyzed"
+        
+        total = len(self.queries)
+        searched = sum(1 for q in self.queries if q['searched'])
+        temporal_searched = sum(1 for q in self.queries 
+                               if q['has_temporal_keywords'] and q['searched'])
+        temporal_total = sum(1 for q in self.queries if q['has_temporal_keywords'])
+        
+        return {
+            'total_queries': total,
+            'searches_performed': searched,
+            'search_rate': searched / total,
+            'temporal_query_search_rate': temporal_searched / temporal_total if temporal_total > 0 else 0
+        }
+
+
+# Usage
+analyzer = DynamicRetrievalAnalyzer()
+client = genai.Client()
+
+test_queries = [
+    "What is machine learning?",
+    "What are the latest machine learning breakthroughs?",
+    "Explain the history of AI",
+    "What is the current state of AI regulation?",
+    "How do transformers work in NLP?"
+]
+
+for query in test_queries:
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=query,
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(google_search=types.GoogleSearch())]
+        )
+    )
+    
+    analysis = analyzer.analyze_query(query, response)
+    print(f"Query: {query}")
+    print(f"  Searched: {analysis['searched']}")
+    print(f"  Temporal keywords: {analysis['has_temporal_keywords']}")
+    print(f"  Sources: {analysis['source_count']}\n")
+
+insights = analyzer.get_insights()
+print(f"Overall search rate: {insights['search_rate']:.1%}")
+print(f"Temporal query search rate: {insights['temporal_query_search_rate']:.1%}")
+</blockquote>
+
+<h2>Advanced Search Customization</h2>
+<p>While Google Search grounding is largely automatic, you can optimize results through prompt engineering:</p>
+
+<h3>Technique 1: Specify Information Freshness</h3>
+<blockquote>
+# Request recent information explicitly
+prompt = """
+Using only information from the past 30 days, what are the major 
+developments in quantum computing?
+"""
+
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents=prompt,
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+</blockquote>
+
+<h3>Technique 2: Request Multiple Perspectives</h3>
+<blockquote>
+# Encourage diverse sources
+prompt = """
+What are different expert opinions on the future of electric vehicles? 
+Include perspectives from industry analysts, environmental groups, 
+and automotive manufacturers.
+"""
+
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents=prompt,
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+
+# Check source diversity
+metadata = response.candidates[0].grounding_metadata
+if metadata:
+    domains = set()
+    for chunk in metadata.grounding_chunks:
+        from urllib.parse import urlparse
+        domain = urlparse(chunk.web.uri).netloc
+        domains.add(domain)
+    
+    print(f"Sources from {len(domains)} different domains")
+</blockquote>
+
+<h3>Technique 3: Specify Source Types</h3>
+<blockquote>
+# Request specific types of sources
+prompt = """
+Based on peer-reviewed research and academic sources, what are the 
+health effects of intermittent fasting?
+"""
+
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents=prompt,
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+</blockquote>
+
+<h2>Search Result Quality Analysis</h2>
+<blockquote>
+def analyze_search_quality(metadata):
+    """
+    Analyze the quality and diversity of search results.
+    """
+    if not metadata or not metadata.grounding_chunks:
+        return {'quality': 'NO_RESULTS'}
+    
+    from urllib.parse import urlparse
+    from collections import Counter
+    
+    # Extract domains
+    domains = [urlparse(chunk.web.uri).netloc for chunk in metadata.grounding_chunks]
+    domain_counts = Counter(domains)
+    
+    # Assess domain diversity
+    unique_domains = len(domain_counts)
+    total_sources = len(metadata.grounding_chunks)
+    diversity_score = unique_domains / total_sources
+    
+    # Identify authoritative domains
+    authoritative_domains = [
+        '.gov', '.edu', '.org', 'wikipedia.org', 
+        'nature.com', 'science.org', 'ieee.org'
+    ]
+    
+    authoritative_count = sum(
+        1 for domain in domains 
+        if any(auth in domain for auth in authoritative_domains)
+    )
+    
+    # Calculate quality score
+    quality_score = (
+        (diversity_score * 0.4) +  # Diversity weight
+        (min(authoritative_count / total_sources, 1.0) * 0.6)  # Authority weight
+    )
+    
+    return {
+        'total_sources': total_sources,
+        'unique_domains': unique_domains,
+        'diversity_score': diversity_score,
+        'authoritative_sources': authoritative_count,
+        'quality_score': quality_score,
+        'top_domains': domain_counts.most_common(3)
+    }
+
+
+# Usage
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents='What are the health benefits of meditation?',
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+
+metadata = response.candidates[0].grounding_metadata
+quality = analyze_search_quality(metadata)
+
+print(f"Search Quality Analysis:")
+print(f"  Total Sources: {quality['total_sources']}")
+print(f"  Unique Domains: {quality['unique_domains']}")
+print(f"  Diversity Score: {quality['diversity_score']:.2f}")
+print(f"  Authoritative Sources: {quality['authoritative_sources']}")
+print(f"  Overall Quality: {quality['quality_score']:.2f}")
+print(f"\nTop Domains:")
+for domain, count in quality['top_domains']:
+    print(f"  {domain}: {count} sources")
+</blockquote>
+
+<h2>Optimizing for Different Use Cases</h2>
+<table>
+    <tr>
+        <th>Use Case</th>
+        <th>Optimization Strategy</th>
+        <th>Example Prompt Pattern</th>
+    </tr>
+    <tr>
+        <td class="rowheader">News Aggregation</td>
+        <td>Emphasize recency, request multiple sources</td>
+        <td>"What are today's top stories about [topic]?"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Research Synthesis</td>
+        <td>Request academic sources, specify depth</td>
+        <td>"Based on recent research, summarize findings on [topic]"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Product Research</td>
+        <td>Request specifications, comparisons, reviews</td>
+        <td>"Compare current specifications and prices for [products]"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Fact Verification</td>
+        <td>Request multiple authoritative sources</td>
+        <td>"Verify this claim using authoritative sources: [claim]"</td>
+    </tr>
+</table>
+
+<h2>Handling Search Limitations</h2>
+<p>Google Search grounding has limitations you should be aware of:</p>
+
+<ul>
+    <li><strong>Language Limitations:</strong> Search quality may vary for non-English queries</li>
+    <li><strong>Paywalled Content:</strong> Cannot access content behind paywalls</li>
+    <li><strong>Real-Time Constraints:</strong> Very recent information (last few minutes) may not be indexed</li>
+    <li><strong>Geographic Bias:</strong> Results may be influenced by geographic factors</li>
+    <li><strong>Search Ranking:</strong> Relies on Google's search ranking, which may not always prioritize the most accurate sources</li>
+</ul>
+
+<blockquote>
+<strong>Mitigation Strategy:</strong> For critical applications, combine Google Search grounding with enterprise data grounding to ensure comprehensive coverage and verify information from multiple sources.
+</blockquote>
+
+<h2>Best Practices for Dynamic Retrieval</h2>
+<ul>
+    <li><strong>Trust the Model:</strong> Dynamic retrieval is generally effective; avoid forcing searches unnecessarily</li>
+    <li><strong>Use Temporal Keywords:</strong> Include "latest", "current", "recent" when you need fresh information</li>
+    <li><strong>Monitor Search Patterns:</strong> Track when searches occur to understand model behavior</li>
+    <li><strong>Optimize Prompts:</strong> Clear, specific prompts lead to better search decisions</li>
+    <li><strong>Validate Quality:</strong> Check source diversity and authority for critical queries</li>
+    <li><strong>Cache Intelligently:</strong> Cache frequently asked questions with appropriate TTL</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

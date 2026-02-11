@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>OWASP Top 10 for LLM Applications</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>OWASP Top 10 for LLM Applications</h1>
+<div class="container">
+<h2>OWASP Top 10 for LLM Applications</h2>
+<p>The Open Web Application Security Project (OWASP) is a global non-profit organization dedicated to improving software security. Recognizing the unique challenges posed by Large Language Models, they have developed a "Top 10" list of the most critical security risks for LLM applications. This list is an essential resource for any developer or security professional working with AI.</p>
+
+<h3>The Critical Risks</h3>
+<p>Here are the top risks as identified by OWASP, many of which we have already explored in detail:</p>
+<ol>
+    <li><strong>LLM01: Prompt Injection:</strong> Both direct and indirect attacks that manipulate the LLM's behavior.</li>
+    <li><strong>LLM02: Insecure Output Handling:</strong> Failing to validate or sanitize LLM-generated content before using it in other systems (e.g., leading to XSS or SQL injection).</li>
+    <li><strong>LLM03: Training Data Poisoning:</strong> Malicious actors compromising the data used to train or fine-tune the model, leading to backdoors or biased behavior.</li>
+    <li><strong>LLM04: Model Denial of Service:</strong> Overwhelming the LLM with complex or massive requests, leading to high costs and service unavailability.</li>
+    <li><strong>LLM05: Supply Chain Vulnerabilities:</strong> Risks associated with third-party models, datasets, or plugins used in the application.</li>
+    <li><strong>LLM06: Sensitive Information Disclosure:</strong> The model accidentally revealing confidential data from its training set, system prompt, or user context.</li>
+    <li><strong>LLM07: Insecure Plugin Design:</strong> Vulnerabilities in the "tools" or "plugins" that the LLM is allowed to call.</li>
+    <li><strong>LLM08: Excessive Agency:</strong> Giving the LLM too much power or permission to act on the real world without human oversight.</li>
+    <li><strong>LLM09: Overreliance:</strong> Users or systems blindly trusting LLM output without verification, leading to errors or misinformation.</li>
+    <li><strong>LLM10: Model Theft:</strong> Attackers stealing the proprietary model architecture or weights through API exploitation.</li>
+</ol>
+
+<h3>Deep Dive: Excessive Agency (LLM08)</h3>
+<p>Excessive Agency occurs when an LLM is given too much authority to perform actions. For example, if a personal assistant AI has the power to "delete all files" in a user's cloud storage. A successful prompt injection could then trigger this action. The solution is the "Principle of Least Privilege"—only give the AI the minimum permissions it needs to do its job.</p>
+
+<h3>Deep Dive: Insecure Output Handling (LLM02)</h3>
+<p>This risk highlights that the LLM's response is itself "untrusted data." If an LLM generates a piece of HTML and your application displays it without sanitization, an attacker could use prompt injection to perform a Cross-Site Scripting (XSS) attack on the end user. Always treat LLM output as if it came from a malicious user.</p>
+
+<h3>Using the OWASP Top 10 as a Checklist</h3>
+<p>Developers should use this list as a security checklist during the design, development, and testing phases of their LLM applications. For every feature, ask: "How does this feature relate to the OWASP Top 10? What defenses have we put in place for each risk?"</p>
+
+<h3>The Evolving Landscape</h3>
+<p>The OWASP list is not static. As LLM technology and attack patterns evolve, the list is updated. Staying informed about the latest version of the OWASP Top 10 for LLMs is a key part of maintaining a strong security posture.</p>
+
+<h3>Practical Exercise: Risk Assessment</h3>
+<p>Select an LLM-powered feature (e.g., an automated email responder or a code generation tool). Perform a quick risk assessment using the OWASP Top 10. Which of the ten risks are most relevant to this feature? What specific steps would you take to mitigate them?</p>
+
+<h3>The Goal: Building Trust in AI</h3>
+<p>By following the guidelines set forth by organizations like OWASP, we can build AI systems that are not only powerful but also trustworthy and secure. Security is not an "add-on" but a fundamental part of responsible AI development.</p>
+
+<p>In conclusion, the OWASP Top 10 for LLMs provides a clear and actionable framework for understanding and mitigating the most critical AI security risks. Mastering these concepts is essential for anyone serious about building professional-grade LLM applications.</p>
+
+</div>
+</body>
+</html>

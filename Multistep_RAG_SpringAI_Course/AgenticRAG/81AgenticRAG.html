@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 8: Agentic RAG with Spring AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 8: Agentic RAG and Tool Use in Spring AI</h1>
+
+<p>Agentic RAG represents a shift from a linear "Retrieve -> Generate" pipeline to an iterative process where an AI agent can decide what to search for, evaluate the results, and even decide when it has enough information to answer.</p>
+
+<h2>8.1 What is an AI Agent in Spring AI?</h2>
+<p>In Spring AI, an agent is typically implemented using a <code>ChatClient</code> that is configured with access to specific "Tools" (functions) and can use its reasoning capabilities to call those tools in a loop.</p>
+
+<h2>8.2 Tool Use (Function Calling)</h2>
+<p>The core of an agentic pipeline is tool use. You can define Java methods as tools and make them available to the LLM.
+<div class="code-block">
+<pre><code>public class SearchTools {
+    @Bean
+    @Description("Search the internal documentation for information about a specific product.")
+    public Function&lt;SearchQuery, String&gt; internalSearch() {
+        return query -> {
+            // Logic to call the vector store or a traditional search engine
+            return "Product X has feature Y...";
+        };
+    }
+}</code></pre>
+</div>
+<p>When the agent needs information, it "calls" this function, gets the result, and then continues its reasoning process.</p>
+
+<h2>8.3 The "Reasoning Loop" (ReAct)</h2>
+<p>Agentic RAG often follows the "ReAct" (Reason + Act) pattern:
+<ol>
+    <li><strong>Thought:</strong> "I need to find out about the pricing of Product X."</li>
+    <li><strong>Action:</strong> Call the <code>internalSearch</code> tool with "Product X pricing".</li>
+    <li><strong>Observation:</strong> "The search returned $100 per month."</li>
+    <li><strong>Thought:</strong> "Now I have the pricing. I can answer the user's question."</li>
+    <li><strong>Final Answer:</strong> "Product X costs $100 per month."</li>
+</ol></p>
+
+<h2>8.4 Using Advisors for Memory and Context</h2>
+<p>Spring AI's <code>Advisor</code> interface is perfect for building agents. Advisors can intercept the prompt and the response to add memory (<code>MessageChatMemoryAdvisor</code>) or context (<code>QuestionAnswerAdvisor</code>).
+<div class="code-block">
+<pre><code>ChatClient agent = ChatClient.builder(chatModel)
+    .defaultAdvisors(new MessageChatMemoryAdvisor(memory))
+    .build();</code></pre>
+</div></p>
+
+<h2>8.5 Challenges of Agentic RAG</h2>
+<ul>
+    <li><strong>Non-determinism:</strong> Agents may take different paths to an answer every time.</li>
+    <li><strong>Latency:</strong> Multiple rounds of reasoning and tool calls take time.</li>
+    <li><strong>Cost:</strong> More LLM calls mean higher token usage.</li>
+    <li><strong>Safety:</strong> Ensuring the agent doesn't call tools with unintended parameters or access unauthorized data.</li>
+</ul>
+
+<p>Despite these challenges, Agentic RAG is much more powerful than static pipelines, especially for complex, multi-step queries where the path to the answer isn't known in advance.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Engineering and Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Engineering and Optimization</h1>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand the principles and importance of effective prompt engineering</li>
+    <li>Master various prompting techniques for different use cases</li>
+    <li>Learn how to optimize prompts for quality, consistency, and cost</li>
+    <li>Apply structured approaches to prompt design and iteration</li>
+</ul>
+
+<h3>Understanding Prompt Engineering</h3>
+
+<p>Prompt engineering is the practice of designing and refining inputs to foundation models to elicit desired outputs. Unlike traditional programming where logic is explicitly coded, working with large language models requires communicating intent through natural language instructions. The quality, structure, and specificity of these instructions—the prompts—directly determine the usefulness and accuracy of model responses.</p>
+
+<p>Effective prompt engineering bridges the gap between human intent and machine understanding. While foundation models possess vast knowledge and capabilities, accessing these capabilities requires precise communication. A well-crafted prompt can transform a mediocre response into an exceptional one, making prompt engineering a critical skill for anyone building AI-powered applications.</p>
+
+<h3>Core Principles of Effective Prompts</h3>
+
+<h4>1. Clarity and Specificity</h4>
+<p>Ambiguous prompts yield inconsistent results. Clearly articulate what you want, including format, tone, length, and any constraints.</p>
+
+<p><strong>Weak Prompt:</strong> "Tell me about databases."</p>
+<p><strong>Strong Prompt:</strong> "Explain the differences between relational and NoSQL databases in 3 paragraphs, focusing on use cases, scalability, and data consistency. Use technical language appropriate for software engineers."</p>
+
+<h4>2. Context Provision</h4>
+<p>Provide relevant background information that helps the model understand the scenario and generate appropriate responses.</p>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+You are a customer service representative for a cloud computing company. A customer is experiencing issues with their database connection timing out after 30 seconds. They are using PostgreSQL on AWS RDS with default settings. Provide a troubleshooting guide with 5 specific steps to diagnose and resolve this issue.
+</blockquote>
+
+<h4>3. Role Assignment</h4>
+<p>Assigning a specific role or persona to the model influences tone, expertise level, and response style.</p>
+
+<p><strong>Examples:</strong></p>
+<ul>
+    <li>"You are an experienced DevOps engineer specializing in Kubernetes..."</li>
+    <li>"You are a patient teacher explaining concepts to beginners..."</li>
+    <li>"You are a technical writer creating API documentation..."</li>
+</ul>
+
+<h4>4. Output Format Specification</h4>
+<p>Explicitly define the desired output structure to ensure consistency and parsability.</p>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+Analyze the following code for security vulnerabilities. Provide your response in JSON format:
+{
+  "vulnerabilities": [
+    {
+      "type": "string",
+      "severity": "Critical|High|Medium|Low",
+      "description": "string",
+      "recommendation": "string"
+    }
+  ]
+}
+</blockquote>
+
+<h3>Advanced Prompting Techniques</h3>
+
+<h4>1. Few-Shot Learning</h4>
+<p>Provide examples of desired input-output pairs to demonstrate the pattern you want the model to follow. This technique is particularly effective for tasks requiring specific formatting or style.</p>
+
+<p><strong>Example: Sentiment Classification</strong></p>
+<blockquote>
+Classify the sentiment of customer reviews as Positive, Negative, or Neutral.
+
+Examples:
+Review: "This product exceeded my expectations! Fast shipping and great quality."
+Sentiment: Positive
+
+Review: "Terrible experience. The item arrived damaged and customer service was unhelpful."
+Sentiment: Negative
+
+Review: "The product works as described. Nothing special but does the job."
+Sentiment: Neutral
+
+Now classify this review:
+Review: "I've been using this for a week and it's been reliable so far."
+Sentiment:
+</blockquote>
+
+<h4>2. Chain-of-Thought Prompting</h4>
+<p>Encourage the model to show its reasoning process step-by-step, improving accuracy for complex problems requiring logical reasoning.</p>
+
+<p><strong>Example: Problem Solving</strong></p>
+<blockquote>
+A company has 150 employees. They want to migrate their on-premises infrastructure to AWS. The migration will take 6 months and requires 3 dedicated engineers. Each engineer costs $120,000 annually. AWS infrastructure will cost $15,000 monthly. Calculate the total first-year cost of migration including both engineer salaries and AWS costs. Show your step-by-step reasoning.
+</blockquote>
+
+<h4>3. Instruction Decomposition</h4>
+<p>Break complex tasks into sequential steps, guiding the model through a structured process.</p>
+
+<p><strong>Example: Code Review</strong></p>
+<blockquote>
+Review the following Python function following these steps:
+1. First, explain what the function does in plain English
+2. Identify any bugs or logical errors
+3. Assess the code's efficiency and suggest optimizations
+4. Check for security vulnerabilities
+5. Provide a refactored version with improvements
+
+[Code to review]
+</blockquote>
+
+<h4>4. Constraint Specification</h4>
+<p>Define explicit boundaries and limitations to prevent unwanted behaviors or outputs.</p>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+Generate a product description for a wireless keyboard. 
+Constraints:
+- Maximum 150 words
+- Do not mention competitor brands
+- Focus on professional use cases
+- Use active voice
+- Include exactly 3 key features
+- Maintain a professional, not promotional, tone
+</blockquote>
+
+<h4>5. Iterative Refinement</h4>
+<p>Use multi-turn conversations to progressively refine outputs, building on previous responses.</p>
+
+<p><strong>Example Flow:</strong></p>
+<blockquote>
+Turn 1: "Create an outline for a technical blog post about microservices architecture."
+Turn 2: "Expand section 3 of the outline with more detail about service communication patterns."
+Turn 3: "Now write the introduction paragraph based on this outline, targeting intermediate developers."
+</blockquote>
+
+<h3>Prompt Optimization Strategies</h3>
+
+<h4>Token Efficiency</h4>
+<p>Minimize token usage without sacrificing clarity to reduce costs and latency:</p>
+
+<ul>
+    <li><strong>Remove Redundancy:</strong> Eliminate repetitive phrases and unnecessary words</li>
+    <li><strong>Use Abbreviations:</strong> Where context is clear, use concise terminology</li>
+    <li><strong>Structured Data:</strong> Use JSON or tables instead of verbose descriptions</li>
+    <li><strong>Reference Previous Context:</strong> In multi-turn conversations, refer to earlier messages rather than repeating information</li>
+</ul>
+
+<p><strong>Inefficient Prompt (127 tokens):</strong></p>
+<blockquote>
+I would like you to please analyze the following customer feedback that we received from our users and provide me with a comprehensive summary that includes the main themes, the overall sentiment, and any actionable insights that our product team should consider implementing in future updates.
+</blockquote>
+
+<p><strong>Optimized Prompt (43 tokens):</strong></p>
+<blockquote>
+Analyze this customer feedback. Provide: 1) Main themes, 2) Overall sentiment, 3) Actionable insights for product team.
+</blockquote>
+
+<h4>Temperature and Parameter Tuning</h4>
+<p>Adjust model parameters based on task requirements:</p>
+
+<table>
+    <tr>
+        <th>Task Type</th>
+        <th>Temperature</th>
+        <th>Rationale</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Factual Q&A, Data Extraction</td>
+        <td>0.0 - 0.3</td>
+        <td>Deterministic, consistent outputs for factual accuracy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Code Generation, Technical Writing</td>
+        <td>0.3 - 0.5</td>
+        <td>Slight variation while maintaining correctness</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Content Creation, Summarization</td>
+        <td>0.5 - 0.7</td>
+        <td>Balanced creativity and coherence</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Creative Writing, Brainstorming</td>
+        <td>0.7 - 1.0</td>
+        <td>Maximum diversity and creativity</td>
+    </tr>
+</table>
+
+<h4>System Prompts vs. User Prompts</h4>
+<p>Many models support system prompts (persistent instructions) separate from user prompts (specific requests). Use system prompts for:</p>
+
+<ul>
+    <li>Role definition and behavioral guidelines</li>
+    <li>Output format specifications</li>
+    <li>Constraints and boundaries</li>
+    <li>Tone and style preferences</li>
+</ul>
+
+<p><strong>Example Structure:</strong></p>
+<blockquote>
+System Prompt:
+"You are a technical documentation assistant. Always provide clear, concise explanations using active voice. Format code examples with proper syntax highlighting. Include practical examples for each concept. Never make assumptions about user knowledge—explain technical terms."
+
+User Prompt:
+"Explain how to implement authentication in a REST API."
+</blockquote>
+
+<h3>Domain-Specific Prompting Patterns</h3>
+
+<h4>Code Generation</h4>
+<blockquote>
+Generate a Python function that [specific functionality]. Requirements:
+- Use type hints
+- Include docstring with parameters and return value
+- Handle edge cases: [list specific cases]
+- Follow PEP 8 style guidelines
+- Include 2-3 example usages
+</blockquote>
+
+<h4>Data Analysis</h4>
+<blockquote>
+Analyze the following dataset summary:
+[Data description]
+
+Provide:
+1. Key statistical insights (mean, median, outliers)
+2. Identified trends or patterns
+3. Potential data quality issues
+4. Recommendations for further analysis
+
+Format as a structured report with sections.
+</blockquote>
+
+<h4>Content Summarization</h4>
+<blockquote>
+Summarize the following article in 3 bullet points. Each bullet should:
+- Be 1-2 sentences maximum
+- Focus on actionable insights
+- Avoid generic statements
+- Use specific data points when available
+
+[Article text]
+</blockquote>
+
+<h4>Question Answering with Citations</h4>
+<blockquote>
+Answer the following question based solely on the provided context. If the answer is not in the context, respond with "Information not available in provided context."
+
+Context:
+[Relevant documents or data]
+
+Question: [User question]
+
+Provide your answer with specific references to the context (e.g., "According to section 2...").
+</blockquote>
+
+<h3>Testing and Validation</h3>
+
+<h4>Prompt Testing Framework</h4>
+<p>Systematically evaluate prompt effectiveness:</p>
+
+<ol>
+    <li><strong>Define Success Criteria:</strong> Establish measurable metrics (accuracy, format compliance, tone, length)</li>
+    <li><strong>Create Test Cases:</strong> Develop diverse examples covering edge cases and typical scenarios</li>
+    <li><strong>Baseline Testing:</strong> Test initial prompt version across all test cases</li>
+    <li><strong>Iterative Refinement:</strong> Modify prompt based on failures and retest</li>
+    <li><strong>A/B Comparison:</strong> Compare multiple prompt variations to identify the best performer</li>
+    <li><strong>Production Monitoring:</strong> Track real-world performance and iterate based on user feedback</li>
+</ol>
+
+<h4>Common Prompt Failures and Solutions</h4>
+
+<table>
+    <tr>
+        <th>Problem</th>
+        <th>Cause</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Inconsistent Outputs</td>
+        <td>Ambiguous instructions, high temperature</td>
+        <td>Add specificity, lower temperature, provide examples</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Incorrect Format</td>
+        <td>Vague format specification</td>
+        <td>Provide explicit format template or schema</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hallucinations</td>
+        <td>Insufficient context, model making assumptions</td>
+        <td>Provide complete context, instruct to acknowledge uncertainty</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Verbose Responses</td>
+        <td>No length constraints</td>
+        <td>Specify word/sentence limits, use max_tokens parameter</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Off-Topic Responses</td>
+        <td>Unclear task definition</td>
+        <td>Clarify objective, add constraints, use system prompts</td>
+    </tr>
+</table>
+
+<h3>Prompt Libraries and Reusability</h3>
+
+<h4>Building a Prompt Library</h4>
+<p>Maintain a repository of tested, effective prompts for common tasks:</p>
+
+<ul>
+    <li><strong>Categorization:</strong> Organize by use case (summarization, Q&A, generation, analysis)</li>
+    <li><strong>Versioning:</strong> Track prompt iterations and performance metrics</li>
+    <li><strong>Parameterization:</strong> Create templates with variables for customization</li>
+    <li><strong>Documentation:</strong> Include usage guidelines, expected outputs, and limitations</li>
+</ul>
+
+<p><strong>Example Template:</strong></p>
+<blockquote>
+{
+  "name": "technical_documentation_generator",
+  "version": "2.1",
+  "description": "Generates API documentation from code",
+  "template": "Generate API documentation for the following {language} {component_type}. Include: description, parameters with types, return value, example usage, and potential errors. Format as Markdown.\n\n{code}",
+  "parameters": {
+    "language": "string",
+    "component_type": "string (function|class|endpoint)",
+    "code": "string"
+  },
+  "model_config": {
+    "temperature": 0.3,
+    "max_tokens": 1024
+  }
+}
+</blockquote>
+
+<h3>Ethical Considerations in Prompt Engineering</h3>
+
+<h4>Bias Mitigation</h4>
+<ul>
+    <li>Avoid prompts that reinforce stereotypes or biases</li>
+    <li>Use inclusive language and diverse examples</li>
+    <li>Test prompts across different demographic contexts</li>
+    <li>Explicitly instruct models to provide balanced perspectives</li>
+</ul>
+
+<h4>Transparency</h4>
+<ul>
+    <li>Clearly indicate AI-generated content to users</li>
+    <li>Avoid prompts designed to deceive or manipulate</li>
+    <li>Instruct models to acknowledge limitations and uncertainty</li>
+</ul>
+
+<h4>Safety</h4>
+<ul>
+    <li>Implement prompts that prevent generation of harmful content</li>
+    <li>Include safety guidelines in system prompts</li>
+    <li>Use Bedrock Guardrails for additional content filtering</li>
+</ul>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Effective prompt engineering requires clarity, specificity, and appropriate context provision</li>
+    <li>Advanced techniques like few-shot learning and chain-of-thought improve output quality for complex tasks</li>
+    <li>Optimize prompts for token efficiency to reduce costs while maintaining effectiveness</li>
+    <li>Adjust temperature and other parameters based on task requirements (factual vs. creative)</li>
+    <li>Use system prompts for persistent instructions and user prompts for specific requests</li>
+    <li>Systematically test and iterate on prompts using defined success criteria</li>
+    <li>Build reusable prompt libraries with templates and documentation for consistency</li>
+    <li>Consider ethical implications including bias, transparency, and safety in prompt design</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 7: Advanced Retrieval Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 7: Advanced Retrieval Strategies in Spring AI</h1>
+
+<p>Basic RAG often fails when the user's query is poorly phrased or when the relevant information is scattered across a document. Advanced retrieval strategies help overcome these limitations by transforming the query or the document structure before the search begins.</p>
+
+<h2>7.1 HyDE: Hypothetical Document Embeddings</h2>
+<p>HyDE is a powerful technique that uses an LLM to generate a "hypothetical" answer to the user's query. Instead of embedding the user's original query (which might be a short, ambiguous question), we embed the hypothetical answer. This works because the hypothetical answer is more likely to be semantically similar to the actual documents in our vector store than the question itself.</p>
+
+<h3>Implementing HyDE with Spring AI</h3>
+<div class="code-block">
+<pre><code>@Service
+public class HydeRagService {
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+
+    public String hydeSearch(String userQuery) {
+        // 1. Generate hypothetical answer
+        String hypotheticalAnswer = chatClient.prompt()
+            .user("Please write a detailed, hypothetical answer to the following question: " + userQuery)
+            .call()
+            .content();
+
+        // 2. Search using the hypothetical answer's embedding
+        List&lt;Document&gt; results = vectorStore.similaritySearch(
+            SearchRequest.query(hypotheticalAnswer).withTopK(5)
+        );
+
+        // 3. Continue with standard RAG generation...
+        return results.get(0).getContent();
+    }
+}</code></pre>
+</div>
+
+<h2>7.2 Parent Document Retrieval</h2>
+<p>When we chunk a document, we often lose the surrounding context. Parent Document Retrieval solves this by indexing small "child" chunks (to improve retrieval accuracy) but returning the larger "parent" document (to provide better context for generation).</p>
+
+<h3>Workflow in Spring AI</h3>
+<ol>
+    <li><strong>Ingestion:</strong> Split the document into large Parent chunks and then split those further into small Child chunks. Store the child chunks in the vector store with a metadata reference to their Parent ID.</li>
+    <li><strong>Retrieval:</strong> Search for the most relevant Child chunks.</li>
+    <li><strong>Expansion:</strong> Use the Parent IDs from the retrieved child chunks to fetch the full Parent documents from a separate document store (or the database).</li>
+    <li><strong>Generation:</strong> Provide the full parent context to the LLM.</li>
+</ol>
+
+<h2>7.3 Multi-query Retrieval</h2>
+<p>Instead of just one query, we ask an LLM to generate 3-5 different versions of the user's question. We perform a vector search for each version and then combine the results. This helps capture different nuances and increases the chance of finding the most relevant information.</p>
+
+<p>By implementing these advanced strategies, you can significantly improve the robustness and accuracy of your Spring AI RAG applications, making them capable of handling even the most complex and ambiguous user queries.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

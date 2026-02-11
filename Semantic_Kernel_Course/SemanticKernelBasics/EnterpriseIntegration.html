@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Enterprise Integration with Semantic Kernel</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Enterprise Integration: Bringing AI to the Core Business</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>Building an AI agent is one thing; integrating it into a complex enterprise environment is another. Enterprise applications require strict security, high scalability, and the ability to interact with legacy systems. Semantic Kernel is designed with these requirements in mind. In this module, we will explore how to connect SK to enterprise identity systems, data warehouses, and existing microservices.</p>
+
+<h2>2. Secure Identity and Authentication</h2>
+<p>In an enterprise, your AI agent shouldn't have a "god-key" to everything. It should operate on behalf of the logged-in user.
+    <ul>
+        <li><strong>On-Behalf-Of (OBO) Flow:</strong> Using OAuth 2.0 to pass the user's token through the kernel to the native plugins. This ensures the agent can only access the files and data that the user is authorized to see.</li>
+        <li><strong>Managed Identities:</strong> Using Azure Managed Identities or AWS IAM Roles to securely connect the Kernel to cloud services without hardcoding any secrets in the application code.</li>
+    </ul>
+</p>
+
+<h2>3. Connecting to the Data Estate</h2>
+<p>AI agents are only as good as the data they can access.
+    <ul>
+        <li><strong>SQL Search Plugin:</strong> Giving the agent the ability to query relational databases (like SQL Server or PostgreSQL). <em>Caution:</em> Use read-only accounts and parameterized queries to prevent SQL injection.</li>
+        <li><strong>Microsoft Graph Integration:</strong> Using the Semantic Kernel Graph Plugin to allow agents to read emails, check calendars, and interact with Teams messages.</li>
+        <li><strong>Vectorizing the Enterprise:</strong> Using scheduled pipelines to convert your corporate documents (SharePoint, Confluence, Jira) into embeddings and storing them in an enterprise vector store like Azure AI Search.</li>
+    </ul>
+</p>
+
+<h2>4. Scaling with Containerization</h2>
+<p>For production, Semantic Kernel applications are typically deployed as Docker containers.
+    <ul>
+        <li><strong>Azure Container Apps / AWS Fargate:</strong> Serverless container platforms that allow your agents to scale based on demand.</li>
+        <li><strong>Sidecar Pattern:</strong> Running the Kernel as a "sidecar" container alongside your main application. The app handles the UI, and the Kernel handles the AI "brain."</li>
+    </ul>
+</p>
+
+<h2>5. Governance and Policy Enforcement</h2>
+<p>Enterprises need to control how AI is used.
+    <ul>
+        <li><strong>Kernel Filters for Policy:</strong> Implementing filters that check every prompt against a list of "Prohibited Topics" (e.g., "Don't discuss legal advice" or "Don't share internal project names").</li>
+        <li><strong>Cost Allocation:</strong> Using the Kernel's telemetry to attribute token costs back to specific business departments or projects.</li>
+    </ul>
+</p>
+
+<h2>6. Case Study: The AI Financial Analyst</h2>
+<p>Imagine a multi-agent system built for a bank:
+    <ol>
+        <li><strong>The Client Agent:</strong> Authenticates the user via Active Directory and retrieves their portfolio data from a secure API.</li>
+        <li><strong>The Market Agent:</strong> Pulls real-time stock data from Bloomberg or Refinitiv.</li>
+        <li><strong>The Compliance Agent:</strong> Checks the proposed advice against internal banking regulations using a specialized Semantic Plugin.</li>
+        <li><strong>The Orchestrator:</strong> Combines these inputs into a personalized financial report.</li>
+    </ol>
+</p>
+
+<h2>Conclusion</h2>
+<p>Enterprise integration is where AI provides its greatest value. By following professional engineering standards for security, data access, and scalability, you can turn a experimental chatbot into a core part of your organization's digital transformation. In our final modules, we'll wrap up the course and prepare you for the final assessment.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

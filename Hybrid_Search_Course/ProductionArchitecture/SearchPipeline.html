@@ -1,0 +1,263 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Search Pipeline Architecture</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production Search Pipeline Architecture</h1>
+
+<h2>Complete Search System Overview</h2>
+<p>A production-grade hybrid search system consists of three main pipelines that work together to deliver high-quality search results:</p>
+
+<table>
+    <tr><th>Pipeline</th><th>Purpose</th><th>Key Components</th><th>Performance Target</th></tr>
+    <tr>
+        <td class="rowheader">Indexing</td>
+        <td>Prepare documents for search</td>
+        <td>Ingestion, chunking, embedding, metadata extraction</td>
+        <td>Throughput: 1000+ docs/sec</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Query</td>
+        <td>Process queries and retrieve results</td>
+        <td>Query understanding, hybrid search, fusion, re-ranking</td>
+        <td>Latency: &lt;200ms p95</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Response</td>
+        <td>Format and present results</td>
+        <td>RAG synthesis, source attribution, highlighting</td>
+        <td>Latency: &lt;500ms p95</td>
+    </tr>
+</table>
+
+<h2>Indexing Pipeline: Document Preparation</h2>
+<p>The indexing pipeline transforms raw documents into searchable content with both keyword indices and vector embeddings:</p>
+
+<div class="code-block">
+<pre><code>from sentence_transformers import SentenceTransformer
+from elasticsearch import Elasticsearch
+
+class IndexingPipeline:
+    def __init__(self):
+        self.es = Elasticsearch(["http://localhost:9200"])
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+    def process_document(self, doc_id: str, content: str, metadata: dict):
+        '''Complete indexing pipeline for a single document.'''
+        
+        # Step 1: Chunk document for better retrieval
+        chunks = self.chunk_document(content, chunk_size=512, overlap=50)
+        
+        # Step 2: Generate embeddings for each chunk
+        embeddings = self.embedding_model.encode(chunks)
+        
+        # Step 3: Extract metadata with LLM
+        enhanced_metadata = self.extract_metadata(content, metadata)
+        
+        # Step 4: Index each chunk
+        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            chunk_doc = {
+                "doc_id": doc_id,
+                "chunk_id": i,
+                "content": chunk,
+                "content_embedding": embedding.tolist(),
+                "metadata": enhanced_metadata,
+                "indexed_at": datetime.now().isoformat()
+            }
+            
+            self.es.index(
+                index="documents",
+                id=f"{doc_id}_chunk_{i}",
+                body=chunk_doc
+            )
+    
+    def chunk_document(self, content: str, chunk_size: int, overlap: int):
+        '''Split document into overlapping chunks.'''
+        words = content.split()
+        chunks = []
+        
+        for i in range(0, len(words), chunk_size - overlap):
+            chunk = ' '.join(words[i:i + chunk_size])
+            if len(chunk) > 50:  # Minimum chunk size
+                chunks.append(chunk)
+        
+        return chunks
+    
+    def extract_metadata(self, content: str, base_metadata: dict):
+        '''Use LLM to extract additional metadata.'''
+        # Call LLM to extract topics, entities, sentiment, etc.
+        # (Implementation similar to previous examples)
+        return {**base_metadata, "ai_generated_tags": ["tag1", "tag2"]}</code></pre>
+</div>
+
+<h3>Chunking Strategies</h3>
+<table>
+    <tr><th>Strategy</th><th>Description</th><th>Best For</th><th>Chunk Size</th></tr>
+    <tr>
+        <td class="rowheader">Fixed Size</td>
+        <td>Split by character or token count</td>
+        <td>General purpose, consistent performance</td>
+        <td>256-512 tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Semantic</td>
+        <td>Split at natural boundaries (paragraphs, sections)</td>
+        <td>Long-form content, articles</td>
+        <td>Variable</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Sliding Window</td>
+        <td>Overlapping chunks to preserve context</td>
+        <td>When context spans boundaries</td>
+        <td>512 tokens, 50 token overlap</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hierarchical</td>
+        <td>Multiple granularities (sentence, paragraph, section)</td>
+        <td>Complex documents with structure</td>
+        <td>Multi-level</td>
+    </tr>
+</table>
+
+<h2>Query Pipeline: Real-Time Search</h2>
+<p>The query pipeline processes user queries through multiple stages to deliver the best results:</p>
+
+<div class="code-block">
+<pre><code>class QueryPipeline:
+    def __init__(self):
+        self.es = Elasticsearch(["http://localhost:9200"])
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-12-v2')
+        
+    def search(self, user_query: str, top_k: int = 10):
+        '''Complete query pipeline with all optimizations.'''
+        
+        # Stage 1: Query understanding
+        parsed_query = self.understand_query(user_query)
+        
+        # Stage 2: Multi-query expansion
+        queries = [user_query] + parsed_query.get("expanded_queries", [])
+        
+        # Stage 3: Hybrid search for each query variation
+        all_results = []
+        for query in queries[:3]:  # Limit to 3 variations
+            query_embedding = self.embedding_model.encode(query)
+            
+            # BM25 search
+            bm25_results = self.bm25_search(query, top_k=20)
+            
+            # Vector search
+            vector_results = self.vector_search(query_embedding, top_k=20)
+            
+            all_results.extend([bm25_results, vector_results])
+        
+        # Stage 4: RRF fusion
+        fused_results = self.reciprocal_rank_fusion(all_results)
+        
+        # Stage 5: Apply filters from query understanding
+        filtered_results = self.apply_filters(
+            fused_results[:50],
+            parsed_query.get("filters", {})
+        )
+        
+        # Stage 6: Re-rank top candidates
+        top_candidates = filtered_results[:20]
+        reranked = self.rerank(user_query, top_candidates)
+        
+        return reranked[:top_k]
+    
+    def bm25_search(self, query: str, top_k: int):
+        '''BM25 keyword search.'''
+        response = self.es.search(
+            index="documents",
+            body={
+                "query": {"match": {"content": query}},
+                "size": top_k
+            }
+        )
+        return [hit["_id"] for hit in response["hits"]["hits"]]
+    
+    def vector_search(self, query_embedding, top_k: int):
+        '''Vector similarity search.'''
+        response = self.es.search(
+            index="documents",
+            body={
+                "knn": {
+                    "field": "content_embedding",
+                    "query_vector": query_embedding.tolist(),
+                    "k": top_k,
+                    "num_candidates": 100
+                }
+            }
+        )
+        return [hit["_id"] for hit in response["hits"]["hits"]]</code></pre>
+</div>
+
+<h2>Performance Optimization Techniques</h2>
+<ul>
+    <li><strong>Caching:</strong> Cache query embeddings and frequent query results (Redis, Memcached)</li>
+    <li><strong>Batch Processing:</strong> Process multiple queries together for better GPU utilization</li>
+    <li><strong>Async Operations:</strong> Use async/await for parallel search execution</li>
+    <li><strong>Index Optimization:</strong> Use index replicas for read scaling, optimize shard count</li>
+    <li><strong>Model Optimization:</strong> Use quantized models (int8) for faster inference</li>
+    <li><strong>Early Termination:</strong> Stop search when confidence threshold is met</li>
+</ul>
+
+<h2>Monitoring and Observability</h2>
+<p>Production search systems require comprehensive monitoring:</p>
+
+<table>
+    <tr><th>Metric Category</th><th>Key Metrics</th><th>Target</th></tr>
+    <tr>
+        <td class="rowheader">Latency</td>
+        <td>p50, p95, p99 query latency</td>
+        <td>p95 &lt; 200ms</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Quality</td>
+        <td>Click-through rate, MRR, NDCG</td>
+        <td>CTR &gt; 40%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Availability</td>
+        <td>Uptime, error rate</td>
+        <td>99.9% uptime</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost</td>
+        <td>Queries per dollar, compute utilization</td>
+        <td>Varies by scale</td>
+    </tr>
+</table>
+
+<div class="code-block">
+<pre><code>import time
+from prometheus_client import Histogram, Counter
+
+# Define metrics
+search_latency = Histogram('search_latency_seconds', 'Search query latency')
+search_errors = Counter('search_errors_total', 'Total search errors')
+
+def monitored_search(query: str):
+    '''Search with monitoring.'''
+    start_time = time.time()
+    
+    try:
+        results = query_pipeline.search(query)
+        search_latency.observe(time.time() - start_time)
+        return results
+    except Exception as e:
+        search_errors.inc()
+        raise</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

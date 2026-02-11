@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to Firebase Genkit</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Introduction to Firebase Genkit</h1>
+
+<h2>What Is Firebase Genkit?</h2>
+<p>Firebase Genkit is an <strong>open-source framework</strong> developed by Google for building AI-powered applications. It provides a unified, type-safe interface for working with multiple AI models, structured generation, retrieval systems, and evaluation tools. Genkit abstracts the complexity of integrating various LLM providers while maintaining flexibility and observability.</p>
+
+<h2>Why Genkit?</h2>
+<ul>
+    <li><strong>Provider Agnostic:</strong> Switch between AI providers (Gemini, GPT, Claude, Ollama) without rewriting code</li>
+    <li><strong>Type Safety:</strong> Full TypeScript support with Zod schema validation for inputs and outputs</li>
+    <li><strong>Built-in Observability:</strong> Automatic tracing, logging, and debugging of AI interactions</li>
+    <li><strong>Production Ready:</strong> Designed for deployment to Firebase Cloud Functions, Cloud Run, or any Node.js environment</li>
+    <li><strong>Developer Experience:</strong> Visual developer UI for testing flows, inspecting traces, and evaluating outputs</li>
+    <li><strong>Extensible:</strong> Plugin architecture for custom models, retrievers, and tools</li>
+</ul>
+
+<h2>Core Architecture Components</h2>
+
+<h3>Flows</h3>
+<p><strong>Flows</strong> are the fundamental building blocks in Genkit. They are type-safe, observable functions that orchestrate AI operations. Each flow has:</p>
+<ul>
+    <li>Defined input and output schemas (using Zod)</li>
+    <li>Automatic tracing and logging</li>
+    <li>Error handling and retry logic</li>
+    <li>Ability to call AI models, tools, and other flows</li>
+</ul>
+
+<h3>Models</h3>
+<p><strong>Models</strong> provide an abstraction layer over different LLM providers. Genkit supports:</p>
+<ul>
+    <li><strong>Google AI:</strong> Gemini 1.5 Flash, Gemini 1.5 Pro, Gemini 2.0</li>
+    <li><strong>OpenAI:</strong> GPT-4, GPT-4 Turbo, GPT-3.5</li>
+    <li><strong>Anthropic:</strong> Claude 3 Opus, Claude 3 Sonnet, Claude 3 Haiku</li>
+    <li><strong>Ollama:</strong> Local models (Llama, Mistral, etc.)</li>
+    <li><strong>Vertex AI:</strong> Enterprise-grade Google Cloud models</li>
+</ul>
+
+<h3>Prompts</h3>
+<p><strong>Prompts</strong> are managed templates with input/output schemas. They enable:</p>
+<ul>
+    <li>Reusable prompt definitions across your application</li>
+    <li>Version control and testing of prompts</li>
+    <li>Input validation and output parsing</li>
+    <li>Separation of prompt engineering from application logic</li>
+</ul>
+
+<h3>Retrievers</h3>
+<p><strong>Retrievers</strong> enable retrieval-augmented generation (RAG) by connecting to vector databases:</p>
+<ul>
+    <li>Pinecone, Chroma, Weaviate integration</li>
+    <li>Document chunking and embedding generation</li>
+    <li>Semantic search capabilities</li>
+    <li>Context injection into prompts</li>
+</ul>
+
+<h3>Evaluators</h3>
+<p><strong>Evaluators</strong> assess AI output quality using automated metrics:</p>
+<ul>
+    <li>Faithfulness (accuracy to source material)</li>
+    <li>Answer relevance</li>
+    <li>Maliciousness detection</li>
+    <li>Custom evaluation criteria</li>
+</ul>
+
+<h2>Installation and Setup</h2>
+
+<h3>Step 1: Install Genkit</h3>
+<div class="code-block">
+<pre><code># Install core Genkit package
+npm install genkit
+
+# Install AI provider plugin (example: Google AI)
+npm install @genkit-ai/googleai
+
+# Install development tools
+npm install -D genkit-cli
+</code></pre>
+</div>
+
+<h3>Step 2: Initialize Genkit</h3>
+<div class="code-block">
+<pre><code>import { genkit } from 'genkit';
+import { googleAI, gemini15Flash } from '@genkit-ai/googleai';
+
+// Configure Genkit with plugins and default model
+const ai = genkit({
+  plugins: [googleAI()],
+  model: gemini15Flash,
+});
+</code></pre>
+</div>
+
+<h3>Step 3: Set Up API Keys</h3>
+<p>Configure environment variables for your chosen AI provider:</p>
+<div class="code-block">
+<pre><code># .env file
+GOOGLE_GENAI_API_KEY=your_google_api_key
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+</code></pre>
+</div>
+
+<h2>Genkit Developer UI</h2>
+<p>Genkit includes a powerful visual developer interface for testing and debugging:</p>
+
+<div class="code-block">
+<pre><code># Start the developer UI
+npx genkit start
+
+# Access at http://localhost:4000
+</code></pre>
+</div>
+
+<p>The Developer UI provides:</p>
+<ul>
+    <li><strong>Flow Runner:</strong> Test flows with custom inputs</li>
+    <li><strong>Trace Inspector:</strong> View detailed execution traces with timing and token usage</li>
+    <li><strong>Prompt Editor:</strong> Design and test prompts interactively</li>
+    <li><strong>Evaluator Dashboard:</strong> Run and visualize evaluation results</li>
+</ul>
+
+<h2>Project Structure Best Practices</h2>
+<div class="code-block">
+<pre><code>my-genkit-app/
+├── src/
+│   ├── flows/           # Flow definitions
+│   ├── prompts/         # Prompt templates
+│   ├── tools/           # Custom tools
+│   ├── evaluators/      # Custom evaluators
+│   └── index.ts         # Main entry point
+├── .env                 # Environment variables
+├── package.json
+└── tsconfig.json
+</code></pre>
+</div>
+
+<h2>Key Concepts Summary</h2>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Key Feature</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Flows</td>
+        <td>Orchestrate AI operations</td>
+        <td>Type-safe with automatic tracing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Models</td>
+        <td>Abstract LLM providers</td>
+        <td>Provider-agnostic interface</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompts</td>
+        <td>Manage prompt templates</td>
+        <td>Schema validation and versioning</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Retrievers</td>
+        <td>Enable RAG capabilities</td>
+        <td>Vector database integration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Evaluators</td>
+        <td>Assess output quality</td>
+        <td>Automated quality metrics</td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Testing and Debugging MCP Servers</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Testing and Debugging MCP Servers</h1>
+
+<h2>Testing Strategies</h2>
+
+<p>Effective testing ensures your MCP server works reliably in production. A comprehensive testing strategy includes unit tests, integration tests, and manual testing.</p>
+
+<h2>MCP Inspector Tool</h2>
+
+<p>The <strong>MCP Inspector</strong> is the primary tool for interactive testing and debugging of MCP servers.</p>
+
+<h3>Using MCP Inspector</h3>
+
+<blockquote>
+npx @modelcontextprotocol/inspector node dist/server.js
+</blockquote>
+
+<p>The Inspector provides:</p>
+
+<ul>
+    <li>Visual interface for browsing available tools and resources</li>
+    <li>Interactive tool execution with parameter input</li>
+    <li>Real-time response inspection</li>
+    <li>JSON-RPC message logging</li>
+    <li>Error message display</li>
+</ul>
+
+<h3>Inspector Workflow</h3>
+
+<ol>
+    <li>Launch Inspector with your server command</li>
+    <li>Browse the list of available tools</li>
+    <li>Select a tool to test</li>
+    <li>Enter parameter values</li>
+    <li>Execute and inspect the response</li>
+    <li>Review logs for any errors</li>
+</ol>
+
+<h2>Logging and Debugging</h2>
+
+<p>Proper logging is essential for diagnosing issues in MCP servers.</p>
+
+<h3>Logging Rules</h3>
+
+<ul>
+    <li><strong>Never log to stdout:</strong> stdout is reserved for JSON-RPC messages</li>
+    <li><strong>Always log to stderr:</strong> Use stderr for all debug output</li>
+    <li><strong>Include context:</strong> Log tool names, parameters, and timestamps</li>
+    <li><strong>Log errors:</strong> Capture stack traces for unexpected errors</li>
+</ul>
+
+<h3>TypeScript Logging</h3>
+
+<blockquote>
+console.error("[DEBUG] Tool called:", toolName);
+console.error("[ERROR] Failed to process:", error.message);
+</blockquote>
+
+<h3>Python Logging</h3>
+
+<blockquote>
+import sys
+
+def debug_log(message):
+    print(f"[DEBUG] {message}", file=sys.stderr)
+
+def error_log(message, error):
+    print(f"[ERROR] {message}: {error}", file=sys.stderr)
+</blockquote>
+
+<h2>Common Issues and Solutions</h2>
+
+<table>
+    <tr>
+        <th>Issue</th>
+        <th>Cause</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Server not starting</td>
+        <td>Incorrect command or path in configuration</td>
+        <td>Test command manually in terminal first</td>
+    </tr>
+    <tr>
+        <td class="rowheader">No tools appearing</td>
+        <td>list_tools handler not returning correct format</td>
+        <td>Verify JSON schema matches MCP specification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Timeout errors</td>
+        <td>Tool execution takes too long</td>
+        <td>Optimize async operations, add timeouts</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Garbled output</td>
+        <td>Logging to stdout instead of stderr</td>
+        <td>Redirect all logs to stderr</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Connection drops</td>
+        <td>Unhandled exceptions crashing server</td>
+        <td>Add try-catch blocks around all handlers</td>
+    </tr>
+</table>
+
+<h2>Unit Testing</h2>
+
+<p>Test individual tool functions independently of the MCP protocol.</p>
+
+<h3>TypeScript Unit Test Example</h3>
+
+<blockquote>
+import { describe, it, expect } from 'vitest';
+
+describe('Weather Tool', () => {
+  it('should fetch weather data', async () => {
+    const result = await fetchWeather('London');
+    expect(result).toHaveProperty('temperature');
+    expect(result.temperature).toBeGreaterThan(-50);
+  });
+  
+  it('should handle invalid city', async () => {
+    await expect(fetchWeather('')).rejects.toThrow();
+  });
+});
+</blockquote>
+
+<h3>Python Unit Test Example</h3>
+
+<blockquote>
+import pytest
+
+def test_search_database():
+    result = search_database("test query", limit=5)
+    assert len(result) <= 5
+    assert all(isinstance(r, dict) for r in result)
+
+def test_search_empty_query():
+    with pytest.raises(ValueError):
+        search_database("", limit=10)
+</blockquote>
+
+<h2>Integration Testing</h2>
+
+<p>Test the complete MCP protocol interaction.</p>
+
+<h3>Testing with MCP Client</h3>
+
+<blockquote>
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+const transport = new StdioClientTransport({
+  command: "node",
+  args: ["dist/server.js"]
+});
+
+const client = new Client({
+  name: "test-client",
+  version: "1.0.0"
+}, {
+  capabilities: {}
+});
+
+await client.connect(transport);
+
+// Test tool listing
+const tools = await client.listTools();
+expect(tools.tools).toHaveLength(3);
+
+// Test tool execution
+const result = await client.callTool({
+  name: "get_weather",
+  arguments: { city: "London" }
+});
+expect(result.content).toBeDefined();
+</blockquote>
+
+<h2>Debugging Techniques</h2>
+
+<h3>Message Inspection</h3>
+
+<p>Log all JSON-RPC messages to understand protocol flow:</p>
+
+<blockquote>
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  console.error("Received request:", JSON.stringify(request, null, 2));
+  
+  const result = await handleTool(request);
+  
+  console.error("Sending response:", JSON.stringify(result, null, 2));
+  return result;
+});
+</blockquote>
+
+<h3>Parameter Validation</h3>
+
+<p>Validate all inputs and log validation failures:</p>
+
+<blockquote>
+if (!arguments.city || typeof arguments.city !== 'string') {
+  console.error("Invalid city parameter:", arguments.city);
+  throw new Error("City must be a non-empty string");
+}
+</blockquote>
+
+<h2>Performance Testing</h2>
+
+<p>Ensure your server performs well under load:</p>
+
+<ul>
+    <li>Test with multiple concurrent tool calls</li>
+    <li>Measure response times for each tool</li>
+    <li>Monitor memory usage during operation</li>
+    <li>Test with large parameter values</li>
+    <li>Verify timeout handling</li>
+</ul>
+
+<h2>Best Practices</h2>
+
+<ul>
+    <li><strong>Test early and often:</strong> Use MCP Inspector during development</li>
+    <li><strong>Write unit tests:</strong> Test business logic independently</li>
+    <li><strong>Log comprehensively:</strong> Include context in all log messages</li>
+    <li><strong>Handle errors gracefully:</strong> Never let exceptions crash the server</li>
+    <li><strong>Validate inputs:</strong> Check all parameters before processing</li>
+    <li><strong>Monitor performance:</strong> Track response times and resource usage</li>
+    <li><strong>Document issues:</strong> Keep a log of common problems and solutions</li>
+</ul>
+
+<h2>Debugging Checklist</h2>
+
+<p>When troubleshooting issues, check:</p>
+
+<ol>
+    <li>Is the server starting successfully?</li>
+    <li>Are tools being listed correctly?</li>
+    <li>Do tool schemas match the specification?</li>
+    <li>Are all logs going to stderr?</li>
+    <li>Are errors being caught and handled?</li>
+    <li>Are responses in the correct format?</li>
+    <li>Is the server configuration correct?</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>MCP Inspector is the primary tool for interactive testing</li>
+    <li>Always log to stderr, never to stdout</li>
+    <li>Unit tests validate business logic independently</li>
+    <li>Integration tests verify protocol compliance</li>
+    <li>Comprehensive error handling prevents server crashes</li>
+    <li>Performance testing ensures production readiness</li>
+</ul>
+
+<p><strong>Next:</strong> You will complete Assessment 2 to test your understanding of building MCP servers.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

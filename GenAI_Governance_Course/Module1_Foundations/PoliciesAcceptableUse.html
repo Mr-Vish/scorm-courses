@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>AI Policies and Acceptable Use</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AI Policies and Acceptable Use</h1>
+
+<h2>Core Policy Framework</h2>
+<p>Effective AI governance requires multiple interconnected policies that guide behavior, set boundaries, and define processes:</p>
+
+<table>
+    <tr><th>Policy Type</th><th>Purpose</th><th>Audience</th><th>Update Frequency</th></tr>
+    <tr><td>Acceptable Use Policy</td><td>Define approved and prohibited AI uses</td><td>All employees</td><td>Quarterly</td></tr>
+    <tr><td>Data Handling Policy</td><td>Rules for data input to AI systems</td><td>All users, developers</td><td>Quarterly</td></tr>
+    <tr><td>Model Development Policy</td><td>Standards for building AI systems</td><td>Data scientists, engineers</td><td>Semi-annually</td></tr>
+    <tr><td>Deployment Policy</td><td>Requirements before production release</td><td>Product teams, DevOps</td><td>Semi-annually</td></tr>
+    <tr><td>Monitoring Policy</td><td>Ongoing oversight requirements</td><td>Operations, compliance</td><td>Annually</td></tr>
+    <tr><td>Incident Response Policy</td><td>Process for AI failures or harms</td><td>All stakeholders</td><td>Annually</td></tr>
+</table>
+
+<h2>Acceptable Use Policy Template</h2>
+<div class="code-block">
+<pre><code># GenAI Acceptable Use Policy v2.1
+
+## 1. APPROVED USE CASES
+
+### Tier 1: Self-Service (No Approval Required)
+- Personal productivity: summarization, drafting, brainstorming
+- Code assistance: autocomplete, documentation, refactoring suggestions
+- Internal research: literature review, data analysis
+- Learning and training: skill development, tutorials
+
+### Tier 2: Team Approval Required
+- Customer-facing content: marketing copy, support responses
+- Internal automation: report generation, data processing
+- Decision support: recommendations with human final decision
+- Content moderation: flagging for human review
+
+### Tier 3: Governance Board Approval Required
+- Automated decision-making: credit, hiring, performance reviews
+- Regulated data processing: healthcare, financial, legal
+- Public-facing AI agents: autonomous customer interactions
+- High-volume processing: >10,000 requests/day
+
+## 2. PROHIBITED USES
+
+### Strictly Forbidden
+❌ Automated decisions on employment, credit, housing without human review
+❌ Generating deepfakes or impersonating real individuals
+❌ Processing regulated data (HIPAA, PCI-DSS) in unapproved tools
+❌ Bypassing security controls or data loss prevention systems
+❌ Creating content that violates laws, regulations, or company values
+❌ Using AI outputs as final decisions in high-stakes scenarios
+
+### Requires Special Authorization
+⚠️  Biometric data processing (facial recognition, voice analysis)
+⚠️  Sentiment analysis of employee communications
+⚠️  Predictive analytics on protected characteristics
+⚠️  AI systems that interact with minors
+
+## 3. DATA HANDLING REQUIREMENTS
+
+### Input Data Classification
+- PUBLIC: No restrictions (e.g., public documentation)
+- INTERNAL: Approved AI gateway only (e.g., internal reports)
+- CONFIDENTIAL: Approved tools with DLP (e.g., customer data)
+- RESTRICTED: Prohibited in AI systems (e.g., trade secrets, PII)
+
+### Specific Prohibitions
+- Never input customer PII into public AI services
+- Never upload confidential documents to unapproved tools
+- Never share API keys or credentials with AI systems
+- Never use production data in AI experiments without anonymization
+
+## 4. OUTPUT HANDLING
+
+### Review Requirements
+- External publication: Human review + legal clearance
+- Customer communication: Human review + tone check
+- Code deployment: Standard code review + security scan
+- Financial/legal content: Subject matter expert review
+
+### Attribution and Disclosure
+- Disclose AI assistance in customer-facing content
+- Cite AI-generated code with model and version
+- Label AI-generated images and media
+- Document AI involvement in decision-making processes
+
+## 5. COMPLIANCE OBLIGATIONS
+
+- Complete AI training before using enterprise AI tools
+- Report policy violations to ai-governance@company.com
+- Participate in audits and provide requested documentation
+- Update use cases in AI inventory within 5 business days</code></pre>
+</div>
+
+<h2>Data Handling Policy Details</h2>
+<p>Data handling is the highest-risk area in GenAI governance. Clear rules prevent data leakage and compliance violations:</p>
+
+<table>
+    <tr><th>Data Type</th><th>Public AI Tools</th><th>Enterprise AI Gateway</th><th>Approved Vendors</th></tr>
+    <tr><td>Public information</td><td>✓ Allowed</td><td>✓ Allowed</td><td>✓ Allowed</td></tr>
+    <tr><td>Internal documents</td><td>✗ Prohibited</td><td>✓ Allowed</td><td>✓ With DPA</td></tr>
+    <tr><td>Customer data (non-PII)</td><td>✗ Prohibited</td><td>✓ With logging</td><td>✓ With DPA + audit</td></tr>
+    <tr><td>Customer PII</td><td>✗ Prohibited</td><td>✓ With redaction</td><td>✓ With BAA/DPA</td></tr>
+    <tr><td>Regulated data (HIPAA/PCI)</td><td>✗ Prohibited</td><td>✗ Prohibited</td><td>✓ Certified vendors only</td></tr>
+    <tr><td>Trade secrets</td><td>✗ Prohibited</td><td>✗ Prohibited</td><td>✗ Prohibited</td></tr>
+</table>
+
+<h2>Model Development Standards</h2>
+<div class="code-block">
+<pre><code># AI Model Development Policy - Key Requirements
+
+## Pre-Development
+1. Use Case Documentation
+   - Business justification and expected benefits
+   - Alternative approaches considered
+   - Stakeholder identification and impact assessment
+
+2. Risk Assessment
+   - Complete AI risk questionnaire
+   - Identify potential harms and affected groups
+   - Determine risk tier and approval requirements
+
+## Development Phase
+3. Data Requirements
+   - Document data sources and collection methods
+   - Verify data rights and licensing
+   - Assess data quality and representativeness
+   - Implement bias testing on training data
+
+4. Model Documentation (Model Card)
+   - Intended use and out-of-scope uses
+   - Training data characteristics
+   - Performance metrics across demographic groups
+   - Known limitations and failure modes
+
+5. Testing Requirements
+   - Accuracy testing on diverse test sets
+   - Bias and fairness evaluation
+   - Adversarial testing (prompt injection, jailbreaks)
+   - Performance under edge cases
+
+## Pre-Deployment
+6. Security Review
+   - Input validation and sanitization
+   - Output filtering and content moderation
+   - Rate limiting and abuse prevention
+   - Logging and monitoring implementation
+
+7. Approval Gates
+   - Tier 1: Team lead sign-off
+   - Tier 2: Department head + security review
+   - Tier 3: Governance board + legal review
+   - Tier 4: External audit + regulatory filing</code></pre>
+</div>
+
+<h2>Deployment Checklist</h2>
+<table>
+    <tr><th>Category</th><th>Requirement</th><th>Verification Method</th></tr>
+    <tr><td>Documentation</td><td>Model card completed and published</td><td>Link in deployment ticket</td></tr>
+    <tr><td>Testing</td><td>Accuracy ≥95% on validation set</td><td>Test report attached</td></tr>
+    <tr><td>Bias</td><td>Fairness metrics within tolerance</td><td>Bias audit report</td></tr>
+    <tr><td>Security</td><td>OWASP Top 10 for LLM addressed</td><td>Security scan results</td></tr>
+    <tr><td>Privacy</td><td>PII detection and redaction enabled</td><td>Privacy review sign-off</td></tr>
+    <tr><td>Monitoring</td><td>Metrics, alerts, and dashboards configured</td><td>Monitoring runbook</td></tr>
+    <tr><td>Incident Response</td><td>Rollback plan and escalation path defined</td><td>IR plan documented</td></tr>
+    <tr><td>Compliance</td><td>Regulatory requirements mapped and met</td><td>Compliance checklist</td></tr>
+</table>
+
+<h2>Incident Response Process</h2>
+<div class="code-block">
+<pre><code># AI Incident Response Workflow
+
+## Severity Classification
+- P0 (Critical): Active harm, data breach, regulatory violation
+- P1 (High): Significant accuracy degradation, bias detected
+- P2 (Medium): Performance issues, user complaints
+- P3 (Low): Minor bugs, documentation gaps
+
+## Response Steps
+1. DETECT: Automated alerts or user reports
+2. TRIAGE: Assess severity and impact (15 min for P0)
+3. CONTAIN: Disable system or limit scope (30 min for P0)
+4. INVESTIGATE: Root cause analysis
+5. REMEDIATE: Fix issue and test solution
+6. COMMUNICATE: Notify stakeholders and affected users
+7. DOCUMENT: Incident report and lessons learned
+8. IMPROVE: Update policies, controls, or training
+
+## Escalation Path
+- P3: Team lead → Product manager
+- P2: Product manager → Department head
+- P1: Department head → VP Engineering + Legal
+- P0: VP Engineering + Legal → CEO + Board (if material)</code></pre>
+</div>
+
+<h2>Policy Enforcement</h2>
+<p>Policies are only effective if enforced consistently:</p>
+
+<ul>
+    <li><strong>Technical Controls:</strong> AI gateway blocks unapproved tools, DLP prevents data leakage</li>
+    <li><strong>Monitoring:</strong> Log analysis detects policy violations, usage patterns reviewed quarterly</li>
+    <li><strong>Training:</strong> Mandatory AI governance training for all employees, role-specific training for developers</li>
+    <li><strong>Audits:</strong> Random sampling of AI use cases, annual comprehensive audit</li>
+    <li><strong>Consequences:</strong> First violation: warning and retraining; Repeated violations: access revocation; Intentional violations: disciplinary action</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Security Scanning and Code Analysis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Core Features and Implementation</h1>
+
+<h2>Lesson 3: Security Scanning and Code Analysis</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand the security scanning capabilities and vulnerability detection mechanisms</li>
+    <li>Identify common security vulnerabilities and their remediation strategies</li>
+    <li>Master the workflow for addressing security findings</li>
+    <li>Integrate security scanning into development and CI/CD processes</li>
+</ul>
+
+<h2>Introduction to Security Scanning</h2>
+<p>Security vulnerabilities in application code represent one of the most significant risks to modern software systems. Traditional security testing often occurs late in the development lifecycle, making fixes expensive and time-consuming. Amazon Q Developer's integrated security scanning brings vulnerability detection directly into the IDE, enabling developers to identify and fix security issues as they write code.</p>
+
+<p>This proactive approach, known as "shift-left security," reduces the cost and complexity of security remediation while improving overall application security posture. The scanning engine analyzes code for common vulnerability patterns, insecure coding practices, and potential security weaknesses across multiple programming languages.</p>
+
+<h2>Security Scanning Architecture</h2>
+
+<h3>Scanning Mechanisms</h3>
+<p>Amazon Q Developer employs multiple analysis techniques:</p>
+
+<h4>1. Static Application Security Testing (SAST)</h4>
+<p>Analyzes source code without executing it:</p>
+<ul>
+    <li><strong>Data Flow Analysis:</strong> Tracks how data moves through the application</li>
+    <li><strong>Control Flow Analysis:</strong> Examines execution paths and decision points</li>
+    <li><strong>Pattern Matching:</strong> Identifies known vulnerable code patterns</li>
+    <li><strong>Taint Analysis:</strong> Tracks untrusted input through the system</li>
+</ul>
+
+<h4>2. Semantic Analysis</h4>
+<p>Understands code meaning and intent:</p>
+<ul>
+    <li>Recognizes security-relevant operations (authentication, encryption, data access)</li>
+    <li>Identifies missing security controls</li>
+    <li>Detects insecure configurations</li>
+    <li>Analyzes API usage patterns</li>
+</ul>
+
+<h4>3. Machine Learning-Based Detection</h4>
+<p>Leverages AI models trained on vulnerability datasets:</p>
+<ul>
+    <li>Identifies novel vulnerability patterns</li>
+    <li>Reduces false positives through contextual understanding</li>
+    <li>Adapts to new vulnerability types</li>
+    <li>Learns from developer feedback</li>
+</ul>
+
+<h2>Vulnerability Categories</h2>
+
+<h3>Injection Vulnerabilities</h3>
+
+<h4>SQL Injection</h4>
+<p>Occurs when untrusted data is included in SQL queries without proper sanitization:</p>
+
+<p><strong>Vulnerable Pattern:</strong></p>
+<blockquote>
+query = "SELECT * FROM users WHERE username = '" + user_input + "'"
+</blockquote>
+
+<p><strong>Attack Vector:</strong> Attacker inputs: <code>' OR '1'='1</code></p>
+<p><strong>Result:</strong> Query returns all users, bypassing authentication</p>
+
+<p><strong>Secure Alternative:</strong></p>
+<blockquote>
+query = "SELECT * FROM users WHERE username = ?"
+cursor.execute(query, (user_input,))
+</blockquote>
+
+<h4>Command Injection</h4>
+<p>Executing system commands with untrusted input:</p>
+
+<p><strong>Vulnerable Pattern:</strong></p>
+<blockquote>
+os.system("ping " + user_provided_host)
+</blockquote>
+
+<p><strong>Secure Alternative:</strong></p>
+<blockquote>
+subprocess.run(["ping", user_provided_host], check=True)
+</blockquote>
+
+<h4>Cross-Site Scripting (XSS)</h4>
+<p>Injecting malicious scripts into web pages:</p>
+
+<p><strong>Vulnerable Pattern:</strong></p>
+<blockquote>
+document.getElementById("output").innerHTML = userInput;
+</blockquote>
+
+<p><strong>Secure Alternative:</strong></p>
+<blockquote>
+document.getElementById("output").textContent = userInput;
+</blockquote>
+
+<h3>Authentication and Authorization Flaws</h3>
+
+<h4>Broken Authentication</h4>
+<table>
+    <tr>
+        <th>Vulnerability</th>
+        <th>Description</th>
+        <th>Remediation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Weak Password Storage</td>
+        <td>Storing passwords in plaintext or using weak hashing</td>
+        <td>Use bcrypt, scrypt, or Argon2 with appropriate work factors</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Missing Session Timeout</td>
+        <td>Sessions never expire</td>
+        <td>Implement absolute and idle timeouts</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Predictable Session IDs</td>
+        <td>Session tokens can be guessed</td>
+        <td>Use cryptographically secure random generation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Missing MFA</td>
+        <td>No multi-factor authentication for sensitive operations</td>
+        <td>Implement TOTP or SMS-based second factor</td>
+    </tr>
+</table>
+
+<h4>Broken Access Control</h4>
+<p>Common access control vulnerabilities:</p>
+<ul>
+    <li><strong>Missing Authorization Checks:</strong> Endpoints accessible without permission verification</li>
+    <li><strong>Insecure Direct Object References:</strong> Users can access resources by manipulating IDs</li>
+    <li><strong>Privilege Escalation:</strong> Users can elevate their permissions</li>
+    <li><strong>Path Traversal:</strong> Users can access files outside intended directories</li>
+</ul>
+
+<h3>Cryptographic Failures</h3>
+
+<h4>Weak Cryptographic Algorithms</h4>
+<p>Algorithms that should not be used for security:</p>
+<ul>
+    <li><strong>MD5:</strong> Cryptographically broken, vulnerable to collisions</li>
+    <li><strong>SHA-1:</strong> Deprecated, collision attacks demonstrated</li>
+    <li><strong>DES/3DES:</strong> Insufficient key length, vulnerable to brute force</li>
+    <li><strong>RC4:</strong> Multiple vulnerabilities, deprecated in TLS</li>
+</ul>
+
+<p><strong>Recommended Alternatives:</strong></p>
+<ul>
+    <li><strong>Hashing:</strong> SHA-256, SHA-3, BLAKE2</li>
+    <li><strong>Symmetric Encryption:</strong> AES-256-GCM</li>
+    <li><strong>Asymmetric Encryption:</strong> RSA-2048+, ECDSA with P-256+</li>
+</ul>
+
+<h4>Insecure Random Number Generation</h4>
+<p><strong>Vulnerable Pattern:</strong></p>
+<blockquote>
+import random
+token = random.randint(1000000, 9999999)
+</blockquote>
+
+<p><strong>Secure Alternative:</strong></p>
+<blockquote>
+import secrets
+token = secrets.randbelow(9000000) + 1000000
+</blockquote>
+
+<h3>Sensitive Data Exposure</h3>
+
+<h4>Hardcoded Secrets</h4>
+<p>Amazon Q detects various forms of hardcoded credentials:</p>
+<ul>
+    <li>API keys and access tokens</li>
+    <li>Database passwords</li>
+    <li>Encryption keys</li>
+    <li>Private keys and certificates</li>
+    <li>OAuth client secrets</li>
+</ul>
+
+<p><strong>Detection Methods:</strong></p>
+<ul>
+    <li>Entropy analysis (high randomness indicates secrets)</li>
+    <li>Pattern matching (AWS keys, JWT tokens, etc.)</li>
+    <li>Variable name analysis (password, secret, key, token)</li>
+</ul>
+
+<p><strong>Remediation:</strong></p>
+<ul>
+    <li>Use environment variables</li>
+    <li>Leverage AWS Secrets Manager or Parameter Store</li>
+    <li>Implement proper key management systems</li>
+    <li>Never commit secrets to version control</li>
+</ul>
+
+<h4>Insufficient Transport Security</h4>
+<p>Vulnerabilities in data transmission:</p>
+<ul>
+    <li><strong>Missing HTTPS:</strong> Transmitting sensitive data over HTTP</li>
+    <li><strong>Disabled Certificate Validation:</strong> Accepting invalid SSL/TLS certificates</li>
+    <li><strong>Weak TLS Configuration:</strong> Using outdated protocols or weak cipher suites</li>
+</ul>
+
+<h2>Security Scanning Workflow</h2>
+
+<h3>Triggering Scans</h3>
+
+<h4>Automatic Scanning</h4>
+<p>Scans triggered automatically:</p>
+<ul>
+    <li><strong>On Save:</strong> Scan file when saved (configurable)</li>
+    <li><strong>On Open:</strong> Scan when file is opened in editor</li>
+    <li><strong>Background Scanning:</strong> Periodic scans of open files</li>
+    <li><strong>Project-Wide:</strong> Scan entire project on demand</li>
+</ul>
+
+<h4>Manual Scanning</h4>
+<p>Developer-initiated scans:</p>
+<ul>
+    <li>Right-click file/folder → "Scan with Amazon Q"</li>
+    <li>Command palette → "Amazon Q: Run Security Scan"</li>
+    <li>Keyboard shortcut (configurable)</li>
+    <li>Pre-commit hook integration</li>
+</ul>
+
+<h3>Reviewing Findings</h3>
+
+<h4>Finding Presentation</h4>
+<p>Security findings are displayed in multiple locations:</p>
+<ul>
+    <li><strong>Inline Annotations:</strong> Squiggly underlines in code editor</li>
+    <li><strong>Problems Panel:</strong> Aggregated list of all findings</li>
+    <li><strong>Hover Tooltips:</strong> Detailed information on hover</li>
+    <li><strong>Security Dashboard:</strong> Overview of project security posture</li>
+</ul>
+
+<h4>Finding Details</h4>
+<p>Each finding includes:</p>
+<ul>
+    <li><strong>Severity:</strong> Critical, High, Medium, Low, Info</li>
+    <li><strong>Vulnerability Type:</strong> CWE classification</li>
+    <li><strong>Description:</strong> What the vulnerability is and why it's dangerous</li>
+    <li><strong>Location:</strong> File, line number, and code snippet</li>
+    <li><strong>Remediation:</strong> How to fix the vulnerability</li>
+    <li><strong>Code Example:</strong> Secure alternative implementation</li>
+    <li><strong>References:</strong> Links to OWASP, CWE, and other resources</li>
+</ul>
+
+<h3>Addressing Findings</h3>
+
+<h4>Remediation Workflow</h4>
+<ul>
+    <li><strong>Step 1:</strong> Review finding details and understand the vulnerability</li>
+    <li><strong>Step 2:</strong> Examine suggested remediation and code examples</li>
+    <li><strong>Step 3:</strong> Implement fix or apply suggested code</li>
+    <li><strong>Step 4:</strong> Re-scan to verify fix</li>
+    <li><strong>Step 5:</strong> Mark as resolved or suppress if false positive</li>
+</ul>
+
+<h4>Auto-Fix Capabilities</h4>
+<p>Some vulnerabilities can be automatically fixed:</p>
+<ul>
+    <li>Upgrading weak cryptographic algorithms</li>
+    <li>Adding input validation</li>
+    <li>Fixing insecure configurations</li>
+    <li>Updating deprecated API usage</li>
+</ul>
+
+<h4>Suppression and False Positives</h4>
+<p>When findings are not actual vulnerabilities:</p>
+<ul>
+    <li><strong>Inline Suppression:</strong> Add comment to suppress specific finding</li>
+    <li><strong>File-Level Suppression:</strong> Exclude entire files from scanning</li>
+    <li><strong>Rule Disabling:</strong> Disable specific vulnerability checks</li>
+    <li><strong>Feedback:</strong> Report false positives to improve detection</li>
+</ul>
+
+<h2>Severity Classification</h2>
+
+<h3>Severity Levels</h3>
+<table>
+    <tr>
+        <th>Severity</th>
+        <th>Characteristics</th>
+        <th>Action Required</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Critical</td>
+        <td>Easily exploitable, severe impact, remote exploitation possible</td>
+        <td>Fix immediately before deployment</td>
+    </tr>
+    <tr>
+        <td class="rowheader">High</td>
+        <td>Exploitable with moderate effort, significant impact</td>
+        <td>Fix before next release</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Medium</td>
+        <td>Requires specific conditions, moderate impact</td>
+        <td>Fix in upcoming sprint</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Low</td>
+        <td>Difficult to exploit, limited impact</td>
+        <td>Fix when convenient</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Info</td>
+        <td>Best practice violations, no immediate security risk</td>
+        <td>Consider for code quality improvement</td>
+    </tr>
+</table>
+
+<h3>Prioritization Strategy</h3>
+<p>Focus remediation efforts based on:</p>
+<ul>
+    <li><strong>Severity:</strong> Critical and High findings first</li>
+    <li><strong>Exploitability:</strong> Remotely exploitable vulnerabilities prioritized</li>
+    <li><strong>Data Sensitivity:</strong> Vulnerabilities affecting sensitive data</li>
+    <li><strong>Attack Surface:</strong> Public-facing components before internal</li>
+    <li><strong>Compliance:</strong> Findings affecting regulatory compliance</li>
+</ul>
+
+<h2>Integration with Development Workflow</h2>
+
+<h3>Pre-Commit Scanning</h3>
+<p>Prevent vulnerable code from entering version control:</p>
+
+<p><strong>Git Hook Example:</strong></p>
+<blockquote>
+#!/bin/bash
+# .git/hooks/pre-commit
+
+# Run Amazon Q security scan
+q scan --severity high,critical
+
+if [ $? -ne 0 ]; then
+    echo "Security scan failed. Fix vulnerabilities before committing."
+    exit 1
+fi
+</blockquote>
+
+<h3>CI/CD Pipeline Integration</h3>
+<p>Automated security scanning in build pipelines:</p>
+<ul>
+    <li><strong>Build Stage:</strong> Scan code during compilation</li>
+    <li><strong>Quality Gate:</strong> Fail builds with critical/high findings</li>
+    <li><strong>Reporting:</strong> Generate security reports for each build</li>
+    <li><strong>Trend Analysis:</strong> Track security metrics over time</li>
+</ul>
+
+<h3>Code Review Integration</h3>
+<p>Incorporate security findings into code review process:</p>
+<ul>
+    <li>Scan pull requests automatically</li>
+    <li>Comment on PRs with security findings</li>
+    <li>Require security review for high-risk changes</li>
+    <li>Track remediation in issue tracking systems</li>
+</ul>
+
+<h2>Best Practices for Security Scanning</h2>
+
+<h3>Development Phase</h3>
+<ul>
+    <li><strong>Scan Early and Often:</strong> Enable automatic scanning on save</li>
+    <li><strong>Fix as You Go:</strong> Address findings immediately while context is fresh</li>
+    <li><strong>Understand Findings:</strong> Don't just apply fixes without understanding</li>
+    <li><strong>Learn Patterns:</strong> Recognize vulnerability patterns to avoid them</li>
+</ul>
+
+<h3>Team Practices</h3>
+<ul>
+    <li><strong>Security Champions:</strong> Designate team members as security experts</li>
+    <li><strong>Knowledge Sharing:</strong> Discuss interesting findings in team meetings</li>
+    <li><strong>Metrics Tracking:</strong> Monitor security finding trends</li>
+    <li><strong>Training:</strong> Regular security awareness training</li>
+</ul>
+
+<h3>Organizational Policies</h3>
+<ul>
+    <li><strong>Severity Thresholds:</strong> Define acceptable severity levels for deployment</li>
+    <li><strong>Remediation SLAs:</strong> Set timeframes for fixing different severity levels</li>
+    <li><strong>Compliance Mapping:</strong> Map findings to compliance requirements</li>
+    <li><strong>Audit Trail:</strong> Maintain records of findings and remediations</li>
+</ul>
+
+<h2>Advanced Security Features</h2>
+
+<h3>Dependency Scanning</h3>
+<p>Analyzing third-party dependencies for vulnerabilities:</p>
+<ul>
+    <li>Scans package manifests (package.json, requirements.txt, pom.xml)</li>
+    <li>Identifies known vulnerabilities in dependencies</li>
+    <li>Suggests version upgrades to fix vulnerabilities</li>
+    <li>Tracks transitive dependencies</li>
+</ul>
+
+<h3>Infrastructure as Code Scanning</h3>
+<p>Security analysis for cloud infrastructure code:</p>
+<ul>
+    <li><strong>CloudFormation:</strong> Detect insecure resource configurations</li>
+    <li><strong>Terraform:</strong> Identify security misconfigurations</li>
+    <li><strong>CDK:</strong> Analyze infrastructure code for security issues</li>
+    <li><strong>Kubernetes:</strong> Scan manifests for security problems</li>
+</ul>
+
+<h3>Secrets Detection</h3>
+<p>Advanced detection of exposed credentials:</p>
+<ul>
+    <li>Scans code, comments, and configuration files</li>
+    <li>Detects various secret formats (API keys, tokens, passwords)</li>
+    <li>Provides guidance on proper secret management</li>
+    <li>Integrates with AWS Secrets Manager</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Amazon Q Developer provides comprehensive security scanning integrated directly into the IDE</li>
+    <li>Scanning employs SAST, semantic analysis, and machine learning to detect vulnerabilities</li>
+    <li>Common vulnerability categories include injection flaws, authentication issues, and cryptographic failures</li>
+    <li>Findings are classified by severity (Critical, High, Medium, Low, Info) to guide prioritization</li>
+    <li>Remediation workflow includes reviewing findings, implementing fixes, and verifying resolution</li>
+    <li>Integration with pre-commit hooks and CI/CD pipelines enables shift-left security</li>
+    <li>Best practices include scanning early and often, understanding findings, and tracking metrics</li>
+    <li>Advanced features include dependency scanning, IaC analysis, and secrets detection</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

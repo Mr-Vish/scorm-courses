@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Red Teaming: Finding Vulnerabilities</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Red Teaming: Finding Vulnerabilities</h1>
+<div class="container">
+<h2>Red Teaming for LLMs: Proactive Security Testing</h2>
+<p>Red Teaming is the practice of ethically attacking a system to find and fix vulnerabilities before they can be exploited by malicious actors. In the context of LLMs, Red Teaming involves attempting to trick the model into generating harmful content, leaking sensitive data, or bypassing its own internal logic and external filters.</p>
+
+<h3>The Philosophy of Red Teaming</h3>
+<p>The core idea is to "think like an attacker." Instead of just testing if the system works for "good" users, Red Teamers spend their time figuring out how "bad" users might break it. This proactive approach is essential for identifying "zero-day" vulnerabilities that haven't been seen before.</p>
+
+<h3>How to Conduct LLM Red Teaming</h3>
+<p>A Red Teaming exercise typically follows these steps:</p>
+<ol>
+    <li><strong>Scope Definition:</strong> What part of the system are we testing? What are the prohibited behaviors? (e.g., "The model must not reveal the company's internal server IP addresses.")</li>
+    <li><strong>Adversarial Prompting:</strong> Using the techniques we've discussed (jailbreaking, indirect injection, payload splitting) to try and trigger the prohibited behaviors.</li>
+    <li><strong>Exploitation:</strong> If a vulnerability is found, seeing how far it can be pushed. Can a simple injection lead to full system access?</li>
+    <li><strong>Analysis and Reporting:</strong> Documenting the successful attacks, why they worked, and recommending specific fixes (e.g., updating a filter or strengthening the system prompt).</li>
+    <li><strong>Remediation and Re-testing:</strong> The development team implements the fixes, and the Red Team tests them again to ensure they are effective.</li>
+</ol>
+
+<h3>Red Teaming vs. Traditional QA</h3>
+<p>Traditional Quality Assurance (QA) testing focuses on "functional requirements"—does the feature do what it's supposed to do? Red Teaming focuses on "security and safety requirements"—does the feature NOT do what it's NOT supposed to do? Both are essential, but they require different mindsets.</p>
+
+<h3>Automated vs. Manual Red Teaming</h3>
+<ul>
+    <li><strong>Manual Red Teaming:</strong> Skilled security researchers use their intuition and creativity to find complex vulnerabilities. This is slow but very effective at finding "clever" attacks.</li>
+    <li><strong>Automated Red Teaming:</strong> Using scripts and even other LLMs to generate and test thousands of adversarial prompts. This is fast and can find many simple vulnerabilities, but might miss the more subtle ones.
+        <ul>
+            <li>Tools like "Giskard" or "PyRIT" are emerging to help automate this process.</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>The Importance of Diversity</h3>
+<p>Effective Red Teaming requires a diverse team with different backgrounds, perspectives, and languages. An attacker in one part of the world might think of a framing or cultural reference that a developer in another part of the world would never imagine. Diversity is a key security asset.</p>
+
+<h3>Ethical Guidelines for Red Teamers</h3>
+<p>Red Teaming must be done responsibly:</p>
+<ul>
+    <li><strong>Get Permission:</strong> Never Red Team a system you don't have explicit permission to test.</li>
+    <li><strong>Isolate Testing:</strong> Perform tests in a dedicated staging or sandbox environment, never on live production data or systems.</li>
+    <li><strong>Responsible Disclosure:</strong> If you find a vulnerability in a third-party model (like Claude), report it to the provider (Anthropic) through their official security channels.</li>
+</ul>
+
+<h3>Use Case: Red Teaming a Medical AI</h3>
+<p>A company is building an AI to answer questions about health insurance. The Red Team attempts to:
+- Trick the AI into giving actual medical advice (which is prohibited).
+- Access the medical records of other (fictional) users.
+- Force the AI to say that the company's insurance is "a scam."
+By finding these issues early, the company can implement strong "Guard" models and system prompt constraints before the AI goes live.</p>
+
+<h3>The 'Blue Team' Counterpart</h3>
+<p>In security circles, the "Blue Team" is the group responsible for defending the system. The Red Team attacks, the Blue Team defends, and both teams share knowledge to improve the overall security posture. This collaborative "Purple Teaming" approach is the most effective way to build resilient AI systems.</p>
+
+<p>In conclusion, Red Teaming is not a one-time event; it's a continuous process. As LLMs become more capable and attackers become more sophisticated, the role of the Red Team in ensuring AI safety and security will only grow in importance.</p>
+
+</div>
+</body>
+</html>

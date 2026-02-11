@@ -1,0 +1,389 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Document Stores and Indexing Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Document Stores and Indexing Strategies</h1>
+
+<h2>Deep Dive: Vector Databases</h2>
+<p>Vector databases are specialized storage systems optimized for storing and querying high-dimensional vectors (embeddings). Unlike traditional databases that use exact matching, vector databases use <strong>approximate nearest neighbor (ANN)</strong> algorithms to find similar vectors efficiently.</p>
+
+<h2>How Vector Search Works</h2>
+<p>The vector search process involves several key steps:</p>
+
+<ol>
+    <li><strong>Embedding Generation:</strong> Text is converted to a dense vector representation using embedding models</li>
+    <li><strong>Index Construction:</strong> Vectors are organized into data structures (HNSW, IVF, etc.) for fast retrieval</li>
+    <li><strong>Query Processing:</strong> Query text is embedded using the same model</li>
+    <li><strong>Similarity Calculation:</strong> Distance metrics (cosine, dot product, euclidean) measure similarity</li>
+    <li><strong>Result Ranking:</strong> Top-k most similar documents are returned</li>
+</ol>
+
+<h2>Similarity Metrics Explained</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Formula</th>
+        <th>Range</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Cosine Similarity</td>
+        <td>cos(θ) = (A · B) / (||A|| ||B||)</td>
+        <td>-1 to 1 (higher is more similar)</td>
+        <td>Normalized embeddings, text similarity</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Dot Product</td>
+        <td>A · B = Σ(ai × bi)</td>
+        <td>-∞ to +∞ (higher is more similar)</td>
+        <td>When magnitude matters, faster computation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Euclidean Distance</td>
+        <td>||A - B|| = √Σ(ai - bi)²</td>
+        <td>0 to +∞ (lower is more similar)</td>
+        <td>Spatial data, when absolute distance matters</td>
+    </tr>
+</table>
+
+<h2>Indexing Algorithms</h2>
+<p>Understanding indexing algorithms helps you optimize for your use case:</p>
+
+<h3>HNSW (Hierarchical Navigable Small World)</h3>
+<ul>
+    <li><strong>How it works:</strong> Creates a multi-layer graph where each layer has progressively fewer nodes</li>
+    <li><strong>Advantages:</strong> Excellent query performance, good recall</li>
+    <li><strong>Disadvantages:</strong> Higher memory usage, slower indexing</li>
+    <li><strong>Best for:</strong> Production systems prioritizing query speed</li>
+</ul>
+
+<h3>IVF (Inverted File Index)</h3>
+<ul>
+    <li><strong>How it works:</strong> Partitions vector space into clusters, searches only relevant clusters</li>
+    <li><strong>Advantages:</strong> Lower memory usage, faster indexing</li>
+    <li><strong>Disadvantages:</strong> Slightly lower recall, requires tuning</li>
+    <li><strong>Best for:</strong> Large-scale datasets with memory constraints</li>
+</ul>
+
+<h2>Production Indexing Pipeline</h2>
+<p>Here's a production-ready indexing pipeline with error handling and monitoring:</p>
+
+<div class="code-block">
+<pre><code>import os
+import logging
+from haystack import Pipeline, Document
+from haystack.components.converters import TextFileToDocument, PDFToDocument
+from haystack.components.preprocessors import DocumentCleaner, DocumentSplitter
+from haystack.components.embedders import SentenceTransformersDocumentEmbedder
+from haystack.components.writers import DocumentWriter
+from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def create_indexing_pipeline():
+    """Create a production-ready indexing pipeline."""
+    
+    # Initialize document store with production settings
+    document_store = QdrantDocumentStore(
+        url=os.getenv("QDRANT_URL", "http://localhost:6333"),
+        api_key=os.getenv("QDRANT_API_KEY"),
+        index="production_docs",
+        embedding_dim=384,
+        recreate_index=False,  # Never recreate in production
+        return_embedding=False,
+        wait_result_from_api=True,
+        similarity="cosine",
+        hnsw_config={
+            "m": 16,
+            "ef_construct": 100
+        }
+    )
+    
+    # Create pipeline
+    pipeline = Pipeline()
+    
+    # Add components with production configurations
+    pipeline.add_component("text_converter", TextFileToDocument())
+    pipeline.add_component("pdf_converter", PDFToDocument())
+    
+    pipeline.add_component(
+        "cleaner",
+        DocumentCleaner(
+            remove_empty_lines=True,
+            remove_extra_whitespaces=True,
+            remove_repeated_substrings=True
+        )
+    )
+    
+    pipeline.add_component(
+        "splitter",
+        DocumentSplitter(
+            split_by="sentence",
+            split_length=5,  # Larger chunks for better context
+            split_overlap=2,  # 40% overlap
+            split_threshold=3  # Minimum 3 sentences per chunk
+        )
+    )
+    
+    pipeline.add_component(
+        "embedder",
+        SentenceTransformersDocumentEmbedder(
+            model="sentence-transformers/all-MiniLM-L6-v2",
+            progress_bar=False,  # Disable in production
+            batch_size=64,  # Optimize for throughput
+            normalize_embeddings=True  # Required for cosine similarity
+        )
+    )
+    
+    pipeline.add_component(
+        "writer",
+        DocumentWriter(
+            document_store=document_store,
+            policy="UPSERT"  # Update existing, insert new
+        )
+    )
+    
+    # Connect components
+    pipeline.connect("text_converter.documents", "cleaner.documents")
+    pipeline.connect("pdf_converter.documents", "cleaner.documents")
+    pipeline.connect("cleaner.documents", "splitter.documents")
+    pipeline.connect("splitter.documents", "embedder.documents")
+    pipeline.connect("embedder.documents", "writer.documents")
+    
+    return pipeline, document_store
+
+def index_documents(pipeline, file_paths):
+    """Index documents with error handling."""
+    try:
+        logger.info(f"Starting indexing for {len(file_paths)} files")
+        
+        # Separate files by type
+        text_files = [f for f in file_paths if f.endswith('.txt')]
+        pdf_files = [f for f in file_paths if f.endswith('.pdf')]
+        
+        results = []
+        
+        if text_files:
+            result = pipeline.run({
+                "text_converter": {"sources": text_files}
+            })
+            results.append(result)
+            logger.info(f"Indexed {len(text_files)} text files")
+        
+        if pdf_files:
+            result = pipeline.run({
+                "pdf_converter": {"sources": pdf_files}
+            })
+            results.append(result)
+            logger.info(f"Indexed {len(pdf_files)} PDF files")
+        
+        total_docs = sum(r['writer']['documents_written'] for r in results)
+        logger.info(f"Successfully indexed {total_docs} document chunks")
+        
+        return total_docs
+        
+    except Exception as e:
+        logger.error(f"Indexing failed: {str(e)}")
+        raise
+
+# Usage
+pipeline, doc_store = create_indexing_pipeline()
+index_documents(pipeline, ["docs/manual.txt", "docs/guide.pdf"])
+</code></pre>
+</div>
+
+<h2>Metadata Filtering</h2>
+<p>Metadata enables powerful filtering capabilities during retrieval:</p>
+
+<div class="code-block">
+<pre><code>from haystack import Document
+
+# Documents with rich metadata
+documents = [
+    Document(
+        content="Python 3.11 introduces performance improvements.",
+        meta={
+            "language": "python",
+            "version": "3.11",
+            "category": "release_notes",
+            "date": "2023-10-24",
+            "author": "Python Core Team",
+            "tags": ["performance", "new_features"]
+        }
+    ),
+    Document(
+        content="FastAPI is a modern web framework for Python.",
+        meta={
+            "language": "python",
+            "framework": "fastapi",
+            "category": "tutorial",
+            "difficulty": "intermediate",
+            "tags": ["web", "api", "async"]
+        }
+    )
+]
+
+# Write documents
+writer = DocumentWriter(document_store=doc_store)
+writer.run(documents=documents)
+
+# Later: Retrieve with filters
+from haystack_integrations.components.retrievers.qdrant import QdrantEmbeddingRetriever
+
+retriever = QdrantEmbeddingRetriever(
+    document_store=doc_store,
+    top_k=5,
+    filters={
+        "operator": "AND",
+        "conditions": [
+            {"field": "meta.language", "operator": "==", "value": "python"},
+            {"field": "meta.category", "operator": "==", "value": "tutorial"}
+        ]
+    }
+)
+</code></pre>
+</div>
+
+<h2>Batch Processing for Large Datasets</h2>
+<p>When indexing large document collections, use batch processing:</p>
+
+<div class="code-block">
+<pre><code>import glob
+from pathlib import Path
+
+def batch_index_directory(pipeline, directory_path, batch_size=100):
+    """Index documents in batches for memory efficiency."""
+    
+    all_files = list(Path(directory_path).rglob("*.txt"))
+    total_files = len(all_files)
+    
+    logger.info(f"Found {total_files} files to index")
+    
+    for i in range(0, total_files, batch_size):
+        batch = all_files[i:i + batch_size]
+        batch_paths = [str(f) for f in batch]
+        
+        logger.info(f"Processing batch {i//batch_size + 1}/{(total_files + batch_size - 1)//batch_size}")
+        
+        try:
+            result = pipeline.run({
+                "text_converter": {"sources": batch_paths}
+            })
+            logger.info(f"Batch completed: {result['writer']['documents_written']} chunks indexed")
+        except Exception as e:
+            logger.error(f"Batch failed: {str(e)}")
+            continue  # Continue with next batch
+
+# Usage
+batch_index_directory(pipeline, "data/documents", batch_size=50)
+</code></pre>
+</div>
+
+<h2>Pipeline Serialization</h2>
+<p>Save pipelines to YAML for version control and reproducibility:</p>
+
+<div class="code-block">
+<pre><code># Save pipeline to YAML
+pipeline.dump("indexing_pipeline.yaml")
+
+# Load pipeline in production
+from haystack import Pipeline
+
+production_pipeline = Pipeline.load("indexing_pipeline.yaml")
+
+# Run loaded pipeline
+result = production_pipeline.run({
+    "text_converter": {"sources": ["new_document.txt"]}
+})
+</code></pre>
+</div>
+
+<h2>Monitoring and Observability</h2>
+<p>Implement monitoring for production pipelines:</p>
+
+<ul>
+    <li><strong>Document Count:</strong> Track total documents and chunks indexed</li>
+    <li><strong>Indexing Rate:</strong> Monitor documents processed per second</li>
+    <li><strong>Error Rate:</strong> Track failed indexing operations</li>
+    <li><strong>Storage Size:</strong> Monitor document store disk usage</li>
+    <li><strong>Embedding Time:</strong> Measure time spent generating embeddings</li>
+</ul>
+
+<h2>Common Indexing Challenges</h2>
+<table>
+    <tr>
+        <th>Challenge</th>
+        <th>Symptom</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Memory Overflow</td>
+        <td>Process crashes during large batch indexing</td>
+        <td>Reduce batch size, use streaming, increase system memory</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Slow Indexing</td>
+        <td>Low throughput, long processing times</td>
+        <td>Increase batch size, use GPU for embeddings, optimize chunking</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Poor Retrieval Quality</td>
+        <td>Irrelevant results returned</td>
+        <td>Adjust chunk size/overlap, try different embedding models</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Duplicate Documents</td>
+        <td>Same content indexed multiple times</td>
+        <td>Use UPSERT policy, implement deduplication logic</td>
+    </tr>
+</table>
+
+<h2>Incremental Indexing</h2>
+<p>Update your index without reprocessing everything:</p>
+
+<div class="code-block">
+<pre><code>def incremental_index(pipeline, new_files, existing_doc_ids):
+    """Index only new or modified documents."""
+    
+    # Filter out already indexed files
+    files_to_index = [
+        f for f in new_files 
+        if get_file_id(f) not in existing_doc_ids
+    ]
+    
+    if not files_to_index:
+        logger.info("No new files to index")
+        return
+    
+    logger.info(f"Indexing {len(files_to_index)} new files")
+    
+    result = pipeline.run({
+        "text_converter": {"sources": files_to_index}
+    })
+    
+    return result['writer']['documents_written']
+
+def get_file_id(filepath):
+    """Generate unique ID for file based on path and modification time."""
+    import hashlib
+    from pathlib import Path
+    
+    path = Path(filepath)
+    content = f"{path.absolute()}_{path.stat().st_mtime}"
+    return hashlib.md5(content.encode()).hexdigest()
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

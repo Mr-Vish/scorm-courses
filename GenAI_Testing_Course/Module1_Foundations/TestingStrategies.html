@@ -1,0 +1,306 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Testing Strategies and Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Testing Strategies and Patterns</h1>
+
+<h2>Testing RAG Applications</h2>
+<p>Retrieval-Augmented Generation (RAG) systems have unique testing requirements because they combine retrieval, context assembly, and generation.</p>
+
+<h3>Component Testing</h3>
+<table>
+    <tr><th>Component</th><th>What to Test</th><th>Method</th></tr>
+    <tr>
+        <td class="rowheader">Embedding Generation</td>
+        <td>Consistency, dimensionality, similarity scores</td>
+        <td>Unit tests with known inputs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vector Search</td>
+        <td>Retrieval accuracy, ranking quality, latency</td>
+        <td>Golden dataset with known relevant documents</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Assembly</td>
+        <td>Relevance filtering, deduplication, ordering</td>
+        <td>Integration tests with mock retrieval</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Generation</td>
+        <td>Groundedness, relevance, accuracy</td>
+        <td>Evaluation frameworks</td>
+    </tr>
+</table>
+
+<h3>RAG-Specific Metrics</h3>
+<div class="code-block">
+<pre><code>def test_rag_retrieval_accuracy():
+    # Test if correct documents are retrieved
+    query = "What is the capital of France?"
+    results = retriever.search(query, top_k=5)
+    
+    # Check if relevant document is in top results
+    relevant_doc_ids = ["doc_france_001", "doc_paris_001"]
+    retrieved_ids = [r.id for r in results]
+    
+    assert any(doc_id in retrieved_ids for doc_id in relevant_doc_ids)
+    assert results[0].score > 0.7  # Top result has high relevance
+
+def test_rag_groundedness():
+    query = "What is the capital of France?"
+    context = "France is a country in Europe. Paris is its capital city."
+    response = rag_system.generate(query, context)
+    
+    # Response should be grounded in context
+    assert "Paris" in response
+    assert not contains_hallucination(response, context)
+</code></pre>
+</div>
+
+<h2>Testing AI Agents</h2>
+<p>AI agents make autonomous decisions about tool usage, requiring specialized testing approaches.</p>
+
+<h3>Agent Testing Challenges</h3>
+<ul>
+    <li><strong>Non-deterministic paths:</strong> Agent may choose different tools for same task</li>
+    <li><strong>Variable iterations:</strong> Number of steps varies by complexity</li>
+    <li><strong>Tool dependencies:</strong> Failures cascade through workflow</li>
+    <li><strong>Cost:</strong> Multiple LLM calls per test case</li>
+</ul>
+
+<h3>Agent Testing Patterns</h3>
+<div class="code-block">
+<pre><code>def test_agent_tool_selection():
+    # Test that agent selects appropriate tools
+    task = "What's the weather in Paris and convert 20°C to Fahrenheit?"
+    
+    with AgentTracer() as tracer:
+        result = agent.execute(task)
+        
+        # Verify correct tools were called
+        tools_used = tracer.get_tools_used()
+        assert "get_weather" in tools_used
+        assert "convert_temperature" in tools_used
+        
+        # Verify reasonable number of iterations
+        assert tracer.iteration_count <= 5
+        
+        # Verify final answer contains both pieces of information
+        assert "Paris" in result
+        assert "68" in result or "Fahrenheit" in result
+
+def test_agent_error_handling():
+    # Test agent behavior when tools fail
+    task = "Get weather for InvalidCity123"
+    
+    with mock.patch('tools.get_weather', side_effect=ToolError("City not found")):
+        result = agent.execute(task)
+        
+        # Agent should handle error gracefully
+        assert "not found" in result.lower() or "unable" in result.lower()
+        assert not result.startswith("Error:")  # No raw error exposed
+</code></pre>
+</div>
+
+<h2>Prompt Testing</h2>
+
+<h3>Template Validation</h3>
+<div class="code-block">
+<pre><code>def test_prompt_template_rendering():
+    template = """You are a helpful assistant.
+    
+User question: {question}
+Context: {context}
+
+Provide a concise answer."""
+    
+    rendered = render_prompt(
+        template,
+        question="What is AI?",
+        context="AI stands for Artificial Intelligence."
+    )
+    
+    assert "{question}" not in rendered  # All variables replaced
+    assert "What is AI?" in rendered
+    assert "Artificial Intelligence" in rendered
+
+def test_prompt_token_limits():
+    template = "Summarize: {text}"
+    long_text = "word " * 10000  # Very long input
+    
+    rendered = render_prompt(template, text=long_text)
+    token_count = count_tokens(rendered)
+    
+    # Should not exceed model's context window
+    assert token_count < 8000  # Example limit for GPT-3.5
+</code></pre>
+</div>
+
+<h3>Few-Shot Example Testing</h3>
+<div class="code-block">
+<pre><code>def test_few_shot_examples():
+    examples = [
+        {"input": "2+2", "output": "4"},
+        {"input": "5*3", "output": "15"},
+        {"input": "10/2", "output": "5"}
+    ]
+    
+    prompt = build_few_shot_prompt(
+        examples=examples,
+        new_input="6+3"
+    )
+    
+    response = llm.generate(prompt)
+    
+    # Should follow pattern from examples
+    assert response.strip() == "9" or "9" in response
+</code></pre>
+</div>
+
+<h2>Testing Streaming Responses</h2>
+
+<div class="code-block">
+<pre><code>async def test_streaming_response():
+    chunks = []
+    
+    async for chunk in llm.stream("Tell me a short story"):
+        chunks.append(chunk)
+        
+        # Test chunk properties
+        assert isinstance(chunk, str)
+        assert len(chunk) > 0
+    
+    # Test complete response
+    full_response = "".join(chunks)
+    assert len(full_response) > 50  # Reasonable length
+    assert len(chunks) > 5  # Multiple chunks received
+
+async def test_streaming_error_handling():
+    try:
+        async for chunk in llm.stream("Invalid prompt that causes error"):
+            pass
+    except StreamingError as e:
+        assert "error" in str(e).lower()
+        # Error should be caught and handled
+</code></pre>
+</div>
+
+<h2>Testing Multi-Modal Applications</h2>
+
+<h3>Image Input Testing</h3>
+<div class="code-block">
+<pre><code>def test_image_analysis():
+    image_path = "tests/fixtures/cat.jpg"
+    prompt = "What animal is in this image?"
+    
+    response = vision_model.analyze(image_path, prompt)
+    
+    assert "cat" in response.lower()
+    assert len(response) > 10  # Reasonable description
+
+def test_image_format_validation():
+    invalid_formats = ["file.txt", "file.pdf", "file.exe"]
+    
+    for file_path in invalid_formats:
+        with pytest.raises(InvalidImageFormat):
+            vision_model.analyze(file_path, "Describe this")
+</code></pre>
+</div>
+
+<h2>Performance Testing</h2>
+
+<h3>Latency Testing</h3>
+<div class="code-block">
+<pre><code>import time
+
+def test_response_latency():
+    start = time.time()
+    response = llm.generate("What is 2+2?")
+    latency = time.time() - start
+    
+    assert latency < 5.0  # Should respond within 5 seconds
+    assert len(response) > 0
+
+def test_concurrent_requests():
+    import asyncio
+    
+    async def make_request():
+        return await llm.generate_async("Test prompt")
+    
+    start = time.time()
+    results = await asyncio.gather(*[make_request() for _ in range(10)])
+    total_time = time.time() - start
+    
+    assert all(len(r) > 0 for r in results)
+    assert total_time < 15.0  # 10 requests in under 15 seconds
+</code></pre>
+</div>
+
+<h3>Cost Testing</h3>
+<div class="code-block">
+<pre><code>def test_token_usage():
+    with TokenCounter() as counter:
+        response = llm.generate("Summarize: " + long_text)
+        
+        # Verify token usage is reasonable
+        assert counter.input_tokens < 4000
+        assert counter.output_tokens < 500
+        assert counter.total_cost < 0.10  # Less than 10 cents
+
+def test_caching_effectiveness():
+    # First call - cache miss
+    response1 = cached_llm.generate("What is AI?")
+    cost1 = get_last_request_cost()
+    
+    # Second call - cache hit
+    response2 = cached_llm.generate("What is AI?")
+    cost2 = get_last_request_cost()
+    
+    assert response1 == response2
+    assert cost2 == 0  # Cached response has no cost
+</code></pre>
+</div>
+
+<h2>Test Fixtures and Utilities</h2>
+
+<div class="code-block">
+<pre><code># conftest.py
+import pytest
+
+@pytest.fixture
+def mock_llm():
+    """Provides a mock LLM for testing without API calls"""
+    from unittest.mock import Mock
+    mock = Mock()
+    mock.generate.return_value = "Mocked response"
+    return mock
+
+@pytest.fixture
+def test_documents():
+    """Provides sample documents for RAG testing"""
+    return [
+        {"id": "doc1", "text": "Paris is the capital of France."},
+        {"id": "doc2", "text": "London is the capital of the UK."},
+        {"id": "doc3", "text": "Berlin is the capital of Germany."}
+    ]
+
+@pytest.fixture
+def golden_dataset():
+    """Loads golden test dataset"""
+    import yaml
+    with open("tests/fixtures/golden_dataset.yaml") as f:
+        return yaml.safe_load(f)
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

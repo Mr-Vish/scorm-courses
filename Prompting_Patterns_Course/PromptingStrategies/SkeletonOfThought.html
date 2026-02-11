@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Skeleton-of-Thought</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Skeleton-of-Thought</h1>
+<div class="container">
+<h2>The Skeleton-of-Thought Pattern: High-Speed Generation</h2>
+<p>One of the biggest bottlenecks in using LLMs is their generation speed. Because LLMs generate text token-by-token, long responses can take a significant amount of time. The "Skeleton-of-Thought" (SoT) pattern is a technique designed to significantly speed up the generation of long-form content by using a "parallel" approach.</p>
+
+<h3>The Problem: Sequential Generation Latency</h3>
+<p>When you ask for a 2,000-word report, the model writes word 1, then word 2, and so on. This is purely sequential. If the model generates at 50 tokens per second, a 2,000-word (roughly 2,500 tokens) report will take at least 50 seconds. SoT aims to reduce this by breaking the task into parts that can be generated at the same time.</p>
+
+<h3>How Skeleton-of-Thought Works</h3>
+<p>The SoT pattern involves two main phases:</p>
+<ol>
+    <li><strong>Skeleton Generation:</strong> Instead of asking for the full report, you first ask the model to generate a "skeleton" or an outline. "Create an outline for a 5-section report on the impact of AI on healthcare." This step is very fast because the output is short.</li>
+    <li><strong>Parallel Expansion:</strong> You then take each section of the outline and ask the model (or multiple instances of the model) to expand on that section *simultaneously*.
+        <ul>
+            <li>Task 1: "Expand on Section 1 of this outline: [Outline]"</li>
+            <li>Task 2: "Expand on Section 2 of this outline: [Outline]"</li>
+            <li>...and so on.</li>
+        </ul>
+    </li>
+</ol>
+<p>By running these expansion tasks in parallel, the total time to get the final result is roughly equal to the time it takes to generate the *longest single section*, rather than the sum of all sections.</p>
+
+<h3>The Role of the Orchestrator</h3>
+<p>To implement SoT, you need an "orchestrator" (a piece of code) that manages the parallel API calls. The orchestrator:
+1. Calls the LLM to get the skeleton.
+2. Parses the skeleton into individual sections.
+3. Launches multiple parallel API calls for the expansions.
+4. Collects the results and stitches them back together into the final document.</p>
+
+<h3>Why SoT is a 'Prompting' Pattern</h3>
+<p>Like RAG, SoT requires infrastructure, but its success depends on the prompt. The skeleton must be clear and the expansion prompts must provide enough context from the skeleton to ensure the final sections are coherent and don't repeat each other. "You are writing Section 3 of this report. For context, Section 2 discussed [Topic] and Section 4 will discuss [Topic]. Please focus only on Section 3: [Section 3 Outline]."</p>
+
+<h3>Benefits of Skeleton-of-Thought</h3>
+<ul>
+    <li><strong>Significant Speedup:</strong> Can reduce generation time for long documents by 50-80% depending on the number of sections.</li>
+    <li><strong>Improved Focus:</strong> Because the model is focusing on one specific section at a time, the quality and depth of each section are often higher than if it tried to write the whole thing in one go.</li>
+    <li><strong>Scalability:</strong> You can generate very long documents (e.g., a whole book) by expanding each section recursively.</li>
+</ul>
+
+<h3>Use Cases for SoT</h3>
+<ul>
+    <li><strong>Long-Form Reports and Essays:</strong> Generating 10-20 page documents in seconds.</li>
+    <li><strong>Course Content Creation:</strong> Generating multiple modules of a course simultaneously.</li>
+    <li><strong>Technical Documentation:</strong> Writing different chapters of a user manual in parallel.</li>
+    <li><strong>Personalized Books/Guides:</strong> Creating custom itineraries or instructional guides for users on the fly.</li>
+</ul>
+
+<h3>Practical Exercise: SoT for a City Guide</h3>
+<p>1. <strong>Skeleton:</strong> "Create an outline for a comprehensive city guide to Tokyo, including sections on History, Food, Transportation, and Top 5 Attractions."
+2. <strong>Expansion (Parallel):</strong>
+   - "Expand on the History of Tokyo..."
+   - "Expand on the Food culture in Tokyo..."
+   - ...and so on.
+3. <strong>Result:</strong> Stitch the sections together for a complete guide in a fraction of the time.</p>
+
+<h3>Limitations</h3>
+<ul>
+    <li><strong>Coherence Issues:</strong> If not carefully prompted, the different sections might have slightly different tones or might repeat information. The orchestrator might need to do a final "smoothing" pass.</li>
+    <li><strong>Cost:</strong> Total token count is slightly higher due to the need to repeat the skeleton and context in every expansion prompt.</li>
+    <li><strong>Complexity:</strong> Requires multi-threaded or asynchronous code to manage the parallel calls.</li>
+</ul>
+
+<p>In conclusion, the Skeleton-of-Thought pattern is a vital technique for building high-performance LLM applications. It demonstrates how "agentic" orchestration can overcome the fundamental physical limitations of token generation speed.</p>
+
+</div>
+</body>
+</html>

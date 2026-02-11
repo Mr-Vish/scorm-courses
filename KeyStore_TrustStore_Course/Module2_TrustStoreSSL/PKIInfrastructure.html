@@ -1,0 +1,347 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Certificate Authorities and PKI Infrastructure</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Certificate Authorities and PKI Infrastructure</h1>
+
+<h2>Understanding Public Key Infrastructure (PKI)</h2>
+<p>Public Key Infrastructure (PKI) is a framework of policies, procedures, hardware, software, and people that create, manage, distribute, use, store, and revoke digital certificates. PKI enables secure electronic transfer of information for authentication, encryption, and digital signatures.</p>
+
+<h3>PKI Components</h3>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Role</th>
+        <th>Responsibility</th>
+    </tr>
+    <tr>
+        <td>Certificate Authority (CA)</td>
+        <td>Trust anchor</td>
+        <td>Issues and signs digital certificates</td>
+    </tr>
+    <tr>
+        <td>Registration Authority (RA)</td>
+        <td>Identity verification</td>
+        <td>Verifies certificate requests before CA signs</td>
+    </tr>
+    <tr>
+        <td>Certificate Repository</td>
+        <td>Storage</td>
+        <td>Stores and distributes certificates and CRLs</td>
+    </tr>
+    <tr>
+        <td>Certificate Revocation List (CRL)</td>
+        <td>Revocation tracking</td>
+        <td>Lists revoked certificates</td>
+    </tr>
+    <tr>
+        <td>OCSP Responder</td>
+        <td>Real-time validation</td>
+        <td>Provides certificate status in real-time</td>
+    </tr>
+</table>
+
+<h2>Certificate Authority Types</h2>
+
+<h3>Public Certificate Authorities</h3>
+<p>Publicly trusted CAs whose root certificates are pre-installed in browsers and operating systems:</p>
+
+<table>
+    <tr>
+        <th>CA Provider</th>
+        <th>Market Position</th>
+        <th>Typical Use Cases</th>
+    </tr>
+    <tr>
+        <td>DigiCert</td>
+        <td>Enterprise leader</td>
+        <td>Large organizations, high-assurance certificates</td>
+    </tr>
+    <tr>
+        <td>Let's Encrypt</td>
+        <td>Free, automated</td>
+        <td>Public websites, automated certificate management</td>
+    </tr>
+    <tr>
+        <td>GlobalSign</td>
+        <td>International presence</td>
+        <td>Global enterprises, IoT devices</td>
+    </tr>
+    <tr>
+        <td>Sectigo (Comodo)</td>
+        <td>Cost-effective</td>
+        <td>Small to medium businesses</td>
+    </tr>
+    <tr>
+        <td>GoDaddy</td>
+        <td>SMB focused</td>
+        <td>Small businesses, domain-validated certificates</td>
+    </tr>
+</table>
+
+<h3>Private Certificate Authorities</h3>
+<p>Internal CAs operated by organizations for their own infrastructure:</p>
+
+<h4>Advantages of Private CA</h4>
+<ul>
+<li><strong>Cost Savings:</strong> No per-certificate fees</li>
+<li><strong>Control:</strong> Full control over certificate policies</li>
+<li><strong>Flexibility:</strong> Custom certificate attributes and validity periods</li>
+<li><strong>Speed:</strong> Instant certificate issuance</li>
+<li><strong>Internal Use:</strong> Ideal for internal systems and development</li>
+</ul>
+
+<h4>Challenges of Private CA</h4>
+<ul>
+<li><strong>Trust Distribution:</strong> Must manually distribute root certificate</li>
+<li><strong>Management Overhead:</strong> Requires infrastructure and expertise</li>
+<li><strong>No Public Trust:</strong> Not trusted by external parties</li>
+<li><strong>Security Responsibility:</strong> Organization responsible for CA security</li>
+</ul>
+
+<h2>Certificate Validation Levels</h2>
+
+<h3>Domain Validated (DV) Certificates</h3>
+<p><strong>Validation:</strong> Proves control of domain name only</p>
+<p><strong>Issuance Time:</strong> Minutes to hours</p>
+<p><strong>Cost:</strong> Low ($0-$50/year)</p>
+<p><strong>Use Cases:</strong> Blogs, personal websites, development environments</p>
+<p><strong>Trust Level:</strong> Basic - only domain ownership verified</p>
+
+<h3>Organization Validated (OV) Certificates</h3>
+<p><strong>Validation:</strong> Verifies organization identity and domain control</p>
+<p><strong>Issuance Time:</strong> 1-3 days</p>
+<p><strong>Cost:</strong> Medium ($50-$200/year)</p>
+<p><strong>Use Cases:</strong> Corporate websites, business applications</p>
+<p><strong>Trust Level:</strong> Medium - organization identity verified</p>
+
+<h3>Extended Validation (EV) Certificates</h3>
+<p><strong>Validation:</strong> Rigorous verification of legal entity and operational existence</p>
+<p><strong>Issuance Time:</strong> 1-2 weeks</p>
+<p><strong>Cost:</strong> High ($200-$1000+/year)</p>
+<p><strong>Use Cases:</strong> Financial institutions, e-commerce, high-security sites</p>
+<p><strong>Trust Level:</strong> Highest - comprehensive verification</p>
+
+<h2>Certificate Revocation</h2>
+
+<h3>Reasons for Certificate Revocation</h3>
+<ul>
+<li><strong>Private Key Compromise:</strong> Private key exposed or stolen</li>
+<li><strong>CA Compromise:</strong> Issuing CA's security breached</li>
+<li><strong>Affiliation Changed:</strong> Organization name or ownership changed</li>
+<li><strong>Certificate Misuse:</strong> Certificate used improperly</li>
+<li><strong>Superseded:</strong> Replaced by newer certificate</li>
+<li><strong>Cessation of Operation:</strong> Service discontinued</li>
+</ul>
+
+<h3>Certificate Revocation List (CRL)</h3>
+<p>CRL is a list of revoked certificates published by the CA:</p>
+
+<blockquote>
+<strong>How It Works:</strong><br/>
+1. CA publishes CRL at regular intervals<br/>
+2. Clients download CRL periodically<br/>
+3. Clients check certificate serial number against CRL<br/>
+4. If found in CRL, certificate is rejected
+</blockquote>
+
+<h4>CRL Advantages</h4>
+<ul>
+<li>Simple to implement</li>
+<li>Works offline once downloaded</li>
+<li>Standardized format</li>
+</ul>
+
+<h4>CRL Disadvantages</h4>
+<ul>
+<li>Can become very large</li>
+<li>Delayed revocation (until next CRL update)</li>
+<li>Bandwidth intensive</li>
+<li>Scalability issues</li>
+</ul>
+
+<h3>Online Certificate Status Protocol (OCSP)</h3>
+<p>OCSP provides real-time certificate status checking:</p>
+
+<blockquote>
+<strong>How It Works:</strong><br/>
+1. Client sends certificate serial number to OCSP responder<br/>
+2. OCSP responder checks certificate status<br/>
+3. Responder returns: Good, Revoked, or Unknown<br/>
+4. Client accepts or rejects certificate based on response
+</blockquote>
+
+<h4>OCSP Advantages</h4>
+<ul>
+<li>Real-time status information</li>
+<li>Smaller data transfer than CRL</li>
+<li>More current revocation information</li>
+</ul>
+
+<h4>OCSP Disadvantages</h4>
+<ul>
+<li>Requires online connectivity</li>
+<li>Privacy concerns (CA knows which sites you visit)</li>
+<li>Performance impact (additional network request)</li>
+<li>OCSP responder availability dependency</li>
+</ul>
+
+<h3>OCSP Stapling</h3>
+<p>Optimization where server provides OCSP response during handshake:</p>
+
+<blockquote>
+<strong>Benefits:</strong><br/>
+- Reduces client latency<br/>
+- Improves privacy<br/>
+- Reduces load on OCSP responders<br/>
+- Server caches OCSP response
+</blockquote>
+
+<h2>Certificate Lifecycle in PKI</h2>
+
+<h3>Certificate Lifecycle Stages</h3>
+
+<table>
+    <tr>
+        <th>Stage</th>
+        <th>Activities</th>
+        <th>Duration</th>
+    </tr>
+    <tr>
+        <td>Request</td>
+        <td>Generate CSR, submit to CA</td>
+        <td>Minutes to hours</td>
+    </tr>
+    <tr>
+        <td>Validation</td>
+        <td>CA verifies identity and domain</td>
+        <td>Minutes to weeks (depends on validation level)</td>
+    </tr>
+    <tr>
+        <td>Issuance</td>
+        <td>CA signs and issues certificate</td>
+        <td>Immediate after validation</td>
+    </tr>
+    <tr>
+        <td>Active Use</td>
+        <td>Certificate in production use</td>
+        <td>Validity period (typically 1-2 years)</td>
+    </tr>
+    <tr>
+        <td>Renewal</td>
+        <td>Request new certificate before expiration</td>
+        <td>30-60 days before expiry</td>
+    </tr>
+    <tr>
+        <td>Revocation</td>
+        <td>Certificate invalidated if compromised</td>
+        <td>Immediate when needed</td>
+    </tr>
+    <tr>
+        <td>Expiration</td>
+        <td>Certificate no longer valid</td>
+        <td>End of validity period</td>
+    </tr>
+</table>
+
+<h2>Selecting a Certificate Authority</h2>
+
+<h3>Evaluation Criteria</h3>
+
+<h4>For Public-Facing Applications</h4>
+<ul>
+<li><strong>Browser Trust:</strong> Root certificate trusted by major browsers</li>
+<li><strong>Reputation:</strong> Established CA with good security track record</li>
+<li><strong>Support:</strong> Quality customer support and documentation</li>
+<li><strong>Pricing:</strong> Competitive pricing for required validation level</li>
+<li><strong>Features:</strong> Wildcard, SAN, multi-domain support as needed</li>
+<li><strong>Automation:</strong> API support for automated certificate management</li>
+</ul>
+
+<h4>For Internal Applications</h4>
+<ul>
+<li><strong>Private CA:</strong> Consider internal CA for cost savings</li>
+<li><strong>Management Tools:</strong> Certificate lifecycle management capabilities</li>
+<li><strong>Integration:</strong> Integration with existing infrastructure</li>
+<li><strong>Scalability:</strong> Ability to handle certificate volume</li>
+</ul>
+
+<h2>PKI Best Practices</h2>
+
+<h3>Organizational Policies</h3>
+<ul>
+<li><strong>Certificate Policy (CP):</strong> Define rules for certificate issuance and use</li>
+<li><strong>Certificate Practice Statement (CPS):</strong> Document how policies are implemented</li>
+<li><strong>Key Management:</strong> Procedures for key generation, storage, and destruction</li>
+<li><strong>Audit Requirements:</strong> Regular audits of certificate usage and compliance</li>
+</ul>
+
+<h3>Operational Practices</h3>
+<ul>
+<li><strong>Inventory Management:</strong> Maintain complete certificate inventory</li>
+<li><strong>Expiration Monitoring:</strong> Automated alerts for expiring certificates</li>
+<li><strong>Renewal Process:</strong> Defined procedures for certificate renewal</li>
+<li><strong>Incident Response:</strong> Plan for handling compromised certificates</li>
+<li><strong>Documentation:</strong> Comprehensive documentation of PKI infrastructure</li>
+</ul>
+
+<h3>Security Practices</h3>
+<ul>
+<li><strong>CA Security:</strong> Protect CA private keys with HSM</li>
+<li><strong>Access Control:</strong> Restrict certificate issuance authority</li>
+<li><strong>Audit Logging:</strong> Log all certificate operations</li>
+<li><strong>Regular Reviews:</strong> Periodic security assessments</li>
+<li><strong>Disaster Recovery:</strong> Backup and recovery procedures</li>
+</ul>
+
+<h2>Emerging Trends in PKI</h2>
+
+<h3>Automated Certificate Management</h3>
+<p>ACME protocol (used by Let's Encrypt) enables automated certificate lifecycle:</p>
+<ul>
+<li>Automated domain validation</li>
+<li>Programmatic certificate issuance</li>
+<li>Automatic renewal before expiration</li>
+<li>Integration with DevOps pipelines</li>
+</ul>
+
+<h3>Short-Lived Certificates</h3>
+<p>Trend toward shorter certificate validity periods:</p>
+<ul>
+<li><strong>Current Standard:</strong> 398 days maximum for public SSL certificates</li>
+<li><strong>Future Direction:</strong> Moving toward 90-day or shorter validity</li>
+<li><strong>Benefits:</strong> Reduced impact of compromise, forced regular rotation</li>
+<li><strong>Challenge:</strong> Requires automation for practical management</li>
+</ul>
+
+<h3>Certificate Transparency</h3>
+<p>Public logs of all issued certificates for accountability:</p>
+<ul>
+<li>Detect mis-issued certificates</li>
+<li>Monitor certificate issuance for domains</li>
+<li>Improve CA accountability</li>
+<li>Required for Extended Validation certificates</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>PKI provides framework for certificate management and trust establishment</li>
+<li>Public CAs offer broad trust; private CAs provide control and cost savings</li>
+<li>Certificate validation levels (DV, OV, EV) offer different trust assurances</li>
+<li>Certificate revocation uses CRL or OCSP to invalidate compromised certificates</li>
+<li>Selecting appropriate CA depends on use case, budget, and trust requirements</li>
+<li>Automation and short-lived certificates are emerging best practices</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

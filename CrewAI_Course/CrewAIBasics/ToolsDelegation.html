@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Tools and Delegation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Tools and Delegation</h1>
+
+
+<h2>Equipping Agents with Tools</h2>
+<p>Tools give agents the ability to interact with the real world - search the web, read files, query databases, and call APIs:</p>
+<div class="code-block">
+<pre><code>from crewai import Agent
+from crewai_tools import SerperDevTool, ScrapeWebsiteTool, FileReadTool
+
+# Create tools
+search_tool = SerperDevTool()      # Google search via Serper API
+scrape_tool = ScrapeWebsiteTool()  # Web page scraping
+file_tool = FileReadTool()         # Local file reading
+
+# Assign tools to an agent
+researcher = Agent(
+    role="Research Analyst",
+    goal="Find accurate, up-to-date information",
+    backstory="Expert researcher with access to web search tools.",
+    tools=[search_tool, scrape_tool, file_tool],
+    llm="gpt-4o",
+)</code></pre>
+</div>
+
+<h2>Built-in Tools</h2>
+<table>
+    <tr><th>Tool</th><th>Purpose</th><th>Requirements</th></tr>
+    <tr><td>SerperDevTool</td><td>Google search results</td><td>Serper API key</td></tr>
+    <tr><td>ScrapeWebsiteTool</td><td>Extract content from web pages</td><td>None</td></tr>
+    <tr><td>FileReadTool</td><td>Read local files</td><td>File path access</td></tr>
+    <tr><td>DirectoryReadTool</td><td>List directory contents</td><td>Directory access</td></tr>
+    <tr><td>PDFSearchTool</td><td>Search within PDF documents</td><td>RAG-powered</td></tr>
+    <tr><td>GithubSearchTool</td><td>Search GitHub repositories</td><td>GitHub token</td></tr>
+</table>
+
+<h2>Creating Custom Tools</h2>
+<div class="code-block">
+<pre><code>from crewai_tools import BaseTool
+from pydantic import BaseModel, Field
+
+class DatabaseQueryInput(BaseModel):
+    query: str = Field(description="SQL query to execute")
+
+class DatabaseQueryTool(BaseTool):
+    name: str = "database_query"
+    description: str = "Execute a SQL query against the analytics database"
+    args_schema: type[BaseModel] = DatabaseQueryInput
+
+    def _run(self, query: str) -&gt; str:
+        # Execute query against your database
+        import sqlite3
+        conn = sqlite3.connect("analytics.db")
+        result = conn.execute(query).fetchall()
+        conn.close()
+        return str(result)</code></pre>
+</div>
+
+<h2>Delegation</h2>
+<p>When <code>allow_delegation=True</code>, an agent can ask other agents in the crew for help. This enables dynamic collaboration:</p>
+<ul>
+    <li>The researcher can ask the writer to rephrase findings for clarity</li>
+    <li>The writer can ask the researcher for additional data on a specific point</li>
+    <li>Delegation happens automatically through natural language requests between agents</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Clear roles:</strong> Give agents distinct, non-overlapping responsibilities</li>
+    <li><strong>Specific goals:</strong> Vague goals lead to vague outputs - be precise</li>
+    <li><strong>Rich backstories:</strong> Backstories improve output quality by providing context</li>
+    <li><strong>Limit tools:</strong> Only give agents the tools they need - too many tools confuse the model</li>
+    <li><strong>Expected outputs:</strong> Define clear output formats in task descriptions</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

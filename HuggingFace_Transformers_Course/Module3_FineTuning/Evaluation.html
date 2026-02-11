@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Model Evaluation and Metrics</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Model Evaluation and Metrics</h1>
+
+<h2>Why Evaluation Matters</h2>
+<p>Proper evaluation ensures your model performs well on real-world tasks. Different metrics capture different aspects of model quality, and choosing the right metrics is crucial for your specific use case.</p>
+
+<h2>Common Evaluation Metrics</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Task Type</th>
+        <th>What It Measures</th>
+        <th>Range</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Perplexity</td>
+        <td>Language Modeling</td>
+        <td>How well model predicts text</td>
+        <td>Lower is better</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Accuracy</td>
+        <td>Classification</td>
+        <td>Percentage of correct predictions</td>
+        <td>0-100%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">F1 Score</td>
+        <td>Classification</td>
+        <td>Harmonic mean of precision and recall</td>
+        <td>0-1</td>
+    </tr>
+    <tr>
+        <td class="rowheader">BLEU</td>
+        <td>Translation</td>
+        <td>N-gram overlap with reference</td>
+        <td>0-100</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ROUGE</td>
+        <td>Summarization</td>
+        <td>Overlap with reference summaries</td>
+        <td>0-1</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Exact Match</td>
+        <td>QA</td>
+        <td>Exact string match with answer</td>
+        <td>0-100%</td>
+    </tr>
+</table>
+
+<h2>Evaluating with the Trainer</h2>
+<pre><code>from transformers import Trainer, TrainingArguments
+from datasets import load_metric
+
+# Load metric
+metric = load_metric("accuracy")
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return metric.compute(predictions=predictions, references=labels)
+
+# Configure evaluation
+training_args = TrainingArguments(
+    output_dir="./results",
+    evaluation_strategy="steps",
+    eval_steps=500,
+    per_device_eval_batch_size=8,
+    logging_steps=100
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
+    compute_metrics=compute_metrics
+)
+
+# Evaluate
+results = trainer.evaluate()
+print(results)
+# Output: {'eval_loss': 0.45, 'eval_accuracy': 0.89, 'eval_runtime': 12.34}\n</code></pre>
+
+<h2>Perplexity Calculation</h2>
+<pre><code>import torch
+from torch.nn import CrossEntropyLoss
+
+def calculate_perplexity(model, tokenizer, text):
+    encodings = tokenizer(text, return_tensors="pt")
+    
+    max_length = model.config.max_position_embeddings
+    stride = 512
+    
+    nlls = []
+    for i in range(0, encodings.input_ids.size(1), stride):
+        begin_loc = max(i + stride - max_length, 0)
+        end_loc = min(i + stride, encodings.input_ids.size(1))
+        trg_len = end_loc - i
+        
+        input_ids = encodings.input_ids[:, begin_loc:end_loc].to(model.device)
+        target_ids = input_ids.clone()
+        target_ids[:, :-trg_len] = -100
+        
+        with torch.no_grad():
+            outputs = model(input_ids, labels=target_ids)
+            neg_log_likelihood = outputs.loss * trg_len
+        
+        nlls.append(neg_log_likelihood)
+    
+    ppl = torch.exp(torch.stack(nlls).sum() / end_loc)
+    return ppl.item()
+
+# Usage
+test_text = "Your evaluation text here..."
+perplexity = calculate_perplexity(model, tokenizer, test_text)
+print(f"Perplexity: {perplexity:.2f}")\n</code></pre>
+
+<h2>BLEU Score for Translation</h2>
+<pre><code>from datasets import load_metric
+
+bleu = load_metric("bleu")
+
+predictions = ["The cat is on the mat"]
+references = [["The cat is on the mat", "There is a cat on the mat"]]
+
+results = bleu.compute(predictions=predictions, references=references)
+print(f"BLEU score: {results['bleu']:.4f}")\n</code></pre>
+
+<h2>ROUGE Score for Summarization</h2>
+<pre><code>from datasets import load_metric
+
+rouge = load_metric("rouge")
+
+predictions = ["The quick brown fox jumps over the lazy dog"]
+references = ["A fast brown fox leaps over a sleepy dog"]
+
+results = rouge.compute(predictions=predictions, references=references)
+print(f"ROUGE-1: {results['rouge1'].mid.fmeasure:.4f}")
+print(f"ROUGE-2: {results['rouge2'].mid.fmeasure:.4f}")
+print(f"ROUGE-L: {results['rougeL'].mid.fmeasure:.4f}")\n</code></pre>
+
+<h2>Custom Evaluation Loop</h2>
+<pre><code>from tqdm import tqdm
+import torch
+
+def evaluate_model(model, eval_dataloader, device):
+    model.eval()
+    total_loss = 0
+    total_samples = 0
+    
+    with torch.no_grad():
+        for batch in tqdm(eval_dataloader, desc="Evaluating"):
+            inputs = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**inputs)
+            
+            loss = outputs.loss
+            total_loss += loss.item() * inputs['input_ids'].size(0)
+            total_samples += inputs['input_ids'].size(0)
+    
+    avg_loss = total_loss / total_samples
+    perplexity = torch.exp(torch.tensor(avg_loss))
+    
+    return {
+        "eval_loss": avg_loss,
+        "eval_perplexity": perplexity.item()
+    }
+
+# Usage
+results = evaluate_model(model, eval_dataloader, device)
+print(results)\n</code></pre>
+
+<h2>Benchmark Evaluation</h2>
+<pre><code># Evaluate on standard benchmarks
+from lm_eval import evaluator
+
+results = evaluator.simple_evaluate(
+    model="hf-causal",
+    model_args="pretrained=./my_model",
+    tasks=["hellaswag", "arc_easy", "arc_challenge"],
+    num_fewshot=0,
+    batch_size=8
+)
+
+print(results["results"])\n</code></pre>
+
+<h2>Human Evaluation</h2>
+<p>Automated metrics don't capture all aspects of quality. Human evaluation is essential for:</p>
+<ul>
+    <li>Fluency and naturalness</li>
+    <li>Factual accuracy</li>
+    <li>Relevance to prompt</li>
+    <li>Harmful or biased content</li>
+    <li>Overall helpfulness</li>
+</ul>
+
+<h2>A/B Testing Framework</h2>
+<pre><code>import random
+
+def ab_test(model_a, model_b, test_prompts, evaluators):
+    results = {"model_a_wins": 0, "model_b_wins": 0, "ties": 0}
+    
+    for prompt in test_prompts:
+        # Generate from both models
+        output_a = generate(model_a, prompt)
+        output_b = generate(model_b, prompt)
+        
+        # Randomize order to avoid bias
+        if random.random() &lt; 0.5:
+            first, second = output_a, output_b
+            first_model, second_model = "a", "b"
+        else:
+            first, second = output_b, output_a
+            first_model, second_model = "b", "a"
+        
+        # Human evaluation
+        for evaluator in evaluators:
+            choice = evaluator.evaluate(prompt, first, second)
+            
+            if choice == "first":
+                winner = first_model
+            elif choice == "second":
+                winner = second_model
+            else:
+                winner = "tie"
+            
+            if winner == "a":
+                results["model_a_wins"] += 1
+            elif winner == "b":
+                results["model_b_wins"] += 1
+            else:
+                results["ties"] += 1
+    
+    return results\n</code></pre>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Use Multiple Metrics:</strong> No single metric captures everything</li>
+    <li><strong>Evaluate on Held-Out Data:</strong> Never evaluate on training data</li>
+    <li><strong>Consider Task-Specific Metrics:</strong> Choose metrics aligned with your use case</li>
+    <li><strong>Include Human Evaluation:</strong> Especially for generation tasks</li>
+    <li><strong>Track Metrics Over Time:</strong> Monitor for degradation or improvement</li>
+    <li><strong>Compare to Baselines:</strong> Evaluate against existing solutions</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

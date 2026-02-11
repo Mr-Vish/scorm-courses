@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Streaming and Advanced Validation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Streaming and Advanced Validation</h1>
+
+<h2>Why Streaming Matters</h2>
+<p>In production applications, users expect immediate feedback. Streaming allows you to display partial results as the LLM generates them, creating a responsive user experience. Instructor supports streaming structured data, not just raw text, enabling real-time validation and progressive rendering.</p>
+
+
+<h2>Streaming Partial Results</h2>
+<p>Instructor supports streaming structured data as it is generated, allowing you to show partial results to users in real time:</p>
+<div class="code-block">
+<pre><code>import instructor
+from openai import OpenAI
+from pydantic import BaseModel
+
+client = instructor.from_openai(OpenAI())
+
+class Article(BaseModel):
+    title: str
+    summary: str
+    tags: list[str]
+
+# Stream partial objects as they are generated
+for partial in client.chat.completions.create_partial(
+    model="gpt-4o-mini",
+    response_model=Article,
+    messages=[{"role": "user", "content": "Write about quantum computing"}],
+):
+    print(f"Title: {partial.title}")
+    print(f"Summary: {partial.summary}")
+    print(f"Tags: {partial.tags}")
+    print("---")</code></pre>
+</div>
+
+<h2>Iterable Extraction</h2>
+<p>Extract a list of structured objects from text:</p>
+<div class="code-block">
+<pre><code>class Person(BaseModel):
+    name: str
+    age: int
+    occupation: str
+
+# Extract multiple people from a paragraph
+people = client.chat.completions.create_iterable(
+    model="gpt-4o-mini",
+    response_model=Person,
+    messages=[{
+        "role": "user",
+        "content": "Alice (32) is a software engineer. Bob (28) is a data scientist. Carol (45) is a PM."
+    }],
+)
+
+for person in people:
+    print(f"{person.name}, {person.age}, {person.occupation}")</code></pre>
+</div>
+
+<h2>Advanced Validation Patterns</h2>
+<table>
+    <tr><th>Pattern</th><th>Use Case</th><th>Example</th><th>Benefit</th></tr>
+    <tr><td>LLM-based validation</td><td>Semantic correctness checks</td><td>Verify extracted date is plausible</td><td>Catches logical errors</td></tr>
+    <tr><td>Cross-field validation</td><td>Fields that depend on each other</td><td>End date must be after start date</td><td>Ensures data consistency</td></tr>
+    <tr><td>Chain of extraction</td><td>Multi-step structured extraction</td><td>Extract entities, then relationships</td><td>Handles complex documents</td></tr>
+    <tr><td>Maybe pattern</td><td>Handle uncertain extractions</td><td>Return None instead of hallucinating</td><td>Prevents false positives</td></tr>
+</table>
+
+<h2>The Maybe Pattern</h2>
+<div class="code-block">
+<pre><code>from instructor import Maybe
+
+class Address(BaseModel):
+    street: str
+    city: str
+    state: str
+    zip_code: str
+
+# MaybeAddress has an optional result + error field
+MaybeAddress = Maybe(Address)
+
+result = client.chat.completions.create(
+    model="gpt-4o-mini",
+    response_model=MaybeAddress,
+    messages=[{"role": "user", "content": "Call me at 555-0123"}],
+)
+
+if result.result is None:
+    print(f"Could not extract: {result.error}")
+else:
+    print(f"Address: {result.result.street}")</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Descriptive fields:</strong> Use <code>Field(description=...)</code> to guide the LLM on what each field means</li>
+    <li><strong>Constrained types:</strong> Use Pydantic validators, Literal types, and enums to limit possible values</li>
+    <li><strong>Retry budget:</strong> Set max_retries=3 for complex extractions; 1 is enough for simple schemas</li>
+    <li><strong>Streaming for UX:</strong> Use <code>create_partial</code> for long extractions so users see progress</li>
+    <li><strong>Test edge cases:</strong> Test with ambiguous, incomplete, and adversarial inputs</li>
+    <li><strong>Monitor costs:</strong> Each retry consumes additional tokens - balance accuracy with cost</li>
+    <li><strong>Fallback strategies:</strong> Use the Maybe pattern when extraction might fail legitimately</li>
+</ul>
+
+<h2>Performance Optimization</h2>
+<p>When working with Instructor in production, consider these optimization strategies:</p>
+<ul>
+    <li><strong>Model Selection:</strong> Use smaller models (GPT-3.5, Claude Haiku) for simple extractions</li>
+    <li><strong>Batch Processing:</strong> Use <code>create_iterable</code> to extract multiple objects in one API call</li>
+    <li><strong>Caching:</strong> Cache validated results for identical inputs to reduce API calls</li>
+    <li><strong>Async Operations:</strong> Use async/await for concurrent extractions</li>
+    <li><strong>Schema Simplification:</strong> Simpler schemas = fewer tokens = faster responses</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

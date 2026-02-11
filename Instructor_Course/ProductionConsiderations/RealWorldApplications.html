@@ -1,0 +1,452 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Real-World Applications and Best Practices</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Real-World Applications and Best Practices</h1>
+
+<h2>Production Use Cases</h2>
+<p>Instructor shines in real-world applications where structured data extraction from unstructured sources is critical. Let's explore proven patterns and implementations.</p>
+
+<h2>Use Case 1: Document Intelligence</h2>
+<p>Extract structured information from invoices, receipts, contracts, and other business documents.</p>
+
+<h3>Implementation Pattern</h3>
+<div class="code-block">
+<pre><code>from pydantic import BaseModel, Field
+from typing import List, Optional
+from datetime import date
+from decimal import Decimal
+
+class LineItem(BaseModel):
+    description: str
+    quantity: int = Field(gt=0)
+    unit_price: Decimal = Field(gt=0)
+    total: Decimal = Field(gt=0)
+    
+    @model_validator(mode='after')
+    def validate_total(self):
+        expected = self.quantity * self.unit_price
+        if abs(self.total - expected) > Decimal('0.01'):
+            raise ValueError(f"Total mismatch: {self.total} != {expected}")
+        return self
+
+class Invoice(BaseModel):
+    invoice_number: str
+    invoice_date: date
+    due_date: date
+    vendor_name: str
+    vendor_address: str
+    customer_name: str
+    customer_address: str
+    line_items: List[LineItem] = Field(min_length=1)
+    subtotal: Decimal
+    tax: Decimal = Field(ge=0)
+    total: Decimal
+    payment_terms: Optional[str] = None
+
+# Production-ready extraction with error handling
+async def extract_invoice(document_text: str) -> Invoice:
+    try:
+        invoice = await client.chat.completions.create(
+            model="gpt-4o",
+            response_model=Invoice,
+            max_retries=3,
+            messages=[
+                {"role": "system", "content": "Extract invoice data accurately. Ensure all calculations are correct."},
+                {"role": "user", "content": document_text}
+            ],
+        )
+        return invoice
+    except Exception as e:
+        # Log error and implement fallback
+        logger.error(f"Invoice extraction failed: {e}")
+        raise</code></pre>
+</div>
+
+<h3>Best Practices for Document Intelligence</h3>
+<ul>
+    <li><strong>Pre-process Documents:</strong> Use OCR for scanned documents, clean up formatting</li>
+    <li><strong>Validate Calculations:</strong> Cross-check totals, taxes, and line items</li>
+    <li><strong>Handle Variations:</strong> Different vendors use different formats</li>
+    <li><strong>Audit Trail:</strong> Log original text and extracted data for review</li>
+</ul>
+
+<h2>Use Case 2: Customer Support Automation</h2>
+<p>Extract structured information from customer inquiries to route and process requests automatically.</p>
+
+<h3>Implementation Pattern</h3>
+<div class="code-block">
+<pre><code>from enum import Enum
+from typing import Literal
+
+class Priority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
+
+class Category(str, Enum):
+    BILLING = "billing"
+    TECHNICAL = "technical"
+    ACCOUNT = "account"
+    PRODUCT = "product"
+    OTHER = "other"
+
+class CustomerInquiry(BaseModel):
+    category: Category
+    priority: Priority
+    subject: str = Field(max_length=200)
+    customer_email: str
+    order_number: Optional[str] = None
+    product_name: Optional[str] = None
+    issue_description: str
+    requested_action: str
+    sentiment: Literal["positive", "neutral", "negative"]
+
+# Extract and route customer inquiry
+async def process_customer_email(email_text: str):
+    inquiry = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_model=CustomerInquiry,
+        messages=[
+            {"role": "system", "content": "Analyze customer email and extract key information for routing."},
+            {"role": "user", "content": email_text}
+        ],
+    )
+    
+    # Route based on extracted data
+    if inquiry.priority == Priority.URGENT:
+        await escalate_to_manager(inquiry)
+    elif inquiry.category == Category.BILLING:
+        await route_to_billing_team(inquiry)
+    else:
+        await create_support_ticket(inquiry)
+    
+    return inquiry</code></pre>
+</div>
+
+<h2>Use Case 3: Data Enrichment Pipeline</h2>
+<p>Enhance existing data with additional structured information extracted from various sources.</p>
+
+<h3>Implementation Pattern</h3>
+<div class="code-block">
+<pre><code>class CompanyInfo(BaseModel):
+    name: str
+    industry: str
+    employee_count: Optional[int] = None
+    founded_year: Optional[int] = None
+    headquarters: str
+    description: str
+    technologies: List[str] = []
+    funding_stage: Optional[Literal["seed", "series_a", "series_b", "series_c", "public"]] = None
+
+class EnrichmentPipeline:
+    def __init__(self):
+        self.client = instructor.from_openai(AsyncOpenAI())
+        self.cache = {}  # Simple cache, use Redis in production
+    
+    async def enrich_company(self, company_name: str, source_text: str) -> CompanyInfo:
+        # Check cache first
+        if company_name in self.cache:
+            return self.cache[company_name]
+        
+        # Extract structured data
+        info = await self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            response_model=CompanyInfo,
+            max_retries=2,
+            messages=[
+                {"role": "system", "content": "Extract company information from the provided text."},
+                {"role": "user", "content": f"Company: {company_name}\n\nInformation:\n{source_text}"}
+            ],
+        )
+        
+        # Cache result
+        self.cache[company_name] = info
+        return info
+    
+    async def batch_enrich(self, companies: List[tuple[str, str]]) -> List[CompanyInfo]:
+        tasks = [self.enrich_company(name, text) for name, text in companies]
+        return await asyncio.gather(*tasks, return_exceptions=True)</code></pre>
+</div>
+
+<h2>Production Architecture Patterns</h2>
+
+<h3>Pattern 1: Queue-Based Processing</h3>
+<div class="code-block">
+<pre><code>import asyncio
+from asyncio import Queue
+
+class ExtractionWorker:
+    def __init__(self, queue: Queue, num_workers: int = 5):
+        self.queue = queue
+        self.num_workers = num_workers
+        self.results = []
+    
+    async def worker(self, worker_id: int):
+        while True:
+            try:
+                item = await self.queue.get()
+                if item is None:  # Poison pill
+                    break
+                
+                result = await self.process_item(item)
+                self.results.append(result)
+                self.queue.task_done()
+            except Exception as e:
+                logger.error(f"Worker {worker_id} error: {e}")
+    
+    async def process_item(self, item):
+        # Your extraction logic here
+        return await extract_data(item)
+    
+    async def run(self, items: List):
+        # Add items to queue
+        for item in items:
+            await self.queue.put(item)
+        
+        # Add poison pills
+        for _ in range(self.num_workers):
+            await self.queue.put(None)
+        
+        # Start workers
+        workers = [asyncio.create_task(self.worker(i)) for i in range(self.num_workers)]
+        await asyncio.gather(*workers)
+        
+        return self.results</code></pre>
+</div>
+
+<h3>Pattern 2: Circuit Breaker for API Resilience</h3>
+<div class="code-block">
+<pre><code>from enum import Enum
+from datetime import datetime, timedelta
+
+class CircuitState(Enum):
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"      # Failing, reject requests
+    HALF_OPEN = "half_open"  # Testing recovery
+
+class CircuitBreaker:
+    def __init__(self, failure_threshold: int = 5, timeout: int = 60):
+        self.failure_threshold = failure_threshold
+        self.timeout = timeout
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = CircuitState.CLOSED
+    
+    async def call(self, func, *args, **kwargs):
+        if self.state == CircuitState.OPEN:
+            if datetime.now() - self.last_failure_time > timedelta(seconds=self.timeout):
+                self.state = CircuitState.HALF_OPEN
+            else:
+                raise Exception("Circuit breaker is OPEN")
+        
+        try:
+            result = await func(*args, **kwargs)
+            self.on_success()
+            return result
+        except Exception as e:
+            self.on_failure()
+            raise
+    
+    def on_success(self):
+        self.failure_count = 0
+        self.state = CircuitState.CLOSED
+    
+    def on_failure(self):
+        self.failure_count += 1
+        self.last_failure_time = datetime.now()
+        if self.failure_count >= self.failure_threshold:
+            self.state = CircuitState.OPEN
+
+# Usage
+breaker = CircuitBreaker()
+result = await breaker.call(extract_data, document_text)</code></pre>
+</div>
+
+<h2>Monitoring and Observability</h2>
+
+<h3>Key Metrics to Track</h3>
+<table>
+    <tr><th>Metric</th><th>Purpose</th><th>Alert Threshold</th></tr>
+    <tr><td>Extraction Success Rate</td><td>Overall system health</td><td>&lt; 95%</td></tr>
+    <tr><td>Average Retry Count</td><td>Schema complexity indicator</td><td>&gt; 2.0</td></tr>
+    <tr><td>Token Usage per Request</td><td>Cost monitoring</td><td>&gt; expected baseline</td></tr>
+    <tr><td>P95 Latency</td><td>User experience</td><td>&gt; 5 seconds</td></tr>
+    <tr><td>Validation Error Rate</td><td>Schema quality</td><td>&gt; 10%</td></tr>
+</table>
+
+<h3>Logging Best Practices</h3>
+<div class="code-block">
+<pre><code>import logging
+import json
+from datetime import datetime
+
+class ExtractionLogger:
+    def __init__(self):
+        self.logger = logging.getLogger("instructor_extraction")
+    
+    def log_extraction(self, input_text: str, result: BaseModel, 
+                      retries: int, duration: float):
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "input_length": len(input_text),
+            "model_type": type(result).__name__,
+            "retries": retries,
+            "duration_ms": duration * 1000,
+            "success": True
+        }
+        self.logger.info(json.dumps(log_data))
+    
+    def log_failure(self, input_text: str, error: Exception, retries: int):
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "input_length": len(input_text),
+            "error": str(error),
+            "retries": retries,
+            "success": False
+        }
+        self.logger.error(json.dumps(log_data))</code></pre>
+</div>
+
+<h2>Security Best Practices</h2>
+
+<h3>Data Privacy</h3>
+<ul>
+    <li><strong>PII Handling:</strong> Redact sensitive information before sending to LLM</li>
+    <li><strong>Data Retention:</strong> Don't log full input/output in production</li>
+    <li><strong>Encryption:</strong> Use TLS for API calls, encrypt stored data</li>
+    <li><strong>Access Control:</strong> Limit who can access extraction logs</li>
+</ul>
+
+<h3>Input Validation</h3>
+<div class="code-block">
+<pre><code>def sanitize_input(text: str, max_length: int = 10000) -> str:
+    # Limit length to prevent excessive token usage
+    if len(text) > max_length:
+        text = text[:max_length]
+    
+    # Remove potentially harmful content
+    text = text.replace("\\x00", "")  # Null bytes
+    
+    # Validate encoding
+    try:
+        text.encode('utf-8')
+    except UnicodeEncodeError:
+        text = text.encode('utf-8', errors='ignore').decode('utf-8')
+    
+    return text</code></pre>
+</div>
+
+<h2>Cost Optimization Strategies</h2>
+
+<h3>1. Model Selection</h3>
+<table>
+    <tr><th>Task Complexity</th><th>Recommended Model</th><th>Cost Savings</th></tr>
+    <tr><td>Simple extraction (1-5 fields)</td><td>GPT-3.5-turbo, Claude Haiku</td><td>80-90%</td></tr>
+    <tr><td>Medium complexity (5-15 fields)</td><td>GPT-4o-mini</td><td>50-70%</td></tr>
+    <tr><td>Complex nested structures</td><td>GPT-4o, Claude Sonnet</td><td>Baseline</td></tr>
+</table>
+
+<h3>2. Prompt Optimization</h3>
+<ul>
+    <li><strong>Be Concise:</strong> Remove unnecessary context from prompts</li>
+    <li><strong>Use System Messages:</strong> Put instructions in system message to avoid repetition</li>
+    <li><strong>Batch When Possible:</strong> Extract multiple items in one call</li>
+</ul>
+
+<h3>3. Caching Strategy</h3>
+<div class="code-block">
+<pre><code>import hashlib
+from functools import lru_cache
+
+class CachedExtractor:
+    def __init__(self, cache_ttl: int = 3600):
+        self.cache = {}
+        self.cache_ttl = cache_ttl
+    
+    def cache_key(self, text: str, model_type: type) -> str:
+        content = f"{text}:{model_type.__name__}"
+        return hashlib.sha256(content.encode()).hexdigest()
+    
+    async def extract_with_cache(self, text: str, model_type: type):
+        key = self.cache_key(text, model_type)
+        
+        if key in self.cache:
+            cached_result, timestamp = self.cache[key]
+            if time.time() - timestamp < self.cache_ttl:
+                return cached_result
+        
+        result = await extract_data(text, model_type)
+        self.cache[key] = (result, time.time())
+        return result</code></pre>
+</div>
+
+<h2>Testing Strategies</h2>
+
+<h3>Unit Testing Schemas</h3>
+<div class="code-block">
+<pre><code>import pytest
+from pydantic import ValidationError
+
+def test_invoice_schema():
+    # Test valid data
+    valid_invoice = {
+        "invoice_number": "INV-001",
+        "invoice_date": "2024-01-15",
+        "due_date": "2024-02-15",
+        # ... other fields
+    }
+    invoice = Invoice(**valid_invoice)
+    assert invoice.invoice_number == "INV-001"
+    
+    # Test invalid data
+    invalid_invoice = valid_invoice.copy()
+    invalid_invoice["total"] = -100
+    with pytest.raises(ValidationError):
+        Invoice(**invalid_invoice)</code></pre>
+</div>
+
+<h3>Integration Testing with Mock LLM</h3>
+<div class="code-block">
+<pre><code>from unittest.mock import AsyncMock, patch
+
+@pytest.mark.asyncio
+async def test_extraction_pipeline():
+    mock_response = Invoice(
+        invoice_number="INV-001",
+        # ... mock data
+    )
+    
+    with patch('instructor.from_openai') as mock_client:
+        mock_client.return_value.chat.completions.create = AsyncMock(
+            return_value=mock_response
+        )
+        
+        result = await extract_invoice("mock invoice text")
+        assert result.invoice_number == "INV-001"</code></pre>
+</div>
+
+<h2>Deployment Checklist</h2>
+<ul>
+    <li>✅ Schema validation tests pass</li>
+    <li>✅ Error handling covers all failure modes</li>
+    <li>✅ Monitoring and alerting configured</li>
+    <li>✅ Rate limiting implemented</li>
+    <li>✅ Cost tracking enabled</li>
+    <li>✅ Security review completed</li>
+    <li>✅ Documentation updated</li>
+    <li>✅ Rollback plan prepared</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

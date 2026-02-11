@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Limitations of Naive RAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Limitations of Naive RAG</h1>
+
+
+<h2>The Standard RAG Pipeline</h2>
+<p>Basic RAG follows a simple pattern: <strong>Embed query -> Retrieve top-K chunks -> Generate answer</strong>. While effective for simple Q&A, it has significant limitations.</p>
+
+<h2>Common Failure Modes</h2>
+<table>
+    <tr><th>Problem</th><th>Cause</th><th>Impact</th></tr>
+    <tr><td>Missed relevant docs</td><td>Query-document semantic gap</td><td>Incomplete or wrong answers</td></tr>
+    <tr><td>Lost in the middle</td><td>LLM ignores middle chunks in long contexts</td><td>Key information missed</td></tr>
+    <tr><td>Chunk boundary issues</td><td>Important info split across chunks</td><td>Fragmented context</td></tr>
+    <tr><td>No multi-hop reasoning</td><td>Answer requires combining multiple documents</td><td>Partial answers</td></tr>
+    <tr><td>Stale embeddings</td><td>Documents updated but vectors not re-indexed</td><td>Outdated answers</td></tr>
+</table>
+
+<h2>When Basic RAG Fails</h2>
+<ul>
+    <li><strong>Complex queries:</strong> "Compare the security approaches of modules A and B"</li>
+    <li><strong>Aggregation:</strong> "How many incidents occurred last quarter?"</li>
+    <li><strong>Multi-step reasoning:</strong> "If X is true and Y is configured, what happens to Z?"</li>
+    <li><strong>Temporal queries:</strong> "What changed between version 2.0 and 3.0?"</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

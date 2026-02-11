@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Long-Context RAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Long-Context RAG</h1>
+<div class="container">
+<h2>The 'Long-Context RAG' Pattern</h2>
+<p>For a long time, the standard RAG pattern involved retrieving very small "chunks" of text (e.g., 500 words) because of the small context windows of early LLMs. However, with the advent of models like Claude 3.5 (200k+ tokens), a new pattern has emerged: <strong>Long-Context RAG</strong>. This pattern retrieves much larger "blocks" of data, providing the model with significantly more nuance and context.</p>
+
+<h3>The Problem with Small Chunks</h3>
+<p>When you break a document into tiny 500-word pieces, you often lose the "big picture."
+<ul>
+    <li><strong>Broken Context:</strong> A sentence in chunk A might refer to a concept introduced in chunk B. If the retriever only finds chunk A, the model will be confused.</li>
+    <li><strong>Syntactic Fragmentation:</strong> Chunks often cut off in the middle of a paragraph or a sentence, making them harder for the LLM to read.</li>
+    <li><strong>Inability to Synthesize:</strong> Small-chunk RAG is great for "Find the date of this event" but terrible for "Summarize the three main arguments against this policy."</li>
+</ul></p>
+
+<h3>How Long-Context RAG Works</h3>
+<p>Instead of retrieving 10 chunks of 500 tokens each, Long-Context RAG retrieves 5 blocks of 20,000 tokens each (e.g., entire chapters or long technical specifications).
+<ol>
+    <li><strong>Retrieval:</strong> The system identifies the most relevant "top-level" documents or large sections using vector search.</li>
+    <li><strong>Massive Augmentation:</strong> These large blocks are all stuffed into the prompt. With a 200k window, you can easily fit 5-10 such blocks.</li>
+    <li><strong>Deep Reasoning:</strong> The LLM, having seen the full context of each section, can now perform much more sophisticated reasoning, synthesis, and cross-referencing.</li>
+</ol></p>
+
+<h3>Benefits of Long-Context RAG</h3>
+<ul>
+    <li><strong>Higher Faithfulness:</strong> The model is less likely to hallucinate because it has all the surrounding context it needs to understand the information.</li>
+    <li><strong>Superior Synthesis:</strong> The model can identify patterns and themes that only become visible at a larger scale.</li>
+    <li><strong>Simplified Pipeline:</strong> You don't need complex "sliding window" chunking or "metadata filtering" to preserve context. You just retrieve the whole section.</li>
+    <li><strong>Handling of Complex Documents:</strong> Perfect for legal contracts, medical textbooks, or entire source code repositories.</li>
+</ul>
+
+<h3>The Cost-Performance Tradeoff</h3>
+<p>While powerful, Long-Context RAG is more expensive.
+<ul>
+    <li><strong>Token Cost:</strong> Sending 100,000 tokens with every request is 20x more expensive than sending 5,000 tokens.</li>
+    <li><strong>Latency:</strong> Processing 100k tokens takes longer than processing 5k tokens.</li>
+    <li><strong>Prompt Caching to the Rescue:</strong> This is where <strong>Prompt Caching</strong> becomes essential. If you are asking multiple questions about the same 100k tokens of context, you can cache that context and only pay for it once. This makes Long-Context RAG economically viable.</li>
+</ul></p>
+
+<h3>Use Case: Comprehensive Legal Review</h3>
+<p>A user asks: "Identify any contradictions between the 'Intellectual Property' section and the 'Termination' section of this 200-page contract."
+- Small-chunk RAG might find snippets of both sections but fail to see the contradiction because it doesn't have the full narrative flow.
+- Long-Context RAG retrieves both entire sections (perhaps 30,000 words total). Claude reads both in their entirety and easily spots the conflicting clauses.</p>
+
+<h3>Summary</h3>
+<p>Long-Context RAG represents a shift from "finding a needle in a haystack" to "giving the model the entire haystack (or at least the right parts of it)." By leveraging the massive memory of modern LLMs, we can build RAG systems that reason with a level of depth and accuracy that was simply impossible just a year ago.</p>
+
+</div>
+</body>
+</html>

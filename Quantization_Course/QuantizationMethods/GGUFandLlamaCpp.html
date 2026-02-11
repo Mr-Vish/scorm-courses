@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>GGUF and Llama.cpp</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>GGUF and Llama.cpp</h1>
+<div class="container">
+<h2>GGUF and Llama.cpp: Quantization for Everyone</h2>
+<p>While GPTQ and AWQ are focused on maximizing performance on GPUs, the <strong>GGUF</strong> (GPT-Generated Unified Format) and the <strong>llama.cpp</strong> project are focused on making Large Language Models accessible on almost any hardware, especially CPUs and Apple Silicon (Macs).</p>
+
+<h3>What is GGUF?</h3>
+<p>GGUF is a binary file format designed specifically for the <code>llama.cpp</code> ecosystem. It replaced the older GGML format. GGUF is "unified" because it contains everything needed to run the model in a single file:
+<ul>
+    <li>Model weights (quantized).</li>
+    <li>Model configuration (hyperparameters).</li>
+    <li>Tokenizer data.</li>
+    <li>Metadata about the quantization process.</li>
+</ul>
+This makes GGUF models extremely portable and easy to share.</p>
+
+<h3>The Power of Llama.cpp</h3>
+<p><code>llama.cpp</code> is a C++ implementation of the Llama model architecture (and many others). Its key innovation is the ability to run these models on the CPU using highly optimized math libraries. It also supports "GPU Offloading," where some layers of the model run on the GPU while others run on the CPU, allowing you to run models that are larger than your GPU's VRAM.</p>
+
+<h3>K-Quants (Block-wise Quantization)</h3>
+<p>GGUF models use a unique quantization method called "K-Quants." Instead of quantizing all weights in a layer the same way, K-Quants break the weights into "blocks" and use different bit-widths for different parts of the network.
+<ul>
+    <li><strong>Q4_K_M (4-bit Medium):</strong> The most popular format. It uses 4 bits for most weights but "protects" some important parts with higher precision.</li>
+    <li><strong>Q2_K, Q3_K, Q5_K, Q6_K:</strong> A wide range of options from 2-bit (very small, low quality) to 6-bit (large, very high quality).</li>
+</ul></p>
+
+<h3>Why GGUF is a Game-Changer</h3>
+<ol>
+    <li><strong>Mac Performance:</strong> GGUF is perfectly optimized for Apple's M-series chips, using their Unified Memory and GPU cores to achieve incredible speeds.</li>
+    <li><strong>CPU Inference:</strong> You can run a 7B model at usable speeds on a modern laptop CPU without any dedicated GPU.</li>
+    <li><strong>Single-File Simplicity:</strong> No need to download multiple configuration and tokenizer files. Just download one <code>.gguf</code> file and you're ready to go.</li>
+    <li><strong>Broad Hardware Support:</strong> Runs on Windows, Linux, macOS, and even Android/iOS.</li>
+</ol>
+
+<h3>The 'Perplexity' Tradeoff</h3>
+<p>Perplexity is a measure of how well a model predicts text. Lower is better. When comparing GGUF K-Quants, you'll see that a Q4_K_M model has slightly higher perplexity than a Q8_0 model, but it's half the size. For most users, the massive memory savings far outweigh the tiny increase in perplexity.</p>
+
+<h3>Practical Exercise: Running a GGUF Model</h3>
+<p>Download a small <code>.gguf</code> model and try running it with a tool like "LM Studio," "Ollama," or the "llama.cpp" command-line interface. Monitor your system's RAM and CPU usage. How does it compare to running the same model in full precision (if you even could)?</p>
+
+<h3>Summary</h3>
+<p>GGUF and llama.cpp have "democratized" AI. They have moved LLMs out of massive data centers and onto the computers and devices we use every day. Whether you're an enthusiast running models on a Mac or a developer building edge applications, GGUF is a critical format to master.</p>
+
+</div>
+</body>
+</html>

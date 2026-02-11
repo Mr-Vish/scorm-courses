@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Semantic Caching and Provider Features</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Semantic Caching and Provider Features</h1>
+
+
+<h2>Semantic Caching</h2>
+<p>Semantic caching matches queries by meaning, not exact text. "What's the weather in NYC?" and "Tell me NYC weather" hit the same cache entry.</p>
+<div class="code-block">
+<pre><code>from langchain.cache import RedisSemanticCache
+from langchain.embeddings import OpenAIEmbeddings
+import langchain
+
+# Set up semantic cache
+langchain.llm_cache = RedisSemanticCache(
+    redis_url="redis://localhost:6379",
+    embedding=OpenAIEmbeddings(),
+    score_threshold=0.92  # Similarity threshold (0-1)
+)</code></pre>
+</div>
+
+<h2>Anthropic Prompt Caching</h2>
+<p>Anthropic offers native prompt caching for repeated system prompts and context:</p>
+<div class="code-block">
+<pre><code>import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    system=[
+        {
+            "type": "text",
+            "text": "You are a legal assistant with expertise in contract law...",
+            "cache_control": {"type": "ephemeral"}  # Cache this block
+        }
+    ],
+    messages=[{"role": "user", "content": "Review clause 3.2 of the contract"}]
+)
+
+# First call: full price
+# Subsequent calls with same system prompt: 90% cheaper input tokens</code></pre>
+</div>
+
+<h2>TTL Strategies</h2>
+<table>
+    <tr><th>Content Type</th><th>Recommended TTL</th><th>Reason</th></tr>
+    <tr><td>Static knowledge (docs)</td><td>24-72 hours</td><td>Changes infrequently</td></tr>
+    <tr><td>Dynamic data (prices)</td><td>5-15 minutes</td><td>Changes frequently</td></tr>
+    <tr><td>User-specific content</td><td>1-4 hours</td><td>Balance freshness and cost</td></tr>
+    <tr><td>Creative content</td><td>No cache</td><td>Users expect variety</td></tr>
+</table>
+
+<h2>Cache Invalidation</h2>
+<ul>
+    <li><strong>Time-based (TTL):</strong> Simplest, set expiration on cache entries</li>
+    <li><strong>Event-based:</strong> Invalidate when source data changes (webhook, CDC)</li>
+    <li><strong>Version-based:</strong> Include model version in cache key, auto-invalidate on updates</li>
+    <li><strong>Manual purge:</strong> Admin tools to clear specific cache entries or patterns</li>
+</ul>
+
+<h2>Monitoring Cache Performance</h2>
+<ul>
+    <li>Track hit rate, miss rate, and eviction rate</li>
+    <li>Monitor cache size and memory usage</li>
+    <li>Compare latency for cache hits vs misses</li>
+    <li>Calculate actual cost savings from caching</li>
+    <li>Alert on sudden drops in hit rate (may indicate data freshness issues)</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Applying Guardrails to Inference</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Applying Guardrails to Inference</h1>
+
+<h2>Module Overview</h2>
+<p>This final module focuses on the practical implementation and operational aspects of Amazon Bedrock Guardrails. You will learn how to apply guardrails to model inference requests, interpret intervention results, implement comprehensive monitoring strategies, design effective testing approaches, and establish best practices for production deployment and ongoing maintenance.</p>
+
+<h2>Guardrail Application Architecture</h2>
+<p>Applying guardrails to inference requests involves integrating guardrail evaluation into the model invocation workflow. Understanding this integration architecture is essential for successful implementation.</p>
+
+<h3>The Inference Flow with Guardrails</h3>
+<p>When guardrails are applied, the inference flow follows this sequence:</p>
+
+<ol>
+    <li><strong>Request Initiation:</strong> Application sends inference request specifying model, prompt, and guardrail configuration</li>
+    <li><strong>Input Evaluation:</strong> Bedrock evaluates the prompt against configured guardrail policies</li>
+    <li><strong>Input Intervention Decision:</strong> If input violates policies, request is blocked and intervention message returned; otherwise, processing continues</li>
+    <li><strong>Model Inference:</strong> Foundation model generates response based on the prompt</li>
+    <li><strong>Output Evaluation:</strong> Bedrock evaluates model response against guardrail policies</li>
+    <li><strong>Output Intervention Decision:</strong> If output violates policies, response is blocked and intervention message returned; otherwise, response is returned to application</li>
+    <li><strong>Response Delivery:</strong> Application receives either the model response or intervention message</li>
+</ol>
+
+<p>This dual-layer evaluation ensures comprehensive protection regardless of whether issues originate from user inputs or model behaviors.</p>
+
+<h3>Specifying Guardrails in API Calls</h3>
+<p>When invoking a foundation model through Amazon Bedrock, applications specify which guardrail to apply using two key parameters:</p>
+
+<p><strong>Guardrail Identifier:</strong> The unique ID of the guardrail to apply. This identifier is assigned when the guardrail is created and remains constant across versions.</p>
+
+<p><strong>Guardrail Version:</strong> The specific version of the guardrail to use. Organizations can specify a numbered version (e.g., "1", "2") for stable, tested configurations, or "DRAFT" for the latest working version during development and testing.</p>
+
+<h3>Version Management Strategy</h3>
+<p>Guardrail versioning enables safe evolution of content policies:</p>
+
+<p><strong>DRAFT Version:</strong> The working version where configuration changes are made. Use DRAFT in development and testing environments to validate changes before promoting to production. DRAFT should never be used in production as it can change without notice.</p>
+
+<p><strong>Numbered Versions:</strong> Immutable snapshots of guardrail configuration. Once created, numbered versions cannot be modified, ensuring stable, predictable behavior. Production applications should always reference specific numbered versions.</p>
+
+<p><strong>Version Promotion Workflow:</strong> Make changes in DRAFT, test thoroughly, create a new numbered version when satisfied, update production applications to reference the new version, monitor for issues, and roll back to previous version if problems arise.</p>
+
+<h2>Interpreting Guardrail Responses</h2>
+<p>When guardrails intervene, applications must interpret the response to handle the situation appropriately:</p>
+
+<h3>Intervention Indicators</h3>
+<p>Guardrail responses include metadata indicating whether intervention occurred:</p>
+
+<p><strong>Guardrail Action Field:</strong> Indicates whether the guardrail intervened. Values include "NONE" (no intervention, response is from model) or "GUARDRAIL_INTERVENED" (guardrail blocked content, response is intervention message).</p>
+
+<p><strong>Trace Information:</strong> Detailed information about why the guardrail intervened, including which policy component triggered (content filter, denied topic, word filter, PII detection, grounding check) and relevant details.</p>
+
+<h3>Handling Interventions in Application Logic</h3>
+<p>Applications should implement appropriate handling for guardrail interventions:</p>
+
+<p><strong>User Communication:</strong> When input is blocked, communicate clearly to users why their request cannot be processed. Use the configured blocked input message, potentially supplemented with guidance on how to rephrase. Avoid revealing specific filter logic that could help adversaries craft bypass attempts.</p>
+
+<p><strong>Logging and Monitoring:</strong> Log all guardrail interventions for security monitoring, compliance auditing, and optimization analysis. Include relevant context (user ID, timestamp, intervention reason) while respecting privacy requirements.</p>
+
+<p><strong>Fallback Strategies:</strong> For output interventions, consider fallback strategies such as retrying with modified parameters, providing a generic safe response, or escalating to human review for complex cases.</p>
+
+<p><strong>User Experience Considerations:</strong> Frequent interventions frustrate users. Track intervention rates per user to identify potential issues (legitimate users repeatedly triggering false positives, or malicious users conducting attacks). Provide support channels for users who believe interventions were incorrect.</p>
+
+<h2>Contextual Application of Guardrails</h2>
+<p>Different applications, user contexts, or use cases may require different guardrail configurations:</p>
+
+<h3>Multi-Guardrail Strategy</h3>
+<p>Organizations often maintain multiple guardrails for different contexts:</p>
+
+<p><strong>Public-Facing Guardrail:</strong> Strictest configuration (HIGH filter strengths, comprehensive PII blocking) for customer-facing applications where reputation risk is highest.</p>
+
+<p><strong>Internal Tool Guardrail:</strong> Moderate configuration (MEDIUM filter strengths, selective PII filtering) for internal applications used by trained employees where some additional flexibility is acceptable.</p>
+
+<p><strong>Research Guardrail:</strong> Minimal configuration (LOW filter strengths, limited PII filtering) for research and development contexts where maximum flexibility is needed and users understand risks.</p>
+
+<p><strong>Specialized Guardrails:</strong> Domain-specific configurations for particular use cases (healthcare applications with HIPAA-focused PII detection, financial applications with fraud-focused misconduct filtering).</p>
+
+<h3>Dynamic Guardrail Selection</h3>
+<p>Applications can dynamically select which guardrail to apply based on runtime context:</p>
+
+<ul>
+    <li><strong>User Role:</strong> Apply stricter guardrails for general users, more permissive guardrails for administrators or power users</li>
+    <li><strong>Content Sensitivity:</strong> Apply stricter guardrails for sensitive topics or high-risk interactions</li>
+    <li><strong>Application Mode:</strong> Apply different guardrails for different application modes (customer support vs. internal knowledge base)</li>
+    <li><strong>Regulatory Context:</strong> Apply region-specific guardrails based on user location to address varying regulatory requirements</li>
+</ul>
+
+<h2>Performance Considerations</h2>
+<p>Guardrail evaluation adds latency to inference requests. Understanding and managing this performance impact is important for user experience:</p>
+
+<h3>Latency Components</h3>
+<p>Total request latency with guardrails includes:</p>
+
+<ul>
+    <li><strong>Input Evaluation Time:</strong> Time to evaluate prompt against all configured policies</li>
+    <li><strong>Model Inference Time:</strong> Time for foundation model to generate response (unchanged by guardrails)</li>
+    <li><strong>Output Evaluation Time:</strong> Time to evaluate model response against policies</li>
+    <li><strong>Network Overhead:</strong> Additional network time for guardrail service communication</li>
+</ul>
+
+<p>Typical guardrail evaluation adds 100-500ms depending on configuration complexity and content length.</p>
+
+<h3>Performance Optimization Strategies</h3>
+<p>Several strategies can minimize performance impact:</p>
+
+<p><strong>Selective Component Enablement:</strong> Only enable guardrail components actually needed for your use case. Disabling unnecessary components reduces evaluation time.</p>
+
+<p><strong>Filter Strength Tuning:</strong> Lower filter strengths (where acceptable) can reduce evaluation time as less thorough analysis is required.</p>
+
+<p><strong>Caching Strategies:</strong> For repeated prompts, consider caching guardrail evaluation results to avoid redundant evaluation.</p>
+
+<p><strong>Asynchronous Processing:</strong> For non-interactive use cases, consider asynchronous processing where guardrail latency is less critical.</p>
+
+<h2>Error Handling and Resilience</h2>
+<p>Production applications must handle guardrail-related errors gracefully:</p>
+
+<h3>Common Error Scenarios</h3>
+<p>Several error conditions can occur:</p>
+
+<p><strong>Guardrail Not Found:</strong> Specified guardrail ID or version doesn't exist. Verify guardrail configuration and version references.</p>
+
+<p><strong>Throttling:</strong> Request rate exceeds guardrail service limits. Implement exponential backoff and retry logic.</p>
+
+<p><strong>Service Unavailability:</strong> Temporary guardrail service issues. Implement retry logic with fallback strategies.</p>
+
+<p><strong>Configuration Errors:</strong> Invalid guardrail configuration. Validate configurations in testing before production deployment.</p>
+
+<h3>Resilience Patterns</h3>
+<p>Implement resilience patterns for production robustness:</p>
+
+<p><strong>Retry with Exponential Backoff:</strong> For transient errors, retry with increasing delays to avoid overwhelming services.</p>
+
+<p><strong>Circuit Breaker:</strong> If guardrail service experiences sustained issues, temporarily bypass guardrails (with appropriate logging and alerting) to maintain application availability while issues are resolved.</p>
+
+<p><strong>Fallback Guardrails:</strong> Maintain a simplified backup guardrail configuration that can be used if primary guardrail is unavailable.</p>
+
+<p><strong>Graceful Degradation:</strong> Design applications to function (with reduced safety guarantees) if guardrails are temporarily unavailable, rather than failing completely.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Guardrails integrate into inference flow with dual-layer evaluation of inputs and outputs</li>
+    <li>Applications specify guardrails using identifier and version parameters, with versioning enabling safe policy evolution</li>
+    <li>Guardrail responses include intervention indicators and trace information for appropriate handling</li>
+    <li>Multi-guardrail strategies enable contextual protection based on application, user, or use case requirements</li>
+    <li>Guardrail evaluation adds latency that can be managed through selective enablement and optimization</li>
+    <li>Production applications require robust error handling and resilience patterns for guardrail-related issues</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

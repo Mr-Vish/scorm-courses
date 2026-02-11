@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Knowledge Graph Fundamentals</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Knowledge Graph Fundamentals</h1>
+
+<h2>What is a Knowledge Graph?</h2>
+<p>A knowledge graph is a structured representation of knowledge that captures entities, their attributes, and the relationships between them. Unlike traditional databases that store data in tables or documents, knowledge graphs organize information as an interconnected network of nodes and edges, enabling intuitive traversal and complex reasoning.</p>
+
+<h2>Core Components</h2>
+<table>
+    <tr><th>Component</th><th>Description</th><th>Example</th></tr>
+    <tr>
+        <td class="rowheader">Entity (Node)</td>
+        <td>A distinct object, concept, or thing in the real world</td>
+        <td>Person: "Marie Curie", Organization: "University of Paris"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Relationship (Edge)</td>
+        <td>A connection or association between two entities</td>
+        <td>"Marie Curie" WORKED_AT "University of Paris"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Property (Attribute)</td>
+        <td>A characteristic or data value associated with an entity or relationship</td>
+        <td>birth_year: 1867, nationality: "Polish-French"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Triple</td>
+        <td>The fundamental unit: (subject, predicate, object)</td>
+        <td>(Marie Curie, WON, Nobel Prize in Physics)</td>
+    </tr>
+</table>
+
+<h2>Knowledge Graph vs Traditional Databases</h2>
+<table>
+    <tr><th>Aspect</th><th>Relational Database</th><th>Knowledge Graph</th></tr>
+    <tr>
+        <td class="rowheader">Data Model</td>
+        <td>Tables with rows and columns</td>
+        <td>Nodes and edges (graph structure)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Relationships</td>
+        <td>Foreign keys and joins</td>
+        <td>First-class citizens (edges)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Schema</td>
+        <td>Rigid, predefined schema</td>
+        <td>Flexible, evolving schema</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Query Complexity</td>
+        <td>Complex joins for multi-hop queries</td>
+        <td>Natural graph traversal</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Best Use Case</td>
+        <td>Transactional data, structured records</td>
+        <td>Connected data, semantic relationships</td>
+    </tr>
+</table>
+
+<h2>Real-World Applications</h2>
+<ul>
+    <li><strong>Search Engines:</strong> Google's Knowledge Graph powers rich search results with entity information and relationships</li>
+    <li><strong>Recommendation Systems:</strong> Netflix and Amazon use knowledge graphs to understand user preferences and content relationships</li>
+    <li><strong>Drug Discovery:</strong> Pharmaceutical companies map relationships between genes, proteins, diseases, and compounds</li>
+    <li><strong>Fraud Detection:</strong> Financial institutions identify suspicious patterns through relationship analysis</li>
+    <li><strong>Enterprise Knowledge Management:</strong> Organizations connect documents, people, projects, and expertise</li>
+    <li><strong>Question Answering:</strong> Virtual assistants leverage knowledge graphs for factual responses</li>
+</ul>
+
+<h2>Knowledge Graph Standards</h2>
+<h3>RDF (Resource Description Framework)</h3>
+<p>RDF is a W3C standard for representing information as triples. Each triple consists of subject-predicate-object:</p>
+<div class="code-block">
+<pre><code>&lt;http://example.org/person/marie_curie&gt; 
+  &lt;http://example.org/ontology/wonAward&gt; 
+  &lt;http://example.org/award/nobel_physics_1903&gt; .
+
+&lt;http://example.org/person/marie_curie&gt; 
+  &lt;http://example.org/ontology/birthYear&gt; 
+  "1867"^^xsd:integer .
+</code></pre>
+</div>
+
+<h3>Property Graph Model</h3>
+<p>Used by databases like Neo4j, this model allows properties on both nodes and relationships:</p>
+<div class="code-block">
+<pre><code>// Cypher query language example
+CREATE (marie:Person {
+  name: "Marie Curie",
+  birthYear: 1867,
+  nationality: "Polish-French"
+})
+
+CREATE (nobel:Award {
+  name: "Nobel Prize in Physics",
+  year: 1903
+})
+
+CREATE (marie)-[:WON {
+  sharedWith: "Pierre Curie, Henri Becquerel"
+}]->(nobel)
+</code></pre>
+</div>
+
+<h2>Key Characteristics of Effective Knowledge Graphs</h2>
+<ul>
+    <li><strong>Semantic Richness:</strong> Entities and relationships have well-defined meanings</li>
+    <li><strong>Interconnectedness:</strong> High degree of connections enabling multi-hop reasoning</li>
+    <li><strong>Scalability:</strong> Ability to grow from thousands to billions of entities</li>
+    <li><strong>Queryability:</strong> Support for complex graph traversal and pattern matching</li>
+    <li><strong>Evolvability:</strong> Schema can adapt as new entity types and relationships emerge</li>
+    <li><strong>Provenance:</strong> Track sources and confidence levels for information</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

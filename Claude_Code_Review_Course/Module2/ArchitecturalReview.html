@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>`n    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Module 2: Architectural Review and Quality Analysis</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Architectural Review and Code Quality Analysis</h1>
+
+<h2>Architectural Review with AI</h2>
+
+<p>While traditional code review focuses on implementation details, architectural review evaluates system-level design decisions, component interactions, and long-term maintainability implications. AI-powered architectural review provides systematic analysis of structural qualities that might be overlooked in line-by-line code inspection.</p>
+
+<h3>Architectural Quality Attributes</h3>
+
+<p>Architectural review assesses multiple quality attributes that determine system success:</p>
+
+<table>
+    <tr>
+        <th>Quality Attribute</th>
+        <th>Definition</th>
+        <th>AI Analysis Capabilities</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Modularity</td>
+        <td>Degree to which system components are separated into distinct, independent units</td>
+        <td>Identifies tight coupling, circular dependencies, and opportunities for better separation of concerns</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Scalability</td>
+        <td>System's ability to handle increased load through resource addition</td>
+        <td>Detects scalability bottlenecks, stateful components preventing horizontal scaling, resource contention</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Maintainability</td>
+        <td>Ease with which system can be modified to fix defects or add features</td>
+        <td>Measures complexity, identifies code smells, assesses documentation adequacy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Testability</td>
+        <td>Ease with which system components can be tested in isolation</td>
+        <td>Identifies hard-to-test code, suggests dependency injection opportunities, evaluates test coverage</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Resilience</td>
+        <td>System's ability to handle and recover from failures</td>
+        <td>Analyzes error handling patterns, identifies single points of failure, evaluates retry and fallback mechanisms</td>
+    </tr>
+</table>
+
+<h3>Component Interaction Analysis</h3>
+
+<p>Understanding how components interact reveals architectural strengths and weaknesses:</p>
+
+<ul>
+    <li><strong>Coupling Analysis:</strong> Measures dependencies between components. High coupling indicates components that are difficult to modify independently, while low coupling suggests good separation of concerns.</li>
+    <li><strong>Cohesion Assessment:</strong> Evaluates whether component responsibilities are logically related. High cohesion indicates focused, single-purpose components, while low cohesion suggests components mixing unrelated concerns.</li>
+    <li><strong>Interface Design:</strong> Reviews component interfaces for clarity, stability, and appropriate abstraction levels. Well-designed interfaces hide implementation details while providing necessary functionality.</li>
+    <li><strong>Communication Patterns:</strong> Analyzes how components exchange information. Identifies synchronous dependencies that could be made asynchronous, or complex communication patterns that could be simplified.</li>
+</ul>
+
+<h3>Layered Architecture Review</h3>
+
+<p>Many applications follow layered architecture patterns. AI review can verify adherence to layer boundaries:</p>
+
+<ul>
+    <li><strong>Presentation Layer:</strong> Should contain only UI logic, delegating business logic to lower layers</li>
+    <li><strong>Business Logic Layer:</strong> Should be independent of presentation and data access concerns</li>
+    <li><strong>Data Access Layer:</strong> Should encapsulate all database interactions, providing clean abstractions to business logic</li>
+    <li><strong>Cross-Cutting Concerns:</strong> Logging, security, and transaction management should be handled consistently across layers</li>
+</ul>
+
+<p><strong>Common Violations Detected:</strong> Business logic in controllers, direct database access from presentation layer, data access logic mixed with business rules, inconsistent error handling across layers.</p>
+
+<h2>Code Quality Metrics and Analysis</h2>
+
+<p>Quantitative metrics provide objective measures of code quality, enabling tracking of quality trends over time and identification of areas requiring attention.</p>
+
+<h3>Complexity Metrics</h3>
+
+<p>Complexity metrics quantify how difficult code is to understand and maintain:</p>
+
+<h4>Cyclomatic Complexity</h4>
+
+<p>Measures the number of independent paths through code. High cyclomatic complexity indicates code with many conditional branches, making it difficult to test thoroughly and understand completely.</p>
+
+<ul>
+    <li><strong>Low Complexity (1-10):</strong> Simple, easy to understand and test</li>
+    <li><strong>Moderate Complexity (11-20):</strong> Moderately complex, consider refactoring</li>
+    <li><strong>High Complexity (21-50):</strong> Complex, should be refactored</li>
+    <li><strong>Very High Complexity (50+):</strong> Extremely complex, refactoring is critical</li>
+</ul>
+
+<p><strong>Refactoring Strategy:</strong> Extract complex conditional logic into separate methods, apply strategy pattern for multiple algorithm variants, simplify boolean expressions.</p>
+
+<h4>Cognitive Complexity</h4>
+
+<p>Measures how difficult code is for humans to understand, considering nesting depth and control flow interruptions. Unlike cyclomatic complexity, cognitive complexity weights nested conditions more heavily.</p>
+
+<p><strong>Example:</strong> A method with five sequential if statements has lower cognitive complexity than a method with three nested if statements, even though cyclomatic complexity might be similar.</p>
+
+<h3>Size Metrics</h3>
+
+<p>Size metrics identify components that have grown too large:</p>
+
+<ul>
+    <li><strong>Lines of Code (LOC):</strong> Methods exceeding 50 lines or classes exceeding 500 lines often indicate need for decomposition</li>
+    <li><strong>Number of Methods:</strong> Classes with more than 20 methods may be handling too many responsibilities</li>
+    <li><strong>Parameter Count:</strong> Methods with more than 4-5 parameters suggest need for parameter objects or refactoring</li>
+    <li><strong>Nesting Depth:</strong> Code nested more than 3-4 levels deep becomes difficult to follow and should be refactored</li>
+</ul>
+
+<h3>Maintainability Index</h3>
+
+<p>The maintainability index combines multiple metrics into a single score indicating overall code maintainability:</p>
+
+<ul>
+    <li><strong>85-100:</strong> Highly maintainable, well-structured code</li>
+    <li><strong>65-85:</strong> Moderately maintainable, some improvement opportunities</li>
+    <li><strong>Below 65:</strong> Difficult to maintain, refactoring recommended</li>
+</ul>
+
+<p>The index considers cyclomatic complexity, lines of code, and Halstead volume (a measure of code vocabulary and length).</p>
+
+<h2>Technical Debt Identification and Management</h2>
+
+<p>Technical debt represents the implied cost of additional rework caused by choosing quick solutions over better approaches. AI-powered analysis systematically identifies and quantifies technical debt.</p>
+
+<h3>Types of Technical Debt</h3>
+
+<table>
+    <tr>
+        <th>Debt Type</th>
+        <th>Description</th>
+        <th>Detection Approach</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Code Debt</td>
+        <td>Poor code quality, duplication, complexity</td>
+        <td>Complexity metrics, duplication detection, code smell identification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Design Debt</td>
+        <td>Architectural shortcuts, violated design principles</td>
+        <td>Coupling analysis, layer violation detection, pattern anti-pattern identification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Documentation Debt</td>
+        <td>Missing or outdated documentation</td>
+        <td>Documentation coverage analysis, comment quality assessment</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Test Debt</td>
+        <td>Inadequate test coverage, brittle tests</td>
+        <td>Coverage analysis, test quality metrics, test maintainability assessment</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Technology Debt</td>
+        <td>Outdated dependencies, deprecated APIs</td>
+        <td>Dependency analysis, API usage scanning, security vulnerability detection</td>
+    </tr>
+</table>
+
+<h3>Debt Prioritization Framework</h3>
+
+<p>Not all technical debt warrants immediate attention. Prioritize based on:</p>
+
+<ul>
+    <li><strong>Impact:</strong> How significantly does the debt affect system quality, performance, or security?</li>
+    <li><strong>Frequency:</strong> How often is the affected code modified or executed?</li>
+    <li><strong>Risk:</strong> What is the probability of the debt causing production issues?</li>
+    <li><strong>Remediation Cost:</strong> How much effort is required to address the debt?</li>
+    <li><strong>Business Value:</strong> Does addressing the debt enable important business capabilities?</li>
+</ul>
+
+<p><strong>Priority Formula:</strong> Priority = (Impact × Frequency × Risk) / Remediation Cost</p>
+
+<h3>Debt Remediation Strategies</h3>
+
+<p>Different debt types require different remediation approaches:</p>
+
+<ul>
+    <li><strong>Incremental Refactoring:</strong> Address debt gradually as code is modified for other purposes ("Boy Scout Rule")</li>
+    <li><strong>Dedicated Sprints:</strong> Allocate specific time periods for debt reduction without feature development</li>
+    <li><strong>Strangler Pattern:</strong> Gradually replace problematic components with improved implementations</li>
+    <li><strong>Rewrite:</strong> Complete replacement of severely problematic components (use sparingly)</li>
+</ul>
+
+<h2>Code Smell Detection</h2>
+
+<p>Code smells are indicators of deeper problems in code design. While not bugs, they suggest areas where code could be improved.</p>
+
+<h3>Common Code Smells</h3>
+
+<ul>
+    <li><strong>Long Method:</strong> Methods that are too long to understand easily. Refactor by extracting smaller methods.</li>
+    <li><strong>Large Class:</strong> Classes trying to do too much. Apply Single Responsibility Principle by extracting classes.</li>
+    <li><strong>Duplicate Code:</strong> Similar code in multiple locations. Extract common functionality into shared methods or classes.</li>
+    <li><strong>Long Parameter List:</strong> Methods with too many parameters. Introduce parameter objects or builder patterns.</li>
+    <li><strong>Divergent Change:</strong> One class frequently changed for different reasons. Split into multiple classes with focused responsibilities.</li>
+    <li><strong>Shotgun Surgery:</strong> Single change requiring modifications across many classes. Consolidate related functionality.</li>
+    <li><strong>Feature Envy:</strong> Method more interested in another class than its own. Move method to the class it's most interested in.</li>
+    <li><strong>Data Clumps:</strong> Same group of data items appearing together repeatedly. Create a class to encapsulate the related data.</li>
+    <li><strong>Primitive Obsession:</strong> Using primitive types instead of small objects for simple tasks. Create value objects.</li>
+    <li><strong>Switch Statements:</strong> Complex switch statements that should be polymorphism. Apply strategy or state pattern.</li>
+</ul>
+
+<h2>Performance Analysis</h2>
+
+<p>AI-powered review can identify common performance anti-patterns before they impact production systems.</p>
+
+<h3>Performance Anti-Patterns</h3>
+
+<ul>
+    <li><strong>N+1 Query Problem:</strong> Executing one query to fetch a list, then N additional queries to fetch related data for each item. Solution: Use joins or batch loading.</li>
+    <li><strong>Premature Optimization:</strong> Optimizing code before identifying actual performance bottlenecks. Solution: Profile first, then optimize based on data.</li>
+    <li><strong>Synchronous Blocking:</strong> Blocking threads waiting for I/O operations. Solution: Use asynchronous patterns or non-blocking I/O.</li>
+    <li><strong>Memory Leaks:</strong> Retaining references to objects no longer needed. Solution: Proper resource cleanup and weak references where appropriate.</li>
+    <li><strong>Inefficient Algorithms:</strong> Using algorithms with poor time complexity. Solution: Choose appropriate data structures and algorithms.</li>
+    <li><strong>Excessive Object Creation:</strong> Creating unnecessary objects in hot code paths. Solution: Object pooling or reuse strategies.</li>
+</ul>
+
+<h3>Scalability Considerations</h3>
+
+<p>AI review can identify code patterns that prevent horizontal scaling:</p>
+
+<ul>
+    <li><strong>Shared Mutable State:</strong> Global variables or singletons with mutable state prevent scaling across multiple instances</li>
+    <li><strong>Session Affinity Requirements:</strong> Code requiring requests from the same user to hit the same server instance</li>
+    <li><strong>Local File System Dependencies:</strong> Code reading or writing to local disk instead of distributed storage</li>
+    <li><strong>In-Memory Caching:</strong> Caches that don't synchronize across instances</li>
+</ul>
+
+<h2>Pros and Cons of Advanced AI Review</h2>
+
+<h3>Advantages</h3>
+
+<ul>
+    <li><strong>Comprehensive Analysis:</strong> Evaluates code across multiple dimensions simultaneously</li>
+    <li><strong>Pattern Recognition:</strong> Identifies complex anti-patterns that might escape human reviewers</li>
+    <li><strong>Objective Metrics:</strong> Provides quantitative measures of code quality for tracking trends</li>
+    <li><strong>Architectural Insight:</strong> Analyzes system-level design qualities beyond individual code changes</li>
+    <li><strong>Debt Visibility:</strong> Systematically identifies and quantifies technical debt</li>
+    <li><strong>Knowledge Transfer:</strong> Educates developers about advanced patterns and best practices</li>
+</ul>
+
+<h3>Limitations and Risks</h3>
+
+<ul>
+    <li><strong>Context Sensitivity:</strong> May not understand domain-specific constraints or business requirements</li>
+    <li><strong>Metric Limitations:</strong> Quantitative metrics don't capture all aspects of code quality</li>
+    <li><strong>False Confidence:</strong> Teams may over-rely on AI analysis without critical evaluation</li>
+    <li><strong>Refactoring Complexity:</strong> Large-scale refactoring suggestions may be impractical to implement</li>
+    <li><strong>Learning Curve:</strong> Advanced features require deeper understanding to use effectively</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Architectural review evaluates system-level design qualities beyond implementation details</li>
+    <li>Code quality metrics provide objective measures for tracking quality trends and identifying problem areas</li>
+    <li>Technical debt identification and prioritization enables systematic quality improvement</li>
+    <li>Code smell detection reveals design problems that should be addressed through refactoring</li>
+    <li>Performance analysis identifies anti-patterns before they impact production systems</li>
+    <li>Advanced AI review capabilities require thoughtful application and human judgment to maximize value</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

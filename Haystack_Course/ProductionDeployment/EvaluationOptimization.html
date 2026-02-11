@@ -1,0 +1,355 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Evaluation and Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Evaluation and Optimization</h1>
+
+<h2>Why Evaluation Matters</h2>
+<p>Building a RAG system is only the first step. To ensure production quality, you must systematically evaluate and optimize performance. Without proper evaluation, you cannot:</p>
+
+<ul>
+    <li>Measure if your system meets quality requirements</li>
+    <li>Compare different configurations objectively</li>
+    <li>Identify specific failure modes</li>
+    <li>Track performance degradation over time</li>
+    <li>Justify architectural decisions to stakeholders</li>
+</ul>
+
+<h2>Evaluation Framework in Haystack</h2>
+<p>Haystack provides built-in evaluators for assessing different aspects of RAG systems:</p>
+
+<table>
+    <tr>
+        <th>Evaluator</th>
+        <th>Measures</th>
+        <th>Use Case</th>
+        <th>Range</th>
+    </tr>
+    <tr>
+        <td class="rowheader">SASEvaluator</td>
+        <td>Semantic Answer Similarity</td>
+        <td>Compare generated vs expected answers</td>
+        <td>0.0 - 1.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">FaithfulnessEvaluator</td>
+        <td>Answer grounding in context</td>
+        <td>Detect hallucinations</td>
+        <td>0.0 - 1.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ContextRelevanceEvaluator</td>
+        <td>Relevance of retrieved documents</td>
+        <td>Assess retrieval quality</td>
+        <td>0.0 - 1.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">DocumentMRREvaluator</td>
+        <td>Mean Reciprocal Rank</td>
+        <td>Ranking quality of retrieval</td>
+        <td>0.0 - 1.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">DocumentMAPEvaluator</td>
+        <td>Mean Average Precision</td>
+        <td>Overall retrieval precision</td>
+        <td>0.0 - 1.0</td>
+    </tr>
+</table>
+
+<h2>Semantic Answer Similarity (SAS)</h2>
+<p>Measures how semantically similar the generated answer is to a reference answer:</p>
+
+<div class="code-block">
+<pre><code>from haystack.components.evaluators import SASEvaluator
+
+# Initialize evaluator
+sas_evaluator = SASEvaluator()
+
+# Evaluate answers
+result = sas_evaluator.run(
+    predicted_answers=["Python 3.8 or higher is required."],
+    ground_truth_answers=["The system needs Python version 3.8+."]
+)
+
+print(f"SAS Score: {result['score']}")  # Output: ~0.95 (high similarity)
+</code></pre>
+</div>
+
+<h2>Faithfulness Evaluation</h2>
+<p>Checks if the generated answer is grounded in the retrieved context (detects hallucinations):</p>
+
+<div class="code-block">
+<pre><code>from haystack.components.evaluators import FaithfulnessEvaluator
+
+faithfulness_evaluator = FaithfulnessEvaluator()
+
+result = faithfulness_evaluator.run(
+    questions=["What is the capital of France?"],
+    contexts=[["Paris is the capital and largest city of France."]],
+    predicted_answers=["The capital of France is Paris."]
+)
+
+print(f"Faithfulness Score: {result['score']}")  # Output: 1.0 (fully grounded)
+
+# Example of hallucination
+result_hallucination = faithfulness_evaluator.run(
+    questions=["What is the capital of France?"],
+    contexts=[["Paris is the capital and largest city of France."]],
+    predicted_answers=["The capital of France is Paris, with a population of 50 million."]
+)
+
+print(f"Faithfulness Score: {result_hallucination['score']}")  # Lower score
+</code></pre>
+</div>
+
+<h2>Context Relevance Evaluation</h2>
+<p>Assesses whether retrieved documents are relevant to the question:</p>
+
+<div class="code-block">
+<pre><code>from haystack.components.evaluators import ContextRelevanceEvaluator
+
+context_evaluator = ContextRelevanceEvaluator()
+
+result = context_evaluator.run(
+    questions=["How do I install Python?"],
+    contexts=[[
+        "To install Python, download from python.org and run the installer.",
+        "Python supports multiple operating systems including Windows, macOS, and Linux."
+    ]]
+)
+
+print(f"Context Relevance Score: {result['score']}")
+</code></pre>
+</div>
+
+<h2>Building an Evaluation Pipeline</h2>
+<p>Create a comprehensive evaluation pipeline to assess your RAG system:</p>
+
+<div class="code-block">
+<pre><code>from haystack import Pipeline
+from haystack.components.evaluators import (
+    SASEvaluator,
+    FaithfulnessEvaluator,
+    ContextRelevanceEvaluator
+)
+
+def create_evaluation_pipeline():
+    """Create pipeline for comprehensive RAG evaluation."""
+    
+    eval_pipeline = Pipeline()
+    
+    # Add evaluators
+    eval_pipeline.add_component("sas", SASEvaluator())
+    eval_pipeline.add_component("faithfulness", FaithfulnessEvaluator())
+    eval_pipeline.add_component("context_relevance", ContextRelevanceEvaluator())
+    
+    return eval_pipeline
+
+def evaluate_rag_system(rag_pipeline, test_cases):
+    """Evaluate RAG system on test cases."""
+    
+    results = {
+        "sas_scores": [],
+        "faithfulness_scores": [],
+        "context_relevance_scores": []
+    }
+    
+    for test_case in test_cases:
+        question = test_case["question"]
+        expected_answer = test_case["expected_answer"]
+        
+        # Run RAG pipeline
+        rag_result = rag_pipeline.run({
+            "embedder": {"text": question},
+            "prompt_builder": {"query": question}
+        })
+        
+        predicted_answer = rag_result["generator"]["replies"][0]
+        retrieved_docs = rag_result["retriever"]["documents"]
+        contexts = [doc.content for doc in retrieved_docs]
+        
+        # Evaluate SAS
+        sas_result = SASEvaluator().run(
+            predicted_answers=[predicted_answer],
+            ground_truth_answers=[expected_answer]
+        )
+        results["sas_scores"].append(sas_result["score"])
+        
+        # Evaluate Faithfulness
+        faith_result = FaithfulnessEvaluator().run(
+            questions=[question],
+            contexts=[contexts],
+            predicted_answers=[predicted_answer]
+        )
+        results["faithfulness_scores"].append(faith_result["score"])
+        
+        # Evaluate Context Relevance
+        context_result = ContextRelevanceEvaluator().run(
+            questions=[question],
+            contexts=[contexts]
+        )
+        results["context_relevance_scores"].append(context_result["score"])
+    
+    # Calculate averages
+    avg_results = {
+        "avg_sas": sum(results["sas_scores"]) / len(results["sas_scores"]),
+        "avg_faithfulness": sum(results["faithfulness_scores"]) / len(results["faithfulness_scores"]),
+        "avg_context_relevance": sum(results["context_relevance_scores"]) / len(results["context_relevance_scores"])
+    }
+    
+    return avg_results
+
+# Example test cases
+test_cases = [
+    {
+        "question": "What are the system requirements?",
+        "expected_answer": "Python 3.8+, 4GB RAM, and 10GB disk space."
+    },
+    {
+        "question": "How do I configure the database?",
+        "expected_answer": "Edit config.yaml and set the database URL and credentials."
+    }
+]
+
+evaluation_results = evaluate_rag_system(rag_pipeline, test_cases)
+print(evaluation_results)
+</code></pre>
+</div>
+
+<h2>Optimization Strategies</h2>
+<p>Based on evaluation results, apply these optimization techniques:</p>
+
+<h3>1. Retrieval Optimization</h3>
+<blockquote>
+<strong>Problem:</strong> Low context relevance scores
+<ul>
+    <li>Adjust top_k parameter (try 3, 5, 10, 20)</li>
+    <li>Experiment with different embedding models</li>
+    <li>Implement hybrid retrieval (dense + sparse)</li>
+    <li>Add metadata filters to narrow search space</li>
+    <li>Improve document chunking strategy</li>
+</ul>
+</blockquote>
+
+<h3>2. Generation Optimization</h3>
+<blockquote>
+<strong>Problem:</strong> Low faithfulness or SAS scores
+<ul>
+    <li>Refine prompt templates with clearer instructions</li>
+    <li>Lower temperature for more deterministic outputs</li>
+    <li>Increase max_tokens if answers are truncated</li>
+    <li>Try different LLM models (GPT-4 vs GPT-3.5)</li>
+    <li>Add few-shot examples to prompts</li>
+</ul>
+</blockquote>
+
+<h3>3. Chunking Optimization</h3>
+<div class="code-block">
+<pre><code># Experiment with different chunking strategies
+chunking_configs = [
+    {"split_by": "sentence", "split_length": 3, "split_overlap": 1},
+    {"split_by": "sentence", "split_length": 5, "split_overlap": 2},
+    {"split_by": "word", "split_length": 200, "split_overlap": 50},
+]
+
+for config in chunking_configs:
+    # Re-index with new chunking
+    splitter = DocumentSplitter(**config)
+    # ... rebuild pipeline and evaluate
+    # Compare results
+</code></pre>
+</div>
+
+<h2>A/B Testing RAG Configurations</h2>
+<div class="code-block">
+<pre><code>def compare_configurations(test_cases, config_a, config_b):
+    """Compare two RAG configurations."""
+    
+    pipeline_a = create_rag_pipeline(**config_a)
+    pipeline_b = create_rag_pipeline(**config_b)
+    
+    results_a = evaluate_rag_system(pipeline_a, test_cases)
+    results_b = evaluate_rag_system(pipeline_b, test_cases)
+    
+    print("Configuration A Results:")
+    print(results_a)
+    
+    print("\nConfiguration B Results:")
+    print(results_b)
+    
+    # Determine winner
+    if results_a["avg_sas"] > results_b["avg_sas"]:
+        print("\nConfiguration A performs better")
+    else:
+        print("\nConfiguration B performs better")
+
+# Example comparison
+config_a = {"top_k": 5, "temperature": 0.2}
+config_b = {"top_k": 10, "temperature": 0.1}
+
+compare_configurations(test_cases, config_a, config_b)
+</code></pre>
+</div>
+
+<h2>Performance Monitoring</h2>
+<p>Track these metrics in production:</p>
+
+<ul>
+    <li><strong>Latency:</strong> Time from query to response (target: &lt;2 seconds)</li>
+    <li><strong>Throughput:</strong> Queries processed per second</li>
+    <li><strong>Error Rate:</strong> Percentage of failed queries</li>
+    <li><strong>Token Usage:</strong> LLM API costs and consumption</li>
+    <li><strong>User Feedback:</strong> Thumbs up/down on answers</li>
+</ul>
+
+<div class="code-block">
+<pre><code>import time
+
+def monitored_rag_query(pipeline, query):
+    """Execute RAG query with monitoring."""
+    
+    start_time = time.time()
+    
+    try:
+        result = pipeline.run({
+            "embedder": {"text": query},
+            "prompt_builder": {"query": query}
+        })
+        
+        latency = time.time() - start_time
+        
+        # Log metrics
+        logger.info(f"Query latency: {latency:.2f}s")
+        logger.info(f"Documents retrieved: {len(result['retriever']['documents'])}")
+        
+        return result["generator"]["replies"][0]
+        
+    except Exception as e:
+        logger.error(f"Query failed: {str(e)}")
+        raise
+</code></pre>
+</div>
+
+<h2>Continuous Improvement Cycle</h2>
+<ol>
+    <li><strong>Collect Data:</strong> Gather user queries and feedback</li>
+    <li><strong>Evaluate:</strong> Run evaluation pipeline on new data</li>
+    <li><strong>Identify Issues:</strong> Analyze low-scoring queries</li>
+    <li><strong>Optimize:</strong> Adjust configuration or add training data</li>
+    <li><strong>Test:</strong> Validate improvements on test set</li>
+    <li><strong>Deploy:</strong> Roll out improvements to production</li>
+    <li><strong>Monitor:</strong> Track metrics and repeat</li>
+</ol>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>RAG Chat Bots with Spring AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>RAG Chat Bots with Spring AI</h1>
+<div class="container">
+<h2>Building a RAG Chat Bot with Spring AI</h2>
+<p>The ultimate goal of most RAG pipelines is to provide a conversational interface for users. Spring AI makes this easy through its <code>ChatClient</code> API, which handles the integration of prompts, retrieval, and chat history into a single, seamless experience.</p>
+
+<h3>The 'ChatClient.Builder' Pattern</h3>
+<p>The recommended way to create a ChatClient is using its fluent builder. This allows you to configure global settings that apply to every message.
+<blockquote>
+<code>ChatClient chatClient = builder<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.defaultSystem("You are a helpful support bot for our company.")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.build();</code>
+</blockquote></p>
+
+<h3>Integrating Retrieval with 'Advisors'</h3>
+<p>The "magic" of Spring AI RAG happens through <strong>Advisors</strong>. An Advisor is a component that can intercept the chat process and modify the prompt. The <code>QuestionAnswerAdvisor</code> is the most important one for RAG.
+<blockquote>
+<code>String response = chatClient.prompt()<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.user("How do I reset my password?")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.advisors(new QuestionAnswerAdvisor(vectorStore))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.call()<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.content();</code>
+</blockquote>
+When this code runs:
+1. The Advisor takes the user's question.
+2. It performs a <code>similaritySearch</code> on the <code>vectorStore</code>.
+3. It "augments" the prompt by adding the retrieved documents as context.
+4. It sends the final, augmented prompt to the LLM.
+5. It returns the LLM's answer to you.</p>
+
+<h3>Managing Chat History</h3>
+<p>A good chatbot needs to remember what was said earlier. Spring AI provides a <code>MessageChatMemoryAdvisor</code> for this. You can choose where to store the history—in memory, in a database, or even in a distributed cache like Redis.
+<blockquote>
+<code>.advisors(new MessageChatMemoryAdvisor(chatMemory))</code>
+</blockquote>
+By combining the <code>QuestionAnswerAdvisor</code> and the <code>MessageChatMemoryAdvisor</code>, you get a full-featured RAG chatbot with conversation history in just a few lines of code.</p>
+
+<h3>Streaming Responses</h3>
+<p>For a better user experience, you should often "stream" the AI's response instead of waiting for the whole thing to finish.
+<blockquote>
+<code>Flux&lt;String&gt; stream = chatClient.prompt()<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.user("...")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.advisors(...)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.stream()<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.content();</code>
+</blockquote>
+This returns a reactive <code>Flux</code> that you can easily pipe to a WebSocket or a Server-Sent Events (SSE) endpoint in your Spring WebFlux or MVC controller.</p>
+
+<h3>Customizing the Prompt Template</h3>
+<p>While the <code>QuestionAnswerAdvisor</code> has a default prompt template, you can (and should!) customize it to match your needs. You can tell Claude how to use the context, how to cite sources, and what to do if no information is found.
+<blockquote>
+<code>"Use the following information to answer: {context}. Question: {question}"</code>
+</blockquote></p>
+
+<h3>Practical Exercise: Building a Support Controller</h3>
+<p>Create a <code>@RestController</code> with a <code>/chat</code> endpoint. Inject the <code>ChatClient.Builder</code> and the <code>VectorStore</code>. Implement a simple GET or POST mapping that uses the builder to create a client with a <code>QuestionAnswerAdvisor</code>. Test it with a few questions about your ingested data.</p>
+
+<h3>Summary</h3>
+<p>Spring AI's <code>ChatClient</code> and Advisor system provide a high-level, declarative way to build RAG applications. By abstracting away the complex details of retrieval and history management, it allows you to focus on what matters most: the user experience and the quality of the AI's answers.</p>
+
+</div>
+</body>
+</html>

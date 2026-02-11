@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Graph RAG and RAPTOR</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Graph RAG and RAPTOR</h1>
+
+
+<h2>Graph RAG</h2>
+<p>Instead of treating documents as flat text, Graph RAG builds a <strong>knowledge graph</strong> of entities and relationships, then traverses the graph during retrieval.</p>
+<ul>
+    <li><strong>Entity extraction:</strong> LLM extracts entities (people, concepts, systems) from documents</li>
+    <li><strong>Relationship mapping:</strong> Identifies how entities relate to each other</li>
+    <li><strong>Community detection:</strong> Groups related entities into clusters</li>
+    <li><strong>Graph traversal:</strong> Retrieval follows relationship paths, not just vector similarity</li>
+</ul>
+
+<h2>When to Use Graph RAG</h2>
+<ul>
+    <li>Questions about <strong>relationships</strong> between entities</li>
+    <li>Queries requiring <strong>multi-hop reasoning</strong> across documents</li>
+    <li>Summarization of <strong>themes</strong> across a large corpus</li>
+</ul>
+
+<h2>RAPTOR: Recursive Abstractive Processing</h2>
+<p>RAPTOR builds a <strong>tree of summaries</strong> at multiple abstraction levels:</p>
+<ul>
+    <li><strong>Level 0:</strong> Original document chunks</li>
+    <li><strong>Level 1:</strong> Summaries of related chunks (clustered by embedding similarity)</li>
+    <li><strong>Level 2:</strong> Summaries of summaries (high-level themes)</li>
+    <li><strong>Retrieval:</strong> Search across ALL levels simultaneously</li>
+</ul>
+<p>This enables both <strong>specific detail retrieval</strong> (leaf nodes) and <strong>thematic understanding</strong> (higher nodes) from the same query.</p>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

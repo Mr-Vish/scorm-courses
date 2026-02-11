@@ -1,0 +1,418 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LangChain Integration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LangChain Integration</h1>
+
+<h2>LangChain Framework Overview</h2>
+<p>LangChain is a popular open-source framework for building LLM-powered applications. It provides abstractions and tools for creating sophisticated agent systems with Vertex AI models.</p>
+
+<h3>Key LangChain Components</h3>
+<ul>
+<li><strong>LLMs and Chat Models:</strong> Interfaces to language models</li>
+<li><strong>Prompts:</strong> Template management and optimization</li>
+<li><strong>Chains:</strong> Sequences of LLM calls and logic</li>
+<li><strong>Agents:</strong> Autonomous systems that use tools</li>
+<li><strong>Memory:</strong> Conversation and context management</li>
+<li><strong>Callbacks:</strong> Hooks for logging and monitoring</li>
+</ul>
+
+<h2>Setting Up LangChain with Vertex AI</h2>
+<blockquote>
+# Install required packages
+pip install langchain langchain-google-vertexai google-cloud-aiplatform
+
+# Initialize Vertex AI
+from google.cloud import aiplatform
+from langchain_google_vertexai import ChatVertexAI
+
+aiplatform.init(project="my-project", location="us-central1")
+
+# Create LangChain model
+llm = ChatVertexAI(
+    model_name="gemini-1.5-pro",
+    temperature=0.3,
+    max_output_tokens=2048,
+    top_p=0.8,
+    top_k=40
+)
+
+# Test the model
+response = llm.invoke("Explain AI agents in one sentence")
+print(response.content)
+</blockquote>
+
+<h2>Creating Agents with LangChain</h2>
+
+<h3>Tool-Calling Agent</h3>
+<blockquote>
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
+
+# Define tools using decorator
+@tool
+def get_weather(city: str) -> str:
+    """Get current weather for a city."""
+    # Call weather API
+    return f"The weather in {city} is sunny and 72°F"
+
+@tool
+def calculate(expression: str) -> float:
+    """Evaluate a mathematical expression."""
+    try:
+        return eval(expression, {"__builtins__": {}})
+    except:
+        return "Invalid expression"
+
+# Create prompt template
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant with access to tools."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}")
+])
+
+# Create agent
+tools = [get_weather, calculate]
+agent = create_tool_calling_agent(llm, tools, prompt)
+
+# Create executor
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    max_iterations=10,
+    return_intermediate_steps=True
+)
+
+# Run agent
+result = agent_executor.invoke({
+    "input": "What's the weather in Tokyo and what's 25 * 4?"
+})
+
+print(result["output"])
+</blockquote>
+
+<h3>ReAct Agent</h3>
+<blockquote>
+from langchain.agents import create_react_agent
+from langchain import hub
+
+# Load ReAct prompt from LangChain Hub
+react_prompt = hub.pull("hwchase17/react")
+
+# Create ReAct agent
+react_agent = create_react_agent(
+    llm=llm,
+    tools=tools,
+    prompt=react_prompt
+)
+
+# Execute with detailed reasoning
+executor = AgentExecutor(
+    agent=react_agent,
+    tools=tools,
+    verbose=True,
+    handle_parsing_errors=True
+)
+
+result = executor.invoke({
+    "input": "Find the weather in Paris and convert 20°C to Fahrenheit"
+})
+</blockquote>
+
+<h2>Advanced Agent Patterns</h2>
+
+<h3>Conversational Agent with Memory</h3>
+<blockquote>
+from langchain.memory import ConversationBufferMemory
+from langchain.agents import create_conversational_retrieval_agent
+
+# Create memory
+memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    return_messages=True,
+    output_key="output"
+)
+
+# Create conversational agent
+conversational_agent = create_tool_calling_agent(llm, tools, prompt)
+
+executor = AgentExecutor(
+    agent=conversational_agent,
+    tools=tools,
+    memory=memory,
+    verbose=True
+)
+
+# Multi-turn conversation
+executor.invoke({"input": "What's the weather in London?"})
+executor.invoke({"input": "And what about Paris?"})
+executor.invoke({"input": "Which city is warmer?"})
+# Agent remembers previous queries
+</blockquote>
+
+<h3>Structured Output Agent</h3>
+<blockquote>
+from langchain_core.pydantic_v1 import BaseModel, Field
+from typing import List
+
+class FlightInfo(BaseModel):
+    """Structured flight information."""
+    flight_number: str = Field(description="Flight number")
+    airline: str = Field(description="Airline name")
+    departure: str = Field(description="Departure time")
+    arrival: str = Field(description="Arrival time")
+    price: float = Field(description="Ticket price in USD")
+
+class FlightSearchResult(BaseModel):
+    """Search results for flights."""
+    flights: List[FlightInfo] = Field(description="List of available flights")
+    total_results: int = Field(description="Total number of results")
+
+# Create agent with structured output
+structured_llm = llm.with_structured_output(FlightSearchResult)
+
+result = structured_llm.invoke(
+    "Find flights from NYC to LAX on December 15th"
+)
+
+# Result is a Pydantic model
+for flight in result.flights:
+    print(f"{flight.airline} {flight.flight_number}: ${flight.price}")
+</blockquote>
+
+<h2>LangChain Chains</h2>
+
+<h3>Sequential Chain</h3>
+<blockquote>
+from langchain.chains import LLMChain, SequentialChain
+from langchain.prompts import PromptTemplate
+
+# Chain 1: Generate product description
+description_prompt = PromptTemplate(
+    input_variables=["product_name"],
+    template="Write a compelling product description for: {product_name}"
+)
+description_chain = LLMChain(llm=llm, prompt=description_prompt, output_key="description")
+
+# Chain 2: Generate marketing tagline
+tagline_prompt = PromptTemplate(
+    input_variables=["description"],
+    template="Create a catchy tagline based on this description:\n{description}"
+)
+tagline_chain = LLMChain(llm=llm, prompt=tagline_prompt, output_key="tagline")
+
+# Combine chains
+overall_chain = SequentialChain(
+    chains=[description_chain, tagline_chain],
+    input_variables=["product_name"],
+    output_variables=["description", "tagline"],
+    verbose=True
+)
+
+result = overall_chain({"product_name": "Smart Water Bottle"})
+print(result["tagline"])
+</blockquote>
+
+<h3>Router Chain</h3>
+<blockquote>
+from langchain.chains.router import MultiPromptChain
+from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
+
+# Define specialized prompts
+physics_template = """You are a physics expert. Answer this question:
+{input}"""
+
+math_template = """You are a mathematics expert. Answer this question:
+{input}"""
+
+history_template = """You are a history expert. Answer this question:
+{input}"""
+
+prompt_infos = [
+    {"name": "physics", "description": "Good for physics questions", "prompt_template": physics_template},
+    {"name": "math", "description": "Good for math questions", "prompt_template": math_template},
+    {"name": "history", "description": "Good for history questions", "prompt_template": history_template}
+]
+
+# Create router chain
+destination_chains = {}
+for p_info in prompt_infos:
+    name = p_info["name"]
+    prompt = PromptTemplate(template=p_info["prompt_template"], input_variables=["input"])
+    chain = LLMChain(llm=llm, prompt=prompt)
+    destination_chains[name] = chain
+
+# Router decides which chain to use
+router_chain = MultiPromptChain(
+    router_chain=LLMRouterChain.from_llm(llm, prompt_infos),
+    destination_chains=destination_chains,
+    default_chain=LLMChain(llm=llm, prompt=PromptTemplate(template="{input}", input_variables=["input"])),
+    verbose=True
+)
+
+result = router_chain.run("What is Newton's second law?")
+# Routes to physics chain
+</blockquote>
+
+<h2>Custom Tools</h2>
+<blockquote>
+from langchain.tools import BaseTool
+from typing import Optional
+
+class DatabaseQueryTool(BaseTool):
+    """Custom tool for database queries."""
+    
+    name = "database_query"
+    description = "Query the product database. Input should be a SQL SELECT query."
+    
+    def _run(self, query: str) -> str:
+        """Execute the query."""
+        # Validate query
+        if not query.strip().upper().startswith("SELECT"):
+            return "Error: Only SELECT queries allowed"
+        
+        # Execute query (simplified)
+        try:
+            results = execute_db_query(query)
+            return f"Found {len(results)} results: {results[:5]}"
+        except Exception as e:
+            return f"Query error: {str(e)}"
+    
+    async def _arun(self, query: str) -> str:
+        """Async version."""
+        return self._run(query)
+
+# Use custom tool
+db_tool = DatabaseQueryTool()
+agent = create_tool_calling_agent(llm, [db_tool], prompt)
+executor = AgentExecutor(agent=agent, tools=[db_tool])
+</blockquote>
+
+<h2>Callbacks and Monitoring</h2>
+<blockquote>
+from langchain.callbacks.base import BaseCallbackHandler
+
+class CustomCallbackHandler(BaseCallbackHandler):
+    """Custom callback for monitoring agent execution."""
+    
+    def on_llm_start(self, serialized, prompts, **kwargs):
+        """Called when LLM starts."""
+        print(f"LLM started with {len(prompts)} prompts")
+    
+    def on_llm_end(self, response, **kwargs):
+        """Called when LLM ends."""
+        print(f"LLM finished. Tokens used: {response.llm_output.get('token_usage', {})}")
+    
+    def on_tool_start(self, serialized, input_str, **kwargs):
+        """Called when tool starts."""
+        print(f"Tool started: {serialized.get('name')}")
+    
+    def on_tool_end(self, output, **kwargs):
+        """Called when tool ends."""
+        print(f"Tool finished with output: {output[:100]}")
+    
+    def on_agent_action(self, action, **kwargs):
+        """Called when agent takes action."""
+        print(f"Agent action: {action.tool} with input: {action.tool_input}")
+
+# Use callback
+callback = CustomCallbackHandler()
+executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    callbacks=[callback],
+    verbose=True
+)
+</blockquote>
+
+<h2>Deploying LangChain Agents to Vertex AI</h2>
+<blockquote>
+from vertexai.preview import reasoning_engines
+
+# Create LangChain agent
+langchain_agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=langchain_agent, tools=tools)
+
+# Wrap for deployment
+class DeployableAgent:
+    def __init__(self, executor):
+        self.executor = executor
+    
+    def query(self, input: str) -> dict:
+        """Query the agent."""
+        result = self.executor.invoke({"input": input})
+        return {
+            "output": result["output"],
+            "intermediate_steps": result.get("intermediate_steps", [])
+        }
+
+# Deploy to Vertex AI
+deployable = DeployableAgent(executor)
+deployed = reasoning_engines.ReasoningEngine.create(
+    deployable,
+    requirements=[
+        "langchain==0.1.0",
+        "langchain-google-vertexai==0.1.0"
+    ],
+    display_name="LangChain Agent"
+)
+</blockquote>
+
+<h2>LangChain vs Native Vertex AI</h2>
+<table>
+<tr>
+<th>Aspect</th>
+<th>LangChain</th>
+<th>Native Vertex AI</th>
+</tr>
+<tr>
+<td class="rowheader">Flexibility</td>
+<td>High - many abstractions</td>
+<td>Moderate - focused on Vertex AI</td>
+</tr>
+<tr>
+<td class="rowheader">Learning Curve</td>
+<td>Steeper - more concepts</td>
+<td>Gentler - simpler API</td>
+</tr>
+<tr>
+<td class="rowheader">Community</td>
+<td>Large open-source community</td>
+<td>Google Cloud support</td>
+</tr>
+<tr>
+<td class="rowheader">Integration</td>
+<td>Many third-party integrations</td>
+<td>Deep Google Cloud integration</td>
+</tr>
+<tr>
+<td class="rowheader">Performance</td>
+<td>Good with optimization</td>
+<td>Optimized for Vertex AI</td>
+</tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Start Simple:</strong> Begin with basic chains before complex agents</li>
+<li><strong>Use Callbacks:</strong> Implement monitoring and logging from the start</li>
+<li><strong>Memory Management:</strong> Clear memory periodically to prevent context overflow</li>
+<li><strong>Error Handling:</strong> Use handle_parsing_errors for robust agents</li>
+<li><strong>Testing:</strong> Test chains and agents thoroughly before deployment</li>
+<li><strong>Version Control:</strong> Pin LangChain versions for production stability</li>
+<li><strong>Documentation:</strong> Document custom tools and chains clearly</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

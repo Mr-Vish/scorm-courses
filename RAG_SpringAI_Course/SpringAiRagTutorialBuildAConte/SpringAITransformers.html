@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Document Transformers</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Document Transformers</h1>
+<div class="container">
+<h2>Advanced Document Transformers in Spring AI</h2>
+<p>In a RAG pipeline, the "Transform" step is where you turn raw data into a format that is optimized for retrieval and generation. While chunking is the most common transformation, Spring AI supports a wide range of advanced <code>DocumentTransformer</code> implementations that can significantly improve the quality of your AI's responses.</p>
+
+<h3>What is a Document Transformer?</h3>
+<p>A <code>DocumentTransformer</code> is a functional interface in Spring AI that takes a list of <code>Document</code> objects and returns a new list of transformed documents. Transformers can be chained together to create complex data processing pipelines.</p>
+
+<h3>Key Transformer Implementations</h3>
+<ol>
+    <li><strong>SummaryTransformer:</strong> Uses an LLM to generate a concise summary of each document. These summaries can be used for initial search (finding relevant documents faster) or to provide a "high-level" context to Claude.</li>
+    <li><strong>KeywordExtractorTransformer:</strong> Identifies the most important keywords in a document and adds them to the metadata. This is essential for Hybrid Retrieval systems that combine vector and keyword search.</li>
+    <li><strong>MetadataEnricher:</strong> Automatically adds metadata to documents based on their content or source. For example, it could extract the "Topic" or "Department" from a document and add it as a tag for structured filtering.</li>
+    <li><strong>TextCleaningTransformer:</strong> Removes noise from the retrieved text, such as HTML tags, extra whitespace, or repetitive footers/headers. Clean data leads to better embeddings and more accurate generation.</li>
+</ol>
+
+<h3>The Power of Chaining Transformers</h3>
+<p>The real value of transformers comes when you combine them. Imagine a pipeline for processing customer support tickets:
+<ul>
+    <li>Step 1: <strong>TikaDocumentReader</strong> extracts the text from a PDF ticket.</li>
+    <li>Step 2: <strong>TextCleaningTransformer</strong> removes the legal disclaimers from the bottom.</li>
+    <li>Step 3: <strong>TokenTextSplitter</strong> breaks the ticket into 500-token chunks.</li>
+    <li>Step 4: <strong>KeywordExtractorTransformer</strong> adds tags for "Product Name" and "Problem Type" to each chunk.</li>
+    <li>Step 5: <strong>VectorStore.add</strong> saves the enriched chunks to PGVector.</li>
+</ul></p>
+
+<h3>Building a Custom Transformer</h3>
+<p>You can easily build your own transformers to handle domain-specific logic.
+<blockquote>
+<code>public class MyCustomTransformer implements DocumentTransformer {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Override<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public List&lt;Document&gt; apply(List&lt;Document&gt; docs) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Custom logic to modify documents...<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return modifiedDocs;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}</code>
+</blockquote></p>
+
+<h3>Transformers and LLM-as-a-Service</h3>
+<p>Some transformers, like the <code>SummaryTransformer</code>, actually call an LLM to perform their task. This is a great example of using "AI for AI"—using a cheap, fast model (like Claude 3 Haiku) to process and prepare data for a more powerful model (like Claude 3.5 Sonnet) during the final generation step.</p>
+
+<h3>Practical Exercise: Multi-Stage Transformation</h3>
+<p>Write a Spring AI pipeline that reads a 5,000-word article, generates a 100-word summary using one model, identifies 5 keywords using a second model, and then indexes both the summary and the original chunks in a vector store. How would you structure your search to prioritize the summary results?</p>
+
+<h3>Summary</h3>
+<p>Advanced document transformers are the "secret sauce" of high-quality RAG. By enriching your documents with summaries, keywords, and clean metadata, you provide Claude with a much richer and more structured information base, leading to answers that are more accurate, relevant, and useful.</p>
+
+</div>
+</body>
+</html>

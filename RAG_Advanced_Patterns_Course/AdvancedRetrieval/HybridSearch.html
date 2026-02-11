@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced: Hybrid Search</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced: Hybrid Search</h1>
+<div class="container">
+<h2>Hybrid Search: Combining the Best of Both Worlds</h2>
+<p>In a basic RAG system, we often rely solely on "Semantic Search" using vector embeddings. While powerful, semantic search has its limitations. Hybrid Search is an advanced pattern that combines semantic search with traditional keyword-based search (BM25) to provide significantly more accurate and robust retrieval.</p>
+
+<h3>The Limitations of Pure Semantic Search</h3>
+<p>Semantic search excels at finding "meaning" but can struggle with:
+<ul>
+    <li><strong>Exact Matches:</strong> Finding a specific product ID, serial number, or rare technical term.</li>
+    <li><strong>Acronyms and Jargon:</strong> If a specific acronym isn't well-represented in the embedding model's training data, semantic search might miss it.</li>
+    <li><strong>Short Queries:</strong> For one or two-word queries, there isn't much "meaning" to embed, leading to poor results.</li>
+</ul></p>
+
+<h3>The Two Pillars of Hybrid Search</h3>
+<ol>
+    <li><strong>Dense Retrieval (Semantic):</strong> Uses models like BERT or Ada to turn text into high-dimensional vectors. It's great for "What are the symptoms of the flu?"</li>
+    <li><strong>Sparse Retrieval (Keyword):</strong> Uses algorithms like BM25 to count word overlaps. It's great for "FluSymptoms-2024-PDF."</li>
+</ol>
+
+<h3>Combining the Results: Reciprocal Rank Fusion (RRF)</h3>
+<p>Once you have two sets of results (one from semantic search and one from keyword search), how do you combine them? The most common method is <strong>Reciprocal Rank Fusion (RRF)</strong>.
+<ul>
+    <li>RRF gives a score to each document based on its rank in both lists.</li>
+    <li>A document that appears near the top of *either* list gets a high score.</li>
+    <li>A document that appears in both lists gets an even higher score.</li>
+    <li>RRF is "parameter-free," meaning you don't need to manually decide how much to "weight" keyword vs. semantic search.</li>
+</ul></p>
+
+<h3>Benefits of Hybrid Search</h3>
+<ul>
+    <li><strong>Higher Recall:</strong> You are much less likely to miss relevant documents.</li>
+    <li><strong>Out-of-the-Box Performance:</strong> It works well across a wide range of domains without needing custom-trained embedding models.</li>
+    <li><strong>Handling of Diverse Queries:</strong> Whether the user types a full question or just a couple of keywords, hybrid search can handle it.</li>
+</ul>
+
+<h3>Use Case: Technical Support Knowledge Base</h3>
+<p>A user asks: "How do I fix error 0x8004210B?"
+- Semantic Search might find articles about general "connection errors."
+- Keyword Search will find the exact article containing the "0x8004210B" string.
+- Hybrid Search combines these, putting the exact match at the top while also providing relevant context about connection errors.</p>
+
+<h3>Implementation Considerations</h3>
+<p>To implement hybrid search, your vector database must support both vector storage and inverted indices (for keyword search). Modern databases like Weaviate, Pinecone, and Qdrant have built-in support for hybrid search, making it relatively easy to enable.</p>
+
+<h3>Practical Exercise: Tuning weights</h3>
+<p>While RRF is parameter-free, some systems allow you to manually set weights (e.g., 70% semantic, 30% keyword). Experiment with a technical dataset. How does changing the weights affect the model's ability to find specific error codes vs. general concepts?</p>
+
+<h3>Summary</h3>
+<p>Hybrid Search is one of the most effective ways to upgrade a RAG system. By acknowledging that both meaning and specific words matter, you can build a retrieval engine that is far more resilient and useful than one based on vectors alone.</p>
+
+</div>
+</body>
+</html>

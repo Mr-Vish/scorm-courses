@@ -1,0 +1,458 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Data Stores and Grounding</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Data Stores and Grounding</h1>
+
+<h2>Understanding Grounding</h2>
+<p>Grounding is the process of connecting AI agents to external knowledge sources to provide accurate, up-to-date information and reduce hallucinations. Instead of relying solely on the LLM's training data, grounded agents retrieve relevant information from authoritative sources before generating responses.</p>
+
+<h3>Benefits of Grounding</h3>
+<ul>
+<li><strong>Accuracy:</strong> Responses based on current, verified information</li>
+<li><strong>Reduced Hallucinations:</strong> Less likely to generate false information</li>
+<li><strong>Source Attribution:</strong> Can cite specific sources for claims</li>
+<li><strong>Domain Expertise:</strong> Access to specialized knowledge bases</li>
+<li><strong>Real-Time Data:</strong> Incorporate latest information not in training data</li>
+<li><strong>Compliance:</strong> Ensure responses align with company policies and regulations</li>
+</ul>
+
+<h2>Grounding Sources in Vertex AI</h2>
+<table>
+<tr>
+<th>Source Type</th>
+<th>Best For</th>
+<th>Implementation</th>
+</tr>
+<tr>
+<td class="rowheader">Google Search</td>
+<td>Current events, general knowledge</td>
+<td>Built-in grounding API</td>
+</tr>
+<tr>
+<td class="rowheader">Vertex AI Search</td>
+<td>Enterprise documents, unstructured data</td>
+<td>Data store integration</td>
+</tr>
+<tr>
+<td class="rowheader">BigQuery</td>
+<td>Structured data, analytics</td>
+<td>SQL query tool</td>
+</tr>
+<tr>
+<td class="rowheader">Cloud Storage</td>
+<td>Documents, PDFs, files</td>
+<td>Document parsing + vector search</td>
+</tr>
+<tr>
+<td class="rowheader">Custom APIs</td>
+<td>Proprietary systems, databases</td>
+<td>Tool calling</td>
+</tr>
+</table>
+
+<h2>Grounding with Google Search</h2>
+<blockquote>
+from vertexai.preview.generative_models import (
+    GenerativeModel,
+    Tool,
+    grounding
+)
+
+# Configure Google Search grounding
+google_search_tool = Tool.from_google_search_retrieval(
+    grounding.GoogleSearchRetrieval(
+        disable_attribution=False  # Include source citations
+    )
+)
+
+# Create model with grounding
+model = GenerativeModel(
+    model_name="gemini-1.5-pro",
+    tools=[google_search_tool]
+)
+
+# Query with grounding
+response = model.generate_content(
+    "What are the latest developments in quantum computing in 2024?"
+)
+
+# Response includes:
+# - Answer based on current search results
+# - Source citations with URLs
+# - Grounding metadata
+print(response.text)
+print(response.grounding_metadata)
+</blockquote>
+
+<h2>Vertex AI Search Data Stores</h2>
+
+<h3>Creating a Data Store</h3>
+<blockquote>
+from google.cloud import discoveryengine_v1 as discoveryengine
+
+# Create data store for enterprise documents
+client = discoveryengine.DataStoreServiceClient()
+
+data_store = discoveryengine.DataStore(
+    display_name="Company Knowledge Base",
+    industry_vertical="GENERIC",
+    content_config="CONTENT_REQUIRED",
+    solution_types=["SOLUTION_TYPE_SEARCH"]
+)
+
+operation = client.create_data_store(
+    parent=f"projects/{project_id}/locations/global/collections/default_collection",
+    data_store=data_store,
+    data_store_id="company-kb"
+)
+
+# Wait for operation to complete
+result = operation.result()
+</blockquote>
+
+<h3>Importing Documents</h3>
+<blockquote>
+# Import documents from Cloud Storage
+import_request = discoveryengine.ImportDocumentsRequest(
+    parent=data_store.name,
+    gcs_source=discoveryengine.GcsSource(
+        input_uris=[
+            "gs://my-bucket/docs/*.pdf",
+            "gs://my-bucket/docs/*.docx"
+        ],
+        data_schema="document"
+    ),
+    reconciliation_mode="INCREMENTAL"
+)
+
+import_operation = client.import_documents(request=import_request)
+import_result = import_operation.result()
+
+print(f"Imported {import_result.success_count} documents")
+</blockquote>
+
+<h3>Integrating with Agent</h3>
+<blockquote>
+from vertexai.preview import reasoning_engines
+
+def search_knowledge_base(query: str, max_results: int = 5) -> List[dict]:
+    """Search the company knowledge base.
+    
+    Args:
+        query: Search query
+        max_results: Maximum number of results to return
+        
+    Returns:
+        List of relevant documents with content and metadata
+    """
+    search_client = discoveryengine.SearchServiceClient()
+    
+    request = discoveryengine.SearchRequest(
+        serving_config=f"{data_store.name}/servingConfigs/default_config",
+        query=query,
+        page_size=max_results
+    )
+    
+    response = search_client.search(request)
+    
+    return [
+        {
+            "title": result.document.derived_struct_data.get("title", ""),
+            "content": result.document.derived_struct_data.get("snippets", []),
+            "url": result.document.derived_struct_data.get("link", ""),
+            "relevance_score": result.relevance_score
+        }
+        for result in response.results
+    ]
+
+# Create agent with knowledge base access
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[search_knowledge_base],
+    system_instruction="""You are a helpful assistant with access to the company knowledge base.
+    Always search the knowledge base before answering questions about company policies, procedures, or products.
+    Cite your sources when providing information."""
+)
+</blockquote>
+
+<h2>RAG (Retrieval-Augmented Generation)</h2>
+
+<h3>Basic RAG Pattern</h3>
+<blockquote>
+from langchain_google_vertexai import VertexAIEmbeddings
+from langchain.vectorstores import MatchingEngine
+from langchain.chains import RetrievalQA
+
+# 1. Create embeddings
+embeddings = VertexAIEmbeddings(
+    model_name="textembedding-gecko@003"
+)
+
+# 2. Create vector store
+vector_store = MatchingEngine.from_components(
+    project_id=project_id,
+    region="us-central1",
+    index_id="rag-index",
+    embedding=embeddings
+)
+
+# 3. Create retrieval chain
+qa_chain = RetrievalQA.from_chain_type(
+    llm=ChatVertexAI(model_name="gemini-1.5-pro"),
+    chain_type="stuff",
+    retriever=vector_store.as_retriever(
+        search_kwargs={"k": 5}  # Retrieve top 5 documents
+    ),
+    return_source_documents=True
+)
+
+# 4. Query with RAG
+result = qa_chain({"query": "What is our return policy?"})
+print(result["result"])
+print("Sources:", result["source_documents"])
+</blockquote>
+
+<h3>Advanced RAG with Reranking</h3>
+<blockquote>
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import CohereRerank
+
+# Base retriever
+base_retriever = vector_store.as_retriever(search_kwargs={"k": 20})
+
+# Reranker for better relevance
+compressor = CohereRerank(
+    model="rerank-english-v2.0",
+    top_n=5
+)
+
+# Compression retriever
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor,
+    base_retriever=base_retriever
+)
+
+# Use in QA chain
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    retriever=compression_retriever,
+    return_source_documents=True
+)
+</blockquote>
+
+<h2>BigQuery Integration</h2>
+<blockquote>
+from google.cloud import bigquery
+
+def query_bigquery(sql_query: str) -> List[dict]:
+    """Execute BigQuery query and return results.
+    
+    Args:
+        sql_query: SQL query to execute
+        
+    Returns:
+        Query results as list of dictionaries
+    """
+    client = bigquery.Client()
+    
+    # Validate query (read-only)
+    if not sql_query.strip().upper().startswith("SELECT"):
+        return {"error": "Only SELECT queries are allowed"}
+    
+    try:
+        query_job = client.query(sql_query)
+        results = query_job.result()
+        
+        return [dict(row) for row in results]
+        
+    except Exception as e:
+        return {"error": f"Query failed: {str(e)}"}
+
+# Agent with BigQuery access
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[query_bigquery],
+    system_instruction="""You can query the BigQuery database to answer questions about sales data.
+    Always use proper SQL syntax and limit results to reasonable numbers.
+    Example tables: sales_data, customer_info, product_catalog"""
+)
+
+# Natural language to SQL
+response = agent.query(
+    "What were the top 5 products by revenue last month?"
+)
+</blockquote>
+
+<h2>Hybrid Search Strategies</h2>
+
+<h3>Combining Keyword and Semantic Search</h3>
+<blockquote>
+def hybrid_search(query: str, alpha: float = 0.5) -> List[dict]:
+    """Combine keyword and semantic search results.
+    
+    Args:
+        query: Search query
+        alpha: Weight for semantic search (0-1), keyword weight is (1-alpha)
+        
+    Returns:
+        Ranked search results
+    """
+    # Keyword search (BM25)
+    keyword_results = keyword_search_engine.search(query, top_k=20)
+    
+    # Semantic search (vector similarity)
+    semantic_results = vector_store.similarity_search(query, k=20)
+    
+    # Combine and rerank
+    combined_scores = {}
+    
+    for doc, score in keyword_results:
+        combined_scores[doc.id] = (1 - alpha) * score
+    
+    for doc, score in semantic_results:
+        if doc.id in combined_scores:
+            combined_scores[doc.id] += alpha * score
+        else:
+            combined_scores[doc.id] = alpha * score
+    
+    # Sort by combined score
+    ranked = sorted(
+        combined_scores.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+    
+    return [get_document(doc_id) for doc_id, score in ranked[:10]]
+</blockquote>
+
+<h2>Document Processing Pipeline</h2>
+<blockquote>
+from langchain.document_loaders import GCSFileLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+def process_documents(gcs_uri: str) -> List[dict]:
+    """Load, process, and index documents from Cloud Storage.
+    
+    Args:
+        gcs_uri: GCS URI of documents to process
+        
+    Returns:
+        Processing results
+    """
+    # 1. Load documents
+    loader = GCSFileLoader(
+        project_name=project_id,
+        bucket=bucket_name,
+        blob=blob_name
+    )
+    documents = loader.load()
+    
+    # 2. Split into chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        separators=["\n\n", "\n", ". ", " ", ""]
+    )
+    chunks = text_splitter.split_documents(documents)
+    
+    # 3. Generate embeddings
+    embeddings = VertexAIEmbeddings()
+    vectors = embeddings.embed_documents([chunk.page_content for chunk in chunks])
+    
+    # 4. Store in vector database
+    vector_store.add_documents(
+        documents=chunks,
+        embeddings=vectors
+    )
+    
+    return {
+        "documents_processed": len(documents),
+        "chunks_created": len(chunks),
+        "status": "success"
+    }
+</blockquote>
+
+<h2>Grounding Metadata and Citations</h2>
+<blockquote>
+# Response with grounding metadata
+response = model.generate_content(
+    "What are the benefits of our premium plan?",
+    generation_config={
+        "temperature": 0.2,
+        "top_p": 0.8
+    }
+)
+
+# Access grounding information
+if response.grounding_metadata:
+    print("Grounding Sources:")
+    for chunk in response.grounding_metadata.grounding_chunks:
+        print(f"- {chunk.web.title}")
+        print(f"  URL: {chunk.web.uri}")
+        print(f"  Relevance: {chunk.relevance_score}")
+    
+    # Check grounding support
+    support_score = response.grounding_metadata.grounding_support
+    print(f"Grounding Support Score: {support_score}")
+</blockquote>
+
+<h2>Caching for Performance</h2>
+<blockquote>
+from functools import lru_cache
+import hashlib
+
+@lru_cache(maxsize=1000)
+def cached_search(query: str, cache_ttl: int = 3600) -> List[dict]:
+    """Search with caching to reduce API calls."""
+    return search_knowledge_base(query)
+
+# Redis caching for distributed systems
+import redis
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+def search_with_redis_cache(query: str) -> List[dict]:
+    """Search with Redis caching."""
+    cache_key = f"search:{hashlib.md5(query.encode()).hexdigest()}"
+    
+    # Check cache
+    cached = redis_client.get(cache_key)
+    if cached:
+        return json.loads(cached)
+    
+    # Perform search
+    results = search_knowledge_base(query)
+    
+    # Cache results (1 hour TTL)
+    redis_client.setex(
+        cache_key,
+        3600,
+        json.dumps(results)
+    )
+    
+    return results
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Chunk Size:</strong> Balance between context and relevance (500-1500 tokens typical)</li>
+<li><strong>Overlap:</strong> Use 10-20% overlap between chunks to maintain context</li>
+<li><strong>Metadata:</strong> Include rich metadata (source, date, author) for better filtering</li>
+<li><strong>Freshness:</strong> Regularly update data stores with new information</li>
+<li><strong>Relevance Threshold:</strong> Filter results below minimum relevance score</li>
+<li><strong>Source Diversity:</strong> Retrieve from multiple sources for comprehensive answers</li>
+<li><strong>Citation:</strong> Always provide source attribution for grounded responses</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

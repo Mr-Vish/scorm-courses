@@ -1,0 +1,271 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Evaluation Frameworks</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Evaluation Frameworks</h1>
+
+<h2>Popular Evaluation Frameworks</h2>
+
+<table>
+    <tr><th>Framework</th><th>Language</th><th>Best For</th><th>Key Features</th></tr>
+    <tr>
+        <td class="rowheader">RAGAS</td>
+        <td>Python</td>
+        <td>RAG applications</td>
+        <td>Faithfulness, relevance, context precision metrics</td>
+    </tr>
+    <tr>
+        <td class="rowheader">DeepEval</td>
+        <td>Python</td>
+        <td>General LLM apps</td>
+        <td>G-Eval, hallucination detection, toxicity</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Promptfoo</td>
+        <td>Node.js</td>
+        <td>Prompt testing</td>
+        <td>Multi-model comparison, regression testing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LangSmith</td>
+        <td>Python/JS</td>
+        <td>LangChain apps</td>
+        <td>Integrated tracing, datasets, evaluators</td>
+    </tr>
+</table>
+
+<h2>RAGAS Framework</h2>
+<p>Specialized for RAG evaluation with metrics for retrieval and generation quality.</p>
+
+<div class="code-block">
+<pre><code>from ragas import evaluate
+from ragas.metrics import faithfulness, answer_relevancy, context_precision
+
+# Prepare evaluation dataset
+dataset = {
+    "question": ["What is the capital of France?"],
+    "answer": ["Paris is the capital of France."],
+    "contexts": [["France is a country in Europe. Paris is its capital city."]],
+    "ground_truth": ["Paris"]
+}
+
+# Run evaluation
+results = evaluate(
+    dataset,
+    metrics=[faithfulness, answer_relevancy, context_precision]
+)
+
+print(f"Faithfulness: {results['faithfulness']}")
+print(f"Answer Relevancy: {results['answer_relevancy']}")
+print(f"Context Precision: {results['context_precision']}")
+</code></pre>
+</div>
+
+<h3>RAGAS Metrics Explained</h3>
+<ul>
+    <li><strong>Faithfulness:</strong> Is the answer grounded in the provided context?</li>
+    <li><strong>Answer Relevancy:</strong> Does the answer address the question?</li>
+    <li><strong>Context Precision:</strong> Are retrieved contexts relevant to the question?</li>
+    <li><strong>Context Recall:</strong> Is all necessary information retrieved?</li>
+</ul>
+
+<h2>DeepEval Framework</h2>
+<p>Comprehensive evaluation with LLM-as-judge and custom metrics.</p>
+
+<div class="code-block">
+<pre><code>from deepeval import evaluate
+from deepeval.metrics import HallucinationMetric, AnswerRelevancyMetric
+from deepeval.test_case import LLMTestCase
+
+# Define test case
+test_case = LLMTestCase(
+    input="What is the capital of France?",
+    actual_output="Paris is the capital of France.",
+    context=["France is a country in Europe. Paris is its capital."]
+)
+
+# Define metrics
+hallucination_metric = HallucinationMetric(threshold=0.5)
+relevancy_metric = AnswerRelevancyMetric(threshold=0.7)
+
+# Evaluate
+results = evaluate(
+    test_cases=[test_case],
+    metrics=[hallucination_metric, relevancy_metric]
+)
+
+for result in results:
+    print(f"Hallucination Score: {result.hallucination_score}")
+    print(f"Relevancy Score: {result.relevancy_score}")
+</code></pre>
+</div>
+
+<h2>Promptfoo Framework</h2>
+<p>Node.js-based framework for prompt testing and model comparison.</p>
+
+<div class="code-block">
+<pre><code># promptfooconfig.yaml
+prompts:
+  - "Answer this question: {{question}}"
+  - "You are a helpful assistant. Question: {{question}}"
+
+providers:
+  - openai:gpt-4
+  - anthropic:claude-sonnet-4
+
+tests:
+  - vars:
+      question: "What is the capital of France?"
+    assert:
+      - type: contains
+        value: "Paris"
+      - type: llm-rubric
+        value: "Answer is factually correct and concise"
+
+# Run: npx promptfoo eval
+</code></pre>
+</div>
+
+<h2>Custom Evaluation Metrics</h2>
+
+<div class="code-block">
+<pre><code>class CustomMetric:
+    def __init__(self, name, threshold=0.7):
+        self.name = name
+        self.threshold = threshold
+    
+    def evaluate(self, input, output, expected=None, context=None):
+        score = self._calculate_score(input, output, expected, context)
+        passed = score >= self.threshold
+        
+        return {
+            "metric": self.name,
+            "score": score,
+            "passed": passed,
+            "threshold": self.threshold
+        }
+    
+    def _calculate_score(self, input, output, expected, context):
+        raise NotImplementedError
+
+class LengthMetric(CustomMetric):
+    def _calculate_score(self, input, output, expected, context):
+        # Score based on output length appropriateness
+        word_count = len(output.split())
+        if word_count < 10:
+            return 0.3  # Too short
+        elif word_count > 200:
+            return 0.5  # Too long
+        else:
+            return 1.0  # Appropriate length
+
+# Usage
+metric = LengthMetric(name="length_check", threshold=0.7)
+result = metric.evaluate(
+    input="What is AI?",
+    output="AI stands for Artificial Intelligence, a field of computer science."
+)
+print(f"Score: {result['score']}, Passed: {result['passed']}")
+</code></pre>
+</div>
+
+<h2>Batch Evaluation</h2>
+
+<div class="code-block">
+<pre><code>async def batch_evaluate(test_cases, metrics):
+    results = []
+    
+    for test_case in test_cases:
+        case_results = {
+            "test_id": test_case["id"],
+            "input": test_case["input"],
+            "metrics": {}
+        }
+        
+        # Generate output
+        output = await llm.generate(test_case["input"])
+        
+        # Evaluate with all metrics
+        for metric in metrics:
+            score = metric.evaluate(
+                input=test_case["input"],
+                output=output,
+                expected=test_case.get("expected"),
+                context=test_case.get("context")
+            )
+            case_results["metrics"][metric.name] = score
+        
+        results.append(case_results)
+    
+    return results
+
+# Usage
+test_cases = [
+    {"id": "test_001", "input": "What is AI?", "expected": "Artificial Intelligence"},
+    {"id": "test_002", "input": "What is ML?", "expected": "Machine Learning"}
+]
+
+metrics = [
+    LengthMetric(threshold=0.7),
+    RelevancyMetric(threshold=0.8)
+]
+
+results = await batch_evaluate(test_cases, metrics)
+</code></pre>
+</div>
+
+<h2>Evaluation Reports</h2>
+
+<div class="code-block">
+<pre><code>def generate_evaluation_report(results):
+    report = {
+        "summary": {
+            "total_tests": len(results),
+            "passed": sum(1 for r in results if all(m["passed"] for m in r["metrics"].values())),
+            "failed": sum(1 for r in results if any(not m["passed"] for m in r["metrics"].values()))
+        },
+        "metrics_summary": {},
+        "failed_tests": []
+    }
+    
+    # Calculate average scores per metric
+    for result in results:
+        for metric_name, metric_result in result["metrics"].items():
+            if metric_name not in report["metrics_summary"]:
+                report["metrics_summary"][metric_name] = []
+            report["metrics_summary"][metric_name].append(metric_result["score"])
+    
+    # Average scores
+    for metric_name, scores in report["metrics_summary"].items():
+        report["metrics_summary"][metric_name] = {
+            "average": sum(scores) / len(scores),
+            "min": min(scores),
+            "max": max(scores)
+        }
+    
+    # Collect failed tests
+    for result in results:
+        if any(not m["passed"] for m in result["metrics"].values()):
+            report["failed_tests"].append({
+                "test_id": result["test_id"],
+                "input": result["input"],
+                "failed_metrics": [
+                    name for name, m in result["metrics"].items() if not m["passed"]
+                ]
+            })
+    
+    return report
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

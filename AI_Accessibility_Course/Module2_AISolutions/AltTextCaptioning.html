@@ -1,0 +1,263 @@
+<!DOCTYPE html PUBLIC "-//W3C/DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 2: AI-Powered Alt Text and Image Captioning</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: AI-Powered Alt Text and Image Captioning</h1>
+
+<h2>Module Objectives</h2>
+<p>In this page, you will:</p>
+<ul>
+<li>Understand the purpose and importance of alternative text for images</li>
+<li>Learn how vision-language models generate image descriptions</li>
+<li>Identify different types of images and appropriate alt text strategies</li>
+<li>Apply WCAG guidelines for writing effective alt text</li>
+<li>Recognize when to use AI-generated alt text versus human-written descriptions</li>
+<li>Implement quality assurance processes for AI-generated alt text</li>
+</ul>
+
+<h2>The Critical Role of Alternative Text</h2>
+<p>Alternative text (alt text) is a textual description of an image that serves as a substitute when the image cannot be seen or loaded. Alt text is essential for:</p>
+
+<ul>
+<li><strong>Screen reader users:</strong> People who are blind or have severe vision impairments rely on screen readers that announce alt text aloud, enabling them to understand image content</li>
+<li><strong>Slow connections:</strong> Users on limited bandwidth may disable images; alt text provides context while images load</li>
+<li><strong>Search engines:</strong> Alt text helps search engines understand and index image content, improving SEO</li>
+<li><strong>Context preservation:</strong> If an image fails to load due to broken links or server errors, alt text maintains content meaning</li>
+</ul>
+
+<p>WCAG 2.1 Success Criterion 1.1.1 (Level A) requires that all non-text content has a text alternative that serves the equivalent purpose. This is one of the most fundamental accessibility requirements, yet studies show that 60-70% of images on the web lack adequate alt text.</p>
+
+<h2>The Alt Text Challenge at Scale</h2>
+<p>Organizations face significant challenges in providing alt text for their image libraries:</p>
+
+<ul>
+<li><strong>Volume:</strong> E-commerce sites may have hundreds of thousands of product images; news organizations publish thousands of photos daily</li>
+<li><strong>Cost:</strong> Manual alt text creation costs $5-10 per image when outsourced, making large-scale remediation prohibitively expensive</li>
+<li><strong>Time:</strong> Writing quality alt text requires 2-5 minutes per image, creating bottlenecks in content publishing workflows</li>
+<li><strong>Consistency:</strong> Multiple content creators produce inconsistent alt text quality and style</li>
+<li><strong>Legacy content:</strong> Millions of historical images lack alt text entirely</li>
+</ul>
+
+<p>AI-powered alt text generation addresses these challenges by reducing costs by 98-99%, accelerating production from minutes to seconds, and ensuring consistent quality standards.</p>
+
+<h2>How Vision-Language Models Work</h2>
+<p>Vision-language models are AI systems trained on millions of image-text pairs, learning to understand visual content and generate natural language descriptions. These models combine:</p>
+
+<ul>
+<li><strong>Computer vision:</strong> Neural networks that analyze image pixels, identifying objects, people, scenes, actions, colors, spatial relationships, and visual attributes</li>
+<li><strong>Natural language processing:</strong> Language models that generate coherent, grammatically correct descriptions in human-readable text</li>
+<li><strong>Multimodal learning:</strong> Training that connects visual and linguistic representations, enabling the model to "understand" what it sees and describe it accurately</li>
+</ul>
+
+<h3>Leading Vision-Language Models</h3>
+<table>
+<tr><th>Model</th><th>Provider</th><th>Strengths</th><th>Typical Use Case</th></tr>
+<tr>
+    <td><strong>GPT-4o</strong></td>
+    <td>OpenAI</td>
+    <td>Excellent contextual understanding, detailed descriptions, follows instructions well</td>
+    <td>General-purpose alt text, complex images, contextual descriptions</td>
+</tr>
+<tr>
+    <td><strong>Claude 3</strong></td>
+    <td>Anthropic</td>
+    <td>Strong reasoning, nuanced descriptions, good at identifying text in images</td>
+    <td>Documents, charts, infographics, technical content</td>
+</tr>
+<tr>
+    <td><strong>Gemini Pro Vision</strong></td>
+    <td>Google</td>
+    <td>Fast processing, multilingual support, good object detection</td>
+    <td>High-volume processing, international content</td>
+</tr>
+<tr>
+    <td><strong>Azure Computer Vision</strong></td>
+    <td>Microsoft</td>
+    <td>Enterprise integration, customizable models, compliance features</td>
+    <td>Enterprise applications, regulated industries</td>
+</tr>
+</table>
+
+<h2>Types of Images and Alt Text Strategies</h2>
+
+<h3>1. Informational Images</h3>
+<p><strong>Definition:</strong> Images that convey information, concepts, or ideas essential to understanding the content.</p>
+
+<p><strong>Alt text strategy:</strong> Describe the information conveyed by the image, not just its visual appearance. Focus on the message, not the medium.</p>
+
+<p><strong>Examples:</strong></p>
+<ul>
+<li><strong>Photograph:</strong> "Engineer testing circuit board with multimeter in electronics lab"</li>
+<li><strong>Illustration:</strong> "Diagram showing water cycle: evaporation, condensation, precipitation, and collection"</li>
+<li><strong>Icon:</strong> "Warning: High voltage hazard"</li>
+</ul>
+
+<p><strong>AI effectiveness:</strong> 85-95% accuracy for straightforward informational images. Human review recommended for technical or specialized content.</p>
+
+<h3>2. Functional Images</h3>
+<p><strong>Definition:</strong> Images used as links, buttons, or interactive controls that perform an action when activated.</p>
+
+<p><strong>Alt text strategy:</strong> Describe the function or destination, not the image appearance. Answer "What happens when I click this?"</p>
+
+<p><strong>Examples:</strong></p>
+<ul>
+<li><strong>Search button:</strong> "Search" (not "Magnifying glass icon")</li>
+<li><strong>Social media link:</strong> "Follow us on Twitter" (not "Twitter bird logo")</li>
+<li><strong>Download link:</strong> "Download PDF report" (not "Download icon")</li>
+</ul>
+
+<p><strong>AI effectiveness:</strong> 60-75% accuracy. AI often describes appearance rather than function. Requires context about the button's purpose.</p>
+
+<h3>3. Decorative Images</h3>
+<p><strong>Definition:</strong> Images that are purely aesthetic and do not convey information necessary for understanding the content.</p>
+
+<p><strong>Alt text strategy:</strong> Use empty alt attribute (alt="") so screen readers skip the image entirely. Do not omit the alt attribute, as this causes screen readers to announce the filename.</p>
+
+<p><strong>Examples:</strong></p>
+<ul>
+<li>Decorative borders and dividers</li>
+<li>Background patterns and textures</li>
+<li>Spacer images used for layout</li>
+<li>Purely aesthetic photographs that don't add meaning</li>
+</ul>
+
+<p><strong>AI effectiveness:</strong> 70-80% accuracy in identifying decorative images. Conservative approach: AI should flag potential decorative images for human review rather than automatically marking them.</p>
+
+<h3>4. Complex Images</h3>
+<p><strong>Definition:</strong> Images containing substantial information that cannot be adequately described in a short alt text, such as charts, graphs, diagrams, maps, and infographics.</p>
+
+<p><strong>Alt text strategy:</strong> Provide a brief alt text summarizing the image, plus a longer description elsewhere on the page or via a link.</p>
+
+<p><strong>Example:</strong></p>
+<ul>
+<li><strong>Alt text:</strong> "Bar chart showing quarterly revenue growth from Q1 to Q4 2023"</li>
+<li><strong>Long description:</strong> "Q1: $2.1M, Q2: $2.8M (33% increase), Q3: $3.5M (25% increase), Q4: $4.2M (20% increase). Total annual revenue: $12.6M, representing 60% year-over-year growth."</li>
+</ul>
+
+<p><strong>AI effectiveness:</strong> 75-85% accuracy for charts and graphs. AI can extract data and identify trends but may miss nuanced insights. Human review essential for business-critical visualizations.</p>
+
+<h3>5. Images of Text</h3>
+<p><strong>Definition:</strong> Images containing text, such as logos, quotes, or stylized typography.</p>
+
+<p><strong>Alt text strategy:</strong> Include the text verbatim in the alt attribute. If the image is purely decorative text styling, consider whether the text should be actual HTML text instead.</p>
+
+<p><strong>Example:</strong></p>
+<ul>
+<li><strong>Company logo:</strong> "Acme Corporation"</li>
+<li><strong>Quote image:</strong> "The only way to do great work is to love what you do. - Steve Jobs"</li>
+</ul>
+
+<p><strong>AI effectiveness:</strong> 90-95% accuracy with OCR (Optical Character Recognition) capabilities. Modern vision-language models excel at reading text in images.</p>
+
+<h2>WCAG Guidelines for Effective Alt Text</h2>
+
+<h3>Conciseness</h3>
+<p>Keep alt text under 125 characters when possible. Most screen readers truncate or pause after 125 characters. For complex images requiring longer descriptions, use a short alt text plus a separate long description.</p>
+
+<h3>Accuracy</h3>
+<p>Alt text must accurately represent the image content. Inaccurate descriptions mislead users and violate accessibility principles. This is particularly critical for medical images, legal documents, and financial charts.</p>
+
+<h3>Context-Appropriate</h3>
+<p>Alt text should reflect the image's purpose in context. The same image may require different alt text depending on where it appears. For example, a photo of a laptop might be described as "Silver laptop computer" in a product catalog but "Student taking notes on laptop during lecture" in an educational article.</p>
+
+<h3>Avoid Redundancy</h3>
+<p>Do not begin alt text with "Image of" or "Picture of"—screen readers already announce that it's an image. Start directly with the description.</p>
+
+<h3>Punctuation</h3>
+<p>End alt text with a period to ensure screen readers pause appropriately before continuing to the next element.</p>
+
+<h2>Implementing AI-Powered Alt Text Generation</h2>
+
+<h3>Workflow Integration Points</h3>
+<p>AI alt text generation can be integrated at multiple points in the content lifecycle:</p>
+
+<ul>
+<li><strong>Upload time:</strong> Generate alt text automatically when images are uploaded to CMS or DAM systems</li>
+<li><strong>Publishing workflow:</strong> Generate alt text during content review before publication</li>
+<li><strong>Batch processing:</strong> Remediate existing image libraries in bulk</li>
+<li><strong>API integration:</strong> Generate alt text on-demand when pages are requested</li>
+</ul>
+
+<h3>Providing Context to AI Models</h3>
+<p>To improve AI-generated alt text quality, provide contextual information:</p>
+
+<ul>
+<li><strong>Page context:</strong> "This image appears on a product page for kitchen appliances"</li>
+<li><strong>Surrounding text:</strong> Include nearby headings and paragraphs</li>
+<li><strong>Image purpose:</strong> "This is a functional image used as a navigation button"</li>
+<li><strong>Target audience:</strong> "Content is for medical professionals" vs. "Content is for general public"</li>
+<li><strong>Brand guidelines:</strong> "Use formal tone; avoid marketing language"</li>
+</ul>
+
+<h3>Quality Assurance Process</h3>
+<p>Implement a tiered review process based on content criticality:</p>
+
+<table>
+<tr><th>Content Tier</th><th>AI Processing</th><th>Human Review</th><th>Rationale</th></tr>
+<tr>
+    <td><strong>Critical</strong></td>
+    <td>AI generates draft</td>
+    <td>100% expert review</td>
+    <td>Legal, medical, financial content where errors have serious consequences</td>
+</tr>
+<tr>
+    <td><strong>High-priority</strong></td>
+    <td>AI generates final</td>
+    <td>20-30% spot check</td>
+    <td>Homepage, key product pages, high-traffic content</td>
+</tr>
+<tr>
+    <td><strong>Standard</strong></td>
+    <td>AI generates final</td>
+    <td>5-10% random sampling</td>
+    <td>Blog posts, general content, moderate traffic</td>
+</tr>
+<tr>
+    <td><strong>Low-priority</strong></td>
+    <td>AI generates final</td>
+    <td>User feedback only</td>
+    <td>Archived content, low-traffic pages</td>
+</tr>
+</table>
+
+<h2>Common AI Alt Text Errors and Mitigation</h2>
+
+<h3>Error Type 1: Overly Generic Descriptions</h3>
+<p><strong>Example:</strong> "A person standing in a room" instead of "Customer service representative assisting client at help desk"</p>
+<p><strong>Mitigation:</strong> Provide more context in prompts; use more advanced models; implement human review for important images</p>
+
+<h3>Error Type 2: Hallucinations</h3>
+<p><strong>Example:</strong> Describing objects or details not actually present in the image</p>
+<p><strong>Mitigation:</strong> Use models with lower hallucination rates; implement validation checks; require human verification for critical content</p>
+
+<h3>Error Type 3: Missing Context</h3>
+<p><strong>Example:</strong> Describing visual appearance without explaining significance or function</p>
+<p><strong>Mitigation:</strong> Include page context and surrounding text in API calls; train models on domain-specific examples</p>
+
+<h3>Error Type 4: Inappropriate Detail Level</h3>
+<p><strong>Example:</strong> Excessively long descriptions for simple images or overly brief descriptions for complex images</p>
+<p><strong>Mitigation:</strong> Specify desired length in prompts; implement character limits; use different strategies for simple vs. complex images</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Alt text is essential for screen reader users and is required by WCAG 2.1 Success Criterion 1.1.1 (Level A)</li>
+<li>AI-powered alt text generation reduces costs by 98-99% and accelerates production from minutes to seconds</li>
+<li>Vision-language models like GPT-4o, Claude 3, and Gemini Pro Vision analyze images and generate natural language descriptions</li>
+<li>Different image types (informational, functional, decorative, complex, text) require different alt text strategies</li>
+<li>Effective alt text is concise (under 125 characters), accurate, context-appropriate, and avoids redundancy</li>
+<li>Providing context to AI models significantly improves alt text quality and relevance</li>
+<li>Implement tiered quality assurance with human review based on content criticality</li>
+<li>Common AI errors include generic descriptions, hallucinations, missing context, and inappropriate detail levels</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

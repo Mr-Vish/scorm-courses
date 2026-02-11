@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 3: Tenant-Specific Customization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Customizing AI Models for Individual Tenants</h1>
+
+<p>One of the biggest value propositions in multi-tenant AI is the ability to provide a model that feels "specialized" for each tenant, even if they are all using the same underlying base model. This can be achieved through various customization techniques.</p>
+
+<h2>3.1 Dynamic System Prompts</h2>
+<p>The simplest way to customize the experience is by injecting tenant-specific instructions into the system prompt.
+<ul>
+    <li><strong>Tenant Persona:</strong> "You are an AI assistant for [Tenant Name], a law firm specializing in [Practice Area]. Use a professional and formal tone."</li>
+    <li><strong>Knowledge Context:</strong> "Refer to the following tenant-specific policies when answering: [Policy A, Policy B]."</li>
+    <li><strong>Output Formatting:</strong> "Always format your responses in [Tenant's Preferred Format]."</li>
+</ul></p>
+
+<h2>3.2 Multi-tenant RAG (Retrieval-Augmented Generation)</h2>
+<p>By connecting the LLM to a tenant-specific knowledge base, you can provide highly relevant and accurate answers based only on that tenant's data.
+<ul>
+    <li><strong>Vector Partitioning:</strong> As discussed in Module 2, ensuring that the retrieval process is strictly scoped to the <code>tenant_id</code>.</li>
+    <li><strong>Dynamic Data Sources:</strong> Allowing tenants to connect their own data sources (Google Drive, Slack, Notion) which are then indexed and made available only to them.</li>
+</ul></p>
+
+<h2>3.3 Parameter-Efficient Fine-Tuning (LoRA)</h2>
+<p>For more advanced customization, you can use Low-Rank Adaptation (LoRA) to create small "adapters" for each tenant.
+<ul>
+    <li><strong>Base Model + Adapters:</strong> You keep a single large base model in memory and swap out small (few megabytes) LoRA adapters depending on which tenant is making the request.</li>
+    <li><strong>Cost-Effective Fine-Tuning:</strong> This is much cheaper than full fine-tuning and allows you to support thousands of customized models on a single GPU cluster.</li>
+    <li><strong>Dynamic Loading:</strong> Modern inference servers (like vLLM or Hugging Face TGI) support loading and unloading LoRA adapters on the fly with minimal latency.</li>
+</ul></p>
+
+<h2>3.4 Few-shot Examples (Tenant-Specific)</h2>
+<p>Providing a few examples of high-quality tenant-specific interactions in the prompt can significantly improve the model's performance on tasks that are unique to that tenant's business or industry.</p>
+
+<h2>3.5 Challenges in Customization</h2>
+<ul>
+    <li><strong>Scale:</strong> Managing thousands of LoRA adapters or complex system prompts requires robust orchestration.</li>
+    <li><strong>Evaluation:</strong> How do you ensure that a customization for Tenant A doesn't negatively impact the base model's performance for Tenant B?</li>
+    <li><strong>Privacy:</strong> Ensuring that no data from Tenant A's fine-tuning process or RAG store ever "leaks" into the base model or another tenant's adapter.</li>
+</ul>
+
+<p>By combining these techniques, multi-tenant AI providers can offer a highly personalized experience that scales efficiently and maintains strict data isolation.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

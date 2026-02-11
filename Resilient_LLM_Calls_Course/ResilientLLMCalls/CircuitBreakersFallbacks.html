@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Circuit Breakers and Fallback Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Resilience Patterns: Circuit Breakers and Fallbacks</h1>
+
+<div class="content-section">
+<h2>1. Introduction to Circuit Breakers</h2>
+<p>In distributed systems, a <strong>Circuit Breaker</strong> is a design pattern used to detect failures and encapsulate the logic of preventing a failure from constantly recurring during maintenance, temporary external system failure, or unexpected system difficulties. For LLM applications, this is critical because when an AI provider goes down, continuing to send requests only wastes resources and increases latency for your users.</p>
+
+<h3>The Three States of a Circuit Breaker</h3>
+<p>The pattern is modeled after an electrical circuit breaker:</p>
+<ul>
+    <li><strong>Closed:</strong> The normal state. Requests are allowed to pass through. If the error rate exceeds a certain threshold, the circuit "trips" and moves to the Open state.</li>
+    <li><strong>Open:</strong> Requests are blocked immediately. The system doesn't even try to call the API, returning an error or a fallback response instantly. This gives the external provider time to recover.</li>
+    <li><strong>Half-Open:</strong> After a timeout period, the circuit enters this state to "test the waters." A small number of requests are allowed through. If they succeed, the circuit closes. If they fail, it opens again.</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Simplified Circuit Breaker Logic
+class CircuitBreaker:
+    def __init__(self, failure_threshold=5, recovery_timeout=60):
+        self.state = "CLOSED"
+        self.failures = 0
+        self.last_failure_time = 0
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+
+    def call(self, func, *args, **kwargs):
+        if self.state == "OPEN":
+            if time.time() - self.last_failure_time > self.recovery_timeout:
+                self.state = "HALF-OPEN"
+            else:
+                return self.get_fallback()
+
+        try:
+            result = func(*args, **kwargs)
+            if self.state == "HALF-OPEN":
+                self.state = "CLOSED"
+                self.failures = 0
+            return result
+        except Exception as e:
+            self.failures += 1
+            self.last_failure_time = time.time()
+            if self.failures >= self.failure_threshold:
+                self.state = "OPEN"
+            raise e</code></pre>
+</div>
+
+<h2>2. Fallback Strategies: The "Plan B"</h2>
+<p>A circuit breaker tells you when to stop trying, but a <strong>Fallback</strong> tells you what to do instead. Effective fallback strategies ensure that your application remains useful even when your primary AI model is unavailable.</p>
+
+<h3>Model Fallbacks (The "Tiered" Approach)</h3>
+<p>If your primary model (e.g., GPT-4) is failing or hitting rate limits, you can fall back to a faster, cheaper, and often more available model (e.g., GPT-4o-mini). While the quality might be slightly lower, a "good enough" response is always better than an error message.</p>
+
+<h3>Provider Fallbacks (The "Multi-Cloud" approach)</h3>
+<p>A truly resilient application is provider-agnostic. If OpenAI is experiencing an outage, your system should automatically route requests to Anthropic (Claude) or Google (Gemini). This requires maintaining consistent prompts and output parsing logic across different providers.</p>
+
+<h3>Canned or Cached Fallbacks</h3>
+<p>For common queries, you can fall back to a pre-written "canned" response or a recently cached answer. This is particularly useful for greeting or FAQ-style prompts where a high-degree of creativity isn't required.</p>
+
+<div class="code-block">
+<pre><code>def smart_llm_call(prompt):
+    # Try Primary Provider (OpenAI GPT-4)
+    try:
+        return openai_client.generate(model="gpt-4", prompt=prompt)
+    except (RateLimitError, APIError):
+        print("Primary failed, falling back to secondary...")
+        # Fallback 1: Smaller Model
+        try:
+            return openai_client.generate(model="gpt-4o-mini", prompt=prompt)
+        except:
+            # Fallback 2: Different Provider (Anthropic)
+            try:
+                return anthropic_client.generate(model="claude-3-haiku", prompt=prompt)
+            except:
+                # Fallback 3: Static Response
+                return "I'm currently experiencing high demand. Please try again in a moment."</code></pre>
+</div>
+
+<h2>3. Timeout Management</h2>
+<p>LLM requests are notoriously slow. A "hanging" request that takes 60 seconds to fail is worse than one that fails in 5 seconds. Setting <strong>Aggressive Timeouts</strong> is essential for resilience. If a request hasn't started streaming tokens within 5-10 seconds, it's often better to cancel it and trigger your fallback logic.</p>
+
+<h2>4. Graceful Degradation</h2>
+<p>Sometimes you don't need to replace the entire response; you just need to simplify the task. This is <strong>Graceful Degradation</strong>.</p>
+<ul>
+    <li><strong>Example:</strong> If a model is struggling to generate a complex 500-word analysis, your fallback could be to request a 50-word summary instead.</li>
+    <li><strong>Example:</strong> In a coding assistant, if the "Fix Bug" feature is down, the system might still allow the "Explain Code" feature to work.</li>
+</ul>
+
+<h2>5. Handling Error Codes Correctly</h2>
+<p>Not all errors should trigger a retry or a fallback. It's important to distinguish between:</p>
+<ul>
+    <li><strong>4xx Errors (Client Side):</strong> Usually mean your prompt is too long (400), your API key is invalid (401), or you're asking for something censored (403). Retrying these without changes will never work.</li>
+    <li><strong>429 Errors (Rate Limit):</strong> Trigger backoff.</li>
+    <li><strong>5xx Errors (Server Side):</strong> These indicate a problem with the provider. These are the primary triggers for Circuit Breakers and Provider Fallbacks.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>Circuit breakers and fallbacks transform a fragile application into a resilient one. By anticipating failure and having a clear "Plan B," you can ensure that your users are never left staring at a blank screen or a cryptic error code. In the next module, we'll look at how to monitor these patterns in production and optimize your system for both performance and cost.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

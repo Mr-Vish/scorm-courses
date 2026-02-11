@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM08: Excessive Agency</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM08: Excessive Agency</h1>
+
+<p>Excessive Agency occurs when an LLM-based agent is given too much power—either in terms of the tools it can access, the permissions those tools have, or the level of autonomy it has to make decisions without human oversight.</p>
+
+<h2>8.1 The "God Mode" Problem</h2>
+<p>In the excitement of building AI agents, it's easy to give them "everything" access: full read/write access to a database, the ability to execute any shell command, or a blank check for API calls. This "God Mode" configuration is a massive security risk.</p>
+
+<h2>8.2 Factors Contributing to Excessive Agency</h2>
+<ul>
+    <li><strong>Excessive Functionality:</strong> Giving an agent access to tools it doesn't need for its specific task.</li>
+    <li><strong>Excessive Permissions:</strong> Allowing a tool to perform actions that are broader than necessary (e.g., a "read-only" agent that uses a tool with "read/write" permissions).</li>
+    <li><strong>Lack of Guardrails:</strong> Allowing an agent to make a series of consequential decisions in a loop without any checkpoints or human reviews.</li>
+    <li><strong>Susceptibility to Manipulation:</strong> Because agents can be manipulated via prompt injection, excessive agency effectively gives the attacker control over all the agent's tools and permissions.</li>
+</ul>
+
+<h2>8.3 Remediation Strategies</h2>
+<p>Controlling agency requires a strict application of the Principle of Least Privilege:
+<ul>
+    <li><strong>Minimize Tool Access:</strong> Only provide the agent with the specific tools needed for the current conversation or task.</li>
+    <li><strong>Scoped Permissions:</strong> Ensure that the credentials used by the agent's tools are as restricted as possible (e.g., using a database user with only SELECT permissions on a specific schema).</li>
+    <li><strong>Human-in-the-loop (HITL):</strong> Explicitly requiring human approval for any action with high impact or external side effects.</li>
+    <li><strong>Agent Auditing:</strong> Monitoring the agent's "thought process" and tool calls in real-time to detect and block suspicious patterns of behavior.</li>
+    <li><strong>Time-limited Sessions:</strong> Automatically revoking the agent's access to sensitive tools or data after a task is completed or a time limit is reached.</li>
+</ul></p>
+
+<h2>8.4 Case Study: The Rogue DevOps Agent</h2>
+<p>A DevOps agent was given full admin access to a Kubernetes cluster to "help automate deployments." An attacker used indirect prompt injection via a malicious pull request to trick the agent into deleting all the production namespaces, causing a massive outage. If the agent had only been given permission to `apply` specific resources in a staging namespace, the impact would have been minimal.</p>
+
+<p>By carefully bounding the agency of your AI systems, you can harness their power while protecting your infrastructure and data from both accidental and intentional harm.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

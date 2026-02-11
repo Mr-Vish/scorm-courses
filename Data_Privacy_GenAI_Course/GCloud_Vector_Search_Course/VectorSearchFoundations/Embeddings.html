@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding Embeddings and Vector Representations</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Understanding Embeddings and Vector Representations</h1>
+
+<h2>What Are Embeddings?</h2>
+<p>Embeddings are numerical representations of data (text, images, audio) as vectors in a high-dimensional space. These vectors capture semantic meaning, allowing machines to understand relationships and similarities between different pieces of content.</p>
+
+<h2>From Text to Vectors</h2>
+<p>Traditional approaches like one-hot encoding or TF-IDF fail to capture semantic relationships. Modern embedding models use neural networks to learn dense vector representations where semantically similar items are positioned close together in vector space.</p>
+
+<div class="code-block">
+<pre><code>from vertexai.language_models import TextEmbeddingModel
+
+# Initialize the embedding model
+model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+
+# Generate embeddings for text
+texts = [
+    "Machine learning is a subset of artificial intelligence",
+    "AI enables computers to learn from data",
+    "The weather is sunny today"
+]
+
+embeddings = model.get_embeddings(texts)
+
+# Each embedding is a 768-dimensional vector
+for i, embedding in enumerate(embeddings):
+    print(f"Text {i+1}: {len(embedding.values)} dimensions")
+    print(f"First 5 values: {embedding.values[:5]}")
+</code></pre>
+</div>
+
+<h2>Properties of Good Embeddings</h2>
+<table>
+    <tr>
+        <th>Property</th>
+        <th>Description</th>
+        <th>Benefit</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Semantic Similarity</td>
+        <td>Similar meanings produce similar vectors</td>
+        <td>Enables meaningful search and retrieval</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Dimensionality</td>
+        <td>Typically 128-1536 dimensions</td>
+        <td>Balances expressiveness and efficiency</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Density</td>
+        <td>All dimensions contain meaningful values</td>
+        <td>More efficient than sparse representations</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Normalization</td>
+        <td>Vectors often normalized to unit length</td>
+        <td>Simplifies distance calculations</td>
+    </tr>
+</table>
+
+<h2>Popular Embedding Models</h2>
+<ul>
+    <li><strong>text-embedding-004:</strong> Google's latest text embedding model with 768 dimensions, optimized for semantic search and RAG applications</li>
+    <li><strong>textembedding-gecko:</strong> Multilingual model supporting 100+ languages with strong cross-lingual capabilities</li>
+    <li><strong>multimodalembedding:</strong> Unified embeddings for text and images in the same vector space</li>
+    <li><strong>OpenAI text-embedding-3:</strong> High-performance embeddings with configurable dimensions (256-3072)</li>
+    <li><strong>Cohere embed-v3:</strong> Specialized for search with separate query and document embeddings</li>
+</ul>
+
+<h2>Embedding Dimensions and Trade-offs</h2>
+<p>The dimensionality of embeddings affects both performance and accuracy:</p>
+
+<table>
+    <tr>
+        <th>Dimensions</th>
+        <th>Storage per Vector</th>
+        <th>Search Speed</th>
+        <th>Accuracy</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">128-256</td>
+        <td>512-1024 bytes</td>
+        <td>Very Fast</td>
+        <td>Good</td>
+        <td>High-throughput applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">384-768</td>
+        <td>1.5-3 KB</td>
+        <td>Fast</td>
+        <td>Excellent</td>
+        <td>General-purpose semantic search</td>
+    </tr>
+    <tr>
+        <td class="rowheader">1024-1536</td>
+        <td>4-6 KB</td>
+        <td>Moderate</td>
+        <td>Superior</td>
+        <td>High-precision retrieval</td>
+    </tr>
+</table>
+
+<h2>Generating Embeddings at Scale</h2>
+<p>For production systems processing millions of documents, batch processing is essential:</p>
+
+<div class="code-block">
+<pre><code>from vertexai.language_models import TextEmbeddingModel
+import numpy as np
+
+model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+
+def batch_embed(texts, batch_size=250):
+    """Generate embeddings in batches to optimize API usage"""
+    all_embeddings = []
+    
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i:i + batch_size]
+        embeddings = model.get_embeddings(batch)
+        all_embeddings.extend([emb.values for emb in embeddings])
+    
+    return np.array(all_embeddings)
+
+# Process 10,000 documents efficiently
+documents = load_documents()  # Your document corpus
+embeddings = batch_embed(documents, batch_size=250)
+
+print(f"Generated {len(embeddings)} embeddings")
+print(f"Shape: {embeddings.shape}")  # (10000, 768)
+</code></pre>
+</div>
+
+<h2>Real-World Example: Document Similarity</h2>
+<p>Consider a customer support system that needs to find similar support tickets:</p>
+
+<div class="code-block">
+<pre><code>import numpy as np
+
+# Customer queries
+query = "My payment was declined but money was deducted"
+similar_tickets = [
+    "Credit card charged but order failed",
+    "How to reset my password",
+    "Refund not received after cancellation"
+]
+
+# Generate embeddings
+query_emb = model.get_embeddings([query])[0].values
+ticket_embs = [model.get_embeddings([t])[0].values for t in similar_tickets]
+
+# Calculate cosine similarity
+def cosine_similarity(v1, v2):
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+# Find most similar ticket
+for i, ticket_emb in enumerate(ticket_embs):
+    similarity = cosine_similarity(query_emb, ticket_emb)
+    print(f"Ticket {i+1}: {similarity:.3f} - {similar_tickets[i]}")
+
+# Output:
+# Ticket 1: 0.847 - Credit card charged but order failed
+# Ticket 2: 0.312 - How to reset my password
+# Ticket 3: 0.621 - Refund not received after cancellation
+</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Embeddings transform unstructured data into numerical vectors that capture semantic meaning</li>
+<li>Modern embedding models use deep learning to learn representations from massive datasets</li>
+<li>Higher dimensions generally improve accuracy but increase storage and computation costs</li>
+<li>Batch processing is essential for generating embeddings at scale</li>
+<li>The choice of embedding model depends on your language requirements, accuracy needs, and performance constraints</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

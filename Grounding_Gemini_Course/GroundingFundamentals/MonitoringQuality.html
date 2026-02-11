@@ -1,0 +1,499 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Evaluating and Monitoring Grounding Quality</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Evaluating and Monitoring Grounding Quality</h1>
+
+<h2>Why Monitoring Matters</h2>
+<p>Grounding is not a "set and forget" feature. Source quality, retrieval effectiveness, and model behavior can change over time. Production systems require continuous monitoring to maintain response quality and user trust.</p>
+
+<h2>Key Grounding Metrics</h2>
+<p>Track these metrics to evaluate grounding effectiveness:</p>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Description</th>
+        <th>Target Range</th>
+        <th>Action if Outside Range</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Grounding Score</td>
+        <td>Confidence that response is supported by sources</td>
+        <td>0.7 - 1.0</td>
+        <td>Review prompts, adjust retrieval strategy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Source Count</td>
+        <td>Number of sources used per response</td>
+        <td>2 - 5</td>
+        <td>Too few: broaden search; Too many: refine query</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Retrieval Latency</td>
+        <td>Time to fetch grounding sources</td>
+        <td>&lt; 500ms</td>
+        <td>Optimize queries, consider caching</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Grounding Success Rate</td>
+        <td>Percentage of queries successfully grounded</td>
+        <td>&gt; 95%</td>
+        <td>Investigate failures, improve error handling</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Citation Coverage</td>
+        <td>Percentage of claims with source citations</td>
+        <td>&gt; 80%</td>
+        <td>Adjust prompts to require citations</td>
+    </tr>
+</table>
+
+<h2>Implementing Grounding Analytics</h2>
+<p>Build a monitoring system to track grounding quality over time:</p>
+
+<blockquote>
+import time
+from datetime import datetime
+from collections import defaultdict
+import json
+
+class GroundingMonitor:
+    """
+    Monitor and analyze grounding quality metrics.
+    """
+    def __init__(self):
+        self.metrics = defaultdict(list)
+        self.queries = []
+    
+    def record_query(self, query, response, metadata, latency):
+        """
+        Record a grounded query and its metrics.
+        """
+        # Extract grounding score
+        grounding_score = 0.0
+        if metadata and metadata.grounding_support:
+            grounding_score = metadata.grounding_support.grounding_score
+        
+        # Count sources
+        source_count = 0
+        if metadata and metadata.grounding_chunks:
+            source_count = len(metadata.grounding_chunks)
+        
+        # Record metrics
+        record = {
+            'timestamp': datetime.now().isoformat(),
+            'query': query,
+            'grounding_score': grounding_score,
+            'source_count': source_count,
+            'latency_ms': latency * 1000,
+            'grounded': metadata is not None
+        }
+        
+        self.queries.append(record)
+        self.metrics['grounding_scores'].append(grounding_score)
+        self.metrics['source_counts'].append(source_count)
+        self.metrics['latencies'].append(latency * 1000)
+        
+        return record
+    
+    def get_summary_stats(self):
+        """
+        Calculate summary statistics for all metrics.
+        """
+        if not self.queries:
+            return "No queries recorded"
+        
+        total_queries = len(self.queries)
+        grounded_queries = sum(1 for q in self.queries if q['grounded'])
+        
+        avg_score = sum(self.metrics['grounding_scores']) / total_queries
+        avg_sources = sum(self.metrics['source_counts']) / total_queries
+        avg_latency = sum(self.metrics['latencies']) / total_queries
+        
+        return {
+            'total_queries': total_queries,
+            'grounding_success_rate': grounded_queries / total_queries,
+            'avg_grounding_score': avg_score,
+            'avg_source_count': avg_sources,
+            'avg_latency_ms': avg_latency,
+            'low_quality_responses': sum(
+                1 for score in self.metrics['grounding_scores'] 
+                if score < 0.7
+            )
+        }
+    
+    def export_metrics(self, filename):
+        """
+        Export metrics to JSON for analysis.
+        """
+        with open(filename, 'w') as f:
+            json.dump({
+                'summary': self.get_summary_stats(),
+                'queries': self.queries
+            }, f, indent=2)
+
+
+# Usage example
+from google import genai
+from google.genai import types
+
+monitor = GroundingMonitor()
+client = genai.Client()
+
+queries = [
+    "What is the current inflation rate in the US?",
+    "Explain quantum entanglement",
+    "What are the latest iPhone features?"
+]
+
+for query in queries:
+    start_time = time.time()
+    
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=query,
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(google_search=types.GoogleSearch())]
+        )
+    )
+    
+    latency = time.time() - start_time
+    metadata = response.candidates[0].grounding_metadata
+    
+    # Record metrics
+    record = monitor.record_query(query, response.text, metadata, latency)
+    print(f"Query: {query}")
+    print(f"  Score: {record['grounding_score']:.2f}")
+    print(f"  Sources: {record['source_count']}")
+    print(f"  Latency: {record['latency_ms']:.0f}ms\n")
+
+# Get summary
+stats = monitor.get_summary_stats()
+print("Summary Statistics:")
+print(f"  Total Queries: {stats['total_queries']}")
+print(f"  Success Rate: {stats['grounding_success_rate']:.1%}")
+print(f"  Avg Score: {stats['avg_grounding_score']:.2f}")
+print(f"  Avg Latency: {stats['avg_latency_ms']:.0f}ms")
+
+# Export for analysis
+monitor.export_metrics('grounding_metrics.json')
+</blockquote>
+
+<h2>Source Quality Assessment</h2>
+<p>Not all sources are equally reliable. Implement source quality checks:</p>
+
+<blockquote>
+def assess_source_quality(grounding_chunks):
+    """
+    Evaluate the quality and reliability of grounding sources.
+    """
+    quality_scores = []
+    
+    # Domain reputation lists (simplified example)
+    high_quality_domains = [
+        'wikipedia.org', 'nature.com', 'science.org', 
+        'nih.gov', 'edu', 'gov'
+    ]
+    
+    medium_quality_domains = [
+        'reuters.com', 'bbc.com', 'nytimes.com',
+        'forbes.com', 'techcrunch.com'
+    ]
+    
+    for chunk in grounding_chunks:
+        uri = chunk.web.uri
+        score = 0.5  # Default medium quality
+        
+        # Check domain reputation
+        if any(domain in uri for domain in high_quality_domains):
+            score = 1.0
+        elif any(domain in uri for domain in medium_quality_domains):
+            score = 0.75
+        
+        # Check for HTTPS
+        if uri.startswith('https://'):
+            score += 0.1
+        
+        # Check title quality (not empty, reasonable length)
+        if chunk.web.title and 10 < len(chunk.web.title) < 200:
+            score += 0.1
+        
+        quality_scores.append({
+            'url': uri,
+            'title': chunk.web.title,
+            'quality_score': min(score, 1.0)
+        })
+    
+    return quality_scores
+
+
+# Usage
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents='What are the symptoms of diabetes?',
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+
+metadata = response.candidates[0].grounding_metadata
+if metadata and metadata.grounding_chunks:
+    source_quality = assess_source_quality(metadata.grounding_chunks)
+    
+    print("Source Quality Assessment:")
+    for source in source_quality:
+        print(f"  {source['title']}")
+        print(f"    URL: {source['url']}")
+        print(f"    Quality: {source['quality_score']:.2f}\n")
+    
+    avg_quality = sum(s['quality_score'] for s in source_quality) / len(source_quality)
+    print(f"Average Source Quality: {avg_quality:.2f}")
+</blockquote>
+
+<h2>Detecting Grounding Failures</h2>
+<p>Identify and categorize different types of grounding failures:</p>
+
+<table>
+    <tr>
+        <th>Failure Type</th>
+        <th>Symptoms</th>
+        <th>Diagnosis</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">No Retrieval</td>
+        <td>metadata is None</td>
+        <td>Search didn't execute</td>
+        <td>Check API configuration, verify search is enabled</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Low Score</td>
+        <td>grounding_score &lt; 0.5</td>
+        <td>Weak source support</td>
+        <td>Rephrase query, use more specific prompts</td>
+    </tr>
+    <tr>
+        <td class="rowheader">No Sources</td>
+        <td>grounding_chunks is empty</td>
+        <td>No relevant results found</td>
+        <td>Broaden search terms, check query clarity</td>
+    </tr>
+    <tr>
+        <td class="rowheader">High Latency</td>
+        <td>Retrieval &gt; 1000ms</td>
+        <td>Slow search or network issues</td>
+        <td>Implement caching, optimize queries</td>
+    </tr>
+</table>
+
+<blockquote>
+def diagnose_grounding_failure(response, latency, threshold=0.7):
+    """
+    Diagnose why grounding may have failed or underperformed.
+    """
+    candidate = response.candidates[0]
+    metadata = candidate.grounding_metadata
+    
+    issues = []
+    
+    # Check if grounding executed
+    if metadata is None:
+        issues.append({
+            'type': 'NO_RETRIEVAL',
+            'severity': 'CRITICAL',
+            'message': 'Grounding metadata is missing. Search may not have executed.',
+            'recommendation': 'Verify google_search is configured in tools'
+        })
+        return issues
+    
+    # Check grounding score
+    if metadata.grounding_support:
+        score = metadata.grounding_support.grounding_score
+        if score < threshold:
+            issues.append({
+                'type': 'LOW_SCORE',
+                'severity': 'HIGH' if score < 0.5 else 'MEDIUM',
+                'message': f'Grounding score {score:.2f} below threshold {threshold}',
+                'recommendation': 'Rephrase query or adjust threshold'
+            })
+    
+    # Check source count
+    if metadata.grounding_chunks:
+        source_count = len(metadata.grounding_chunks)
+        if source_count == 0:
+            issues.append({
+                'type': 'NO_SOURCES',
+                'severity': 'HIGH',
+                'message': 'No grounding sources found',
+                'recommendation': 'Broaden search terms or check query specificity'
+            })
+        elif source_count == 1:
+            issues.append({
+                'type': 'SINGLE_SOURCE',
+                'severity': 'LOW',
+                'message': 'Only one source found, limited verification',
+                'recommendation': 'Consider requiring multiple sources for critical queries'
+            })
+    
+    # Check latency
+    if latency > 1.0:
+        issues.append({
+            'type': 'HIGH_LATENCY',
+            'severity': 'MEDIUM',
+            'message': f'Retrieval latency {latency*1000:.0f}ms exceeds 1000ms',
+            'recommendation': 'Implement caching or optimize query complexity'
+        })
+    
+    return issues if issues else [{'type': 'OK', 'message': 'No issues detected'}]
+
+
+# Usage
+start = time.time()
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents='What is the population of Atlantis?',  # Intentionally problematic query
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+latency = time.time() - start
+
+issues = diagnose_grounding_failure(response, latency)
+for issue in issues:
+    print(f"[{issue.get('severity', 'INFO')}] {issue['type']}")
+    print(f"  {issue['message']}")
+    if 'recommendation' in issue:
+        print(f"  → {issue['recommendation']}\n")
+</blockquote>
+
+<h2>A/B Testing Grounding Strategies</h2>
+<p>Compare different grounding approaches to optimize for your use case:</p>
+
+<blockquote>
+def compare_grounding_strategies(query):
+    """
+    Compare grounded vs ungrounded responses.
+    """
+    client = genai.Client()
+    
+    # Strategy A: No grounding
+    start_a = time.time()
+    response_a = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=query
+    )
+    latency_a = time.time() - start_a
+    
+    # Strategy B: With grounding
+    start_b = time.time()
+    response_b = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=query,
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(google_search=types.GoogleSearch())]
+        )
+    )
+    latency_b = time.time() - start_b
+    
+    # Compare results
+    metadata_b = response_b.candidates[0].grounding_metadata
+    grounding_score = 0.0
+    if metadata_b and metadata_b.grounding_support:
+        grounding_score = metadata_b.grounding_support.grounding_score
+    
+    return {
+        'query': query,
+        'ungrounded': {
+            'response': response_a.text,
+            'latency_ms': latency_a * 1000
+        },
+        'grounded': {
+            'response': response_b.text,
+            'latency_ms': latency_b * 1000,
+            'grounding_score': grounding_score,
+            'source_count': len(metadata_b.grounding_chunks) if metadata_b else 0
+        },
+        'latency_increase': (latency_b - latency_a) * 1000
+    }
+
+
+# Test with current events query
+comparison = compare_grounding_strategies(
+    "What are the latest developments in AI regulation?"
+)
+
+print(f"Query: {comparison['query']}\n")
+print("Ungrounded Response:")
+print(f"  Latency: {comparison['ungrounded']['latency_ms']:.0f}ms")
+print(f"  Response: {comparison['ungrounded']['response'][:200]}...\n")
+
+print("Grounded Response:")
+print(f"  Latency: {comparison['grounded']['latency_ms']:.0f}ms")
+print(f"  Score: {comparison['grounded']['grounding_score']:.2f}")
+print(f"  Sources: {comparison['grounded']['source_count']}")
+print(f"  Response: {comparison['grounded']['response'][:200]}...\n")
+
+print(f"Latency Increase: +{comparison['latency_increase']:.0f}ms")
+</blockquote>
+
+<h2>Production Monitoring Dashboard</h2>
+<p>Key metrics to display in a production monitoring dashboard:</p>
+
+<ul>
+    <li><strong>Real-Time Metrics:</strong>
+        <ul>
+            <li>Current grounding success rate (last hour)</li>
+            <li>Average grounding score (last hour)</li>
+            <li>P95 latency for grounded queries</li>
+            <li>Active queries per minute</li>
+        </ul>
+    </li>
+    <li><strong>Quality Trends:</strong>
+        <ul>
+            <li>Grounding score distribution over time</li>
+            <li>Source count trends</li>
+            <li>Low-quality response rate</li>
+        </ul>
+    </li>
+    <li><strong>Alerts:</strong>
+        <ul>
+            <li>Grounding success rate drops below 90%</li>
+            <li>Average score falls below 0.6</li>
+            <li>Latency exceeds 1000ms for 5+ consecutive queries</li>
+            <li>Spike in grounding failures</li>
+        </ul>
+    </li>
+</ul>
+
+<h2>Best Practices for Monitoring</h2>
+<blockquote>
+<strong>✓ Do:</strong>
+<ul>
+    <li>Log every grounded query with full metadata</li>
+    <li>Set up automated alerts for quality degradation</li>
+    <li>Review low-scoring responses weekly</li>
+    <li>Track metrics by query category (news, products, general)</li>
+    <li>Maintain historical data for trend analysis</li>
+</ul>
+
+<strong>✗ Don't:</strong>
+<ul>
+    <li>Ignore grounding failures without investigation</li>
+    <li>Use the same threshold for all query types</li>
+    <li>Forget to monitor source quality over time</li>
+    <li>Overlook latency impact on user experience</li>
+</ul>
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

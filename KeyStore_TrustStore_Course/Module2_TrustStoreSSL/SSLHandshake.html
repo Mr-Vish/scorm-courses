@@ -1,0 +1,320 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>SSL/TLS Handshake and Mutual Authentication</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>SSL/TLS Handshake and Mutual Authentication</h1>
+
+<h2>Understanding the SSL/TLS Handshake</h2>
+<p>The SSL/TLS handshake is a negotiation process between client and server that establishes a secure connection. During this process, both parties authenticate each other (if mutual SSL is configured), agree on encryption algorithms, and exchange keys for secure communication.</p>
+
+<h3>One-Way SSL Handshake (Server Authentication Only)</h3>
+<p>Standard HTTPS connections use one-way SSL where only the server proves its identity:</p>
+
+<table>
+    <tr>
+        <th>Step</th>
+        <th>Action</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td>1. Client Hello</td>
+        <td>Client sends supported cipher suites and TLS version</td>
+        <td>Initiate connection and propose encryption methods</td>
+    </tr>
+    <tr>
+        <td>2. Server Hello</td>
+        <td>Server selects cipher suite and TLS version</td>
+        <td>Agree on encryption parameters</td>
+    </tr>
+    <tr>
+        <td>3. Server Certificate</td>
+        <td>Server sends its certificate chain</td>
+        <td>Prove server identity</td>
+    </tr>
+    <tr>
+        <td>4. Server Hello Done</td>
+        <td>Server indicates completion of hello phase</td>
+        <td>Signal client to proceed</td>
+    </tr>
+    <tr>
+        <td>5. Client Key Exchange</td>
+        <td>Client generates and encrypts pre-master secret</td>
+        <td>Establish shared secret</td>
+    </tr>
+    <tr>
+        <td>6. Change Cipher Spec</td>
+        <td>Both parties switch to encrypted communication</td>
+        <td>Activate negotiated encryption</td>
+    </tr>
+    <tr>
+        <td>7. Finished</td>
+        <td>Both parties send encrypted handshake summary</td>
+        <td>Verify handshake integrity</td>
+    </tr>
+</table>
+
+<h3>Role of KeyStore and TrustStore in One-Way SSL</h3>
+<ul>
+<li><strong>Server Side:</strong> Uses KeyStore containing server's private key and certificate</li>
+<li><strong>Client Side:</strong> Uses TrustStore containing CA certificates to validate server's certificate</li>
+</ul>
+
+<h2>Mutual SSL (Two-Way SSL)</h2>
+<p>Mutual SSL extends the handshake to authenticate both client and server, providing stronger security for sensitive communications.</p>
+
+<h3>Mutual SSL Handshake Process</h3>
+<p>Additional steps beyond one-way SSL:</p>
+
+<table>
+    <tr>
+        <th>Step</th>
+        <th>Action</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td>3a. Certificate Request</td>
+        <td>Server requests client certificate</td>
+        <td>Initiate client authentication</td>
+    </tr>
+    <tr>
+        <td>5a. Client Certificate</td>
+        <td>Client sends its certificate chain</td>
+        <td>Prove client identity</td>
+    </tr>
+    <tr>
+        <td>5b. Certificate Verify</td>
+        <td>Client signs handshake data with private key</td>
+        <td>Prove possession of private key</td>
+    </tr>
+</table>
+
+<h3>Role of KeyStore and TrustStore in Mutual SSL</h3>
+
+<table>
+    <tr>
+        <th>Party</th>
+        <th>KeyStore</th>
+        <th>TrustStore</th>
+    </tr>
+    <tr>
+        <td>Server</td>
+        <td>Server's private key and certificate</td>
+        <td>CA certificates to validate client certificates</td>
+    </tr>
+    <tr>
+        <td>Client</td>
+        <td>Client's private key and certificate</td>
+        <td>CA certificates to validate server certificate</td>
+    </tr>
+</table>
+
+<h2>When to Use Mutual SSL</h2>
+
+<h3>Appropriate Use Cases</h3>
+<ul>
+<li><strong>API-to-API Communication:</strong> Microservices authenticating to each other</li>
+<li><strong>B2B Integrations:</strong> Partner systems requiring strong authentication</li>
+<li><strong>Financial Services:</strong> Banking APIs and payment gateways</li>
+<li><strong>Healthcare Systems:</strong> HIPAA-compliant data exchange</li>
+<li><strong>Government Applications:</strong> High-security government systems</li>
+<li><strong>IoT Devices:</strong> Device-to-server authentication</li>
+</ul>
+
+<h3>When One-Way SSL is Sufficient</h3>
+<ul>
+<li>Public websites serving general users</li>
+<li>Applications using username/password authentication</li>
+<li>OAuth 2.0 or JWT-based authentication systems</li>
+<li>Internal applications with network-level security</li>
+</ul>
+
+<h2>Configuring Mutual SSL in Java</h2>
+
+<h3>Server-Side Configuration</h3>
+<p>Server must be configured to request and validate client certificates:</p>
+
+<blockquote>
+<strong>Requirements:</strong><br/>
+- Server KeyStore with server certificate<br/>
+- Server TrustStore with client CA certificates<br/>
+- Client authentication enabled (clientAuth=true or want/need)
+</blockquote>
+
+<h3>Client-Side Configuration</h3>
+<p>Client must provide certificate when requested by server:</p>
+
+<blockquote>
+<strong>Requirements:</strong><br/>
+- Client KeyStore with client certificate<br/>
+- Client TrustStore with server CA certificates<br/>
+- Proper SSL context configuration
+</blockquote>
+
+<h2>SSL/TLS Versions and Cipher Suites</h2>
+
+<h3>TLS Version Evolution</h3>
+
+<table>
+    <tr>
+        <th>Version</th>
+        <th>Status</th>
+        <th>Recommendation</th>
+    </tr>
+    <tr>
+        <td>SSL 2.0</td>
+        <td>Deprecated</td>
+        <td>Never use - severely compromised</td>
+    </tr>
+    <tr>
+        <td>SSL 3.0</td>
+        <td>Deprecated</td>
+        <td>Never use - POODLE vulnerability</td>
+    </tr>
+    <tr>
+        <td>TLS 1.0</td>
+        <td>Deprecated</td>
+        <td>Disable - outdated security</td>
+    </tr>
+    <tr>
+        <td>TLS 1.1</td>
+        <td>Deprecated</td>
+        <td>Disable - outdated security</td>
+    </tr>
+    <tr>
+        <td>TLS 1.2</td>
+        <td>Current Standard</td>
+        <td>Minimum recommended version</td>
+    </tr>
+    <tr>
+        <td>TLS 1.3</td>
+        <td>Latest</td>
+        <td>Preferred - improved security and performance</td>
+    </tr>
+</table>
+
+<h3>Cipher Suite Selection</h3>
+<p>Cipher suites define the encryption algorithms used for secure communication:</p>
+
+<h4>Strong Cipher Suites (Recommended)</h4>
+<ul>
+<li>TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384</li>
+<li>TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256</li>
+<li>TLS_DHE_RSA_WITH_AES_256_GCM_SHA384</li>
+<li>TLS_AES_256_GCM_SHA384 (TLS 1.3)</li>
+</ul>
+
+<h4>Weak Cipher Suites (Avoid)</h4>
+<ul>
+<li>Any cipher with NULL encryption</li>
+<li>Any cipher with EXPORT-grade encryption</li>
+<li>Any cipher with DES or 3DES</li>
+<li>Any cipher with RC4</li>
+<li>Any cipher with MD5</li>
+</ul>
+
+<h2>Troubleshooting SSL/TLS Handshake Failures</h2>
+
+<h3>Common Handshake Errors</h3>
+
+<table>
+    <tr>
+        <th>Error</th>
+        <th>Cause</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td>Handshake failure</td>
+        <td>No common cipher suite or TLS version</td>
+        <td>Review and align cipher suite configurations</td>
+    </tr>
+    <tr>
+        <td>Certificate unknown</td>
+        <td>Server doesn't trust client certificate</td>
+        <td>Import client CA into server TrustStore</td>
+    </tr>
+    <tr>
+        <td>Bad certificate</td>
+        <td>Client certificate validation failed</td>
+        <td>Verify client certificate validity and chain</td>
+    </tr>
+    <tr>
+        <td>No cipher suites in common</td>
+        <td>Client and server have no compatible ciphers</td>
+        <td>Enable compatible cipher suites on both sides</td>
+    </tr>
+    <tr>
+        <td>Protocol version mismatch</td>
+        <td>Incompatible TLS versions</td>
+        <td>Enable TLS 1.2 or 1.3 on both sides</td>
+    </tr>
+</table>
+
+<h3>Debugging SSL Handshake</h3>
+<p>Enable detailed SSL debugging to diagnose handshake issues:</p>
+
+<blockquote>
+<strong>Debug Property:</strong> -Djavax.net.debug=ssl:handshake:verbose<br/>
+<strong>Output Includes:</strong><br/>
+- Cipher suites offered and selected<br/>
+- Certificates exchanged<br/>
+- Handshake messages<br/>
+- Validation errors
+</blockquote>
+
+<h2>Performance Considerations</h2>
+
+<h3>SSL/TLS Performance Impact</h3>
+<ul>
+<li><strong>Handshake Overhead:</strong> Initial connection slower due to cryptographic operations</li>
+<li><strong>Encryption/Decryption:</strong> Ongoing CPU cost for data encryption</li>
+<li><strong>Certificate Validation:</strong> Time required to validate certificate chains</li>
+</ul>
+
+<h3>Performance Optimization Strategies</h3>
+<ul>
+<li><strong>Session Resumption:</strong> Reuse SSL sessions to avoid full handshake</li>
+<li><strong>Connection Pooling:</strong> Maintain persistent connections</li>
+<li><strong>Hardware Acceleration:</strong> Use hardware for cryptographic operations</li>
+<li><strong>TLS 1.3:</strong> Faster handshake with fewer round trips</li>
+<li><strong>Certificate Caching:</strong> Cache validated certificates</li>
+</ul>
+
+<h2>Security Best Practices</h2>
+
+<h3>Protocol Configuration</h3>
+<ul>
+<li><strong>Disable Old Protocols:</strong> Only enable TLS 1.2 and 1.3</li>
+<li><strong>Strong Cipher Suites:</strong> Disable weak and export-grade ciphers</li>
+<li><strong>Forward Secrecy:</strong> Prefer ECDHE and DHE cipher suites</li>
+<li><strong>Certificate Validation:</strong> Never disable certificate validation in production</li>
+</ul>
+
+<h3>Certificate Management</h3>
+<ul>
+<li><strong>Regular Rotation:</strong> Rotate certificates before expiration</li>
+<li><strong>Strong Key Sizes:</strong> Minimum 2048-bit RSA or 256-bit ECC</li>
+<li><strong>Certificate Revocation:</strong> Implement CRL or OCSP checking</li>
+<li><strong>Hostname Verification:</strong> Always verify hostname matches certificate</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>SSL/TLS handshake establishes secure connection through multi-step negotiation</li>
+<li>One-way SSL authenticates server only; mutual SSL authenticates both parties</li>
+<li>Mutual SSL requires KeyStore and TrustStore on both client and server</li>
+<li>TLS 1.2 is minimum recommended version; TLS 1.3 is preferred</li>
+<li>Strong cipher suites and proper configuration are essential for security</li>
+<li>SSL debugging helps diagnose handshake and certificate validation issues</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

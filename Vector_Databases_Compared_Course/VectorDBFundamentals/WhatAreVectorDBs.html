@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>What Are Vector Databases?</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>What Are Vector Databases?</h1>
+
+<h2>The Need for Vector Search</h2>
+<p>
+Traditional databases were designed for deterministic queries: exact matches, range scans,
+and structured joins. These systems work exceptionally well when the question is precise,
+such as retrieving a customer by ID or filtering orders by date. However, modern AI-driven
+applications require a fundamentally different retrieval paradigm.
+</p>
+
+<p>
+Generative AI systems must retrieve information based on meaning rather than exact wording.
+Users phrase the same intent in countless ways, and rigid keyword matching fails to capture
+this semantic variability. Vector databases address this gap by enabling semantic search,
+where similarity is computed in a high-dimensional embedding space.
+</p>
+
+<p>
+This shift from lexical matching to semantic similarity is what enables use cases such as
+retrieval-augmented generation, recommendation systems, similarity detection, clustering,
+and multimodal search across text, images, audio, and code.
+</p>
+
+<h2>What Is an Embedding?</h2>
+<p>
+An embedding is a numerical representation of data that captures semantic meaning.
+Text embeddings encode linguistic relationships such as synonymy, topic similarity, and
+contextual relevance. Images, audio, and video embeddings encode perceptual similarity.
+</p>
+
+<p>
+Embeddings are typically produced by neural networks trained on large corpora. The resulting
+vectors often have hundreds or thousands of dimensions, with each dimension contributing
+to the representation of meaning.
+</p>
+
+<p>
+Crucially, embeddings allow similarity to be computed using mathematical distance metrics.
+Items with similar meanings are located close to each other in vector space, even if their
+raw representations differ significantly.
+</p>
+
+<h2>How Vector Search Works</h2>
+<p>
+Vector search involves several distinct steps that together form a semantic retrieval
+pipeline.
+</p>
+
+<ul>
+    <li><strong>Embedding generation:</strong> Input data is converted into vectors using a model</li>
+    <li><strong>Vector storage:</strong> Vectors are stored alongside metadata</li>
+    <li><strong>Index construction:</strong> Specialized indexes accelerate nearest neighbor search</li>
+    <li><strong>Query embedding:</strong> User queries are embedded using the same model</li>
+    <li><strong>Similarity computation:</strong> Nearest neighbors are identified</li>
+    <li><strong>Filtering and ranking:</strong> Metadata constraints refine results</li>
+</ul>
+
+<p>
+Unlike traditional indexes such as B-trees, vector indexes must operate efficiently in
+high-dimensional spaces, where exact search is computationally expensive.
+</p>
+
+<h2>Distance Metrics and Similarity</h2>
+<p>
+Vector databases rely on distance metrics to quantify similarity. The choice of metric has
+a significant impact on retrieval behavior and performance.
+</p>
+
+<ul>
+    <li><strong>Cosine similarity:</strong> Measures angular similarity, scale-invariant</li>
+    <li><strong>Euclidean distance:</strong> Measures straight-line distance</li>
+    <li><strong>Dot product:</strong> Measures directional alignment and magnitude</li>
+</ul>
+
+<p>
+Cosine similarity is the most commonly used metric for text embeddings, as it focuses on
+semantic direction rather than vector magnitude.
+</p>
+
+<h2>Approximate Nearest Neighbor Search</h2>
+<p>
+Exact nearest neighbor search becomes infeasible as dataset size and dimensionality grow.
+Vector databases therefore rely on approximate nearest neighbor (ANN) algorithms.
+</p>
+
+<p>
+ANN algorithms trade a small amount of accuracy for orders-of-magnitude improvements in
+performance. In practice, the loss in recall is negligible for most applications.
+</p>
+
+<h2>Common Indexing Algorithms</h2>
+<p>
+Several ANN index structures are widely used:
+</p>
+
+<ul>
+    <li><strong>HNSW:</strong> Graph-based, high recall, memory-intensive</li>
+    <li><strong>IVF:</strong> Cluster-based, memory-efficient, slower recall</li>
+    <li><strong>IVF+PQ:</strong> Compression-focused, lower accuracy</li>
+    <li><strong>Flat:</strong> Exact search, no index, extremely slow at scale</li>
+</ul>
+
+<p>
+Choosing the right index depends on dataset size, latency requirements, memory constraints,
+and update frequency.
+</p>
+
+<h2>Metadata and Hybrid Search</h2>
+<p>
+Real-world applications rarely rely on vector similarity alone. Metadata filtering is
+essential for enforcing business rules such as access control, time ranges, and content
+types.
+</p>
+
+<p>
+Hybrid search combines vector similarity with keyword-based retrieval. This approach is
+particularly effective when precise terms such as IDs, product names, or legal clauses
+matter alongside semantic relevance.
+</p>
+
+<h2>Vector Databases vs Traditional Databases</h2>
+<p>
+While traditional databases can store vectors, they are not optimized for similarity search
+at scale. Vector databases are purpose-built to handle high-dimensional indexing, fast
+approximate search, and real-time updates.
+</p>
+
+<p>
+This does not mean traditional databases are obsolete. In fact, many architectures combine
+both, using vector databases for semantic retrieval and relational databases for structured
+operations.
+</p>
+
+<h2>Common Use Cases</h2>
+<ul>
+    <li>Retrieval-Augmented Generation</li>
+    <li>Semantic document search</li>
+    <li>Recommendation systems</li>
+    <li>Duplicate detection</li>
+    <li>Fraud and anomaly detection</li>
+    <li>Multimodal search</li>
+</ul>
+
+<h2>Operational Considerations</h2>
+<p>
+Vector databases introduce new operational challenges. Memory usage grows with dataset size,
+index type, and embedding dimensionality. Re-indexing can be expensive, and tuning recall
+versus latency requires careful experimentation.
+</p>
+
+<p>
+Observability is also critical. Teams must monitor query latency, recall quality, index
+health, and memory fragmentation.
+</p>
+
+<h2>Additional Readings</h2>
+<ul>
+    <li>
+        <a href="https://www.pinecone.io/learn/vector-database/" target="_blank">
+        Pinecone – Introduction to Vector Databases
+        </a>
+    </li>
+    <li>
+        <a href="https://weaviate.io/developers/weaviate/concepts/vector-search" target="_blank">
+        Weaviate – Vector Search Concepts
+        </a>
+    </li>
+    <li>
+        <a href="https://arxiv.org/abs/1603.09320" target="_blank">
+        Efficient Similarity Search in High-Dimensional Spaces (ArXiv)
+        </a>
+    </li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

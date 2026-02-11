@@ -1,0 +1,376 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Monitoring and Maintenance of AI Systems</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Monitoring and Maintenance of AI Systems</h1>
+
+<h3>The Importance of Ongoing Monitoring</h3>
+<p>AI systems are not "set and forget" technologies. Model performance can degrade over time due to data drift, changing environments, or evolving user behavior. Continuous monitoring and proactive maintenance are essential for ensuring AI systems remain accurate, fair, and safe throughout their operational lifecycle.</p>
+
+<h3>Why Models Degrade</h3>
+
+<h4>1. Data Drift</h4>
+<p><strong>Definition:</strong> Changes in the statistical properties of input data over time</p>
+
+<p><strong>Causes:</strong></p>
+<ul>
+    <li>Changing user behavior or preferences</li>
+    <li>Seasonal variations</li>
+    <li>Market shifts or economic changes</li>
+    <li>Technological evolution</li>
+    <li>Demographic shifts in user population</li>
+</ul>
+
+<p><strong>Example:</strong> A product recommendation model trained on pre-pandemic shopping patterns may perform poorly post-pandemic as consumer preferences shifted toward home goods and online shopping.</p>
+
+<h4>2. Concept Drift</h4>
+<p><strong>Definition:</strong> Changes in the relationship between inputs and outputs</p>
+
+<p><strong>Example:</strong> A fraud detection model may become less effective as fraudsters adapt their tactics to evade detection, changing the patterns that indicate fraud.</p>
+
+<h4>3. Feedback Loops</h4>
+<p><strong>Definition:</strong> Model predictions influence future data, potentially amplifying biases</p>
+
+<p><strong>Example:</strong> A content recommendation system that shows certain content to certain groups reinforces those preferences, creating filter bubbles and potentially amplifying initial biases.</p>
+
+<h4>4. External Changes</h4>
+<p><strong>Examples:</strong></p>
+<ul>
+    <li>Regulatory changes affecting what data can be used</li>
+    <li>Competitive landscape shifts</li>
+    <li>Infrastructure or integration changes</li>
+    <li>New product features or business processes</li>
+</ul>
+
+<h3>Monitoring Framework</h3>
+
+<h4>1. Performance Monitoring</h4>
+<p>Track core model performance metrics:</p>
+
+<table>
+    <tr>
+        <th>Metric Category</th>
+        <th>Specific Metrics</th>
+        <th>Monitoring Frequency</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Accuracy Metrics</td>
+        <td>Accuracy, precision, recall, F1, AUC-ROC</td>
+        <td>Daily to weekly</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prediction Distribution</td>
+        <td>Distribution of predicted classes or values</td>
+        <td>Daily</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Confidence Scores</td>
+        <td>Distribution of model confidence</td>
+        <td>Daily to weekly</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Latency</td>
+        <td>Prediction time (p50, p95, p99)</td>
+        <td>Real-time</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rates</td>
+        <td>False positive rate, false negative rate</td>
+        <td>Daily to weekly</td>
+    </tr>
+</table>
+
+<p><strong>Alert Thresholds:</strong></p>
+<blockquote>
+<strong>Example Alerting Rules:</strong>
+<ul>
+    <li><strong>Critical:</strong> Accuracy drops below 85% (baseline: 92%)</li>
+    <li><strong>Warning:</strong> Accuracy drops below 88%</li>
+    <li><strong>Critical:</strong> Prediction distribution shifts by more than 15%</li>
+    <li><strong>Warning:</strong> Average confidence score drops below 0.75</li>
+    <li><strong>Critical:</strong> p99 latency exceeds 500ms (SLA: 200ms)</li>
+</ul>
+</blockquote>
+
+<h4>2. Fairness Monitoring</h4>
+<p>Track performance across demographic groups:</p>
+
+<table>
+    <tr>
+        <th>Fairness Metric</th>
+        <th>What to Monitor</th>
+        <th>Alert Threshold</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Subgroup Performance</td>
+        <td>Accuracy, precision, recall by demographic group</td>
+        <td>Performance gap exceeds 5 percentage points</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Disparate Impact</td>
+        <td>Ratio of positive prediction rates</td>
+        <td>Ratio falls below 0.8</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Equal Opportunity</td>
+        <td>True positive rate parity</td>
+        <td>Difference exceeds 5 percentage points</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Calibration</td>
+        <td>Calibration error by group</td>
+        <td>Calibration error exceeds 0.1</td>
+    </tr>
+</table>
+
+<h4>3. Data Quality Monitoring</h4>
+<p>Detect data drift and quality issues:</p>
+
+<ul>
+    <li><strong>Feature Distribution:</strong> Track statistical properties of input features (mean, std dev, percentiles)</li>
+    <li><strong>Missing Values:</strong> Monitor rates of missing or null values</li>
+    <li><strong>Out-of-Range Values:</strong> Detect values outside expected ranges</li>
+    <li><strong>Data Freshness:</strong> Ensure data is current and timely</li>
+    <li><strong>Schema Changes:</strong> Detect unexpected changes in data structure</li>
+</ul>
+
+<h4>4. Business Metrics Monitoring</h4>
+<p>Track impact on business outcomes:</p>
+
+<ul>
+    <li><strong>Conversion Rates:</strong> Are predictions leading to desired outcomes?</li>
+    <li><strong>User Satisfaction:</strong> Feedback scores, complaint rates</li>
+    <li><strong>Operational Efficiency:</strong> Time saved, cost reduction</li>
+    <li><strong>Revenue Impact:</strong> Financial outcomes attributable to the model</li>
+    <li><strong>Human Override Rates:</strong> How often do humans disagree with the model?</li>
+</ul>
+
+<h4>5. System Health Monitoring</h4>
+<p>Track technical infrastructure:</p>
+
+<ul>
+    <li><strong>Availability:</strong> Uptime and downtime</li>
+    <li><strong>Throughput:</strong> Requests per second</li>
+    <li><strong>Resource Utilization:</strong> CPU, memory, GPU usage</li>
+    <li><strong>Error Rates:</strong> System errors, timeouts, failures</li>
+    <li><strong>Dependencies:</strong> Health of upstream and downstream systems</li>
+</ul>
+
+<h3>Maintenance Strategies</h3>
+
+<h4>1. Model Retraining</h4>
+<p><strong>Approaches:</strong></p>
+
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Description</th>
+        <th>When to Use</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Scheduled Retraining</td>
+        <td>Retrain on fixed schedule (e.g., monthly, quarterly)</td>
+        <td>Predictable drift; regulatory requirements</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Performance-Triggered</td>
+        <td>Retrain when performance drops below threshold</td>
+        <td>Unpredictable drift; performance-critical applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Continuous Learning</td>
+        <td>Incrementally update model with new data</td>
+        <td>Rapidly changing environments; online learning scenarios</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hybrid</td>
+        <td>Combine scheduled and triggered retraining</td>
+        <td>Balance proactive and reactive approaches</td>
+    </tr>
+</table>
+
+<p><strong>Retraining Checklist:</strong></p>
+<ul>
+    <li>Collect and validate new training data</li>
+    <li>Assess data quality and representativeness</li>
+    <li>Retrain model with updated data</li>
+    <li>Conduct comprehensive evaluation (including fairness assessment)</li>
+    <li>Compare new model to current production model</li>
+    <li>Update model card with new information</li>
+    <li>Conduct staged rollout (canary deployment)</li>
+    <li>Monitor closely during initial deployment period</li>
+</ul>
+
+<h4>2. Threshold Adjustment</h4>
+<p>Modify decision thresholds without retraining:</p>
+
+<p><strong>When Appropriate:</strong></p>
+<ul>
+    <li>Fairness metrics have drifted</li>
+    <li>Business requirements have changed (e.g., different precision/recall trade-off)</li>
+    <li>Quick fix needed while retraining is in progress</li>
+</ul>
+
+<p><strong>Process:</strong></p>
+<ol>
+    <li>Analyze current threshold performance</li>
+    <li>Simulate alternative thresholds on recent data</li>
+    <li>Assess impact on accuracy and fairness</li>
+    <li>Implement threshold change</li>
+    <li>Monitor impact closely</li>
+    <li>Document change in model card</li>
+</ol>
+
+<h4>3. Feature Engineering Updates</h4>
+<p>Modify input features to address drift or improve performance:</p>
+
+<ul>
+    <li>Add new features capturing recent patterns</li>
+    <li>Remove features that have become less predictive</li>
+    <li>Update feature transformations or encodings</li>
+    <li>Address newly identified proxy features</li>
+</ul>
+
+<h4>4. Model Replacement</h4>
+<p>Deploy entirely new model architecture or approach:</p>
+
+<p><strong>Triggers:</strong></p>
+<ul>
+    <li>Fundamental changes in problem or data</li>
+    <li>New modeling techniques offer significant improvements</li>
+    <li>Current model cannot be adequately fixed through retraining</li>
+    <li>Regulatory or business requirements necessitate new approach</li>
+</ul>
+
+<h3>Incident Response</h3>
+
+<h4>Incident Detection</h4>
+<p><strong>Sources:</strong></p>
+<ul>
+    <li>Automated monitoring alerts</li>
+    <li>User complaints or feedback</li>
+    <li>Internal audits or reviews</li>
+    <li>External reports (media, regulators, researchers)</li>
+    <li>Routine performance reviews</li>
+</ul>
+
+<h4>Incident Response Process</h4>
+
+<blockquote>
+<strong>Step 1: Triage (0-2 hours)</strong>
+<ul>
+    <li>Assess severity and impact</li>
+    <li>Determine if immediate action needed (e.g., system shutdown)</li>
+    <li>Assemble response team</li>
+    <li>Begin documentation</li>
+</ul>
+
+<strong>Step 2: Investigation (2-24 hours)</strong>
+<ul>
+    <li>Reproduce the issue</li>
+    <li>Identify root cause</li>
+    <li>Assess scope (how many users affected, for how long)</li>
+    <li>Determine if issue is ongoing or resolved</li>
+</ul>
+
+<strong>Step 3: Remediation (1-7 days)</strong>
+<ul>
+    <li>Implement fix (threshold adjustment, model rollback, retraining, etc.)</li>
+    <li>Test fix thoroughly</li>
+    <li>Deploy fix to production</li>
+    <li>Verify issue is resolved</li>
+</ul>
+
+<strong>Step 4: Communication (Ongoing)</strong>
+<ul>
+    <li>Notify affected users (if appropriate)</li>
+    <li>Report to regulators (if required)</li>
+    <li>Update stakeholders</li>
+    <li>Document incident in transparency report</li>
+</ul>
+
+<strong>Step 5: Post-Incident Review (Within 2 weeks)</strong>
+<ul>
+    <li>Conduct root cause analysis</li>
+    <li>Identify process improvements</li>
+    <li>Update monitoring and alerting</li>
+    <li>Update documentation and runbooks</li>
+    <li>Share learnings across organization</li>
+</ul>
+</blockquote>
+
+<h3>Model Decommissioning</h3>
+
+<p><strong>When to Decommission:</strong></p>
+<ul>
+    <li>Model can no longer meet performance requirements</li>
+    <li>Use case is no longer relevant</li>
+    <li>Regulatory changes prohibit continued use</li>
+    <li>Replacement model is deployed</li>
+    <li>Risks outweigh benefits</li>
+</ul>
+
+<p><strong>Decommissioning Process:</strong></p>
+<ol>
+    <li>Assess impact of decommissioning on users and business</li>
+    <li>Develop transition plan (alternative solutions, timeline)</li>
+    <li>Communicate with stakeholders</li>
+    <li>Gradually reduce traffic to model (if applicable)</li>
+    <li>Archive model, data, and documentation</li>
+    <li>Update model inventory and transparency reports</li>
+    <li>Conduct post-decommissioning review</li>
+</ol>
+
+<h3>Documentation Updates</h3>
+
+<p>Model cards must be updated to reflect changes:</p>
+
+<table>
+    <tr>
+        <th>Change Type</th>
+        <th>Model Card Updates Required</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Retraining</td>
+        <td>Update training data, evaluation metrics, version number, release date</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Threshold Adjustment</td>
+        <td>Update quantitative analysis, recommendations section</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Incident</td>
+        <td>Add to limitations section, update ethical considerations if relevant</td>
+    </tr>
+    <tr>
+        <td class="rowheader">New Use Case</td>
+        <td>Update intended use section, conduct new evaluation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Discovered Bias</td>
+        <td>Update ethical considerations, quantitative analysis, limitations</td>
+    </tr>
+</table>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>AI systems require continuous monitoring as performance can degrade due to data drift, concept drift, and external changes</li>
+    <li>Comprehensive monitoring covers performance, fairness, data quality, business metrics, and system health</li>
+    <li>Maintenance strategies include scheduled retraining, performance-triggered updates, and threshold adjustments</li>
+    <li>Incident response requires rapid triage, investigation, remediation, communication, and post-incident review</li>
+    <li>Models should be decommissioned when they can no longer meet requirements or when risks outweigh benefits</li>
+    <li>Model cards must be updated to reflect all significant changes to the system</li>
+    <li>Proactive monitoring and maintenance are essential for responsible AI deployment</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

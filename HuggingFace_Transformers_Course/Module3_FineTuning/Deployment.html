@@ -1,0 +1,383 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Deployment Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production Deployment Strategies</h1>
+
+<h2>Deployment Options Overview</h2>
+<table>
+    <tr>
+        <th>Option</th>
+        <th>Complexity</th>
+        <th>Cost</th>
+        <th>Scalability</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Hugging Face Inference Endpoints</td>
+        <td>Low</td>
+        <td>Pay-per-use</td>
+        <td>Auto-scaling</td>
+        <td>Quick deployment, managed service</td>
+    </tr>
+    <tr>
+        <td class="rowheader">FastAPI + Docker</td>
+        <td>Medium</td>
+        <td>Infrastructure cost</td>
+        <td>Manual</td>
+        <td>Full control, custom logic</td>
+    </tr>
+    <tr>
+        <td class="rowheader">TGI (Text Generation Inference)</td>
+        <td>Medium</td>
+        <td>Infrastructure cost</td>
+        <td>High throughput</td>
+        <td>Production LLM serving</td>
+    </tr>
+    <tr>
+        <td class="rowheader">vLLM</td>
+        <td>Medium</td>
+        <td>Infrastructure cost</td>
+        <td>Very high throughput</td>
+        <td>Maximum performance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ONNX Runtime</td>
+        <td>High</td>
+        <td>Low</td>
+        <td>Cross-platform</td>
+        <td>Edge deployment, CPU inference</td>
+    </tr>
+    <tr>
+        <td class="rowheader">TensorRT</td>
+        <td>High</td>
+        <td>Infrastructure cost</td>
+        <td>Maximum GPU performance</td>
+        <td>NVIDIA GPUs, latency-critical</td>
+    </tr>
+</table>
+
+<h2>Hugging Face Inference Endpoints</h2>
+<p>Managed deployment with automatic scaling and monitoring:</p>
+
+<pre><code># Deploy via Hugging Face Hub UI or API
+from huggingface_hub import create_inference_endpoint
+
+endpoint = create_inference_endpoint(
+    name="my-llama-endpoint",
+    repository="my-username/my-fine-tuned-model",
+    framework="pytorch",
+    task="text-generation",
+    accelerator="gpu",
+    instance_size="medium",
+    instance_type="nvidia-a10g",
+    region="us-east-1",
+    vendor="aws",
+    min_replica=1,
+    max_replica=3
+)
+
+# Use the endpoint
+from huggingface_hub import InferenceClient
+
+client = InferenceClient(model=endpoint.url, token="hf_...")
+response = client.text_generation(
+    "Explain quantum computing:",
+    max_new_tokens=100
+)
+print(response)\n</code></pre>
+
+<h2>FastAPI Deployment</h2>
+<pre><code># app.py
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+app = FastAPI()
+
+# Load model at startup
+model = None
+tokenizer = None
+
+@app.on_event("startup")
+async def load_model():
+    global model, tokenizer
+    model = AutoModelForCausalLM.from_pretrained(
+        "./my_model",
+        torch_dtype=torch.float16,
+        device_map="auto"
+    )
+    tokenizer = AutoTokenizer.from_pretrained("./my_model")
+
+class GenerationRequest(BaseModel):
+    prompt: str
+    max_new_tokens: int = 100
+    temperature: float = 0.7
+    top_p: float = 0.9
+
+class GenerationResponse(BaseModel):
+    generated_text: str
+    tokens_generated: int
+
+@app.post("/generate", response_model=GenerationResponse)
+async def generate(request: GenerationRequest):
+    try:
+        inputs = tokenizer(request.prompt, return_tensors="pt").to(model.device)
+        
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=request.max_new_tokens,
+                temperature=request.temperature,
+                top_p=request.top_p,
+                do_sample=True
+            )
+        
+        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        tokens_generated = outputs.shape[1] - inputs.input_ids.shape[1]
+        
+        return GenerationResponse(
+            generated_text=generated_text,
+            tokens_generated=tokens_generated
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+# Run with: uvicorn app:app --host 0.0.0.0 --port 8000\n</code></pre>
+
+<h2>Docker Containerization</h2>
+<pre><code># Dockerfile
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+
+# Install Python and dependencies
+RUN apt-get update && apt-get install -y python3 python3-pip
+RUN pip3 install torch transformers fastapi uvicorn
+
+# Copy model and application
+COPY ./my_model /app/my_model
+COPY app.py /app/app.py
+
+WORKDIR /app
+
+# Expose port
+EXPOSE 8000
+
+# Run application
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Build: docker build -t my-llm-api .
+# Run: docker run --gpus all -p 8000:8000 my-llm-api\n</code></pre>
+
+<h2>Text Generation Inference (TGI)</h2>
+<pre><code># Install TGI
+# docker pull ghcr.io/huggingface/text-generation-inference:latest
+
+# Run TGI server
+docker run --gpus all --shm-size 1g -p 8080:80 \
+    -v $PWD/models:/data \
+    ghcr.io/huggingface/text-generation-inference:latest \
+    --model-id meta-llama/Llama-3-8b-instruct \
+    --num-shard 1 \
+    --max-batch-prefill-tokens 4096 \
+    --max-total-tokens 8192
+
+# Client usage
+from huggingface_hub import InferenceClient
+
+client = InferenceClient(model="http://localhost:8080")
+response = client.text_generation(
+    "Explain machine learning:",
+    max_new_tokens=100,
+    temperature=0.7
+)
+print(response)
+
+# TGI features:
+# - Continuous batching
+# - Flash Attention
+# - Paged Attention
+# - Tensor parallelism
+# - Quantization support\n</code></pre>
+
+<h2>vLLM Deployment</h2>
+<pre><code># Install vLLM
+# pip install vllm
+
+from vllm import LLM, SamplingParams
+
+# Initialize vLLM
+llm = LLM(
+    model="meta-llama/Llama-3-8b-instruct",
+    tensor_parallel_size=1,
+    dtype="float16"
+)
+
+# Configure sampling
+sampling_params = SamplingParams(
+    temperature=0.7,
+    top_p=0.9,
+    max_tokens=100
+)
+
+# Generate
+prompts = ["Explain AI:", "What is ML?"]
+outputs = llm.generate(prompts, sampling_params)
+
+for output in outputs:
+    print(f"Prompt: {output.prompt}")
+    print(f"Generated: {output.outputs[0].text}\n")
+
+# vLLM provides:
+# - PagedAttention for efficient memory
+# - Continuous batching
+# - 10-20x higher throughput than naive implementation\n</code></pre>
+
+<h2>ONNX Export and Deployment</h2>
+<pre><code># Export to ONNX
+from optimum.onnxruntime import ORTModelForCausalLM
+from transformers import AutoTokenizer
+
+# Convert and save
+model = ORTModelForCausalLM.from_pretrained(
+    "gpt2",
+    export=True
+)
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+
+model.save_pretrained("./onnx_model")
+tokenizer.save_pretrained("./onnx_model")
+
+# Load and use ONNX model
+onnx_model = ORTModelForCausalLM.from_pretrained("./onnx_model")
+inputs = tokenizer("Hello world", return_tensors="pt")
+outputs = onnx_model.generate(**inputs, max_new_tokens=50)
+
+# Benefits:
+# - Cross-platform (CPU, GPU, mobile)
+# - Optimized inference
+# - Smaller model size\n</code></pre>
+
+<h2>Load Balancing and Scaling</h2>
+<pre><code># Kubernetes deployment example
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: llm-api
+  template:
+    metadata:
+      labels:
+        app: llm-api
+    spec:
+      containers:
+      - name: llm-container
+        image: my-llm-api:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+        ports:
+        - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-service
+spec:
+  selector:
+    app: llm-api
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+  type: LoadBalancer\n</code></pre>
+
+<h2>Monitoring and Observability</h2>
+<pre><code># Add monitoring to FastAPI
+from prometheus_client import Counter, Histogram, generate_latest
+import time
+
+# Metrics
+request_count = Counter('requests_total', 'Total requests')
+request_duration = Histogram('request_duration_seconds', 'Request duration')
+tokens_generated = Counter('tokens_generated_total', 'Total tokens generated')
+
+@app.post("/generate")
+async def generate(request: GenerationRequest):
+    start_time = time.time()
+    request_count.inc()
+    
+    # ... generation logic ...
+    
+    tokens_generated.inc(num_tokens)
+    request_duration.observe(time.time() - start_time)
+    
+    return response
+
+@app.get("/metrics")
+async def metrics():
+    return Response(generate_latest(), media_type="text/plain")
+
+# Scrape with Prometheus, visualize with Grafana\n</code></pre>
+
+<h2>Caching Layer</h2>
+<pre><code>import redis
+import hashlib
+import json
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+def get_cache_key(prompt, params):
+    key_data = f"{prompt}:{json.dumps(params, sort_keys=True)}"
+    return hashlib.md5(key_data.encode()).hexdigest()
+
+@app.post("/generate")
+async def generate(request: GenerationRequest):
+    # Check cache
+    cache_key = get_cache_key(request.prompt, request.dict())
+    cached = redis_client.get(cache_key)
+    
+    if cached:
+        return json.loads(cached)
+    
+    # Generate
+    response = generate_text(request)
+    
+    # Cache result (expire after 1 hour)
+    redis_client.setex(cache_key, 3600, json.dumps(response.dict()))
+    
+    return response\n</code></pre>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Start Simple:</strong> Begin with Inference Endpoints or FastAPI</li>
+    <li><strong>Use Batching:</strong> Batch requests for better throughput</li>
+    <li><strong>Implement Caching:</strong> Cache common queries to reduce costs</li>
+    <li><strong>Monitor Performance:</strong> Track latency, throughput, and errors</li>
+    <li><strong>Set Timeouts:</strong> Prevent long-running requests from blocking</li>
+    <li><strong>Use Load Balancing:</strong> Distribute traffic across multiple instances</li>
+    <li><strong>Implement Rate Limiting:</strong> Protect against abuse</li>
+    <li><strong>Version Your Models:</strong> Support multiple model versions simultaneously</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Retrievers and RAG Fundamentals</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Retrievers and RAG Fundamentals</h1>
+
+<h2>What is Retrieval-Augmented Generation (RAG)?</h2>
+<p>Retrieval-Augmented Generation (RAG) is an architectural pattern that enhances Large Language Models (LLMs) by providing them with relevant context retrieved from external knowledge sources. Instead of relying solely on the model's training data, RAG systems:</p>
+
+<ul>
+    <li><strong>Retrieve relevant documents</strong> based on the user's query</li>
+    <li><strong>Augment the prompt</strong> with retrieved context</li>
+    <li><strong>Generate responses</strong> grounded in factual information</li>
+</ul>
+
+<h2>Why RAG?</h2>
+<p>RAG addresses critical limitations of standalone LLMs:</p>
+
+<table>
+    <tr>
+        <th>Problem</th>
+        <th>Without RAG</th>
+        <th>With RAG</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Knowledge Cutoff</td>
+        <td>Model only knows training data (e.g., up to 2023)</td>
+        <td>Access to current, updated information</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hallucinations</td>
+        <td>Model may generate plausible but incorrect information</td>
+        <td>Responses grounded in retrieved facts</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Domain Knowledge</td>
+        <td>Limited to general knowledge from training</td>
+        <td>Access to proprietary, domain-specific data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Transparency</td>
+        <td>No source attribution for generated content</td>
+        <td>Can cite specific documents and passages</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost</td>
+        <td>Requires fine-tuning for specialized knowledge</td>
+        <td>Update knowledge by updating document store</td>
+    </tr>
+</table>
+
+<h2>RAG Architecture in Haystack</h2>
+<p>A typical RAG pipeline in Haystack consists of three main stages:</p>
+
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <div style="text-align: center; font-family: monospace;">
+        <div style="background: #e3f2fd; padding: 10px; margin: 10px; border-radius: 5px;">
+            <strong>1. Query Processing</strong><br/>
+            User Query → Text Embedder → Query Vector
+        </div>
+        <div style="font-size: 24px; margin: 10px;">↓</div>
+        <div style="background: #fff3e0; padding: 10px; margin: 10px; border-radius: 5px;">
+            <strong>2. Retrieval</strong><br/>
+            Query Vector → Retriever → Relevant Documents
+        </div>
+        <div style="font-size: 24px; margin: 10px;">↓</div>
+        <div style="background: #e8f5e9; padding: 10px; margin: 10px; border-radius: 5px;">
+            <strong>3. Generation</strong><br/>
+            Documents + Query → Prompt Builder → LLM → Answer
+        </div>
+    </div>
+</div>
+
+<h2>Building a Basic RAG Pipeline</h2>
+<p>Let's build a complete RAG query pipeline:</p>
+
+<div class="code-block">
+<pre><code>from haystack import Pipeline
+from haystack.components.embedders import SentenceTransformersTextEmbedder
+from haystack_integrations.components.retrievers.qdrant import QdrantEmbeddingRetriever
+from haystack.components.builders import PromptBuilder
+from haystack.components.generators import OpenAIGenerator
+
+# Assume document_store is already populated with indexed documents
+
+# Create query pipeline
+query_pipeline = Pipeline()
+
+# 1. Embed the query
+query_pipeline.add_component(
+    "text_embedder",
+    SentenceTransformersTextEmbedder(
+        model="sentence-transformers/all-MiniLM-L6-v2"
+    )
+)
+
+# 2. Retrieve relevant documents
+query_pipeline.add_component(
+    "retriever",
+    QdrantEmbeddingRetriever(
+        document_store=document_store,
+        top_k=5  # Retrieve top 5 most relevant documents
+    )
+)
+
+# 3. Build prompt with retrieved context
+prompt_template = """
+You are a helpful assistant. Answer the question based on the provided context.
+If the context doesn't contain relevant information, say so.
+
+Context:
+{% for doc in documents %}
+  {{ doc.content }}
+{% endfor %}
+
+Question: {{ question }}
+
+Answer:
+"""
+
+query_pipeline.add_component(
+    "prompt_builder",
+    PromptBuilder(template=prompt_template)
+)
+
+# 4. Generate answer using LLM
+query_pipeline.add_component(
+    "llm",
+    OpenAIGenerator(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model="gpt-4o-mini",
+        generation_kwargs={
+            "temperature": 0.2,  # Lower temperature for factual responses
+            "max_tokens": 500
+        }
+    )
+)
+
+# Connect components
+query_pipeline.connect("text_embedder.embedding", "retriever.query_embedding")
+query_pipeline.connect("retriever.documents", "prompt_builder.documents")
+query_pipeline.connect("prompt_builder.prompt", "llm.prompt")
+
+# Run the pipeline
+result = query_pipeline.run({
+    "text_embedder": {"text": "What are the system requirements?"},
+    "prompt_builder": {"question": "What are the system requirements?"}
+})
+
+print(result["llm"]["replies"][0])
+</code></pre>
+</div>
+
+<h2>Understanding Retrievers</h2>
+<p>Retrievers are components that find relevant documents from a document store. Haystack supports multiple retrieval strategies:</p>
+
+<h3>Embedding Retriever (Dense Retrieval)</h3>
+<ul>
+    <li><strong>Method:</strong> Compares query embedding with document embeddings using similarity metrics</li>
+    <li><strong>Strengths:</strong> Captures semantic meaning, handles synonyms and paraphrasing</li>
+    <li><strong>Weaknesses:</strong> May miss exact keyword matches, requires embedding computation</li>
+    <li><strong>Best for:</strong> Semantic search, question answering, conceptual queries</li>
+</ul>
+
+<div class="code-block">
+<pre><code>from haystack_integrations.components.retrievers.qdrant import QdrantEmbeddingRetriever
+
+embedding_retriever = QdrantEmbeddingRetriever(
+    document_store=document_store,
+    top_k=10,
+    scale_score=True,  # Normalize scores to 0-1 range
+    return_embedding=False  # Don't return embeddings in results
+)
+</code></pre>
+</div>
+
+<h3>BM25 Retriever (Sparse Retrieval)</h3>
+<ul>
+    <li><strong>Method:</strong> Uses term frequency and inverse document frequency for ranking</li>
+    <li><strong>Strengths:</strong> Excellent for exact keyword matches, no embedding required, fast</li>
+    <li><strong>Weaknesses:</strong> Doesn't understand semantics, struggles with synonyms</li>
+    <li><strong>Best for:</strong> Keyword search, technical terms, proper nouns, code search</li>
+</ul>
+
+<div class="code-block">
+<pre><code>from haystack.components.retrievers import InMemoryBM25Retriever
+
+bm25_retriever = InMemoryBM25Retriever(
+    document_store=in_memory_store,
+    top_k=10,
+    scale_score=True
+)
+</code></pre>
+</div>
+
+<h2>Hybrid Retrieval: Best of Both Worlds</h2>
+<p>Hybrid retrieval combines dense and sparse methods for optimal results:</p>
+
+<div class="code-block">
+<pre><code>from haystack import Pipeline
+from haystack.components.joiners import DocumentJoiner
+
+# Create hybrid pipeline
+hybrid_pipeline = Pipeline()
+
+# Add both retrievers
+hybrid_pipeline.add_component("embedding_retriever", embedding_retriever)
+hybrid_pipeline.add_component("bm25_retriever", bm25_retriever)
+
+# Join results with reciprocal rank fusion
+hybrid_pipeline.add_component(
+    "joiner",
+    DocumentJoiner(
+        join_mode="reciprocal_rank_fusion",  # Combines rankings
+        top_k=10,  # Final number of documents
+        weights=[0.6, 0.4]  # Weight for embedding vs BM25
+    )
+)
+
+# Connect retrievers to joiner
+hybrid_pipeline.connect("embedding_retriever.documents", "joiner.documents")
+hybrid_pipeline.connect("bm25_retriever.documents", "joiner.documents")
+
+# Add prompt builder and generator
+hybrid_pipeline.add_component("prompt_builder", prompt_builder)
+hybrid_pipeline.add_component("llm", llm)
+
+hybrid_pipeline.connect("joiner.documents", "prompt_builder.documents")
+hybrid_pipeline.connect("prompt_builder.prompt", "llm.prompt")
+</code></pre>
+</div>
+
+<h2>Retrieval Parameters and Tuning</h2>
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Description</th>
+        <th>Typical Range</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">top_k</td>
+        <td>Number of documents to retrieve</td>
+        <td>3-20</td>
+        <td>Higher = more context but more noise and cost</td>
+    </tr>
+    <tr>
+        <td class="rowheader">score_threshold</td>
+        <td>Minimum similarity score</td>
+        <td>0.5-0.8</td>
+        <td>Higher = more relevant but fewer results</td>
+    </tr>
+    <tr>
+        <td class="rowheader">filters</td>
+        <td>Metadata-based filtering</td>
+        <td>N/A</td>
+        <td>Narrows search space, improves relevance</td>
+    </tr>
+</table>
+
+<h2>Advanced Retrieval: Filtering by Metadata</h2>
+<p>Combine semantic search with metadata filters for precise retrieval:</p>
+
+<div class="code-block">
+<pre><code>retriever = QdrantEmbeddingRetriever(
+    document_store=document_store,
+    top_k=5,
+    filters={
+        "operator": "AND",
+        "conditions": [
+            {"field": "meta.category", "operator": "==", "value": "technical"},
+            {"field": "meta.date", "operator": ">=", "value": "2024-01-01"},
+            {
+                "operator": "OR",
+                "conditions": [
+                    {"field": "meta.language", "operator": "==", "value": "python"},
+                    {"field": "meta.language", "operator": "==", "value": "javascript"}
+                ]
+            }
+        ]
+    }
+)
+
+# This retrieves only technical documents from 2024 in Python or JavaScript
+</code></pre>
+</div>
+
+<h2>Retrieval Quality Metrics</h2>
+<p>Measure retrieval performance using these metrics:</p>
+
+<ul>
+    <li><strong>Precision@k:</strong> Proportion of retrieved documents that are relevant</li>
+    <li><strong>Recall@k:</strong> Proportion of relevant documents that were retrieved</li>
+    <li><strong>Mean Reciprocal Rank (MRR):</strong> Average of reciprocal ranks of first relevant document</li>
+    <li><strong>Normalized Discounted Cumulative Gain (NDCG):</strong> Considers ranking quality</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

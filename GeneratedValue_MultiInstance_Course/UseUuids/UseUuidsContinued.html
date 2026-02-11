@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>UUID Best Practices</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>UUID Best Practices and Summary</h1>
+
+<h2>Production Recommendations</h2>
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Recommended Strategy</th>
+        <th>Reason</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Single Instance</td>
+        <td>IDENTITY or SEQUENCE</td>
+        <td>Simple, efficient, no collision risk</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Multi-Instance + PostgreSQL</td>
+        <td>SEQUENCE (allocationSize=50)</td>
+        <td>Best performance, collision-free</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Multi-Instance + MySQL</td>
+        <td>UUID</td>
+        <td>MySQL lacks proper sequence support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Microservices</td>
+        <td>UUID</td>
+        <td>No coordination needed</td>
+    </tr>
+    <tr>
+        <td class="rowheader">High Write Volume</td>
+        <td>SEQUENCE or UUID (binary)</td>
+        <td>Avoid TABLE strategy bottleneck</td>
+    </tr>
+</table>
+
+<h2>Migration Strategy</h2>
+<p>Moving from IDENTITY to UUID in existing system:</p>
+<div class="code-block">
+<pre><code>// Step 1: Add UUID column
+ALTER TABLE orders ADD COLUMN uuid VARCHAR(36);
+
+// Step 2: Populate existing records
+UPDATE orders SET uuid = UUID() WHERE uuid IS NULL;
+
+// Step 3: Make UUID NOT NULL
+ALTER TABLE orders MODIFY uuid VARCHAR(36) NOT NULL;
+
+// Step 4: Update application to use UUID
+// Step 5: Drop old ID column (after verification)
+</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>@GeneratedValue with IDENTITY is unsafe in multi-instance environments</li>
+    <li>SEQUENCE strategy is safe with proper allocationSize configuration</li>
+    <li>UUIDs provide guaranteed collision-free IDs across all instances</li>
+    <li>Choose strategy based on database capabilities and architecture</li>
+    <li>Test concurrent scenarios before production deployment</li>
+</ul>
+
+<h2>Decision Flowchart</h2>
+<div style="background: #f7fafc; border: 2px solid #F16F00; border-radius: 12px; padding: 2rem; margin: 2rem 0;">
+    <div style="text-align: center; margin-bottom: 1rem;">
+        <strong style="color: #F16F00;">Single Instance?</strong>
+    </div>
+    <div style="margin-left: 2rem;">
+        <div style="margin-bottom: 1rem;">
+            <strong>Yes →</strong> Use IDENTITY or SEQUENCE
+        </div>
+        <div>
+            <strong>No →</strong> Multi-Instance
+            <div style="margin-left: 2rem; margin-top: 0.5rem;">
+                <div style="margin-bottom: 0.5rem;">
+                    <strong>PostgreSQL/Oracle?</strong>
+                    <div style="margin-left: 2rem;">
+                        <div>Yes → SEQUENCE (allocationSize ≥ 50)</div>
+                        <div>No → UUID</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>Common Mistakes to Avoid</h2>
+<ul>
+    <li>Using IDENTITY in multi-instance without testing</li>
+    <li>Setting allocationSize=1 with SEQUENCE</li>
+    <li>Storing UUIDs as strings without considering binary storage</li>
+    <li>Assuming AUTO strategy is safe (it depends on database)</li>
+    <li>Not testing concurrent insert scenarios</li>
+</ul>
+
+<h2>Further Reading</h2>
+<ul>
+    <li>JPA Specification: ID Generation Strategies</li>
+    <li>Hibernate Documentation: Identifier Generators</li>
+    <li>UUID RFC 4122 Specification</li>
+    <li>Database-specific sequence documentation</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

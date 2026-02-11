@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Guardrail Components Architecture</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Guardrail Components Architecture</h1>
+
+<h2>The Multi-Layer Protection Model</h2>
+<p>Amazon Bedrock Guardrails implements a sophisticated multi-layer architecture where different components work in concert to provide comprehensive content governance. Understanding how these components interact and complement each other is essential for designing effective guardrail strategies.</p>
+
+<p>Each component addresses specific protection requirements and operates at different levels of granularity—from broad content classification to precise word-level filtering. This layered approach ensures that content risks are caught by multiple overlapping safeguards, providing defense-in-depth protection.</p>
+
+<h2>Component 1: Content Policy Filters</h2>
+<p>Content policy filters form the foundation of guardrail protection, using machine learning models to classify content across the five primary categories discussed in the previous section (hate, violence, sexual, misconduct, prompt attacks).</p>
+
+<h3>How Content Filters Work</h3>
+<p>Content filters employ transformer-based neural networks trained on extensive datasets of labeled content. These models analyze semantic meaning, context, and intent rather than simply matching keywords. When evaluating a piece of text, the filter:</p>
+
+<ol>
+    <li><strong>Tokenizes the Input:</strong> Breaks text into semantic units for analysis</li>
+    <li><strong>Generates Embeddings:</strong> Converts text into high-dimensional vector representations capturing meaning</li>
+    <li><strong>Classifies Content:</strong> Evaluates embeddings against learned patterns for each harmful content category</li>
+    <li><strong>Assigns Confidence Scores:</strong> Produces probability scores indicating likelihood of policy violations</li>
+    <li><strong>Applies Thresholds:</strong> Compares scores against configured filter strength thresholds to determine intervention</li>
+</ol>
+
+<h3>Advantages of ML-Based Classification</h3>
+<p>Machine learning-based content filters offer significant advantages over rule-based approaches:</p>
+
+<ul>
+    <li><strong>Context Awareness:</strong> Understands that the same words can be appropriate or inappropriate depending on context</li>
+    <li><strong>Semantic Understanding:</strong> Detects harmful content even when expressed through euphemisms, coded language, or indirect phrasing</li>
+    <li><strong>Language Evolution:</strong> Adapts to evolving language patterns and emerging forms of harmful content</li>
+    <li><strong>Reduced Maintenance:</strong> Requires less manual rule curation compared to keyword-based systems</li>
+</ul>
+
+<h3>Limitations and Considerations</h3>
+<p>Despite their sophistication, ML-based filters have limitations. They may struggle with highly context-dependent content, sarcasm, cultural nuances, or novel attack patterns not represented in training data. Organizations should view content filters as powerful but imperfect tools requiring complementary safeguards.</p>
+
+<h2>Component 2: Denied Topics</h2>
+<p>Denied topics enable organizations to define custom content restrictions beyond the standard harmful content categories. This component addresses business-specific, organizational, or contextual restrictions unique to each application.</p>
+
+<h3>What Denied Topics Address</h3>
+<p>While content filters focus on universally harmful content, denied topics handle organization-specific restrictions such as:</p>
+
+<ul>
+    <li><strong>Competitive Intelligence:</strong> Preventing discussions comparing products to competitors or revealing competitive strategies</li>
+    <li><strong>Proprietary Information:</strong> Blocking topics related to confidential business information, trade secrets, or internal processes</li>
+    <li><strong>Sensitive Business Areas:</strong> Restricting discussions of pending litigation, financial performance, or strategic initiatives</li>
+    <li><strong>Out-of-Scope Subjects:</strong> Preventing AI from discussing topics outside its intended domain (e.g., a customer service bot should not provide medical advice)</li>
+    <li><strong>Controversial Topics:</strong> Avoiding politically divisive or socially controversial subjects that could alienate users</li>
+</ul>
+
+<h3>Defining Effective Denied Topics</h3>
+<p>Creating effective denied topic definitions requires careful consideration:</p>
+
+<p><strong>Topic Name:</strong> A clear, descriptive identifier for internal reference and logging purposes.</p>
+
+<p><strong>Topic Definition:</strong> A natural language description of what the topic encompasses. This definition should be comprehensive yet precise, providing enough context for the guardrail to accurately identify related content. For example, rather than defining a topic as simply "competitors," a more effective definition would be "Discussions comparing our products, services, pricing, or features to those of competing companies, or requests for information about competitor offerings."</p>
+
+<p><strong>Topic Type:</strong> Currently, Bedrock supports DENY type topics, which block any content related to the defined topic. Future enhancements may include ALLOW lists or more nuanced topic policies.</p>
+
+<h3>How Topic Detection Works</h3>
+<p>Denied topic detection uses semantic similarity analysis. The guardrail compares the semantic meaning of user inputs or model outputs against the semantic meaning of denied topic definitions. If the similarity exceeds a threshold, the content is flagged as violating the denied topic policy. This approach allows detection of topically related content even when specific keywords are not mentioned.</p>
+
+<h3>Balancing Specificity and Coverage</h3>
+<p>Denied topic definitions must balance specificity and coverage. Overly broad definitions may block legitimate content (false positives), while overly narrow definitions may miss policy violations (false negatives). Organizations should iteratively refine denied topic definitions based on real-world usage patterns and intervention logs.</p>
+
+<h2>Component 3: Word Filters</h2>
+<p>Word filters provide precise, deterministic blocking of specific words, phrases, or patterns. Unlike ML-based content filters that evaluate semantic meaning, word filters perform exact or pattern-based matching.</p>
+
+<h3>Use Cases for Word Filters</h3>
+<p>Word filters complement content filters by addressing scenarios requiring absolute certainty:</p>
+
+<ul>
+    <li><strong>Profanity Blocking:</strong> Ensuring specific offensive words are never displayed, regardless of context</li>
+    <li><strong>Brand Protection:</strong> Blocking mentions of specific competitor names or trademarked terms</li>
+    <li><strong>Regulatory Keywords:</strong> Preventing use of specific terms that trigger regulatory scrutiny (e.g., financial advice disclaimers)</li>
+    <li><strong>Internal Terminology:</strong> Blocking internal code names, project names, or confidential identifiers</li>
+    <li><strong>Emerging Threats:</strong> Quickly blocking newly identified harmful terms before ML models are retrained</li>
+</ul>
+
+<h3>Managed Profanity Lists</h3>
+<p>Amazon Bedrock provides managed profanity lists covering common offensive terms across multiple languages. These lists are maintained by AWS and updated regularly to reflect evolving language patterns. Organizations can enable managed profanity filtering without manually curating word lists.</p>
+
+<h3>Custom Word Lists</h3>
+<p>Organizations can define custom word lists tailored to their specific needs. Custom lists support:</p>
+
+<ul>
+    <li><strong>Exact Matching:</strong> Blocking specific words or phrases exactly as written</li>
+    <li><strong>Case Sensitivity Options:</strong> Configuring whether matching should be case-sensitive or case-insensitive</li>
+    <li><strong>Whole Word Matching:</strong> Ensuring matches occur only for complete words, not as substrings within larger words</li>
+</ul>
+
+<h3>Limitations of Word Filters</h3>
+<p>Word filters are powerful but have inherent limitations. They cannot understand context, so they may block legitimate uses of filtered words (the "Scunthorpe problem"). They are also vulnerable to simple evasion techniques (character substitution, spacing, homoglyphs). Word filters should be used judiciously as a complement to, not replacement for, semantic content filters.</p>
+
+<h2>Component 4: Sensitive Information Filters (PII Detection)</h2>
+<p>Sensitive information filters detect and redact personally identifiable information (PII) and other sensitive data types to protect user privacy and ensure regulatory compliance.</p>
+
+<h3>Supported PII Types</h3>
+<p>Bedrock Guardrails can detect numerous PII categories:</p>
+
+<table>
+    <tr>
+        <th>PII Category</th>
+        <th>Examples</th>
+        <th>Regulatory Relevance</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Social Security Numbers</td>
+        <td>123-45-6789, 123456789</td>
+        <td>GDPR, CCPA, HIPAA</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Email Addresses</td>
+        <td>user@example.com</td>
+        <td>GDPR, CCPA, CAN-SPAM</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Phone Numbers</td>
+        <td>+1-555-123-4567, (555) 123-4567</td>
+        <td>GDPR, CCPA, TCPA</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Credit Card Numbers</td>
+        <td>4532-1234-5678-9010</td>
+        <td>PCI-DSS, GDPR</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Physical Addresses</td>
+        <td>123 Main St, Anytown, ST 12345</td>
+        <td>GDPR, CCPA</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Driver's License Numbers</td>
+        <td>D1234567</td>
+        <td>GDPR, CCPA</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Passport Numbers</td>
+        <td>123456789</td>
+        <td>GDPR, International Privacy Laws</td>
+    </tr>
+    <tr>
+        <td class="rowheader">IP Addresses</td>
+        <td>192.168.1.1, 2001:0db8::1</td>
+        <td>GDPR (in some contexts)</td>
+    </tr>
+</table>
+
+<h3>PII Detection Techniques</h3>
+<p>PII detection combines multiple techniques for accurate identification:</p>
+
+<ul>
+    <li><strong>Pattern Matching:</strong> Regular expressions identify structured data formats (SSN, credit cards, phone numbers)</li>
+    <li><strong>Named Entity Recognition:</strong> ML models identify entities like names, locations, and organizations</li>
+    <li><strong>Contextual Analysis:</strong> Surrounding text provides context to disambiguate potential PII from non-sensitive data</li>
+    <li><strong>Checksum Validation:</strong> Algorithms verify that detected patterns are valid (e.g., credit card Luhn algorithm)</li>
+</ul>
+
+<h3>PII Intervention Actions</h3>
+<p>When PII is detected, guardrails can take different actions based on configuration:</p>
+
+<p><strong>BLOCK:</strong> Completely prevent the request or response from proceeding. Appropriate for highly sensitive PII (SSN, credit cards) where any exposure is unacceptable.</p>
+
+<p><strong>ANONYMIZE:</strong> Replace detected PII with generic placeholders (e.g., [EMAIL_ADDRESS], [PHONE_NUMBER]). This allows the interaction to proceed while protecting privacy. Useful when the presence of contact information is relevant but the specific values are not.</p>
+
+<p><strong>REDACT:</strong> Remove the PII entirely without replacement. Appropriate when the sensitive information is not essential to the interaction.</p>
+
+<h3>Balancing Privacy and Functionality</h3>
+<p>PII filtering requires balancing privacy protection with application functionality. Overly aggressive PII filtering may break legitimate use cases (e.g., a customer service bot that needs to verify user identity). Organizations should carefully consider which PII types to filter and which actions to apply based on application context and regulatory requirements.</p>
+
+<h2>Component 5: Contextual Grounding Checks</h2>
+<p>Contextual grounding checks verify that model responses remain factually grounded in provided source material and do not hallucinate information or make unsupported claims.</p>
+
+<h3>The Hallucination Problem</h3>
+<p>Foundation models, despite their impressive capabilities, sometimes generate plausible-sounding but factually incorrect information—a phenomenon known as hallucination. In applications where factual accuracy is critical (customer support, medical information, financial advice), hallucinations pose significant risks.</p>
+
+<h3>How Grounding Checks Work</h3>
+<p>Contextual grounding evaluation compares model outputs against provided source documents or knowledge bases. The guardrail assesses two dimensions:</p>
+
+<p><strong>Grounding Score:</strong> Measures whether claims in the response are supported by the source material. A high grounding score indicates the response is well-supported by provided context. A low score suggests the model is generating information not present in the sources.</p>
+
+<p><strong>Relevance Score:</strong> Measures whether the response actually addresses the user's query. A high relevance score indicates the response is on-topic and helpful. A low score suggests the response is tangential or off-topic.</p>
+
+<h3>Configuring Grounding Thresholds</h3>
+<p>Organizations configure minimum acceptable thresholds for grounding and relevance scores (typically 0.0 to 1.0). Responses falling below these thresholds are blocked or flagged. Higher thresholds ensure greater factual accuracy but may increase false positives where legitimate responses are incorrectly flagged.</p>
+
+<h3>Use Cases for Grounding Checks</h3>
+<p>Grounding checks are particularly valuable for:</p>
+
+<ul>
+    <li><strong>Retrieval-Augmented Generation (RAG):</strong> Ensuring responses are based on retrieved documents rather than model's parametric knowledge</li>
+    <li><strong>Customer Support:</strong> Verifying responses align with official documentation and policies</li>
+    <li><strong>Compliance Applications:</strong> Ensuring AI provides only approved, verified information</li>
+    <li><strong>Educational Content:</strong> Preventing dissemination of incorrect information to learners</li>
+</ul>
+
+<h2>Component Interaction and Orchestration</h2>
+<p>These five components do not operate in isolation—they work together in an orchestrated evaluation pipeline. When a request is processed:</p>
+
+<ol>
+    <li>Content filters evaluate for harmful content categories</li>
+    <li>Denied topic detection checks for organization-specific restrictions</li>
+    <li>Word filters scan for blocked terms</li>
+    <li>PII detection identifies sensitive information</li>
+    <li>Prompt attack detection (for inputs) evaluates for adversarial patterns</li>
+    <li>The model generates a response (if input passes all checks)</li>
+    <li>Output evaluation repeats steps 1-4 on the model's response</li>
+    <li>Contextual grounding checks verify response accuracy (if configured)</li>
+</ol>
+
+<p>If any component detects a violation, the guardrail intervenes according to the configured action for that component. This multi-layer approach ensures comprehensive protection.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Guardrails employ five complementary components: content filters, denied topics, word filters, PII detection, and grounding checks</li>
+    <li>Content filters use ML for semantic understanding; word filters provide deterministic blocking</li>
+    <li>Denied topics enable organization-specific content restrictions beyond standard harmful categories</li>
+    <li>PII detection supports multiple intervention actions (block, anonymize, redact) for flexible privacy protection</li>
+    <li>Contextual grounding checks prevent hallucinations by verifying responses against source material</li>
+    <li>Components work in orchestrated layers to provide defense-in-depth protection</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

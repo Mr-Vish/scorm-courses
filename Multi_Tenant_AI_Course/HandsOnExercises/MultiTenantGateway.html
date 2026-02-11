@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on Exercise: Building a Multi-tenant AI Gateway</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on Exercise: Building a Multi-tenant AI Gateway</h1>
+
+<p>In this exercise, you will build a simple Python-based gateway that handles requests from multiple tenants, enforces isolation, and tracks usage.</p>
+
+<h2>Step 1: Define the Tenant Configuration</h2>
+<p>In a real system, this would be stored in a database. For this exercise, we'll use a dictionary.</p>
+<pre>
+TENANTS = {
+    "tenant_a": {
+        "api_key": "sk-tenant-a-123",
+        "model": "gpt-3.5-turbo",
+        "rate_limit": 5, # requests per minute
+        "usage": 0
+    },
+    "tenant_b": {
+        "api_key": "sk-tenant-b-456",
+        "model": "gpt-4",
+        "rate_limit": 2,
+        "usage": 0
+    }
+}
+</pre>
+
+<h2>Step 2: Create the Gateway Function</h2>
+<p>The gateway will validate the tenant's API key, check their rate limits, and then forward the request to the AI provider (mocked here).</p>
+<pre>
+import time
+
+def ai_gateway(tenant_id, api_key, prompt):
+    # 1. Authentication
+    tenant = TENANTS.get(tenant_id)
+    if not tenant or tenant["api_key"] != api_key:
+        return "Error: Unauthorized", 401
+
+    # 2. Rate Limiting (Simple Mock)
+    # In a real system, use Redis or a similar tool
+    print(f"Checking rate limits for {tenant_id}...")
+
+    # 3. Request Forwarding (Mocked)
+    print(f"Forwarding request for {tenant_id} to model {tenant['model']}...")
+    response = f"Response for {tenant_id}: Hello, I am {tenant['model']}!"
+
+    # 4. Usage Tracking
+    tokens = len(prompt.split()) + len(response.split())
+    tenant["usage"] += tokens
+    print(f"Usage updated for {tenant_id}: {tenant['usage']} total tokens.")
+
+    return response, 200
+</pre>
+
+<h2>Step 3: Test the Gateway</h2>
+<p>Simulate requests from different tenants.</p>
+<pre>
+# Successful request from Tenant A
+res, code = ai_gateway("tenant_a", "sk-tenant-a-123", "How are you?")
+print(f"Result: {res} (Status: {code})")
+
+# Unauthorized request
+res, code = ai_gateway("tenant_b", "wrong-key", "Hello?")
+print(f"Result: {res} (Status: {code})")
+</pre>
+
+<h2>Challenge: Add Multi-tenant RAG</h2>
+<p>Modify the gateway to include a "search" step that only looks at a tenant-specific text file. Create two files: <code>tenant_a_data.txt</code> and <code>tenant_b_data.txt</code>. Ensure the gateway only reads the file corresponding to the <code>tenant_id</code>.</p>
+
+<p>This simple exercise demonstrates the core principles of multi-tenant AI: authentication, isolation, and attribution.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Document Processing and Embeddings</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Document Processing and Embeddings</h1>
+
+<h2>Document Loaders</h2>
+<p>Both frameworks support loading documents from various sources:</p>
+
+<table>
+    <tr>
+        <th>Source Type</th>
+        <th>LangChain4j</th>
+        <th>Spring AI</th>
+    </tr>
+    <tr>
+        <td class="rowheader">PDF Files</td>
+        <td>PdfDocumentLoader</td>
+        <td>PagePdfDocumentReader</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Text Files</td>
+        <td>FileSystemDocumentLoader</td>
+        <td>TextReader</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Web Pages</td>
+        <td>UrlDocumentLoader</td>
+        <td>WebPageReader</td>
+    </tr>
+    <tr>
+        <td class="rowheader">JSON</td>
+        <td>JsonDocumentLoader</td>
+        <td>JsonReader</td>
+    </tr>
+</table>
+
+<h2>LangChain4j Document Loading</h2>
+<div class="code-block">
+<pre><code>// Load PDF
+Document pdfDoc = FileSystemDocumentLoader.loadDocument(
+    "document.pdf",
+    new ApachePdfBoxDocumentParser()
+);
+
+// Load from URL
+Document webDoc = UrlDocumentLoader.load(
+    "https://example.com/article",
+    new JsoupHtmlDocumentParser()
+);
+
+// Load multiple files
+List&lt;Document&gt; docs = FileSystemDocumentLoader.loadDocuments(
+    Paths.get("docs/"),
+    glob("*.txt")
+);
+</code></pre>
+</div>
+
+<h2>Spring AI Document Loading</h2>
+<div class="code-block">
+<pre><code>@Service
+public class DocumentLoader {
+    
+    public List&lt;Document&gt; loadPdf(Resource resource) {
+        PagePdfDocumentReader reader = new PagePdfDocumentReader(resource);
+        return reader.get();
+    }
+    
+    public List&lt;Document&gt; loadText(Resource resource) {
+        TextReader reader = new TextReader(resource);
+        return reader.get();
+    }
+    
+    public List&lt;Document&gt; loadJson(Resource resource) {
+        JsonReader reader = new JsonReader(resource);
+        return reader.get();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Text Splitting Strategies</h2>
+
+<h3>LangChain4j Splitters</h3>
+<div class="code-block">
+<pre><code>// Recursive splitter (recommended)
+DocumentSplitter recursive = DocumentSplitters.recursive(
+    500,  // max chunk size
+    50,   // overlap
+    new OpenAiTokenizer("gpt-4")
+);
+
+// Paragraph splitter
+DocumentSplitter paragraph = DocumentSplitters.recursive(
+    1000,
+    100
+);
+
+// Sentence splitter
+DocumentSplitter sentence = new DocumentByParagraphSplitter(
+    500,
+    50
+);
+</code></pre>
+</div>
+
+<h3>Spring AI Splitters</h3>
+<div class="code-block">
+<pre><code>// Token-based splitter
+TokenTextSplitter tokenSplitter = new TokenTextSplitter(
+    500,  // default chunk size
+    50,   // overlap
+    5,    // min chunk size
+    10000 // max chunk size
+);
+
+// Character-based splitter
+TextSplitter charSplitter = new TextSplitter() {
+    @Override
+    public List&lt;String&gt; split(String text) {
+        // Custom splitting logic
+        return Arrays.asList(text.split("\n\n"));
+    }
+};
+</code></pre>
+</div>
+
+<h2>Embedding Models</h2>
+<table>
+    <tr>
+        <th>Model</th>
+        <th>Dimensions</th>
+        <th>Cost</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">text-embedding-3-small</td>
+        <td>1536</td>
+        <td>Low</td>
+        <td>General purpose, cost-effective</td>
+    </tr>
+    <tr>
+        <td class="rowheader">text-embedding-3-large</td>
+        <td>3072</td>
+        <td>Medium</td>
+        <td>High accuracy requirements</td>
+    </tr>
+    <tr>
+        <td class="rowheader">text-embedding-ada-002</td>
+        <td>1536</td>
+        <td>Low</td>
+        <td>Legacy, still effective</td>
+    </tr>
+</table>
+
+<h2>Generating Embeddings</h2>
+
+<h3>LangChain4j</h3>
+<div class="code-block">
+<pre><code>EmbeddingModel embeddingModel = OpenAiEmbeddingModel.builder()
+    .apiKey(System.getenv("OPENAI_API_KEY"))
+    .modelName("text-embedding-3-small")
+    .build();
+
+// Single text
+Embedding embedding = embeddingModel.embed("Hello world").content();
+
+// Multiple texts
+List&lt;Embedding&gt; embeddings = embeddingModel.embedAll(
+    List.of("Text 1", "Text 2", "Text 3")
+).content();
+
+// With metadata
+TextSegment segment = TextSegment.from(
+    "Document content",
+    Metadata.from("source", "doc.pdf")
+);
+Embedding segmentEmbedding = embeddingModel.embed(segment).content();
+</code></pre>
+</div>
+
+<h3>Spring AI</h3>
+<div class="code-block">
+<pre><code>@Service
+public class EmbeddingService {
+    
+    private final EmbeddingModel embeddingModel;
+    
+    public EmbeddingService(EmbeddingModel embeddingModel) {
+        this.embeddingModel = embeddingModel;
+    }
+    
+    public List&lt;Double&gt; generateEmbedding(String text) {
+        return embeddingModel.embed(text);
+    }
+    
+    public List&lt;List&lt;Double&gt;&gt; generateBatchEmbeddings(List&lt;String&gt; texts) {
+        return embeddingModel.embed(texts);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Document Metadata</h2>
+<p>Attach metadata for filtering and tracking:</p>
+
+<div class="code-block">
+<pre><code>// LangChain4j
+TextSegment segment = TextSegment.from(
+    "Content",
+    Metadata.from(Map.of(
+        "source", "manual.pdf",
+        "page", 5,
+        "category", "technical",
+        "date", "2024-01-15"
+    ))
+);
+
+// Spring AI
+Document doc = new Document(
+    "Content",
+    Map.of(
+        "source", "manual.pdf",
+        "page", 5,
+        "category", "technical"
+    )
+);
+</code></pre>
+</div>
+
+<h2>Metadata Filtering</h2>
+<div class="code-block">
+<pre><code>// LangChain4j
+EmbeddingSearchRequest request = EmbeddingSearchRequest.builder()
+    .queryEmbedding(queryEmbedding)
+    .maxResults(10)
+    .minScore(0.7)
+    .filter(metadataKey("category").isEqualTo("technical"))
+    .build();
+
+List&lt;EmbeddingMatch&lt;TextSegment&gt;&gt; matches = embeddingStore.search(request);
+
+// Spring AI
+SearchRequest searchRequest = SearchRequest.query("question")
+    .withTopK(10)
+    .withSimilarityThreshold(0.7)
+    .withFilterExpression("category == 'technical'");
+
+List&lt;Document&gt; results = vectorStore.similaritySearch(searchRequest);
+</code></pre>
+</div>
+
+<h2>Document Transformers</h2>
+<p>Process documents before embedding:</p>
+
+<div class="code-block">
+<pre><code>// LangChain4j
+DocumentTransformer transformer = document -&gt; {
+    String content = document.text();
+    // Remove special characters
+    content = content.replaceAll("[^a-zA-Z0-9\\s]", "");
+    // Convert to lowercase
+    content = content.toLowerCase();
+    return Document.from(content, document.metadata());
+};
+
+List&lt;Document&gt; transformed = documents.stream()
+    .map(transformer::transform)
+    .collect(Collectors.toList());
+</code></pre>
+</div>
+
+<h2>Batch Processing</h2>
+<div class="code-block">
+<pre><code>@Service
+public class BatchIngestionService {
+    
+    private final VectorStore vectorStore;
+    private final EmbeddingModel embeddingModel;
+    
+    public void ingestBatch(List&lt;Document&gt; documents) {
+        // Process in batches of 100
+        int batchSize = 100;
+        for (int i = 0; i &lt; documents.size(); i += batchSize) {
+            List&lt;Document&gt; batch = documents.subList(
+                i,
+                Math.min(i + batchSize, documents.size())
+            );
+            
+            vectorStore.add(batch);
+            
+            // Rate limiting
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+}
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Preprocessing:</strong> Clean and normalize text before embedding</li>
+    <li><strong>Batch Processing:</strong> Process documents in batches to manage memory</li>
+    <li><strong>Metadata:</strong> Include rich metadata for better filtering</li>
+    <li><strong>Error Handling:</strong> Implement retry logic for API failures</li>
+    <li><strong>Monitoring:</strong> Track embedding generation costs and performance</li>
+    <li><strong>Caching:</strong> Cache embeddings to avoid regeneration</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

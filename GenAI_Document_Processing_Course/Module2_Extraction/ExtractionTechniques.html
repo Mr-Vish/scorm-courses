@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Extraction Techniques</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Extraction Techniques</h1>
+
+<h2>Structured Output with Tool Use</h2>
+<p>GenAI models support structured extraction through tool/function calling, ensuring consistent JSON output:</p>
+
+<blockquote>
+import anthropic
+
+client = anthropic.Anthropic()
+
+# Define extraction schema
+invoice_schema = {
+    "name": "extract_invoice_data",
+    "description": "Extract structured data from invoice",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "vendor_name": {"type": "string"},
+            "invoice_number": {"type": "string"},
+            "invoice_date": {"type": "string", "description": "Format: YYYY-MM-DD"},
+            "due_date": {"type": "string", "description": "Format: YYYY-MM-DD"},
+            "total_amount": {"type": "number"},
+            "currency": {"type": "string"},
+            "tax_amount": {"type": "number"},
+            "line_items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "description": {"type": "string"},
+                        "quantity": {"type": "number"},
+                        "unit_price": {"type": "number"},
+                        "total": {"type": "number"}
+                    },
+                    "required": ["description", "quantity", "unit_price", "total"]
+                }
+            }
+        },
+        "required": ["vendor_name", "invoice_number", "total_amount"]
+    }
+}
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=2048,
+    tools=[invoice_schema],
+    tool_choice={"type": "tool", "name": "extract_invoice_data"},
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_data}},
+            {"type": "text", "text": "Extract all invoice data from this document."}
+        ]
+    }]
+)
+
+# Extract structured data
+invoice_data = response.content[0].input
+</blockquote>
+
+<h2>Multi-Page Document Handling</h2>
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Use Case</th>
+        <th>Pros</th>
+        <th>Cons</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Single API Call</td>
+        <td>Documents &lt; 10 pages</td>
+        <td>Simple, maintains context</td>
+        <td>Higher cost, slower</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Page-by-Page</td>
+        <td>Long documents &gt; 20 pages</td>
+        <td>Parallel processing, lower cost</td>
+        <td>May lose cross-page context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Chunked Processing</td>
+        <td>10-20 pages</td>
+        <td>Balanced cost and context</td>
+        <td>Requires merging logic</td>
+    </tr>
+</table>
+
+<h2>Table Extraction Best Practices</h2>
+<ul>
+    <li><strong>Explicit Instructions:</strong> "Extract all rows from the line items table"</li>
+    <li><strong>Column Specification:</strong> Define expected columns in schema</li>
+    <li><strong>Header Detection:</strong> Ask model to identify table headers</li>
+    <li><strong>Spanning Cells:</strong> Handle merged cells and multi-line entries</li>
+    <li><strong>Validation:</strong> Verify row counts and column consistency</li>
+</ul>
+
+<h2>Handling Poor Quality Documents</h2>
+<blockquote>
+Strategies for Low-Quality Scans:
+
+1. Preprocessing:
+   - Image enhancement (contrast, brightness)
+   - Noise reduction
+   - Deskewing and rotation correction
+
+2. Prompt Engineering:
+   "This document may be blurry or low quality. Extract data to the best of your ability and flag any uncertain fields."
+
+3. Confidence Scoring:
+   Request model to indicate confidence per field
+
+4. Multi-Model Approach:
+   Process with multiple models, compare results
+
+5. Human Review:
+   Route low-quality docs to manual review queue
+</blockquote>
+
+<h2>Contract-Specific Extraction</h2>
+<p>Contracts require specialized extraction approaches:</p>
+
+<ul>
+    <li><strong>Party Identification:</strong> Extract all parties, roles, and contact information</li>
+    <li><strong>Date Extraction:</strong> Effective date, expiration, renewal dates, milestones</li>
+    <li><strong>Financial Terms:</strong> Payment amounts, schedules, penalties, bonuses</li>
+    <li><strong>Obligations:</strong> Deliverables, deadlines, performance metrics</li>
+    <li><strong>Termination Clauses:</strong> Conditions, notice periods, penalties</li>
+    <li><strong>Liability Limits:</strong> Caps, exclusions, indemnification</li>
+    <li><strong>Governing Law:</strong> Jurisdiction, dispute resolution</li>
+</ul>
+
+<h2>Form Processing Patterns</h2>
+<table>
+    <tr>
+        <th>Form Type</th>
+        <th>Key Challenges</th>
+        <th>Solutions</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Checkboxes</td>
+        <td>Detecting checked vs unchecked</td>
+        <td>Vision models, explicit prompts</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Handwriting</td>
+        <td>Illegible text</td>
+        <td>Request clarification, confidence scoring</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Signatures</td>
+        <td>Verification needed</td>
+        <td>Extract presence, route for manual verification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Multi-Select</td>
+        <td>Multiple checked boxes</td>
+        <td>Array output in schema</td>
+    </tr>
+</table>
+
+<h2>Extraction Accuracy Optimization</h2>
+<blockquote>
+Techniques to Improve Accuracy:
+
+1. Detailed Schemas:
+   - Specify data types, formats, constraints
+   - Include descriptions and examples
+
+2. Few-Shot Examples:
+   - Provide 2-3 example extractions in prompt
+   - Show desired output format
+
+3. Field-Specific Instructions:
+   - "Extract invoice_date in YYYY-MM-DD format"
+   - "Calculate due_date as invoice_date + payment_terms"
+
+4. Validation Prompts:
+   - "Verify that line_items sum equals total_amount"
+   - "Flag any inconsistencies"
+
+5. Iterative Refinement:
+   - Review errors, update prompts
+   - A/B test prompt variations
+
+Target Accuracy: 95-98% for structured fields
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

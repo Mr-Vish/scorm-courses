@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 8: Security Best Practices</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 8: Security Best Practices for Multi-tenant AI Systems</h1>
+
+<p>Security in a multi-tenant environment is not a one-time setup; it is a continuous process of defense-in-depth. This module covers advanced security practices specifically for AI systems.</p>
+
+<h2>8.1 Protecting Against Prompt Injection</h2>
+<p>In a multi-tenant system, prompt injection can be used to bypass isolation. An attacker from Tenant A might try to inject instructions that cause the model to output data from the system prompt or, in some cases, other tenants' information if the system is not properly isolated.</p>
+<ul>
+    <li><strong>System Prompt Hardening:</strong> Using clear delimiters and strong instructions to prevent the model from following user-supplied commands that conflict with its core mission.</li>
+    <li><strong>Output Filtering:</strong> Using a secondary "guardrail" model to check the LLM's output for sensitive keywords or patterns that shouldn't be visible to that tenant.</li>
+    <li><strong>Least Privilege Prompts:</strong> Only providing the agent or model with the minimum amount of context and the fewest tools necessary for the current task.</li>
+</ul>
+
+<h2>8.2 Secure RAG (Retrieval-Augmented Generation)</h2>
+<p>The retrieval process is a prime target for attacks.
+<ul>
+    <li><strong>Document Sanitization:</strong> Before indexing, documents should be scanned for malicious content or hidden "visual" prompt injections.</li>
+    <li><strong>Strict Vector Partitioning:</strong> As discussed, ensuring that the vector database query is physically restricted to the tenant's partition.</li>
+    <li><strong>Source Attribution:</strong> Always showing the tenant exactly which documents were used to generate a specific answer, providing transparency and an audit trail.</li>
+</ul></p>
+
+<h2>8.3 Sandboxing Code Execution</h2>
+<p>If your multi-tenant AI supports code execution (e.g., for data analysis or math), that code MUST be executed in a secure, isolated sandbox.
+<ul>
+    <li><strong>Micro-VMs (e.g., Firecracker):</strong> Providing strong hardware-level isolation for every tenant's code execution session.</li>
+    <li><strong>WebAssembly (Wasm):</strong> A lighter-weight but still secure sandbox for running code in a multi-tenant environment.</li>
+    <li><strong>Resource Limits:</strong> Strictly limiting the CPU, RAM, and network access for any code run by the AI.</li>
+</ul></p>
+
+<h2>8.4 Audit Logging and Forensic Readiness</h2>
+<p>You must maintain a complete, immutable audit trail for every tenant.
+<ul>
+    <li><strong>What to Log:</strong> Request timestamps, user/tenant IDs, model used, prompt, completion, tool calls, and any errors.</li>
+    <li><strong>Secure Storage:</strong> Shipping logs to a centralized, write-once-read-many (WORM) storage system.</li>
+    <li><strong>Log Analysis:</strong> Regularly reviewing logs for signs of suspicious activity, such as unusual access patterns or frequent prompt injection attempts.</li>
+</ul></p>
+
+<h2>8.5 Penetration Testing and Red Teaming</h2>
+<p>Finally, you should regularly subject your multi-tenant system to rigorous security testing. This includes "Red Teaming" exercises specifically designed to find cross-tenant leakage or prompt injection vulnerabilities.</p>
+
+<p>By following these best practices, you can build a multi-tenant AI platform that is not only powerful and scalable but also fundamentally secure and trustworthy for your most demanding customers.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

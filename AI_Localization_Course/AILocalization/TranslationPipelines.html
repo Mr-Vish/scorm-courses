@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Translation Pipelines with LLMs</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Translation Pipelines with LLMs</h1>
+
+
+<h2>GenAI for Translation</h2>
+<p>LLMs have dramatically improved machine translation quality, especially for nuanced, context-dependent text. Unlike traditional MT systems, LLMs understand context, idioms, and domain-specific terminology, producing translations that read more naturally.</p>
+
+<h2>LLM vs Traditional Machine Translation</h2>
+<table>
+    <tr><th>Feature</th><th>Traditional MT (Google/DeepL)</th><th>LLM Translation</th></tr>
+    <tr><td>Speed</td><td>Very fast (&lt;100ms)</td><td>Slower (1-5 seconds)</td></tr>
+    <tr><td>Cost</td><td>$20/million characters</td><td>$1-15/million characters (varies by model)</td></tr>
+    <tr><td>Context understanding</td><td>Sentence-level</td><td>Document-level, understands full context</td></tr>
+    <tr><td>Style control</td><td>Limited (formal/informal toggle)</td><td>Full control via prompt instructions</td></tr>
+    <tr><td>Terminology</td><td>Glossary-based</td><td>In-context learning from examples</td></tr>
+    <tr><td>Quality (high-resource langs)</td><td>Excellent</td><td>Excellent to superior</td></tr>
+    <tr><td>Quality (low-resource langs)</td><td>Fair</td><td>Improving but variable</td></tr>
+</table>
+
+<h2>Translation Pipeline Architecture</h2>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+def translate_with_context(
+    text: str,
+    source_lang: str,
+    target_lang: str,
+    glossary: dict = None,
+    style: str = "professional",
+    context: str = "",
+) -&gt; str:
+    '''Translate text with style control and glossary.'''
+    glossary_text = ""
+    if glossary:
+        glossary_text = "Terminology glossary (use these exact translations):
+"
+        for source, target in glossary.items():
+            glossary_text += f"  '{source}' -&gt; '{target}'
+"
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                f"You are a professional translator from {source_lang} to {target_lang}. "
+                f"Style: {style}. "
+                "Preserve formatting (markdown, HTML tags, placeholders like {{name}}). "
+                "Do not translate brand names or technical terms unless specified in the glossary.
+"
+                f"{glossary_text}"
+            )},
+            {"role": "user", "content": (
+                f"Context: {context}
+
+"
+                f"Translate the following:
+{text}"
+            )},
+        ],
+    )
+    return response.choices[0].message.content
+
+# Example with glossary
+translated = translate_with_context(
+    text="Click the Dashboard to view your Sprint Velocity metrics.",
+    source_lang="English",
+    target_lang="Japanese",
+    glossary={"Dashboard": "Dashboard", "Sprint Velocity": "Sprint Velocity"},
+    style="polite, formal software UI",
+)</code></pre>
+</div>
+
+<h2>Batch Translation Pipeline</h2>
+<div class="code-block">
+<pre><code>import json
+from pathlib import Path
+
+def translate_resource_file(input_path: str, target_lang: str, glossary: dict):
+    '''Translate a JSON resource file (i18n format).'''
+    with open(input_path) as f:
+        source = json.load(f)
+
+    translated = {}
+    for key, value in source.items():
+        if isinstance(value, str):
+            translated[key] = translate_with_context(
+                text=value,
+                source_lang="English",
+                target_lang=target_lang,
+                glossary=glossary,
+            )
+        else:
+            translated[key] = value  # Keep non-string values as-is
+
+    output_path = input_path.replace("en.json", f"{target_lang.lower()[:2]}.json")
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(translated, f, ensure_ascii=False, indent=2)
+
+    return output_path</code></pre>
+</div>
+
+<h2>Key Challenges</h2>
+<ul>
+    <li><strong>Consistency:</strong> LLMs may translate the same term differently across calls - use glossaries and few-shot examples</li>
+    <li><strong>Placeholder preservation:</strong> Must not translate variables like <code>{user_name}</code> or HTML tags</li>
+    <li><strong>Length expansion:</strong> Translations may be 20-40% longer, breaking UI layouts</li>
+    <li><strong>Right-to-left languages:</strong> Arabic, Hebrew need special UI handling beyond translation</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

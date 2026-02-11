@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Resilience Patterns for AI Infrastructure</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Resilience: Bulkheads, Hedged Requests, and Load Balancing</h1>
+
+<div class="content-section">
+<h2>1. Beyond the Basics: Architecting for High Availability</h2>
+<p>Once you have implemented basic retries and circuit breakers, you have a solid foundation. However, for applications serving millions of users or handling critical business logic, you need advanced architectural patterns that provide "defense in depth." This module explores how to isolate failures and maximize throughput using industry-standard resilience patterns adapted for LLMs.</p>
+
+<h2>2. The Bulkhead Pattern</h2>
+<p>The <strong>Bulkhead Pattern</strong> is named after the internal partitions of a ship's hull. If one section is breached (flooded), the bulkheads prevent the water from spreading to the rest of the ship. In software, bulkheads isolate different parts of your application so that a failure in one doesn't bring down the others.</p>
+
+<h3>Applying Bulkheads to LLMs</h3>
+<p>Imagine your application has three features: a Customer Support Chatbot, an internal Data Summarizer, and an automated Code Reviewer. All three use the same OpenAI API key.</p>
+<p>If the Data Summarizer suddenly initiates a massive batch job that consumes your entire Token-Per-Minute (TPM) quota, your Customer Support Chatbot will start failing with 429 errors. A bulkhead approach would involve:</p>
+<ul>
+    <li><strong>Separate API Keys/Accounts:</strong> Using different credentials for each feature to ensure their quotas are independent.</li>
+    <li><strong>Dedicated Connection Pools:</strong> Limiting the number of concurrent requests allowed for each feature at the application level.</li>
+    <li><strong>Isolated Infrastructure:</strong> Running different features on different server clusters or serverless functions.</li>
+</ul>
+
+<h2>3. Load Balancing and Dynamic Routing</h2>
+<p>A single LLM provider is a single point of failure. <strong>Load Balancing</strong> across multiple providers or multiple deployments of the same model increases both your effective rate limit and your availability.</p>
+
+<h3>Smart Routing Strategies</h3>
+<ul>
+    <li><strong>Round-Robin:</strong> Cycling through a list of available providers or API keys to distribute load evenly.</li>
+    <li><strong>Latency-Based Routing:</strong> Measuring the response time of each provider and automatically sending more traffic to the fastest ones.</li>
+    <li><strong>Cost-Aware Routing:</strong> Routing to the cheapest provider that meets your quality requirements, only switching to more expensive ones if the primary is down or slow.</li>
+    <li><strong>Geographic Routing:</strong> Using "Edge" deployments to route requests to the nearest data center (e.g., using Azure OpenAI deployments in different regions) to minimize network latency.</li>
+</ul>
+
+<h2>4. Hedged Requests: Trading Compute for Latency</h2>
+<p>One of the most effective, albeit expensive, ways to reduce "tail latency" (P99) is the <strong>Hedged Request</strong> pattern. This involves sending the same request to two or more providers simultaneously (e.g., OpenAI and Anthropic) and taking the response from whoever finishes first.</p>
+<p>While this doubles your cost, it significantly reduces the chance of a user experiencing a "hang" or a slow response. A common variation is to send the first request, wait for a short "hedging delay" (e.g., 500ms), and only then send the second request if the first hasn't responded.</p>
+
+<div class="code-block">
+<pre><code># Conceptual Hedged Request
+async def hedged_llm_call(prompt):
+    task1 = asyncio.create_task(call_openai(prompt))
+
+    # Wait for a brief moment before sending the hedge
+    done, pending = await asyncio.wait([task1], timeout=0.5)
+
+    if task1 in done:
+        return task1.result()
+
+    # Still waiting? Send the second request to Anthropic
+    task2 = asyncio.create_task(call_anthropic(prompt))
+
+    # Wait for either to finish
+    done, pending = await asyncio.wait(
+        [task1, task2],
+        return_when=asyncio.FIRST_COMPLETED
+    )
+
+    result = list(done)[0].result()
+    # Cancel the remaining task to save resources
+    for task in pending:
+        task.cancel()
+    return result</code></pre>
+</div>
+
+<h2>5. Asynchronous Processing and Queues</h2>
+<p>For many LLM tasks, the user doesn't need the answer in real-time. Moving these tasks out of the request-response cycle and into a <strong>Background Queue</strong> (like SQS, Redis, or RabbitMQ) is a major boost for resilience.</p>
+<p>If your API provider is down, the background jobs stay in the queue. They don't fail; they just wait. Once the provider is back online, your workers can process the backlog at a controlled rate that respects your TPM limits. This "levels out" the load and ensures that transient outages don't result in data loss.</p>
+
+<h2>6. Context Window and State Resilience</h2>
+<p>Long conversations present a unique resilience challenge: <strong>Context Overflow</strong>. If a conversation exceeds the model's token limit, the API will return an error (400 Bad Request).</p>
+<p>A resilient system handles this by implementing a <strong>Sliding Window</strong> or <strong>Summarization Strategy</strong>:</p>
+<ul>
+    <li><strong>Sliding Window:</strong> Automatically dropping the oldest messages in the conversation to stay within the limit.</li>
+    <li><strong>Recursive Summarization:</strong> When the limit is reached, use the LLM to summarize the conversation so far, and use that summary as the new "starting point" for the context. This preserves the meaning while drastically reducing token count.</li>
+</ul>
+
+<h2>Hands-on Exercise: Implementing a Bulkhead and Hedged Request</h2>
+<p>In this exercise, you will create a simplified version of a bulkhead pattern and a hedged request to understand how they improve system stability.</p>
+
+<h3>Task 1: Creating a Bulkhead</h3>
+<p>Define two separate connection pools (simulated by simple counters) for a "UserChat" and a "BackgroundSummarizer" feature. Ensure that the "BackgroundSummarizer" cannot consume more than 2 concurrent slots, even if it has hundreds of documents to process.</p>
+
+<div class="code-block">
+<pre><code>import asyncio
+
+class Bulkhead:
+    def __init__(self, max_concurrent):
+        self.semaphore = asyncio.Semaphore(max_concurrent)
+
+    async def execute(self, task_name, task_func):
+        async with self.semaphore:
+            print(f"Executing {task_name}...")
+            await task_func()
+            print(f"Finished {task_name}.")
+
+# Usage
+user_chat_bulkhead = Bulkhead(10)
+summarizer_bulkhead = Bulkhead(2)
+
+async def simulate_llm_call():
+    await asyncio.sleep(1) # Simulate network latency
+</code></pre>
+</div>
+
+<h3>Task 2: Implementing a Hedged Request</h3>
+<p>Write an asynchronous function that sends a request to "Provider A," waits for 200ms, and if "Provider A" hasn't responded, sends the same request to "Provider B." Return the first successful result.</p>
+
+<div class="code-block">
+<pre><code>async def provider_a():
+    await asyncio.sleep(0.5) # Simulate a slow response
+    return "Response from Provider A"
+
+async def provider_b():
+    await asyncio.sleep(0.1) # Simulate a fast fallback
+    return "Response from Provider B"
+
+async def hedged_request():
+    # Your logic here
+    pass
+</code></pre>
+</div>
+
+<h2>Conclusion</h2>
+<p>Advanced resilience is about moving from "surviving" failures to "thriving" in a complex environment. By implementing bulkheads to isolate features, load balancing to maximize availability, and hedged requests to minimize latency, you can build AI infrastructure that rivals the reliability of traditional tier-1 web services. In the next module, we'll focus on the financial aspect of resilience: Cost Optimization.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

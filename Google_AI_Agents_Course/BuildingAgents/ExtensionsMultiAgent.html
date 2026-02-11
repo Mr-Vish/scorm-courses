@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Extensions and Multi-Agent Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Extensions and Multi-Agent Patterns</h1>
+
+
+<h2>Pre-Built Extensions</h2>
+<p>Vertex AI provides ready-to-use extensions for common integrations:</p>
+<table>
+    <tr><th>Extension</th><th>Capability</th></tr>
+    <tr><td>Code Interpreter</td><td>Execute Python code, data analysis, chart generation</td></tr>
+    <tr><td>Vertex AI Search</td><td>Search enterprise data stores</td></tr>
+    <tr><td>Google Workspace</td><td>Access Docs, Sheets, Gmail, Calendar</td></tr>
+    <tr><td>BigQuery</td><td>Query structured data with natural language</td></tr>
+</table>
+
+<h2>Custom Extensions with OpenAPI</h2>
+<div class="code-block">
+<pre><code># Define a custom extension using OpenAPI spec
+extension = aiplatform.Extension.create(
+    display_name="Inventory API",
+    manifest={
+        "api_spec": {
+            "open_api_gcs_uri": "gs://my-bucket/inventory-api.yaml"
+        },
+        "auth_config": {
+            "auth_type": "API_KEY_CONFIG",
+            "api_key_config": {"name": "x-api-key", "api_key_secret": "projects/my-project/secrets/api-key"}
+        }
+    }
+)</code></pre>
+</div>
+
+<h2>Multi-Agent Orchestration</h2>
+<p>Build systems with specialized agents that collaborate:</p>
+<ul>
+    <li><strong>Router Agent:</strong> Classifies user intent and delegates to specialist agents</li>
+    <li><strong>Research Agent:</strong> Searches data stores and summarizes findings</li>
+    <li><strong>Action Agent:</strong> Executes operations (booking, ordering, updating)</li>
+    <li><strong>Review Agent:</strong> Validates actions before execution</li>
+</ul>
+
+<h2>LangChain Integration</h2>
+<div class="code-block">
+<pre><code>from langchain_google_vertexai import ChatVertexAI
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.prompts import ChatPromptTemplate
+
+llm = ChatVertexAI(model_name="gemini-1.5-pro")
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful travel assistant."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}")
+])
+
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+result = executor.invoke({"input": "Find flights from NYC to LA next Friday"})</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

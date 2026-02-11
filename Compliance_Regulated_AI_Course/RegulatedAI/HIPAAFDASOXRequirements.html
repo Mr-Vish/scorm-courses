@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>HIPAA, FDA, and SOX Requirements for AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>HIPAA, FDA, and SOX Requirements for AI</h1>
+
+
+<h2>AI in Regulated Industries</h2>
+<p>Healthcare, finance, and legal sectors face strict regulatory requirements that constrain how AI can be used. Understanding these requirements is essential for any organization deploying GenAI in these domains.</p>
+
+<h2>Healthcare: HIPAA and FDA</h2>
+<table>
+    <tr><th>Regulation</th><th>Requirement</th><th>Impact on GenAI</th></tr>
+    <tr><td>HIPAA Privacy Rule</td><td>Protect patient health information (PHI)</td><td>PHI must never reach third-party LLM APIs without a BAA</td></tr>
+    <tr><td>HIPAA Security Rule</td><td>Technical safeguards for electronic PHI</td><td>Encryption at rest and in transit, access controls, audit logs</td></tr>
+    <tr><td>FDA SaMD</td><td>Software as a Medical Device regulation</td><td>AI that diagnoses or recommends treatment may need FDA clearance</td></tr>
+    <tr><td>FDA 21 CFR Part 11</td><td>Electronic records and signatures</td><td>AI-assisted clinical documentation needs audit trails</td></tr>
+</table>
+
+<h2>Healthcare AI Architecture</h2>
+<div class="code-block">
+<pre><code># HIPAA-compliant GenAI architecture
+# Key principle: PHI never leaves your controlled environment
+
+# Option 1: On-premise model (highest compliance)
+# - Run Llama 3 or Phi-3 on your own hardware
+# - PHI stays within your security boundary
+# - Full control over data retention
+
+# Option 2: Cloud with BAA
+# - Use Azure OpenAI (Microsoft signs BAA)
+# - Use AWS Bedrock (Amazon signs BAA)
+# - Deploy within your cloud VPC
+# - Enable customer-managed encryption keys
+
+# Option 3: De-identification pipeline
+# 1. Strip all 18 HIPAA identifiers before LLM call
+# 2. Process de-identified text with any LLM
+# 3. Re-associate with patient record after response
+# WARNING: De-identification must be validated - regex is not sufficient</code></pre>
+</div>
+
+<h2>Finance: SOX, SEC, and Banking Regulations</h2>
+<table>
+    <tr><th>Regulation</th><th>Requirement</th><th>Impact on GenAI</th></tr>
+    <tr><td>SOX (Sarbanes-Oxley)</td><td>Internal controls over financial reporting</td><td>AI-generated financial reports need human sign-off and audit trails</td></tr>
+    <tr><td>SEC Fair Disclosure</td><td>Consistent public disclosures</td><td>AI must not generate materially different disclosures for different audiences</td></tr>
+    <tr><td>SR 11-7 (OCC/Fed)</td><td>Model risk management for banks</td><td>AI models used in lending decisions need full validation and documentation</td></tr>
+    <tr><td>GDPR/CCPA</td><td>Right to explanation</td><td>Automated decisions must be explainable to affected individuals</td></tr>
+</table>
+
+<h2>Legal Industry Considerations</h2>
+<ul>
+    <li><strong>Attorney-client privilege:</strong> Sending client information to third-party AI services may waive privilege</li>
+    <li><strong>Duty of competence:</strong> Lawyers must understand AI limitations (ABA Model Rule 1.1)</li>
+    <li><strong>Court requirements:</strong> Several courts now require disclosure of AI use in legal filings</li>
+    <li><strong>Hallucination risk:</strong> AI-generated legal citations must be verified (see Mata v. Avianca case)</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

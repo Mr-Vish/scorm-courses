@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 7: Advanced Topics - Multi-tenant Agents</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>7.2 Orchestrating Multi-tenant AI Agents</h1>
+
+<p>The next frontier in multi-tenant AI is the deployment of autonomous "Agents" that can perform complex tasks, use tools, and maintain long-term memory. Orchestrating these agents in a multi-tenant environment adds several layers of complexity.</p>
+
+<h2>What is a Multi-tenant Agent?</h2>
+<p>In this context, an agent is an LLM-powered process that is specifically configured for a single tenant. It has access to that tenant's tools (APIs, databases) and knowledge, and it works towards goals defined by that tenant.</p>
+
+<h2>Key Challenges in Agent Orchestration</h2>
+<ul>
+    <li><strong>State Management:</strong> Agents are often stateful. They need to remember past interactions, intermediate results, and the current status of their goals. In a multi-tenant system, this state must be securely stored and isolated for each tenant.</li>
+    <li><strong>Tool Access Control:</strong> An agent for Tenant A must never be able to call a tool that belongs to Tenant B. This requires a robust permissions system where every tool call is validated against the tenant's identity.</li>
+    <li><strong>Long-running Processes:</strong> Unlike a simple chat request, an agent might run for minutes or even hours. Managing these long-running tasks without blocking other tenants requires a distributed task queue (like Celery or Temporal).</li>
+    <li><strong>Cost Attribution for Multi-step Tasks:</strong> An agent may make dozens of LLM calls and tool invocations to complete a single task. Aggregating these costs and attributing them to the correct tenant is essential for profitability.</li>
+</ul>
+
+<h2>Architectural Patterns for Multi-tenant Agents</h2>
+<h3>1. The "Worker Per Tenant" Pattern (Silo)</h3>
+<p>Each tenant has a dedicated pool of agent workers. This provides the best isolation but is very expensive to scale.</p>
+
+<h3>2. The "Shared Worker Pool" Pattern (Pool)</h3>
+<p>A large pool of workers handles tasks for all tenants. Each task in the queue includes the <code>tenant_id</code> and the necessary credentials. The worker assumes the identity of the tenant before executing the task.</p>
+
+<h2>Securing the Agent's "Thought Process"</h2>
+<p>Agents often use a "Chain of Thought" or "Inner Monologue" to reason about their tasks. This reasoning may contain sensitive information.
+<ul>
+    <li><strong>Isolated Logs:</strong> Ensure that the internal logs of an agent's reasoning are stored in tenant-specific locations.</li>
+    <li><strong>Strict Egress Filtering:</strong> If an agent is allowed to write and execute code (e.g., in a Python sandbox), that sandbox must have no network access to other tenants' resources.</li>
+</ul>
+
+<h2>The Role of Multi-tenant Memory</h2>
+<p>Agents need "long-term memory" to be effective over time. This is often implemented using a vector database.
+<ul>
+    <li><strong>Entity Memory:</strong> Remembering specific facts about the tenant's business or users.</li>
+    <li><strong>Procedural Memory:</strong> Remembering how to perform specific tasks based on previous successes or failures.</li>
+</ul>
+<p>As with all tenant data, this memory must be strictly partitioned and encrypted.</p>
+
+<p>By effectively orchestrating multi-tenant agents, you can provide your customers with powerful, autonomous assistants that can transform their business processes while maintaining the highest levels of security and scalability.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

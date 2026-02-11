@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 3: Fallback and Redundancy</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Designing Resilient AI Applications</h1>
+
+<p>AI model providers occasionally experience downtime or hit rate limits. For production applications, this is unacceptable. Fallback strategies ensure that if your primary model fails, the system automatically switches to an alternative model or provider.</p>
+
+<h2>3.1 Basic Fallbacks with LiteLLM</h2>
+<p>LiteLLM makes implementing fallbacks incredibly simple. You can define a list of models to try in order:
+<pre><code>import litellm
+
+response = litellm.completion(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello!"}],
+    fallbacks=["claude-3-5-sonnet-20241022", "azure/gpt-4"]
+)</code></pre>
+<p>If <code>gpt-4o</code> fails (due to a 500 error or a rate limit), LiteLLM will automatically try <code>claude-3-5-sonnet</code>, and then <code>azure/gpt-4</code>.</p>
+
+<h2>3.2 Advanced Fallback Logic</h2>
+<p>You can also define fallbacks based on specific error types:
+<ul>
+    <li><strong>Context Window Errors:</strong> If a prompt is too long for a small model, fallback to a model with a larger context window (e.g., from GPT-4o-mini to Claude 3 Opus).</li>
+    <li><strong>Rate Limit Errors:</strong> If you hit a rate limit on OpenAI, switch to Anthropic or a self-hosted instance of Llama 3.</li>
+    <li><strong>Timeout Errors:</strong> If a high-latency model takes too long, switch to a faster, smaller model to provide a quick (even if less accurate) response.</li>
+</ul></p>
+
+<h2>3.3 Load Balancing Across Providers</h2>
+<p>To improve performance and availability, you can load balance requests across multiple instances of the same model or different providers.
+<pre><code>model_list:
+  - model_name: my-load-balanced-model
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: key1
+  - model_name: my-load-balanced-model
+    litellm_params:
+      model: azure/gpt-4o
+      api_key: key2</code></pre>
+<p>The LiteLLM Proxy will automatically distribute traffic between these two endpoints.</p>
+
+<h2>3.4 Circuit Breakers</h2>
+<p>A "Circuit Breaker" is a pattern that prevents the system from repeatedly trying a failing model. If a model fails X times within a certain window, the circuit "opens," and all requests to that model are immediately failed or routed to a fallback for a cooling-off period. This protects your application from cascading failures.</p>
+
+<h2>3.5 Testing Resilience</h2>
+<p>It is critical to test your fallback logic. You can use tools to simulate API failures or rate limits to ensure that your system behaves correctly and that the transition to the fallback model is seamless for the user.</p>
+
+<p>By building redundancy into the core of your AI orchestration, you create applications that are robust, reliable, and truly production-ready.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

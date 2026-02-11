@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>What Are Large Language Models?</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+	<style>
+		.flowchart {
+			background: linear-gradient(135deg, #ffffff 0%, #fef7f0 100%);
+			border: 2px solid #F16F00;
+			border-radius: 16px;
+			padding: 2rem;
+			margin: 2rem 0;
+			box-shadow: 0 8px 25px rgba(241, 111, 0, 0.1);
+		}
+		.flow-step {
+			background: white;
+			border: 2px solid #F16F00;
+			border-radius: 12px;
+			padding: 1rem;
+			margin: 1rem auto;
+			max-width: 600px;
+			text-align: center;
+			font-weight: 600;
+			color: #2d3748;
+			position: relative;
+		}
+		.flow-step::after {
+			content: '↓';
+			display: block;
+			font-size: 1.5rem;
+			color: #F16F00;
+			margin-top: 0.5rem;
+		}
+		.flow-step:last-child::after {
+			display: none;
+		}
+		@media (max-width: 768px) {
+			.flowchart {
+				padding: 1rem;
+			}
+			.flow-step {
+				padding: 0.75rem;
+				font-size: 0.9rem;
+			}
+		}
+	</style>
+</head>
+<body>
+<h1>What Are Large Language Models?</h1>
+
+<h2>Understanding Large Language Models</h2>
+<p>A Large Language Model (LLM) is a type of artificial intelligence system based on deep neural networks, specifically designed to understand and generate human language. These models are trained on vast amounts of text data from the internet, books, articles, and other sources, enabling them to learn patterns, context, and relationships in language.</p>
+
+<p>LLMs like Claude (Anthropic), GPT-4 (OpenAI), Gemini (Google), and Llama (Meta) represent the foundation of the current generative AI revolution. They power applications ranging from chatbots and virtual assistants to code generation tools and content creation platforms.</p>
+
+<h2>Key Concepts</h2>
+<table>
+    <tr><th>Concept</th><th>Explanation</th><th>Example</th></tr>
+    <tr>
+        <td class="rowheader">Parameters</td>
+        <td>Learned weights in the neural network that determine the model's behavior. More parameters generally means more capability and knowledge.</td>
+        <td>Claude 3.5 Sonnet and GPT-4 have hundreds of billions of parameters</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Tokens</td>
+        <td>The fundamental units LLMs process. A token is roughly 3/4 of a word or about 4 characters.</td>
+        <td>"Hello world" = 2 tokens, "artificial intelligence" = 3 tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Window</td>
+        <td>Maximum number of tokens the model can process at once, including both input and output.</td>
+        <td>Claude 3.5 Sonnet: 200K tokens (~150K words), GPT-4 Turbo: 128K tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Inference</td>
+        <td>The process of generating output from the model. Each token is predicted one at a time based on previous context.</td>
+        <td>When you ask a question, the model performs inference to generate the response</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Training</td>
+        <td>The process of learning from data. Involves pre-training on massive text corpora, then fine-tuning on specific tasks.</td>
+        <td>GPT-4 was trained on ~13 trillion tokens from web pages, books, and code</td>
+    </tr>
+</table>
+
+<h2>How LLMs Generate Text</h2>
+<p>LLMs use an autoregressive approach to generate text, predicting one token at a time based on all previous tokens. This process continues until a stop condition is met (reaching max tokens, generating a stop token, or completing the thought).</p>
+
+<div class="flowchart">
+    <h3 style="text-align: center; color: #F16F00; margin-bottom: 1rem;">Text Generation Process</h3>
+    <div class="flow-step">1. Input text is tokenized (converted to numerical tokens)</div>
+    <div class="flow-step">2. Tokens are processed through multiple transformer layers</div>
+    <div class="flow-step">3. Model outputs probability distribution over all possible next tokens</div>
+    <div class="flow-step">4. A token is selected using sampling parameters (temperature, top-p)</div>
+    <div class="flow-step">5. Selected token is appended to the sequence and process repeats</div>
+</div>
+
+<h2>Transformer Architecture</h2>
+<p>LLMs are built on the transformer architecture, introduced in the 2017 paper "Attention Is All You Need". Key components include:</p>
+<ul>
+    <li><strong>Self-Attention Mechanism:</strong> Allows the model to weigh the importance of different words in the context when processing each token</li>
+    <li><strong>Multi-Head Attention:</strong> Multiple attention mechanisms running in parallel, capturing different types of relationships</li>
+    <li><strong>Feed-Forward Networks:</strong> Process the attention outputs to generate predictions</li>
+    <li><strong>Positional Encoding:</strong> Provides information about the position of tokens in the sequence</li>
+</ul>
+
+<h2>Sampling Parameters</h2>
+<p>These parameters control how the model selects the next token from the probability distribution:</p>
+<table>
+    <tr><th>Parameter</th><th>Range</th><th>Effect</th><th>Use Case</th></tr>
+    <tr>
+        <td class="rowheader">Temperature</td>
+        <td>0.0 - 2.0</td>
+        <td>Controls randomness. Lower = more deterministic, higher = more creative</td>
+        <td>0.0 for factual tasks, 0.7-1.0 for creative writing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Top-p (Nucleus)</td>
+        <td>0.0 - 1.0</td>
+        <td>Only considers tokens whose cumulative probability exceeds p</td>
+        <td>0.9-0.95 for balanced, diverse outputs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Top-k</td>
+        <td>1 - 100+</td>
+        <td>Only considers the k most likely next tokens</td>
+        <td>40-50 for focused but varied responses</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Max Tokens</td>
+        <td>1 - context limit</td>
+        <td>Maximum length of the generated response</td>
+        <td>Set based on expected response length</td>
+    </tr>
+</table>
+
+<h2>Real-World Example</h2>
+<p>Consider asking an LLM: "Explain photosynthesis in simple terms"</p>
+<blockquote>
+<pre>
+# The model processes this through:
+1. Tokenization: ["Explain", "photos", "yn", "thesis", "in", "simple", "terms"]
+2. Context understanding via self-attention
+3. Token-by-token generation:
+   - "Photos" (probability: 0.85)
+   - "yn" (probability: 0.92)
+   - "thesis" (probability: 0.88)
+   - "is" (probability: 0.95)
+   - "the" (probability: 0.93)
+   - "process" (probability: 0.87)
+   - ... continues until complete
+
+# With temperature=0.7, the model balances accuracy with natural variation
+</pre>
+</blockquote>
+
+<h2>Model Scale Comparison</h2>
+<table>
+    <tr><th>Model</th><th>Parameters</th><th>Context Window</th><th>Key Strength</th></tr>
+    <tr>
+        <td class="rowheader">GPT-4</td>
+        <td>~1.7 trillion (estimated)</td>
+        <td>128K tokens</td>
+        <td>Broad capabilities, strong reasoning</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude 3.5 Sonnet</td>
+        <td>Not disclosed</td>
+        <td>200K tokens</td>
+        <td>Long context, safety, coding</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Llama 3 (70B)</td>
+        <td>70 billion</td>
+        <td>8K tokens</td>
+        <td>Open-source, self-hostable</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Gemini 1.5 Pro</td>
+        <td>Not disclosed</td>
+        <td>1M tokens</td>
+        <td>Multimodal, extremely long context</td>
+    </tr>
+</table>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>LLMs are neural networks trained on massive text datasets to understand and generate language</li>
+    <li>They use transformer architecture with self-attention mechanisms</li>
+    <li>Text generation is autoregressive - one token at a time</li>
+    <li>Sampling parameters control the creativity and determinism of outputs</li>
+    <li>Different models have different strengths, context windows, and use cases</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

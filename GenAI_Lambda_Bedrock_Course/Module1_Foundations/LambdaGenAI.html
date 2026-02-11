@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Lambda for GenAI Applications</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Lambda for GenAI Applications</h1>
+
+<h2>Why Lambda for GenAI?</h2>
+<p>AWS Lambda is ideal for GenAI applications because it provides automatic scaling, pay-per-use pricing, and eliminates server management. Lambda functions can invoke Bedrock models, process responses, and integrate with other AWS services seamlessly.</p>
+
+<h3>Key Advantages</h3>
+<ul>
+    <li><strong>Auto-Scaling:</strong> Handle 1 or 1 million requests without configuration</li>
+    <li><strong>Cost-Effective:</strong> Pay only for compute time used (100ms granularity)</li>
+    <li><strong>Event-Driven:</strong> Trigger from API Gateway, S3, SQS, EventBridge, etc.</li>
+    <li><strong>Integrated:</strong> Native AWS SDK access to Bedrock, DynamoDB, S3</li>
+    <li><strong>Managed:</strong> No patching, scaling, or infrastructure management</li>
+</ul>
+
+<h2>Lambda Configuration for GenAI</h2>
+
+<h3>Memory and CPU</h3>
+<p>Lambda allocates CPU proportionally to memory. GenAI workloads benefit from higher memory:</p>
+
+<table>
+    <tr><th>Memory</th><th>vCPU</th><th>Use Case</th><th>Cost (per GB-second)</th></tr>
+    <tr><td>128 MB</td><td>~0.08</td><td>Not recommended for GenAI</td><td>$0.0000166667</td></tr>
+    <tr><td>512 MB</td><td>~0.33</td><td>Simple Bedrock calls, small payloads</td><td>$0.0000666667</td></tr>
+    <tr><td>1024 MB (1 GB)</td><td>~0.58</td><td>Standard GenAI workloads</td><td>$0.0000133333</td></tr>
+    <tr><td>2048 MB (2 GB)</td><td>1 vCPU</td><td>Large payloads, RAG, embeddings</td><td>$0.0000266667</td></tr>
+    <tr><td>3008 MB (3 GB)</td><td>~1.75</td><td>Heavy processing, batch operations</td><td>$0.0000400000</td></tr>
+</table>
+
+<p><strong>Recommendation:</strong> Start with 1024 MB for most GenAI workloads, increase to 2048 MB if processing large documents or embeddings.</p>
+
+<h3>Timeout Configuration</h3>
+<table>
+    <tr><th>Timeout</th><th>Use Case</th><th>Considerations</th></tr>
+    <tr><td>3 seconds (default)</td><td>Not suitable for GenAI</td><td>Bedrock calls typically take 2-10 seconds</td></tr>
+    <tr><td>30 seconds</td><td>Simple Q&A, short responses</td><td>Sufficient for Haiku with short prompts</td></tr>
+    <tr><td>60-120 seconds</td><td>Standard GenAI workloads</td><td>Recommended for most Bedrock calls</td></tr>
+    <tr><td>300 seconds (5 min)</td><td>Long-form generation, RAG</td><td>For complex prompts or large outputs</td></tr>
+    <tr><td>900 seconds (15 min)</td><td>Batch processing, heavy workloads</td><td>Maximum Lambda timeout</td></tr>
+</table>
+
+<h2>Cold Starts and Optimization</h2>
+
+<h3>Cold Start Impact</h3>
+<p>Cold starts occur when Lambda initializes a new execution environment. For GenAI applications:</p>
+
+<table>
+    <tr><th>Runtime</th><th>Cold Start Duration</th><th>Mitigation</th></tr>
+    <tr><td>Python 3.11</td><td>200-500ms</td><td>Recommended for GenAI (fast, popular)</td></tr>
+    <tr><td>Python 3.11 + Layers</td><td>500-1000ms</td><td>Use for large dependencies (boto3, numpy)</td></tr>
+    <tr><td>Node.js 20</td><td>150-300ms</td><td>Faster cold starts, good for simple APIs</td></tr>
+    <tr><td>Java 17</td><td>2-5 seconds</td><td>Avoid for latency-sensitive GenAI</td></tr>
+</table>
+
+<h3>Cold Start Optimization Techniques</h3>
+<div class="code-block">
+<pre><code># 1. Initialize clients outside handler
+import boto3, json
+
+bedrock = boto3.client('bedrock-runtime')  # Reused across invocations
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('conversations')
+
+def lambda_handler(event, context):
+    # Handler code uses pre-initialized clients
+    response = bedrock.invoke_model(...)
+    return {'statusCode': 200, 'body': json.dumps(result)}
+
+# 2. Use Lambda SnapStart (Java only)
+# Reduces Java cold starts from 5s to <1s
+
+# 3. Provisioned Concurrency
+# Pre-warm Lambda instances for consistent performance
+# Cost: $0.000004167 per GB-second (in addition to invocation costs)</code></pre>
+</div>
+
+<h2>Lambda Layers for GenAI</h2>
+<p>Lambda Layers allow sharing code and dependencies across functions:</p>
+
+<h3>Common GenAI Layers</h3>
+<table>
+    <tr><th>Layer</th><th>Contents</th><th>Size</th><th>Use Case</th></tr>
+    <tr><td>AWS SDK Layer</td><td>Latest boto3 with Bedrock support</td><td>~10 MB</td><td>Access newest Bedrock features</td></tr>
+    <tr><td>Data Processing</td><td>pandas, numpy, scipy</td><td>~50 MB</td><td>Data transformation, embeddings</td></tr>
+    <tr><td>Vector DB Clients</td><td>pinecone, weaviate, opensearch</td><td>~20 MB</td><td>RAG implementations</td></tr>
+    <tr><td>Utilities</td><td>Custom prompt templates, helpers</td><td>~1 MB</td><td>Shared business logic</td></tr>
+</table>
+
+<div class="code-block">
+<pre><code># Creating a Lambda Layer
+# 1. Create directory structure
+mkdir -p layer/python
+pip install boto3 -t layer/python/
+
+# 2. Zip the layer
+cd layer && zip -r ../bedrock-layer.zip . && cd ..
+
+# 3. Publish layer
+aws lambda publish-layer-version \
+    --layer-name bedrock-sdk \
+    --zip-file fileb://bedrock-layer.zip \
+    --compatible-runtimes python3.11
+
+# 4. Attach to Lambda function
+aws lambda update-function-configuration \
+    --function-name my-genai-function \
+    --layers arn:aws:lambda:us-east-1:123456789012:layer:bedrock-sdk:1</code></pre>
+</div>
+
+<h2>Environment Variables</h2>
+<div class="code-block">
+<pre><code>import os
+
+# Configuration via environment variables
+MODEL_ID = os.environ.get('BEDROCK_MODEL_ID', 'anthropic.claude-3-sonnet-20240229-v1:0')
+MAX_TOKENS = int(os.environ.get('MAX_TOKENS', '1024'))
+TEMPERATURE = float(os.environ.get('TEMPERATURE', '0.7'))
+TABLE_NAME = os.environ['DYNAMODB_TABLE']  # Required
+
+def lambda_handler(event, context):
+    response = bedrock.invoke_model(
+        modelId=MODEL_ID,
+        body=json.dumps({
+            'anthropic_version': 'bedrock-2023-05-31',
+            'max_tokens': MAX_TOKENS,
+            'temperature': TEMPERATURE,
+            'messages': [...]
+        })
+    )</code></pre>
+</div>
+
+<h2>Error Handling Patterns</h2>
+
+<h3>Retry Logic with Exponential Backoff</h3>
+<div class="code-block">
+<pre><code>from botocore.exceptions import ClientError
+import time
+
+def invoke_bedrock_with_retry(prompt, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            response = bedrock.invoke_model(
+                modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+                body=json.dumps({
+                    'anthropic_version': 'bedrock-2023-05-31',
+                    'max_tokens': 1024,
+                    'messages': [{'role': 'user', 'content': prompt}]
+                })
+            )
+            return json.loads(response['body'].read())
+        
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            
+            if error_code == 'ThrottlingException':
+                if attempt < max_retries - 1:
+                    wait_time = (2 ** attempt) + (random.randint(0, 1000) / 1000)
+                    time.sleep(wait_time)
+                    continue
+                raise
+            
+            elif error_code == 'ModelTimeoutException':
+                # Model took too long, retry with shorter prompt
+                raise
+            
+            elif error_code == 'ValidationException':
+                # Invalid input, don't retry
+                raise
+            
+            else:
+                raise
+    
+    raise Exception(f'Max retries ({max_retries}) exceeded')</code></pre>
+</div>
+
+<h3>Graceful Degradation</h3>
+<div class="code-block">
+<pre><code>def lambda_handler(event, context):
+    try:
+        # Try primary model (Sonnet)
+        response = invoke_bedrock('anthropic.claude-3-sonnet-20240229-v1:0', prompt)
+        return {'statusCode': 200, 'body': json.dumps(response)}
+    
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ThrottlingException':
+            try:
+                # Fallback to faster, cheaper model (Haiku)
+                response = invoke_bedrock('anthropic.claude-3-haiku-20240307-v1:0', prompt)
+                return {'statusCode': 200, 'body': json.dumps(response), 'model': 'fallback'}
+            except:
+                # Return cached or default response
+                return {'statusCode': 503, 'body': json.dumps({'error': 'Service temporarily unavailable'})}
+        raise</code></pre>
+</div>
+
+<h2>Lambda Pricing for GenAI</h2>
+
+<h3>Cost Calculation Example</h3>
+<p>Scenario: 1M requests/month, 1024 MB memory, 5-second average duration</p>
+
+<table>
+    <tr><th>Component</th><th>Calculation</th><th>Cost</th></tr>
+    <tr><td>Requests</td><td>1M requests × $0.20 per 1M</td><td>$0.20</td></tr>
+    <tr><td>Compute</td><td>1M × 5s × 1GB × $0.0000133333</td><td>$66.67</td></tr>
+    <tr><td>Bedrock (Sonnet)</td><td>1M × (0.5K input × $0.003 + 0.2K output × $0.015)</td><td>$4,500</td></tr>
+    <tr><td><strong>Total</strong></td><td></td><td><strong>$4,566.87/month</strong></td></tr>
+</table>
+
+<p><strong>Key Insight:</strong> Bedrock costs dominate (98.5%), Lambda is negligible. Focus optimization on reducing tokens, not Lambda costs.</p>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Memory:</strong> Use 1024-2048 MB for GenAI workloads</li>
+    <li><strong>Timeout:</strong> Set 60-120 seconds for Bedrock calls</li>
+    <li><strong>Initialization:</strong> Create clients outside handler for reuse</li>
+    <li><strong>Layers:</strong> Use layers for large dependencies (boto3, numpy)</li>
+    <li><strong>Error Handling:</strong> Implement retries with exponential backoff</li>
+    <li><strong>Monitoring:</strong> Track cold starts, duration, errors in CloudWatch</li>
+    <li><strong>Provisioned Concurrency:</strong> Use only for latency-critical applications</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

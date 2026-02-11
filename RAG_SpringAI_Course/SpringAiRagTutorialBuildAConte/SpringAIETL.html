@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Spring AI ETL Pipelines</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring AI ETL Pipelines</h1>
+<div class="container">
+<h2>Building ETL Pipelines with Spring AI</h2>
+<p>Before you can perform RAG, you must first ingest your documents into a Vector Store. This process is known as <strong>ETL</strong>: <strong>E</strong>xtract, <strong>T</strong>ransform, and <strong>L</strong>oad. Spring AI provides a dedicated set of components for building these pipelines in a clear and declarative way.</p>
+
+<h3>The ETL Workflow</h3>
+<ol>
+    <li><strong>Extract:</strong> Reading data from various sources (PDFs, Word docs, websites, databases). In Spring AI, this is handled by <code>DocumentReader</code> implementations.</li>
+    <li><strong>Transform:</strong> Processing the documents into chunks and adding metadata. This is handled by <code>DocumentTransformer</code> implementations.</li>
+    <li><strong>Load:</strong> Saving the final chunks into the Vector Store. This is handled by the <code>VectorStore</code> implementation itself.</li>
+</ol>
+
+<h3>Document Readers (Extract)</h3>
+<p>Spring AI comes with readers for many common formats:
+<ul>
+    <li><strong>TikaDocumentReader:</strong> Uses Apache Tika to automatically detect and read content from over 1,000 different file types (PDF, Office, etc.).</li>
+    <li><strong>JsonReader:</strong> Reads structured data from JSON files.</li>
+    <li><strong>TextReader:</strong> Reads simple plain-text files.</li>
+    <li><strong>PagePdfDocumentReader:</strong> A specialized reader for PDFs that can handle multi-page structures.</li>
+</ul></p>
+
+<h3>Document Transformers (Transform)</h3>
+<p>The transformation step is where you "prepare" your data for vectorization. The most common transformation is <strong>Chunking</strong>.
+<ul>
+    <li><strong>TokenTextSplitter:</strong> A popular transformer that splits text into chunks based on a specific number of tokens. This ensures that the chunks fit perfectly into the LLM's context window.</li>
+    <li><strong>ContentEnricher:</strong> A custom transformer where you can add metadata to each document, such as the source URL or a summary of the whole document.</li>
+    <li><strong>KeywordExtractor:</strong> A transformer that uses an LLM to identify key terms in each chunk and add them as metadata for better keyword search.</li>
+</ul></p>
+
+<h3>The 'VectorStore.add' Method (Load)</h3>
+<p>Once your documents are extracted and transformed, loading them is as simple as calling <code>vectorStore.add(documents)</code>. Behind the scenes, Spring AI uses your configured <code>EmbeddingModel</code> to vectorize the text before sending it to the database.</p>
+
+<h3>Building the Pipeline in Java</h3>
+<p>A typical Spring AI ETL pipeline can be expressed fluently:</p>
+<blockquote>
+<code>List&lt;Document&gt; documents = new TikaDocumentReader(resource).get();<br/>
+<br/>
+List&lt;Document&gt; transformedDocuments = new TokenTextSplitter()<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.apply(documents);<br/>
+<br/>
+vectorStore.add(transformedDocuments);</code>
+</blockquote>
+
+<h3>Scheduling and Automation</h3>
+<p>Because Spring AI is part of the Spring ecosystem, you can easily automate your ETL process.
+<ul>
+    <li>Use <strong>Spring Batch</strong> for large-scale document ingestion tasks.</li>
+    <li>Use <strong>@Scheduled</strong> tasks to periodically scrape websites or scan folders for new documents.</li>
+    <li>Use <strong>Spring Integration</strong> to trigger the ETL pipeline whenever a new file is uploaded to an S3 bucket or a message arrives on a queue.</li>
+</ul></p>
+
+<h3>Summary</h3>
+<p>The ETL pipeline is the "engine" that powers your RAG system's knowledge. By using Spring AI's modular readers and transformers, you can build robust and automated ingestion processes that ensure your AI always has access to the latest and most relevant information.</p>
+
+</div>
+</body>
+</html>

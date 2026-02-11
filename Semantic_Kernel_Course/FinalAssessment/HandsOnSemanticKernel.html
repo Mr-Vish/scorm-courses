@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on Exercise: Semantic Kernel Practice</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on Exercise: Building with Semantic Kernel</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>In this exercise, you will practice the fundamental steps for building an AI agent using the Semantic Kernel SDK in Python. You will work through tasks related to Kernel building, Plugin creation, and Memory search.</p>
+
+<h2>Task 1: Building the Kernel</h2>
+<p>You need to initialize a kernel and add a Chat Completion service.</p>
+<p><strong>Exercise:</strong> Fill in the missing code to correctly add an OpenAI service to the kernel.</p>
+
+<div class="code-block">
+<pre><code>from semantic_kernel import Kernel
+from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion
+
+kernel = Kernel()
+
+# Add the service
+kernel.__________( # What method adds a service?
+    OpenAIChatCompletion(
+        service_id="chat",
+        ai_model_id="gpt-4",
+        api_key="your-api-key"
+    )
+)
+</code></pre>
+</div>
+
+<h2>Task 2: Creating a Semantic Function</h2>
+<p>You want to create a function that translates a technical term into a simple explanation for a child.</p>
+<p><strong>Exercise:</strong> Write the prompt template for this semantic function using the <code>{{$input}}</code> variable.</p>
+
+<div class="code-block">
+<pre><code>explain_prompt = """
+Explain the following technical term: _________
+Explain it as if I am a 10-year old child.
+"""
+
+# Register it with the kernel
+my_function = kernel.create_function_from_prompt(
+    prompt=explain_prompt,
+    function_name="ExplainToChild",
+    plugin_name="Education"
+)
+</code></pre>
+</div>
+
+<h2>Task 3: Implementing a Native Plugin</h2>
+<p>You want to give your agent the ability to calculate the area of a circle.</p>
+<p><strong>Exercise:</strong> Complete the <code>@kernel_function</code> decorator and the method signature below.</p>
+
+<div class="code-block">
+<pre><code>import math
+from semantic_kernel.functions import kernel_function
+
+class GeometryPlugin:
+    @kernel_function(
+        name="CircleArea",
+        description="__________________________________________________"
+    )
+    def area(self, ________: float) -> float: # What parameter do we need?
+        return math.pi * radius ** 2
+</code></pre>
+</div>
+
+<h2>Task 4: Searching Semantic Memory</h2>
+<p>You have already saved several documents into a collection named "CompanyPolicies". You want to search for information about "Vacation Days".</p>
+<p><strong>Exercise:</strong> Fill in the arguments for the memory search call.</p>
+
+<div class="code-block">
+<pre><code>results = await kernel.memory.search_async(
+    collection="____________", # Which collection?
+    query="How many vacation days do I get?",
+    limit=1
+)
+
+print(results[0].text)
+</code></pre>
+</div>
+
+<h2>Conclusion</h2>
+<p>By completing these tasks, you have touched on every core component of the Semantic Kernel SDK. You've built a kernel, created both semantic and native functions, and performed a semantic search. These are the building blocks for any intelligent AI agent. Congratulations on completing the course material! You are now ready for the final assessment.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Resilience Case Studies and Architecture Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Architecture Case Studies: Resilience in the Wild</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>Theory is important, but seeing how these patterns are applied in real-world, high-stakes environments is where the real learning happens. In this final module, we will explore three case studies that demonstrate different approaches to LLM resilience, followed by a summary of "anti-patterns" you should avoid in your own architectures.</p>
+
+<h2>2. Case Study 1: The Multi-Provider Chatbot</h2>
+<p><strong>The Challenge:</strong> A global financial services firm built a customer-facing AI assistant. It needed 99.9% availability and strict data residency compliance.</p>
+<p><strong>The Solution:</strong>
+    <ul>
+        <li><strong>Multi-Provider Core:</strong> The system was architected to be provider-blind. It used an "AI Gateway" that could route requests to either Azure OpenAI (US-East), Azure OpenAI (Europe), or Anthropic (AWS Bedrock).</li>
+        <li><strong>Dynamic Failover:</strong> When the Gateway detected a 5xx error or high latency from Azure, it automatically shifted 20% of traffic to Anthropic. If the failure persisted, it shifted 100% within 30 seconds.</li>
+        <li><strong>The Result:</strong> During a major regional outage of the primary provider, the chatbot remained fully functional. Users noticed a slight change in the "tone" of the responses (as it switched to Claude), but the service never went down.</li>
+    </ul>
+</p>
+
+<h2>3. Case Study 2: High-Volume Document Analysis</h2>
+<p><strong>The Challenge:</strong> A legal tech startup needed to process 50,000+ contracts every night. The total token count often exceeded 200 million tokens per night, far surpassing standard API rate limits.</p>
+<p><strong>The Solution:</strong>
+    <ul>
+        <li><strong>Asynchronous Worker Pattern:</strong> They used a "Producer-Consumer" architecture with Amazon SQS. The web application would drop a contract into the queue, and a fleet of worker nodes would pick them up.</li>
+        <li><strong>Backpressure Management:</strong> The workers monitored the <code>x-ratelimit-remaining-tokens</code> headers. If the remaining quota dropped below 10%, the workers would automatically sleep for 60 seconds.</li>
+        <li><strong>Priority Lane:</strong> They implemented two queues. "Priority" was for user-uploaded documents that needed immediate results, and "Batch" was for the nightly bulk processing. The system always prioritized tokens for the "Priority" queue.</li>
+        <li><strong>The Result:</strong> The system successfully processed millions of tokens nightly without a single 429 error ever reaching the user-facing application.</li>
+    </ul>
+</p>
+
+<h2>4. Case Study 3: The Low-Latency Coding Assistant</h2>
+<p><strong>The Challenge:</strong> An IDE extension providing real-time code completions. If the suggestion takes more than 500ms, it's useless to the developer.</p>
+<p><strong>The Solution:</strong>
+    <ul>
+        <li><strong>Hedged Requests with Local SLMs:</strong> The extension would send a request to a remote GPT-4o model and simultaneously initiate a completion using a tiny, local model (like StarCoder-1B) running on the developer's machine.</li>
+        <li><strong>Aggressive 400ms Cutoff:</strong> If the remote model didn't return a result within 400ms, the extension would immediately use the local model's output.</li>
+        <li><strong>Semantic Caching:</strong> Common coding patterns (like "for loops" or "react components") were cached locally in the IDE to provide instant suggestions for 30% of prompts.</li>
+        <li><strong>The Result:</strong> A 100% "perceived" uptime. Even when the developer was offline or the API was slow, they still received helpful, albeit simpler, suggestions from the local model.</li>
+    </ul>
+</p>
+
+<h2>5. Resilience Anti-Patterns: What NOT to Do</h2>
+<p>In our research, we've seen several recurring mistakes that lead to fragile systems:</p>
+<ul>
+    <li><strong>The Infinite Loop:</strong> Retrying without a <code>max_retries</code> limit. This can lead to massive bills and effectively self-inflicted DDoS attacks on your own infrastructure.</li>
+    <li><strong>Hardcoded API Keys:</strong> Storing keys in the code rather than using a Secret Manager. If a key is revoked due to a security breach, your "resilient" system has no way to rotate it without a full code redeploy.</li>
+    <li><strong>Ignoring the 429:</strong> Treating a Rate Limit error like a generic 500. Retrying a 429 without backoff is the fastest way to get your account suspended.</li>
+    <li><strong>The "Giant Prompt":</strong> Sending a 10,000-word context every time without summarization. This makes the system slow, expensive, and prone to "context window" errors.</li>
+</ul>
+
+<h2>6. Summary of Best Practices</h2>
+<ol>
+    <li><strong>Always use Jitter:</strong> Never retry on a fixed schedule.</li>
+    <li><strong>Log Everything:</strong> You can't fix what you can't see. Use semantic logging and tracing.</li>
+    <li><strong>Diversify Providers:</strong> Don't put all your "AI eggs" in one basket.</li>
+    <li><strong>Optimize for Cost:</strong> A system that goes bankrupt isn't resilient.</li>
+    <li><strong>Test for Failure:</strong> Use "Chaos Engineering" (like manually triggering 500 errors) to see how your fallbacks actually perform under pressure.</li>
+</ol>
+
+<h2>Conclusion</h2>
+<p>Resilience is a journey, not a destination. As AI models and infrastructure evolve, new patterns will emerge and old ones will become obsolete. However, the core principles of isolation, graceful degradation, and proactive monitoring will always remain at the heart of robust system design. Congratulations on completing the course—you now have the tools to build AI applications that are ready for the real world.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

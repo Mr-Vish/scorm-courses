@@ -1,0 +1,94 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>The Core Problem: ID Collisions</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>The Core Problem: ID Collisions</h1>
+
+<h2>What Are ID Collisions?</h2>
+<p>ID collisions occur when two or more application instances generate the same primary key value for different entities, leading to data corruption or constraint violations.</p>
+
+<h2>Real-World Scenario</h2>
+<p>E-commerce system with 3 instances behind load balancer:</p>
+
+<div class="code-block">
+<pre><code>// Time: 10:00:00.000
+Instance-1: Creates Order (ID=1001, Customer=Alice, Amount=$100)
+
+// Time: 10:00:00.001 (1ms later)
+Instance-2: Creates Order (ID=1001, Customer=Bob, Amount=$200)
+
+// Result: Bob's order overwrites Alice's order
+// Alice's $100 order is lost forever
+</code></pre>
+</div>
+
+<h2>Why This Happens</h2>
+<ul>
+    <li>Each instance maintains separate ID generation state</li>
+    <li>No coordination between instances</li>
+    <li>Database sees two INSERT statements with same ID</li>
+    <li>Last write wins (or constraint violation occurs)</li>
+</ul>
+
+<h2>Collision Symptoms</h2>
+<table>
+    <tr>
+        <th>Symptom</th>
+        <th>Cause</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Duplicate Key Errors</td>
+        <td>Primary key constraint violation</td>
+        <td>Transaction rollback, user errors</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Silent Data Loss</td>
+        <td>UPDATE instead of INSERT</td>
+        <td>Missing records, data corruption</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Inconsistent Counts</td>
+        <td>Expected vs actual record mismatch</td>
+        <td>Audit failures, reporting errors</td>
+    </tr>
+</table>
+
+<h2>Example with IDENTITY Strategy</h2>
+<div class="code-block">
+<pre><code>@Entity
+public class Order {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+}
+
+// Instance-1 Session:
+// INSERT INTO orders VALUES (DEFAULT, 'Alice', 100);
+// Returns ID = 1
+
+// Instance-2 Session (concurrent):
+// INSERT INTO orders VALUES (DEFAULT, 'Bob', 200);
+// Returns ID = 1 (COLLISION!)
+</code></pre>
+</div>
+
+<h2>Detection Challenges</h2>
+<ul>
+    <li>Collisions are intermittent and timing-dependent</li>
+    <li>Hard to reproduce in testing environments</li>
+    <li>May only occur under production load</li>
+    <li>Silent failures leave no error logs</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

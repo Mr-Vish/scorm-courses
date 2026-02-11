@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>4.3 Insecure Design Principles</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>4.3 Insecure Design Principles</h1>
+
+<p>Insecure Design is a broad category in the OWASP Top 10 that focuses on risks related to design flaws. Unlike many other vulnerabilities that are implementation errors (like a missing input validation), Insecure Design occurs when the system's architecture or workflow is inherently flawed from the start.</p>
+
+<h2>Design vs. Implementation</h2>
+<p>A "perfectly" implemented application can still be insecure if its design is flawed. For example, if a design allows a user to reset their password using only a known security question without any other verification, the implementation might correctly check the answer, but the design itself is weak because the security question is easily guessable or discoverable.</p>
+
+<h2>Key Concepts in Secure Design</h2>
+<ul>
+    <li><strong>Threat Modeling:</strong> A process for identifying, communicating, and understanding threats and mitigations within the context of protecting something of value. Performing threat modeling early in the design phase helps identify potential flaws before a single line of code is written.</li>
+    <li><strong>Secure Development Lifecycle (SDLC):</strong> Integrating security activities into every phase of the software development process, from requirements gathering and design to coding, testing, and maintenance.</li>
+    <li><strong>Least Privilege:</strong> Ensuring that every module, user, or process has only the minimum level of access necessary to perform its function.</li>
+    <li><strong>Defense in Depth:</strong> Implementing multiple layers of security controls so that if one fails, others are in place to prevent a full compromise.</li>
+</ul>
+
+<h2>Common Insecure Design Flaws</h2>
+<ol>
+    <li><strong>Insecure Credential Recovery:</strong> Using easily guessable security questions or sending passwords in plain text via email.</li>
+    <li><strong>Broken Business Logic:</strong> Designing a checkout process where a user can change the price of an item in their cart by modifying a client-side request.</li>
+    <li><strong>Missing Rate Limiting:</strong> Allowing unlimited attempts for password guesses or API requests, enabling brute-force and denial-of-service attacks.</li>
+    <li><strong>Insufficient Resource Isolation:</strong> Designing a multi-tenant system where one tenant's data is stored in the same database table as another tenant's, without a robust mechanism to prevent cross-tenant access.</li>
+</ol>
+
+<h2>Hands-on Example: Business Logic Flaw (Java Spring Boot)</h2>
+<p>Consider a simple e-commerce application where the price is sent from the frontend:</p>
+<pre>
+@PostMapping("/checkout")
+public String processOrder(@RequestParam Long itemId, @RequestParam Double price) {
+    // VULNERABLE: Trusting the price from the user
+    Order order = new Order();
+    order.setItemId(itemId);
+    order.setPrice(price);
+    orderService.save(order);
+    return "Order processed at price: " + price;
+}
+</pre>
+<p>An attacker could intercept the request and change the <code>price</code> parameter to <code>0.01</code>. The implementation correctly saves the order, but the design flaw is trusting the client to provide the price.</p>
+
+<h2>Remediation through Design</h2>
+<p>The fix is a change in the design: fetch the price from a trusted source (the database) based on the item ID, rather than accepting it from the client.</p>
+<pre>
+@PostMapping("/checkout_secure")
+public String processOrderSecure(@RequestParam Long itemId) {
+    Item item = itemRepository.findById(itemId).orElseThrow();
+    Double actualPrice = item.getPrice(); // Fetch from DB
+
+    Order order = new Order();
+    order.setItemId(itemId);
+    order.setPrice(actualPrice);
+    orderService.save(order);
+    return "Order processed at price: " + actualPrice;
+}
+</pre>
+
+<p>Adopting a "Security by Design" mindset ensures that security is a core requirement of the application, rather than an afterthought.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

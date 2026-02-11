@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>API Integration Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>API Integration Patterns for GenAI</h1>
+
+<h2>REST API Integration with API Gateway</h2>
+<p>REST APIs provide the most straightforward integration pattern for GenAI applications. API Gateway acts as the entry point, triggering Lambda functions that invoke Bedrock models.</p>
+
+<h3>Basic REST API Architecture</h3>
+<div class="flow-diagram">
+    <div class="flow-box">Client</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">API Gateway</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Lambda</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Bedrock</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Response</div>
+</div>
+
+<h3>Lambda Handler for REST API</h3>
+<div class="code-block">
+<pre><code>import json
+import boto3
+import os
+
+bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+
+def lambda_handler(event, context):
+    try:
+        # Parse request body
+        body = json.loads(event['body'])
+        user_message = body.get('message', '')
+        model_id = body.get('model_id', 'anthropic.claude-3-sonnet-20240229-v1:0')
+        
+        # Validate input
+        if not user_message:
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({'error': 'Message is required'})
+            }
+        
+        # Invoke Bedrock
+        response = bedrock.invoke_model(
+            modelId=model_id,
+            body=json.dumps({
+                'anthropic_version': 'bedrock-2023-05-31',
+                'max_tokens': 2048,
+                'temperature': 0.7,
+                'messages': [{
+                    'role': 'user',
+                    'content': user_message
+                }]
+            })
+        )
+        
+        # Parse response
+        result = json.loads(response['body'].read())
+        ai_response = result['content'][0]['text']
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'response': ai_response,
+                'model': model_id,
+                'usage': result.get('usage', {})
+            })
+        }
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'error': 'Internal server error'})
+        }
+</code></pre>
+</div>
+
+<h2>WebSocket API for Real-Time Streaming</h2>
+<p>WebSocket APIs enable bidirectional communication, perfect for streaming token-by-token responses from Bedrock models. This provides a ChatGPT-like experience where users see responses appear in real-time.</p>
+
+<h3>WebSocket Architecture</h3>
+<div class="flow-diagram">
+    <div class="flow-box">Client WS</div>
+    <div class="flow-arrow">↔</div>
+    <div class="flow-box">API Gateway WS</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Lambda</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Bedrock Stream</div>
+</div>
+
+<h3>WebSocket Connection Handler</h3>
+<div class="code-block">
+<pre><code>import boto3
+import json
+import time
+
+dynamodb = boto3.resource('dynamodb')
+connections_table = dynamodb.Table('WebSocketConnections')
+
+def connect_handler(event, context):
+    connection_id = event['requestContext']['connectionId']
+    
+    # Store connection
+    connections_table.put_item(Item={
+        'connectionId': connection_id,
+        'connectedAt': int(time.time()),
+        'ttl': int(time.time()) + 7200  # 2 hour TTL
+    })
+    
+    return {'statusCode': 200, 'body': 'Connected'}
+
+def disconnect_handler(event, context):
+    connection_id = event['requestContext']['connectionId']
+    
+    # Remove connection
+    connections_table.delete_item(Key={'connectionId': connection_id})
+    
+    return {'statusCode': 200, 'body': 'Disconnected'}
+</code></pre>
+</div>
+
+<h3>Streaming Message Handler</h3>
+<div class="code-block">
+<pre><code>def message_handler(event, context):
+    connection_id = event['requestContext']['connectionId']
+    domain = event['requestContext']['domainName']
+    stage = event['requestContext']['stage']
+    
+    # Parse message
+    body = json.loads(event['body'])
+    user_message = body.get('message', '')
+    
+    # Create API Gateway Management API client
+    apigw = boto3.client('apigatewaymanagementapi',
+                         endpoint_url=f'https://{domain}/{stage}')
+    
+    try:
+        # Stream response from Bedrock
+        bedrock = boto3.client('bedrock-runtime')
+        response = bedrock.invoke_model_with_response_stream(
+            modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+            body=json.dumps({
+                'anthropic_version': 'bedrock-2023-05-31',
+                'max_tokens': 2048,
+                'messages': [{'role': 'user', 'content': user_message}]
+            })
+        )
+        
+        # Stream each chunk to client
+        for event_chunk in response['body']:
+            chunk = json.loads(event_chunk['chunk']['bytes'])
+            
+            if chunk['type'] == 'content_block_delta':
+                text = chunk['delta']['text']
+                apigw.post_to_connection(
+                    ConnectionId=connection_id,
+                    Data=json.dumps({'type': 'chunk', 'text': text})
+                )
+        
+        # Send completion signal
+        apigw.post_to_connection(
+            ConnectionId=connection_id,
+            Data=json.dumps({'type': 'done'})
+        )
+        
+        return {'statusCode': 200}
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        apigw.post_to_connection(
+            ConnectionId=connection_id,
+            Data=json.dumps({'type': 'error', 'message': str(e)})
+        )
+        return {'statusCode': 500}
+</code></pre>
+</div>
+
+<h2>Request Validation and Error Handling</h2>
+<p>Production APIs require robust validation and error handling to ensure reliability and security.</p>
+
+<h3>Input Validation Best Practices</h3>
+<ul>
+    <li><strong>Message Length:</strong> Limit input to prevent excessive token usage (e.g., 10,000 characters)</li>
+    <li><strong>Rate Limiting:</strong> Implement per-user rate limits using API Gateway or DynamoDB</li>
+    <li><strong>Content Filtering:</strong> Validate against prohibited content before sending to Bedrock</li>
+    <li><strong>Parameter Validation:</strong> Ensure temperature, max_tokens, and other parameters are within valid ranges</li>
+</ul>
+
+<h3>Enhanced Error Handling</h3>
+<div class="code-block">
+<pre><code>from botocore.exceptions import ClientError
+
+def invoke_bedrock_with_retry(bedrock_client, model_id, payload, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            response = bedrock_client.invoke_model(
+                modelId=model_id,
+                body=json.dumps(payload)
+            )
+            return response
+            
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            
+            if error_code == 'ThrottlingException':
+                # Exponential backoff
+                wait_time = (2 ** attempt) + random.uniform(0, 1)
+                time.sleep(wait_time)
+                continue
+                
+            elif error_code == 'ModelTimeoutException':
+                # Model took too long, retry with reduced max_tokens
+                payload['max_tokens'] = int(payload['max_tokens'] * 0.8)
+                continue
+                
+            elif error_code == 'ValidationException':
+                # Don't retry validation errors
+                raise ValueError(f"Invalid request: {e}")
+                
+            else:
+                # Unknown error, don't retry
+                raise
+    
+    raise Exception(f"Failed after {max_retries} retries")
+</code></pre>
+</div>
+
+<h2>CORS Configuration</h2>
+<p>For web applications, configure CORS headers to allow cross-origin requests:</p>
+
+<div class="code-block">
+<pre><code># API Gateway CORS Configuration
+def get_cors_headers():
+    return {
+        'Access-Control-Allow-Origin': '*',  # Use specific domain in production
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+        'Access-Control-Allow-Methods': 'POST,OPTIONS',
+        'Access-Control-Max-Age': '3600'
+    }
+
+# Handle OPTIONS preflight requests
+if event['httpMethod'] == 'OPTIONS':
+    return {
+        'statusCode': 200,
+        'headers': get_cors_headers(),
+        'body': ''
+    }
+</code></pre>
+</div>
+
+<h2>API Gateway Configuration Best Practices</h2>
+<table>
+    <tr><th>Setting</th><th>Recommended Value</th><th>Purpose</th></tr>
+    <tr><td class="rowheader">Timeout</td><td>29 seconds (REST)<br/>30 minutes (WebSocket)</td><td>Maximum integration timeout</td></tr>
+    <tr><td class="rowheader">Throttling</td><td>10,000 requests/second</td><td>Prevent abuse and control costs</td></tr>
+    <tr><td class="rowheader">Caching</td><td>Disabled for GenAI</td><td>Responses are unique per request</td></tr>
+    <tr><td class="rowheader">Logging</td><td>INFO level</td><td>Track requests without excessive logs</td></tr>
+    <tr><td class="rowheader">API Keys</td><td>Enabled</td><td>Control access and track usage</td></tr>
+</table>
+
+<h2>Testing Your API</h2>
+<h3>REST API Test with curl</h3>
+<div class="code-block">
+<pre><code>curl -X POST https://your-api-id.execute-api.us-east-1.amazonaws.com/prod/chat \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your-api-key" \
+  -d '{
+    "message": "Explain AWS Lambda in simple terms",
+    "model_id": "anthropic.claude-3-sonnet-20240229-v1:0"
+  }'
+</code></pre>
+</div>
+
+<h3>WebSocket Test with JavaScript</h3>
+<div class="code-block">
+<pre><code>const ws = new WebSocket('wss://your-ws-id.execute-api.us-east-1.amazonaws.com/prod');
+
+ws.onopen = () => {
+    ws.send(JSON.stringify({
+        action: 'sendMessage',
+        message: 'Hello, AI!'
+    }));
+};
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === 'chunk') {
+        console.log(data.text);  // Stream token
+    } else if (data.type === 'done') {
+        console.log('Complete!');
+    }
+};
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

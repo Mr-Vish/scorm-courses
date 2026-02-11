@@ -1,0 +1,541 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Real-World Search Grounding Applications</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Real-World Search Grounding Applications</h1>
+
+<h2>Building a News Summarization System</h2>
+<p>One of the most powerful applications of Google Search grounding is automated news aggregation and summarization:</p>
+
+<blockquote>
+from google import genai
+from google.genai import types
+from datetime import datetime
+
+class NewsAggregator:
+    """
+    Aggregate and summarize news using Google Search grounding.
+    """
+    def __init__(self):
+        self.client = genai.Client()
+    
+    def get_news_summary(self, topic, time_frame="today"):
+        """
+        Get a comprehensive news summary on a topic.
+        """
+        prompt = f"""
+        Provide a comprehensive summary of {time_frame}'s news about {topic}.
+        Include:
+        1. Key developments and events
+        2. Important quotes from officials or experts
+        3. Impact and implications
+        4. Different perspectives if applicable
+        
+        Organize by importance and cite sources.
+        """
+        
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        metadata = response.candidates[0].grounding_metadata
+        
+        # Extract and categorize sources
+        sources = self._categorize_sources(metadata)
+        
+        return {
+            'topic': topic,
+            'summary': response.text,
+            'sources': sources,
+            'grounding_score': metadata.grounding_support.grounding_score if metadata and metadata.grounding_support else 0.0,
+            'timestamp': datetime.now().isoformat()
+        }
+    
+    def _categorize_sources(self, metadata):
+        """
+        Categorize sources by type (news, official, analysis).
+        """
+        if not metadata or not metadata.grounding_chunks:
+            return {}
+        
+        categories = {
+            'news_outlets': [],
+            'official_sources': [],
+            'analysis': [],
+            'other': []
+        }
+        
+        news_domains = ['reuters.com', 'bbc.com', 'cnn.com', 'nytimes.com', 'apnews.com']
+        official_domains = ['.gov', '.org']
+        
+        for chunk in metadata.grounding_chunks:
+            uri = chunk.web.uri
+            source_info = {
+                'title': chunk.web.title,
+                'url': uri
+            }
+            
+            if any(domain in uri for domain in news_domains):
+                categories['news_outlets'].append(source_info)
+            elif any(domain in uri for domain in official_domains):
+                categories['official_sources'].append(source_info)
+            elif 'analysis' in chunk.web.title.lower() or 'opinion' in chunk.web.title.lower():
+                categories['analysis'].append(source_info)
+            else:
+                categories['other'].append(source_info)
+        
+        return categories
+
+
+# Usage
+aggregator = NewsAggregator()
+news = aggregator.get_news_summary("artificial intelligence regulation", "this week")
+
+print(f"Topic: {news['topic']}")
+print(f"Grounding Score: {news['grounding_score']:.2f}\n")
+print("Summary:")
+print(news['summary'])
+print("\n" + "="*80 + "\n")
+print("Sources by Category:")
+for category, sources in news['sources'].items():
+    if sources:
+        print(f"\n{category.replace('_', ' ').title()} ({len(sources)}):")
+        for source in sources:
+            print(f"  - {source['title']}")
+</blockquote>
+
+<h2>Building a Market Intelligence System</h2>
+<p>Track market trends, competitor activities, and industry developments:</p>
+
+<blockquote>
+class MarketIntelligence:
+    """
+    Gather market intelligence using grounded search.
+    """
+    def __init__(self):
+        self.client = genai.Client()
+    
+    def analyze_competitor(self, company_name):
+        """
+        Analyze recent competitor activities and news.
+        """
+        prompt = f"""
+        Analyze recent developments for {company_name}:
+        1. Latest product launches or announcements
+        2. Financial performance and market position
+        3. Strategic initiatives and partnerships
+        4. Industry analyst opinions
+        
+        Provide current, factual information with sources.
+        """
+        
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        return {
+            'company': company_name,
+            'analysis': response.text,
+            'metadata': response.candidates[0].grounding_metadata
+        }
+    
+    def track_industry_trends(self, industry, time_period="past month"):
+        """
+        Track emerging trends in an industry.
+        """
+        prompt = f"""
+        What are the key trends and developments in the {industry} industry 
+        over the {time_period}? Focus on:
+        - Emerging technologies
+        - Market shifts
+        - Regulatory changes
+        - Major investments or acquisitions
+        """
+        
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        return {
+            'industry': industry,
+            'trends': response.text,
+            'metadata': response.candidates[0].grounding_metadata
+        }
+    
+    def get_pricing_intelligence(self, product_category):
+        """
+        Gather current pricing information for a product category.
+        """
+        prompt = f"""
+        What are the current market prices and pricing trends for {product_category}?
+        Include:
+        - Price ranges from different vendors
+        - Recent price changes
+        - Factors affecting pricing
+        """
+        
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        return {
+            'category': product_category,
+            'pricing_analysis': response.text,
+            'metadata': response.candidates[0].grounding_metadata
+        }
+
+
+# Usage
+intel = MarketIntelligence()
+
+# Competitor analysis
+competitor_report = intel.analyze_competitor("OpenAI")
+print("Competitor Analysis:")
+print(competitor_report['analysis'])
+
+# Industry trends
+trends = intel.track_industry_trends("generative AI")
+print("\n\nIndustry Trends:")
+print(trends['trends'])
+</blockquote>
+
+<h2>Building a Customer Support System</h2>
+<p>Enhance customer support with current product information and troubleshooting:</p>
+
+<blockquote>
+class GroundedSupportAgent:
+    """
+    Customer support agent with access to current product information.
+    """
+    def __init__(self, product_name):
+        self.client = genai.Client()
+        self.product_name = product_name
+    
+    def answer_question(self, customer_question):
+        """
+        Answer customer questions with current product information.
+        """
+        prompt = f"""
+        As a customer support agent for {self.product_name}, answer this question:
+        
+        {customer_question}
+        
+        Provide accurate, helpful information based on current product specifications,
+        known issues, and official documentation. If there are recent updates or 
+        changes, mention them.
+        """
+        
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        metadata = response.candidates[0].grounding_metadata
+        
+        # Extract official sources (documentation, support pages)
+        official_sources = []
+        if metadata and metadata.grounding_chunks:
+            for chunk in metadata.grounding_chunks:
+                if self.product_name.lower().replace(' ', '') in chunk.web.uri.lower():
+                    official_sources.append({
+                        'title': chunk.web.title,
+                        'url': chunk.web.uri
+                    })
+        
+        return {
+            'answer': response.text,
+            'official_sources': official_sources,
+            'grounding_score': metadata.grounding_support.grounding_score if metadata and metadata.grounding_support else 0.0
+        }
+    
+    def check_known_issues(self):
+        """
+        Check for known issues and recent bug reports.
+        """
+        prompt = f"""
+        What are the currently known issues, bugs, or common problems with 
+        {self.product_name}? Include any recent reports or official acknowledgments.
+        """
+        
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        return response.text
+
+
+# Usage
+support_agent = GroundedSupportAgent("iPhone 15 Pro")
+
+# Answer customer question
+result = support_agent.answer_question(
+    "My iPhone 15 Pro battery drains quickly. Is this a known issue?"
+)
+
+print("Support Response:")
+print(result['answer'])
+print(f"\nGrounding Score: {result['grounding_score']:.2f}")
+if result['official_sources']:
+    print("\nOfficial Sources:")
+    for source in result['official_sources']:
+        print(f"  - {source['title']}")
+        print(f"    {source['url']}")
+</blockquote>
+
+<h2>Building a Research Assistant</h2>
+<p>Create a research assistant that synthesizes information from multiple sources:</p>
+
+<blockquote>
+class ResearchAssistant:
+    """
+    Research assistant for academic and professional research.
+    """
+    def __init__(self):
+        self.client = genai.Client()
+    
+    def research_topic(self, topic, focus_areas=None):
+        """
+        Conduct comprehensive research on a topic.
+        """
+        focus_text = ""
+        if focus_areas:
+            focus_text = f"Focus specifically on: {', '.join(focus_areas)}"
+        
+        prompt = f"""
+        Conduct comprehensive research on: {topic}
+        {focus_text}
+        
+        Provide:
+        1. Overview and current state
+        2. Recent developments and breakthroughs
+        3. Key researchers and institutions
+        4. Challenges and open questions
+        5. Future directions
+        
+        Cite authoritative sources and recent publications.
+        """
+        
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        metadata = response.candidates[0].grounding_metadata
+        
+        # Identify academic sources
+        academic_sources = []
+        if metadata and metadata.grounding_chunks:
+            academic_domains = ['.edu', 'scholar.google', 'arxiv.org', 
+                              'nature.com', 'science.org', 'ieee.org']
+            
+            for chunk in metadata.grounding_chunks:
+                if any(domain in chunk.web.uri for domain in academic_domains):
+                    academic_sources.append({
+                        'title': chunk.web.title,
+                        'url': chunk.web.uri
+                    })
+        
+        return {
+            'topic': topic,
+            'research': response.text,
+            'academic_sources': academic_sources,
+            'total_sources': len(metadata.grounding_chunks) if metadata else 0,
+            'grounding_score': metadata.grounding_support.grounding_score if metadata and metadata.grounding_support else 0.0
+        }
+    
+    def compare_approaches(self, topic, approach_a, approach_b):
+        """
+        Compare two different approaches or methodologies.
+        """
+        prompt = f"""
+        Compare and contrast {approach_a} vs {approach_b} for {topic}.
+        
+        Analyze:
+        1. Strengths and weaknesses of each
+        2. Use cases and applications
+        3. Performance and efficiency
+        4. Current research and adoption
+        5. Expert opinions and recommendations
+        
+        Provide balanced, evidence-based comparison.
+        """
+        
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        return response.text
+
+
+# Usage
+assistant = ResearchAssistant()
+
+# Research a topic
+research = assistant.research_topic(
+    "quantum machine learning",
+    focus_areas=["recent algorithms", "practical applications", "challenges"]
+)
+
+print(f"Research on: {research['topic']}")
+print(f"Grounding Score: {research['grounding_score']:.2f}")
+print(f"Total Sources: {research['total_sources']}")
+print(f"Academic Sources: {len(research['academic_sources'])}\n")
+print(research['research'])
+
+if research['academic_sources']:
+    print("\n\nAcademic Sources:")
+    for source in research['academic_sources']:
+        print(f"  - {source['title']}")
+</blockquote>
+
+<h2>Performance Optimization Strategies</h2>
+<p>Optimize grounded applications for production use:</p>
+
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Implementation</th>
+        <th>Benefit</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Response Caching</td>
+        <td>Cache grounded responses with TTL based on volatility</td>
+        <td>Reduce latency and API costs for repeated queries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Async Processing</td>
+        <td>Use async/await for non-blocking grounded queries</td>
+        <td>Improve throughput and user experience</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batch Queries</td>
+        <td>Group related queries when possible</td>
+        <td>Reduce total API calls and latency</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Fallback Strategies</td>
+        <td>Implement graceful degradation when grounding fails</td>
+        <td>Maintain service availability</td>
+    </tr>
+</table>
+
+<blockquote>
+import asyncio
+from datetime import datetime, timedelta
+
+class CachedGroundedSearch:
+    """
+    Grounded search with intelligent caching.
+    """
+    def __init__(self):
+        self.client = genai.Client()
+        self.cache = {}
+    
+    def _get_cache_key(self, query):
+        """Generate cache key from query."""
+        return query.lower().strip()
+    
+    def _is_cache_valid(self, cache_entry, ttl_minutes=30):
+        """Check if cache entry is still valid."""
+        age = datetime.now() - cache_entry['timestamp']
+        return age < timedelta(minutes=ttl_minutes)
+    
+    async def search_async(self, query, ttl_minutes=30):
+        """
+        Perform grounded search with caching (async).
+        """
+        cache_key = self._get_cache_key(query)
+        
+        # Check cache
+        if cache_key in self.cache:
+            entry = self.cache[cache_key]
+            if self._is_cache_valid(entry, ttl_minutes):
+                entry['cache_hit'] = True
+                return entry
+        
+        # Perform grounded search
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=query,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        # Cache result
+        result = {
+            'query': query,
+            'response': response.text,
+            'metadata': response.candidates[0].grounding_metadata,
+            'timestamp': datetime.now(),
+            'cache_hit': False
+        }
+        
+        self.cache[cache_key] = result
+        return result
+
+
+# Usage
+cached_search = CachedGroundedSearch()
+
+# First call - will search
+result1 = await cached_search.search_async("What is the current Bitcoin price?", ttl_minutes=5)
+print(f"Cache hit: {result1['cache_hit']}")  # False
+
+# Second call within TTL - will use cache
+result2 = await cached_search.search_async("What is the current Bitcoin price?", ttl_minutes=5)
+print(f"Cache hit: {result2['cache_hit']}")  # True
+</blockquote>
+
+<h2>Best Practices for Production Applications</h2>
+<ul>
+    <li><strong>Implement Caching:</strong> Cache responses with appropriate TTL based on information volatility</li>
+    <li><strong>Monitor Performance:</strong> Track latency, grounding scores, and cache hit rates</li>
+    <li><strong>Handle Failures Gracefully:</strong> Implement fallback strategies for when grounding fails</li>
+    <li><strong>Validate Sources:</strong> Check source quality and relevance, especially for critical applications</li>
+    <li><strong>Rate Limit Protection:</strong> Implement rate limiting to avoid API quota exhaustion</li>
+    <li><strong>Log Comprehensively:</strong> Log all queries, responses, and metadata for analysis and debugging</li>
+    <li><strong>User Feedback:</strong> Collect user feedback on response quality to improve prompts</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

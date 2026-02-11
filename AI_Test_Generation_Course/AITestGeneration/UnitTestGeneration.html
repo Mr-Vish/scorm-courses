@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Unit Test Generation with LLMs</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Unit Test Generation with LLMs</h1>
+
+
+<h2>AI-Powered Test Generation</h2>
+<p>LLMs can dramatically accelerate test writing by analyzing source code and generating comprehensive test suites. This does not replace human test design but handles the repetitive work of writing boilerplate tests and identifying edge cases.</p>
+
+<h2>How LLM Test Generation Works</h2>
+<ol>
+    <li><strong>Code analysis:</strong> The LLM reads the function/class to understand its behavior</li>
+    <li><strong>Edge case identification:</strong> The LLM identifies boundary conditions, error cases, and typical inputs</li>
+    <li><strong>Test generation:</strong> The LLM produces test code with assertions</li>
+    <li><strong>Human review:</strong> Developer reviews, adjusts, and approves generated tests</li>
+</ol>
+
+<h2>Prompt for Unit Test Generation</h2>
+<div class="code-block">
+<pre><code># Effective prompt for generating unit tests
+prompt = (
+    "Generate comprehensive pytest unit tests for the following Python function.
+"
+    "Include tests for:
+"
+    "- Normal/happy path cases
+"
+    "- Edge cases (empty input, None, boundary values)
+"
+    "- Error cases (invalid types, out of range)
+"
+    "- Use descriptive test names that explain the scenario.
+"
+    "
+"
+    "Function to test:
+"
+    "```python
+"
+    "def calculate_discount(price: float, discount_percent: float) -&gt; float:
+"
+    "    if price &lt; 0:
+"
+    "        raise ValueError('Price cannot be negative')
+"
+    "    if not 0 &lt;= discount_percent &lt;= 100:
+"
+    "        raise ValueError('Discount must be between 0 and 100')
+"
+    "    return round(price * (1 - discount_percent / 100), 2)
+"
+    "```
+"
+)
+
+# LLM generates tests like:
+# def test_calculate_discount_normal():
+#     assert calculate_discount(100, 20) == 80.0
+#
+# def test_calculate_discount_zero_discount():
+#     assert calculate_discount(50, 0) == 50.0
+#
+# def test_calculate_discount_full_discount():
+#     assert calculate_discount(50, 100) == 0.0
+#
+# def test_calculate_discount_negative_price_raises():
+#     with pytest.raises(ValueError, match="Price cannot be negative"):
+#         calculate_discount(-10, 20)
+#
+# def test_calculate_discount_over_100_percent_raises():
+#     with pytest.raises(ValueError, match="Discount must be between 0 and 100"):
+#         calculate_discount(50, 150)</code></pre>
+</div>
+
+<h2>Test Generation Approaches</h2>
+<table>
+    <tr><th>Approach</th><th>How It Works</th><th>Quality</th></tr>
+    <tr><td>Function-level prompting</td><td>Send one function at a time with its docstring</td><td>Good for isolated functions</td></tr>
+    <tr><td>Class-level context</td><td>Include the entire class and its dependencies</td><td>Better for methods with state</td></tr>
+    <tr><td>Codebase-aware</td><td>Use Claude Code or similar to read the full project</td><td>Best - understands patterns and conventions</td></tr>
+    <tr><td>Existing test extension</td><td>Show existing tests and ask for more coverage</td><td>Most consistent with project style</td></tr>
+</table>
+
+<h2>Quality Checks for Generated Tests</h2>
+<ul>
+    <li><strong>Run them:</strong> Generated tests must actually pass against the current code</li>
+    <li><strong>Mutation testing:</strong> Use tools like mutmut to verify tests catch real bugs</li>
+    <li><strong>Coverage analysis:</strong> Check if generated tests improve branch and line coverage</li>
+    <li><strong>No tautologies:</strong> Ensure tests do not just reimplement the function logic</li>
+    <li><strong>Meaningful assertions:</strong> Tests should assert behavior, not just "no exception thrown"</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

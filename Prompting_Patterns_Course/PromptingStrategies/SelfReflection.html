@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Self-Reflection</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Self-Reflection</h1>
+<div class="container">
+<h2>The Self-Reflection Pattern: Improving Through Critique</h2>
+<p>The Self-Reflection pattern involves asking the Large Language Model to review, critique, and then improve its own work. This multi-step process leverages the model's ability to act as its own editor, leading to significantly higher quality and more polished final results.</p>
+
+<h3>The Concept of 'System 2' Thinking</h3>
+<p>In psychology, "System 1" is fast and intuitive, while "System 2" is slow, analytical, and reflective. Simple prompting often triggers System 1-like responses from an LLM. Self-reflection forces the model into a System 2-like mode, where it must consciously analyze its previous output for flaws.</p>
+
+<h3>How to Implement Self-Reflection</h3>
+<p>The pattern typically follows a three-step cycle:</p>
+<ol>
+    <li><strong>Generation:</strong> The model performs the initial task. "Write a blog post about the benefits of a Mediterranean diet."</li>
+    <li><strong>Critique:</strong> You ask the model to find flaws in its own output. "Review the blog post you just wrote. Look for: lack of scientific evidence, repetitive language, or confusing sentences. List the areas that need improvement."</li>
+    <li><strong>Refined Generation:</strong> You ask the model to rewrite the output based on the critique. "Now, rewrite the blog post, addressing all the issues you identified in your critique. Ensure it is more authoritative and engaging."</li>
+</ol>
+
+<h3>Why Self-Reflection Works</h3>
+<p>It's often easier for an LLM (and for humans!) to spot an error in an existing text than it is to get it perfectly right the first time. By separating the "creator" role from the "critic" role, you allow the model to focus on one thing at a time.</p>
+
+<h3>Advanced Reflection: Multi-Persona Critique</h3>
+<p>You can make the reflection even more powerful by asking the model to critique its work from multiple different perspectives:
+- "Critique this code as a Security Engineer."
+- "Critique this same code as a Performance Specialist."
+- "Now rewrite the code to satisfy both experts."</p>
+
+<h3>Use Cases for Self-Reflection</h3>
+<ul>
+    <li><strong>Writing and Editing:</strong> Refining essays, articles, or marketing copy.</li>
+    <li><strong>Coding:</strong> Identifying bugs, edge cases, or potential optimizations in a snippet of code.</li>
+    <li><strong>Fact-Checking:</strong> Asking the model to verify its own claims. "Are there any statements in your previous response that might be inaccurate? Please check them against your internal knowledge."</li>
+    <li><strong>Tone Adjustment:</strong> "Does this email sound too aggressive? If so, rewrite it to be more professional."</li>
+</ul>
+
+<h3>Single-Prompt Reflection</h3>
+<p>While multi-turn reflection is better, you can encourage it in one prompt using "Chain of Thought":
+"First, draft a response to the user. Then, review your draft for any potential inaccuracies or tone issues. Finally, provide the corrected and final version of the response."</p>
+
+<h3>Benefits of Self-Reflection</h3>
+<ul>
+    <li><strong>Higher Quality:</strong> The final output is often much more polished and accurate.</li>
+    <li><strong>Reduced Hallucinations:</strong> The critique phase is a great opportunity for the model to catch its own "hallucinated" facts.</li>
+    <li><strong>Better Alignment:</strong> You can use the critique phase to ensure the model is following complex instructions or persona constraints.</li>
+</ul>
+
+<h3>Practical Exercise: Improving a Product Description</h3>
+<p>1. <strong>Generate:</strong> "Write a 100-word description for a new wireless headphone."
+2. <strong>Critique:</strong> "Analyze that description. Is it too generic? Does it mention the battery life or noise cancellation features? Is the call to action strong enough?"
+3. <strong>Refine:</strong> "Rewrite the description to be more specific and include a compelling call to action."</p>
+
+<h3>Limitations</h3>
+<p>Self-reflection isn't a silver bullet. If the model doesn't know a fact, it won't be able to catch a factual error in its own output. Furthermore, if the model is "confident" in its mistake, the critique might just reinforce the error. Using a separate, more capable model for the critique (e.g., using Claude 3.5 Sonnet to critique Claude 3 Haiku) is often more effective.</p>
+
+<p>In conclusion, the Self-Reflection pattern is a simple yet extremely effective way to boost the quality of AI output. By teaching the model to be its own toughest critic, you can ensure that the results you get are refined, accurate, and ready for use.</p>
+
+</div>
+</body>
+</html>

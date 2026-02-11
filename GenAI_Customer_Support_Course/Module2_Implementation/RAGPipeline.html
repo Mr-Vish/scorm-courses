@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>RAG Pipeline Implementation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>RAG Pipeline Implementation</h1>
+
+<h2>Understanding RAG for Customer Support</h2>
+<p>Retrieval-Augmented Generation (RAG) combines the power of large language models with your organization's specific knowledge base to provide accurate, contextual responses.</p>
+
+<h2>RAG Architecture Components</h2>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Technology Options</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Document Ingestion</td>
+        <td>Load and parse support documents</td>
+        <td>LangChain, LlamaIndex, Custom parsers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Text Chunking</td>
+        <td>Split documents into retrievable units</td>
+        <td>Semantic chunking, Fixed-size, Recursive</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Embedding Generation</td>
+        <td>Convert text to vector representations</td>
+        <td>OpenAI Ada, Cohere, Sentence Transformers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vector Storage</td>
+        <td>Store and index embeddings</td>
+        <td>Pinecone, Weaviate, Qdrant, FAISS</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Retrieval Engine</td>
+        <td>Find relevant documents for queries</td>
+        <td>Similarity search, Hybrid search, Reranking</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Assembly</td>
+        <td>Prepare retrieved docs for LLM</td>
+        <td>Prompt engineering, Context compression</td>
+    </tr>
+</table>
+
+<h2>Document Chunking Strategies</h2>
+<p>Effective chunking is critical for retrieval quality:</p>
+
+<ul>
+    <li><strong>Semantic Chunking:</strong> Split by topic/section boundaries - best for structured documentation</li>
+    <li><strong>Fixed-Size Chunking:</strong> Split by token count (e.g., 512 tokens) - simple but may break context</li>
+    <li><strong>Recursive Chunking:</strong> Try paragraph → sentence → word boundaries - balances context and granularity</li>
+    <li><strong>Sliding Window:</strong> Overlapping chunks to preserve context - reduces boundary issues</li>
+</ul>
+
+<blockquote>
+Recommended Chunking Configuration:
+
+Chunk Size: 400-600 tokens
+Overlap: 50-100 tokens
+Method: Recursive with semantic awareness
+
+Example:
+Document: "Product Installation Guide"
+→ Chunk 1: "Prerequisites and Requirements" (450 tokens)
+→ Chunk 2: "Step-by-Step Installation" (520 tokens, 75 token overlap)
+→ Chunk 3: "Configuration and Setup" (480 tokens, 75 token overlap)
+→ Chunk 4: "Troubleshooting Common Issues" (510 tokens, 75 token overlap)
+</blockquote>
+
+<h2>Metadata Enrichment</h2>
+<p>Enhance chunks with metadata for better filtering and retrieval:</p>
+
+<table>
+    <tr>
+        <th>Metadata Field</th>
+        <th>Purpose</th>
+        <th>Example Values</th>
+    </tr>
+    <tr>
+        <td class="rowheader">product</td>
+        <td>Filter by product line</td>
+        <td>"CloudPlatform", "MobileApp", "API"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">version</td>
+        <td>Ensure version-specific answers</td>
+        <td>"v2.1", "v3.0", "latest"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">category</td>
+        <td>Match to intent classification</td>
+        <td>"billing", "technical", "account"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">last_updated</td>
+        <td>Prioritize recent information</td>
+        <td>"2024-01-15", "2024-03-20"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">audience</td>
+        <td>Target appropriate content</td>
+        <td>"beginner", "advanced", "enterprise"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">language</td>
+        <td>Multi-language support</td>
+        <td>"en", "es", "fr", "de"</td>
+    </tr>
+</table>
+
+<h2>Hybrid Search Strategy</h2>
+<p>Combine multiple search approaches for optimal retrieval:</p>
+
+<blockquote>
+1. Semantic Search (Vector Similarity):
+   - Captures meaning and context
+   - Handles paraphrasing and synonyms
+   - Weight: 70%
+
+2. Keyword Search (BM25):
+   - Exact term matching
+   - Handles specific product names, error codes
+   - Weight: 20%
+
+3. Metadata Filtering:
+   - Pre-filter by product, version, category
+   - Ensures relevance to customer context
+   - Weight: 10%
+
+Final Score = (0.7 × semantic_score) + (0.2 × keyword_score) + (0.1 × metadata_score)
+</blockquote>
+
+<h2>Retrieval Optimization Techniques</h2>
+<ul>
+    <li><strong>Query Expansion:</strong> Expand user query with synonyms and related terms</li>
+    <li><strong>Reranking:</strong> Use cross-encoder model to rerank top-k results</li>
+    <li><strong>Hypothetical Document Embeddings (HyDE):</strong> Generate hypothetical answer, embed it, retrieve similar docs</li>
+    <li><strong>Parent-Child Retrieval:</strong> Retrieve small chunks, return larger parent context</li>
+    <li><strong>Multi-Query Retrieval:</strong> Generate multiple query variations, retrieve for each, merge results</li>
+</ul>
+
+<h2>Context Assembly for LLM</h2>
+<blockquote>
+Prompt Template Structure:
+
+System: You are a helpful customer support assistant for [Company].
+Use the following knowledge base articles to answer the customer's question.
+If the information isn't in the articles, say so honestly.
+
+Knowledge Base Context:
+---
+[Article 1: Title]
+Source: [Metadata]
+Content: [Chunk text]
+---
+[Article 2: Title]
+Source: [Metadata]
+Content: [Chunk text]
+---
+
+Customer Question: [User query]
+
+Instructions:
+- Provide accurate information based on the knowledge base
+- Include relevant article references
+- If uncertain, offer to escalate to a human agent
+- Be concise but complete
+
+Assistant Response:
+</blockquote>
+
+<h2>Handling Missing Information</h2>
+<p>When the knowledge base doesn't contain the answer:</p>
+<ul>
+    <li><strong>Acknowledge Limitation:</strong> "I don't have specific information about that in our current documentation."</li>
+    <li><strong>Offer Alternatives:</strong> "However, I can help you with [related topic] or connect you with a specialist."</li>
+    <li><strong>Log Knowledge Gap:</strong> Track unanswered queries to identify documentation needs</li>
+    <li><strong>Escalate Appropriately:</strong> Route to human agent with context about the information gap</li>
+</ul>
+
+<h2>Knowledge Base Maintenance</h2>
+<table>
+    <tr>
+        <th>Task</th>
+        <th>Frequency</th>
+        <th>Automation Level</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Document Updates</td>
+        <td>Real-time or daily</td>
+        <td>Fully automated</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Re-indexing</td>
+        <td>After updates</td>
+        <td>Fully automated</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Quality Review</td>
+        <td>Weekly</td>
+        <td>Human-in-the-loop</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Gap Analysis</td>
+        <td>Monthly</td>
+        <td>Automated reporting, human action</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Deprecation</td>
+        <td>Quarterly</td>
+        <td>Human review required</td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

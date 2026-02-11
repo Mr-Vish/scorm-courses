@@ -1,0 +1,471 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pro-Tips for Tuning - Monitoring & Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pro-Tips for Tuning - Monitoring & Optimization</h1>
+
+<h2>Monitoring LLM Performance</h2>
+
+<h3>Key Metrics to Track</h3>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>What It Measures</th>
+        <th>Target Range</th>
+        <th>Action If Out of Range</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Response Latency</td>
+        <td>Time to generate response</td>
+        <td>&lt; 3 seconds</td>
+        <td>Reduce Max Tokens or use faster model</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Token Usage</td>
+        <td>Tokens consumed per request</td>
+        <td>Varies by use case</td>
+        <td>Optimize Max Tokens setting</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>Failed requests</td>
+        <td>&lt; 1%</td>
+        <td>Implement retry logic, check parameters</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost per Request</td>
+        <td>API cost per interaction</td>
+        <td>Budget dependent</td>
+        <td>Optimize tokens, consider cheaper models</td>
+    </tr>
+    <tr>
+        <td class="rowheader">User Satisfaction</td>
+        <td>Quality of responses</td>
+        <td>&gt; 80% positive</td>
+        <td>Adjust parameters, improve prompts</td>
+    </tr>
+</table>
+
+<h3>Implementing Metrics with Spring Boot Actuator</h3>
+
+<div class="code-block">
+<pre><code>import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MonitoredChatService {
+
+    private final ChatClient chatClient;
+    private final MeterRegistry meterRegistry;
+
+    public MonitoredChatService(ChatClient.Builder builder, MeterRegistry meterRegistry) {
+        this.chatClient = builder.build();
+        this.meterRegistry = meterRegistry;
+    }
+
+    public String chat(String message, String useCase) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        
+        try {
+            var response = chatClient.prompt()
+                    .user(message)
+                    .options(getOptionsForUseCase(useCase))
+                    .call()
+                    .chatResponse();
+            
+            // Record success metrics
+            sample.stop(Timer.builder("llm.request.duration")
+                    .tag("useCase", useCase)
+                    .tag("status", "success")
+                    .register(meterRegistry));
+            
+            // Record token usage
+            var usage = response.getMetadata().getUsage();
+            meterRegistry.counter("llm.tokens.used",
+                    "useCase", useCase,
+                    "type", "total")
+                    .increment(usage.getTotalTokens());
+            
+            return response.getResult().getOutput().getContent();
+            
+        } catch (Exception e) {
+            // Record failure metrics
+            sample.stop(Timer.builder("llm.request.duration")
+                    .tag("useCase", useCase)
+                    .tag("status", "failure")
+                    .register(meterRegistry));
+            
+            meterRegistry.counter("llm.request.errors",
+                    "useCase", useCase,
+                    "error", e.getClass().getSimpleName())
+                    .increment();
+            
+            throw e;
+        }
+    }
+
+    private OpenAiChatOptions getOptionsForUseCase(String useCase) {
+        // Return appropriate options based on use case
+        return OpenAiChatOptions.builder()
+                .withTemperature(0.7f)
+                .build();
+    }
+}
+</code></pre>
+</div>
+
+<h3>Custom Actuator Endpoint for Parameter Insights</h3>
+
+<div class="code-block">
+<pre><code>import org.springframework.boot.actuate.endpoint.annotation.*;
+import org.springframework.stereotype.Component;
+import java.util.*;
+
+@Component
+@Endpoint(id = "llm-parameters")
+public class LLMParametersEndpoint {
+
+    private final Map&lt;String, ParameterStats&gt; stats = new ConcurrentHashMap&lt;&gt;();
+
+    @ReadOperation
+    public Map&lt;String, ParameterStats&gt; getParameterStats() {
+        return stats;
+    }
+
+    @ReadOperation
+    public ParameterStats getStatsForUseCase(@Selector String useCase) {
+        return stats.get(useCase);
+    }
+
+    public void recordUsage(String useCase, OpenAiChatOptions options, int tokensUsed) {
+        stats.computeIfAbsent(useCase, k -&gt; new ParameterStats())
+                .record(options, tokensUsed);
+    }
+
+    public static class ParameterStats {
+        private int requestCount = 0;
+        private long totalTokens = 0;
+        private double avgTemperature = 0;
+        private double avgMaxTokens = 0;
+
+        public synchronized void record(OpenAiChatOptions options, int tokens) {
+            requestCount++;
+            totalTokens += tokens;
+            avgTemperature = (avgTemperature * (requestCount - 1) + options.getTemperature()) / requestCount;
+            avgMaxTokens = (avgMaxTokens * (requestCount - 1) + options.getMaxTokens()) / requestCount;
+        }
+
+        // Getters
+        public int getRequestCount() { return requestCount; }
+        public long getTotalTokens() { return totalTokens; }
+        public double getAvgTemperature() { return avgTemperature; }
+        public double getAvgMaxTokens() { return avgMaxTokens; }
+        public double getAvgTokensPerRequest() { 
+            return requestCount &gt; 0 ? (double) totalTokens / requestCount : 0; 
+        }
+    }
+}
+</code></pre>
+</div>
+
+<h2>Cost Optimization Strategies</h2>
+
+<h3>Strategy 1: Intelligent Caching</h3>
+<p>Cache responses for identical or similar requests to reduce API calls.</p>
+
+<div class="code-block">
+<pre><code>import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import java.security.MessageDigest;
+import java.util.Base64;
+
+@Service
+public class CachedChatService {
+
+    private final ChatClient chatClient;
+
+    public CachedChatService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    @Cacheable(value = "llmResponses", key = "#message + #temperature")
+    public String chat(String message, float temperature) {
+        return chatClient.prompt()
+                .user(message)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(temperature)
+                        .build())
+                .call()
+                .content();
+    }
+
+    // For deterministic requests (temp = 0), cache indefinitely
+    @Cacheable(value = "deterministicResponses", key = "#message")
+    public String deterministicChat(String message) {
+        return chat(message, 0.0f);
+    }
+}
+</code></pre>
+</div>
+
+<h3>Strategy 2: Request Batching</h3>
+<p>Batch multiple requests when possible to reduce overhead.</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class BatchChatService {
+
+    private final ChatClient chatClient;
+
+    public List&lt;String&gt; batchClassify(List&lt;String&gt; texts) {
+        // Combine multiple classification requests into one
+        String batchPrompt = """
+                Classify the sentiment of each text as POSITIVE, NEGATIVE, or NEUTRAL.
+                Return only the classifications, one per line.
+                
+                Texts:
+                %s
+                """.formatted(String.join("\n", texts));
+
+        String response = chatClient.prompt()
+                .user(batchPrompt)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.0f)
+                        .withMaxTokens(texts.size() * 10)
+                        .build())
+                .call()
+                .content();
+
+        return Arrays.asList(response.split("\n"));
+    }
+}
+</code></pre>
+</div>
+
+<h3>Strategy 3: Model Selection Based on Complexity</h3>
+<p>Use cheaper models for simple tasks, reserve expensive models for complex ones.</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class SmartModelSelector {
+
+    private final ChatClient chatClient;
+
+    public String chat(String message) {
+        String model = selectModel(message);
+        
+        return chatClient.prompt()
+                .user(message)
+                .options(OpenAiChatOptions.builder()
+                        .withModel(model)
+                        .withTemperature(0.7f)
+                        .build())
+                .call()
+                .content();
+    }
+
+    private String selectModel(String message) {
+        int complexity = assessComplexity(message);
+        
+        if (complexity &lt; 3) {
+            return "gpt-3.5-turbo";  // Cheaper for simple tasks
+        } else if (complexity &lt; 7) {
+            return "gpt-4";
+        } else {
+            return "gpt-4-turbo";  // Most capable for complex tasks
+        }
+    }
+
+    private int assessComplexity(String message) {
+        int score = 0;
+        
+        // Simple heuristics
+        if (message.length() &gt; 500) score += 2;
+        if (message.contains("code") || message.contains("technical")) score += 2;
+        if (message.contains("analyze") || message.contains("compare")) score += 3;
+        if (message.split("\\?").length &gt; 2) score += 2;  // Multiple questions
+        
+        return score;
+    }
+}
+</code></pre>
+</div>
+
+<h2>Testing and Validation</h2>
+
+<h3>Automated Parameter Testing</h3>
+
+<div class="code-block">
+<pre><code>import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import static org.assertj.core.api.Assertions.*;
+
+@SpringBootTest
+class ParameterValidationTest {
+
+    @Autowired
+    private ChatClient.Builder chatClientBuilder;
+
+    @Test
+    void testDeterministicOutput() {
+        ChatClient client = chatClientBuilder.build();
+        String prompt = "What is 2+2?";
+        
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .withTemperature(0.0f)
+                .build();
+
+        // Should get identical responses
+        String response1 = client.prompt().user(prompt).options(options).call().content();
+        String response2 = client.prompt().user(prompt).options(options).call().content();
+        
+        assertThat(response1).isEqualTo(response2);
+    }
+
+    @Test
+    void testCreativeVariation() {
+        ChatClient client = chatClientBuilder.build();
+        String prompt = "Write a creative sentence about clouds.";
+        
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .withTemperature(1.0f)
+                .build();
+
+        // Should get different responses
+        String response1 = client.prompt().user(prompt).options(options).call().content();
+        String response2 = client.prompt().user(prompt).options(options).call().content();
+        
+        assertThat(response1).isNotEqualTo(response2);
+    }
+
+    @Test
+    void testTokenLimit() {
+        ChatClient client = chatClientBuilder.build();
+        
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .withTemperature(0.7f)
+                .withMaxTokens(50)
+                .build();
+
+        var response = client.prompt()
+                .user("Explain quantum physics in detail")
+                .options(options)
+                .call()
+                .chatResponse();
+
+        int tokensUsed = response.getMetadata().getUsage().getTotalTokens();
+        assertThat(tokensUsed).isLessThanOrEqualTo(50);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Documentation Best Practices</h2>
+
+<h3>Parameter Decision Documentation Template</h3>
+
+<div class="code-block">
+<pre><code>/**
+ * Customer Support Chat Service
+ * 
+ * Parameter Decisions:
+ * - Temperature: 0.6
+ *   Rationale: Balanced between consistency and natural conversation.
+ *   Tested: 2024-01-15, validated with 100 sample conversations
+ * 
+ * - Max Tokens: 400
+ *   Rationale: Sufficient for complete answers without excessive verbosity.
+ *   Cost Impact: ~$0.02 per request (GPT-4)
+ * 
+ * - Frequency Penalty: 0.2
+ *   Rationale: Prevents repetitive phrasing in multi-turn conversations.
+ *   Added: 2024-01-20 to address user feedback about repetition
+ * 
+ * - Presence Penalty: 0.1
+ *   Rationale: Encourages addressing different aspects of questions.
+ * 
+ * Last Reviewed: 2024-01-25
+ * Next Review: 2024-02-25
+ */
+@Service
+public class CustomerSupportService {
+    // Implementation
+}
+</code></pre>
+</div>
+
+<h2>Continuous Improvement Process</h2>
+
+<h3>Monthly Parameter Review Checklist</h3>
+<ul>
+    <li>Review metrics: latency, cost, error rate, user satisfaction</li>
+    <li>Analyze parameter usage patterns from logs</li>
+    <li>Identify outliers and anomalies</li>
+    <li>Test parameter adjustments in staging</li>
+    <li>A/B test promising changes in production</li>
+    <li>Update documentation with findings</li>
+    <li>Share learnings with team</li>
+</ul>
+
+<h2>Emergency Response Guide</h2>
+
+<h3>High Cost Alert</h3>
+<p><strong>Symptoms:</strong> Unexpected spike in API costs</p>
+<p><strong>Actions:</strong></p>
+<ol>
+    <li>Check Max Tokens settings - may be too high</li>
+    <li>Review request volume - possible abuse or loop</li>
+    <li>Implement rate limiting if not present</li>
+    <li>Consider caching for repeated requests</li>
+    <li>Switch to cheaper model for non-critical tasks</li>
+</ol>
+
+<h3>Poor Quality Responses</h3>
+<p><strong>Symptoms:</strong> Users reporting irrelevant or low-quality responses</p>
+<p><strong>Actions:</strong></p>
+<ol>
+    <li>Review recent parameter changes</li>
+    <li>Check if Temperature is too high (causing randomness)</li>
+    <li>Verify prompts haven't been modified</li>
+    <li>Test with known good inputs</li>
+    <li>Roll back to last known good configuration</li>
+</ol>
+
+<h3>High Latency</h3>
+<p><strong>Symptoms:</strong> Slow response times</p>
+<p><strong>Actions:</strong></p>
+<ol>
+    <li>Reduce Max Tokens if set too high</li>
+    <li>Check if using slower model unnecessarily</li>
+    <li>Implement streaming for long responses</li>
+    <li>Consider caching for common requests</li>
+    <li>Review API provider status</li>
+</ol>
+
+<h2>Final Pro-Tips Summary</h2>
+<ul>
+    <li>Never adjust Temperature and Top-P together</li>
+    <li>Always use Temperature 0.0 for structured output</li>
+    <li>Understand the difference between Frequency and Presence penalties</li>
+    <li>Implement comprehensive monitoring and logging</li>
+    <li>Cache deterministic responses aggressively</li>
+    <li>Choose models based on task complexity</li>
+    <li>Document all parameter decisions with rationale</li>
+    <li>Review and optimize parameters regularly</li>
+    <li>Test parameter changes before production deployment</li>
+    <li>Have rollback plans for parameter changes</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

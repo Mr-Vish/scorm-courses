@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Applications and Implications</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Applications and Implications</h1>
+
+
+<h2>Applying CAI Principles in Your Applications</h2>
+<p>You can use CAI-inspired patterns in your own GenAI applications:</p>
+
+<h3>Self-Critique Pattern</h3>
+<div class="code-block">
+<pre><code># Generate initial response
+response = call_llm(f"Answer: {user_question}")
+
+# Self-critique
+critique = call_llm(
+    f"Review this response for: "
+    f"1. Accuracy 2. Safety 3. Bias 4. Completeness
+"
+    f"Response to review: {response}"
+)
+
+# Revise based on critique
+final = call_llm(
+    f"Revise this response based on the critique.
+"
+    f"Original: {response}
+Critique: {critique}
+"
+    f"Provide an improved response."
+)</code></pre>
+</div>
+
+<h2>The Helpful-Harmless-Honest (HHH) Framework</h2>
+<table>
+    <tr><th>Principle</th><th>Definition</th><th>Tension</th></tr>
+    <tr><td>Helpful</td><td>Provides useful, accurate information</td><td>Helpfulness vs Safety</td></tr>
+    <tr><td>Harmless</td><td>Avoids causing physical, emotional, or societal harm</td><td>Over-refusal reduces helpfulness</td></tr>
+    <tr><td>Honest</td><td>Truthful, acknowledges uncertainty, avoids deception</td><td>Honesty about limitations vs confidence</td></tr>
+</table>
+
+<h2>Challenges and Limitations</h2>
+<ul>
+    <li><strong>Principle conflicts:</strong> What happens when helpfulness and harmlessness conflict?</li>
+    <li><strong>Cultural variation:</strong> Harmlessness definitions vary across cultures</li>
+    <li><strong>Over-refusal:</strong> Models may refuse benign requests out of excessive caution</li>
+    <li><strong>Gaming:</strong> Sophisticated prompts may still bypass constitutional guardrails</li>
+</ul>
+
+<h2>Future Directions</h2>
+<ul>
+    <li>More granular constitutional principles for specific domains</li>
+    <li>User-customizable safety boundaries within limits</li>
+    <li>Better handling of edge cases and nuanced situations</li>
+    <li>Transparent reporting of which principles influenced a response</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

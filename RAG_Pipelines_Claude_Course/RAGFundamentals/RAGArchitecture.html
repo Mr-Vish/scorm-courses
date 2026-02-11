@@ -1,0 +1,76 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>RAG Architecture with Claude</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>RAG Architecture with Claude</h1>
+
+
+<h2>What is Retrieval Augmented Generation?</h2>
+<p>RAG combines a retrieval system with Claude to answer questions using your own data. Instead of relying solely on training data, Claude receives relevant context retrieved from your documents at query time.</p>
+
+<h2>RAG Pipeline Components</h2>
+<ul>
+    <li><strong>Document Ingestion:</strong> Parse PDFs, HTML, markdown, databases into text chunks</li>
+    <li><strong>Embedding Generation:</strong> Convert text chunks into vector representations</li>
+    <li><strong>Vector Store:</strong> Index and store embeddings for fast similarity search</li>
+    <li><strong>Retrieval:</strong> Find the most relevant chunks for a user query</li>
+    <li><strong>Generation:</strong> Send retrieved context + query to Claude for an answer</li>
+</ul>
+
+<h2>Embedding Models for RAG</h2>
+<p>Choose an embedding model based on your requirements:</p>
+<table>
+    <tr><th>Model</th><th>Dimensions</th><th>Best For</th></tr>
+    <tr><td>Voyage AI (voyage-3)</td><td>1024</td><td>High-quality retrieval, Anthropic recommended</td></tr>
+    <tr><td>OpenAI (text-embedding-3-large)</td><td>3072</td><td>Wide ecosystem support</td></tr>
+    <tr><td>Cohere (embed-v3)</td><td>1024</td><td>Multilingual retrieval</td></tr>
+    <tr><td>BGE-large</td><td>1024</td><td>Open-source, self-hosted</td></tr>
+</table>
+
+<h2>Basic RAG Implementation</h2>
+<div class="code-block">
+<pre><code>import anthropic
+from voyageai import Client as VoyageClient
+
+voyage = VoyageClient()
+claude = anthropic.Anthropic()
+
+# 1. Embed the query
+query = "How do I configure connection pooling?"
+query_embedding = voyage.embed([query], model="voyage-3").embeddings[0]
+
+# 2. Retrieve relevant chunks (from your vector store)
+results = vector_store.search(query_embedding, top_k=5)
+context = "
+
+".join([r.text for r in results])
+
+# 3. Generate answer with Claude
+response = claude.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": f"Using the following context, answer the question.
+
+Context:
+{context}
+
+Question: {query}"
+    }]
+)
+print(response.content[0].text)</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

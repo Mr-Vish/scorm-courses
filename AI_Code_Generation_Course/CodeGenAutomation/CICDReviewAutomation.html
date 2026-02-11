@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>CI/CD Integration and Review Automation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>CI/CD Integration and Review Automation</h1>
+
+
+<h2>AI in the CI/CD Pipeline</h2>
+<p>Integrate AI code generation and review into your continuous delivery workflow:</p>
+
+<h3>GitHub Actions Example</h3>
+<div class="code-block">
+<pre><code>name: AI Code Review and Test Generation
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: AI Code Review
+        run: claude review --format=github-comments
+
+  generate-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Missing Tests
+        run: |
+          claude "Generate tests for any new functions that lack test coverage"
+      - name: Run Tests
+        run: npm test</code></pre>
+</div>
+
+<h2>Automated PR Enhancement</h2>
+<p>AI can enhance pull requests automatically:</p>
+<ul>
+    <li><strong>Auto-generate PR description:</strong> Summarize changes and their purpose</li>
+    <li><strong>Add missing tests:</strong> Detect untested code paths and generate tests</li>
+    <li><strong>Suggest documentation:</strong> Generate JSDoc/docstrings for new public APIs</li>
+    <li><strong>Flag breaking changes:</strong> Identify API changes that affect consumers</li>
+</ul>
+
+<h2>Guardrails for AI-Generated Code</h2>
+<table>
+    <tr><th>Guardrail</th><th>Purpose</th><th>Implementation</th></tr>
+    <tr><td>Mandatory human review</td><td>No auto-merge of AI code</td><td>Branch protection rules</td></tr>
+    <tr><td>Test coverage gate</td><td>AI code must have tests</td><td>Coverage threshold in CI</td></tr>
+    <tr><td>Security scanning</td><td>No vulnerabilities introduced</td><td>SAST tools in pipeline</td></tr>
+    <tr><td>Style enforcement</td><td>Consistent code style</td><td>Linter + formatter</td></tr>
+    <tr><td>Dependency audit</td><td>No unnecessary new deps</td><td>Dependency review action</td></tr>
+</table>
+
+<h2>Measuring AI Code Quality</h2>
+<ul>
+    <li><strong>First-pass acceptance rate:</strong> How often AI code passes review without changes</li>
+    <li><strong>Bug introduction rate:</strong> Bugs found in AI-generated code vs human code</li>
+    <li><strong>Time to merge:</strong> How quickly AI-generated PRs are reviewed and merged</li>
+    <li><strong>Test quality:</strong> Do generated tests catch real bugs or just cover lines?</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Video Transcription and Captioning</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Video Transcription and Captioning with AI</h1>
+
+<h2>Why Video Accessibility Matters</h2>
+<p>Over <strong>466 million people</strong> worldwide have hearing loss. Without captions and transcripts, video content is completely inaccessible to deaf and hard-of-hearing users. Additionally, captions benefit:</p>
+<ul>
+    <li>Non-native speakers learning a new language</li>
+    <li>People in sound-sensitive environments (libraries, offices)</li>
+    <li>Users in noisy environments (public transit, cafes)</li>
+    <li>People with auditory processing disorders</li>
+    <li>Anyone who prefers reading to listening</li>
+</ul>
+
+<h2>AI-Powered Transcription with OpenAI Whisper</h2>
+<p>OpenAI's Whisper model provides state-of-the-art speech recognition in 99+ languages with high accuracy, even with background noise, accents, and technical terminology.</p>
+
+<div class="code-block">
+<pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+def transcribe_video(video_path: str, language: str = None) -&gt; dict:
+    '''Transcribe video audio with timestamps.'''
+    with open(video_path, "rb") as audio_file:
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+            response_format="verbose_json",
+            timestamp_granularities=["word", "segment"],
+            language=language  # Optional: 'en', 'es', 'fr', etc.
+        )
+    
+    return {
+        "text": transcript.text,
+        "language": transcript.language,
+        "duration": transcript.duration,
+        "segments": transcript.segments,
+        "words": transcript.words
+    }
+
+# Example usage
+result = transcribe_video("training_video.mp4")
+print(f"Transcribed {result['duration']}s of {result['language']} audio")
+print(result['text'])</code></pre>
+</div>
+
+<h2>Generating WebVTT Captions</h2>
+<p>WebVTT (Web Video Text Tracks) is the standard format for web video captions. AI can automatically generate properly formatted caption files:</p>
+
+<div class="code-block">
+<pre><code>def generate_vtt_captions(transcript: dict, max_chars_per_line: int = 42) -&gt; str:
+    '''Convert transcript to WebVTT format with proper timing and line breaks.'''
+    vtt_content = ["WEBVTT", ""]
+    
+    for i, segment in enumerate(transcript['segments'], 1):
+        start_time = format_vtt_timestamp(segment['start'])
+        end_time = format_vtt_timestamp(segment['end'])
+        text = segment['text'].strip()
+        
+        # Split long lines for readability
+        lines = split_caption_text(text, max_chars_per_line)
+        
+        vtt_content.append(f"{i}")
+        vtt_content.append(f"{start_time} --&gt; {end_time}")
+        vtt_content.extend(lines)
+        vtt_content.append("")
+    
+    return "\n".join(vtt_content)
+
+def format_vtt_timestamp(seconds: float) -&gt; str:
+    '''Convert seconds to VTT timestamp format (HH:MM:SS.mmm).'''
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    millis = int((seconds % 1) * 1000)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}"
+
+def split_caption_text(text: str, max_chars: int) -&gt; list:
+    '''Split caption text into readable lines.'''
+    words = text.split()
+    lines = []
+    current_line = []
+    current_length = 0
+    
+    for word in words:
+        if current_length + len(word) + 1 &gt; max_chars:
+            lines.append(" ".join(current_line))
+            current_line = [word]
+            current_length = len(word)
+        else:
+            current_line.append(word)
+            current_length += len(word) + 1
+    
+    if current_line:
+        lines.append(" ".join(current_line))
+    
+    return lines</code></pre>
+</div>
+
+<h2>Caption Quality Best Practices</h2>
+<table>
+    <tr><th>Guideline</th><th>Requirement</th><th>Why It Matters</th></tr>
+    <tr><td>Timing accuracy</td><td>±250ms of actual speech</td><td>Captions must sync with audio for comprehension</td></tr>
+    <tr><td>Reading speed</td><td>160-180 words per minute</td><td>Viewers need time to read and watch simultaneously</td></tr>
+    <tr><td>Line length</td><td>32-42 characters per line</td><td>Prevents excessive eye movement</td></tr>
+    <tr><td>Line breaks</td><td>Break at natural phrases</td><td>Maintains readability and comprehension</td></tr>
+    <tr><td>Speaker identification</td><td>Label speakers in multi-person videos</td><td>Clarifies who is speaking</td></tr>
+    <tr><td>Sound effects</td><td>Include [music], [applause], [door closes]</td><td>Provides context beyond speech</td></tr>
+</table>
+
+<h2>Multi-Language Support</h2>
+<p>AI enables automatic translation and captioning in multiple languages:</p>
+
+<div class="code-block">
+<pre><code>def translate_captions(transcript_text: str, target_language: str) -&gt; str:
+    '''Translate transcript to another language.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                f"Translate the following video transcript to {target_language}. "
+                "Maintain natural speech patterns and timing-appropriate phrasing. "
+                "Keep technical terms accurate."
+            )},
+            {"role": "user", "content": transcript_text}
+        ]
+    )
+    return response.choices[0].message.content
+
+# Generate captions in multiple languages
+original_transcript = transcribe_video("webinar.mp4", language="en")
+spanish_captions = translate_captions(original_transcript['text'], "Spanish")
+french_captions = translate_captions(original_transcript['text'], "French")</code></pre>
+</div>
+
+<h2>Adding Sound Effects and Speaker Labels</h2>
+<p>For comprehensive accessibility, captions should include non-speech audio information:</p>
+
+<div class="code-block">
+<pre><code>def enhance_captions_with_context(transcript: dict, video_path: str) -&gt; dict:
+    '''Use AI to identify speakers and sound effects.'''
+    # Analyze audio for non-speech sounds
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": (
+                "Analyze this transcript and suggest where to add sound effect "
+                "descriptions like [music], [applause], [laughter]. "
+                "Also identify speaker changes and suggest labels.\n\n"
+                f"Transcript:\n{transcript['text']}"
+            )
+        }]
+    )
+    
+    return response.choices[0].message.content</code></pre>
+</div>
+
+<h2>Real-World Use Cases</h2>
+<ul>
+    <li><strong>Corporate training:</strong> Automatically caption employee training videos in multiple languages</li>
+    <li><strong>Education:</strong> Make lecture recordings accessible to all students</li>
+    <li><strong>Marketing:</strong> Increase video engagement by 40% with captions (Facebook study)</li>
+    <li><strong>Legal compliance:</strong> Meet ADA and WCAG requirements for video content</li>
+    <li><strong>Social media:</strong> 85% of Facebook videos are watched without sound—captions are essential</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Captions make video accessible to 466+ million people with hearing loss</li>
+    <li>AI transcription with Whisper achieves 95%+ accuracy across 99 languages</li>
+    <li>WebVTT is the standard format for web video captions</li>
+    <li>Quality captions require proper timing, line breaks, and non-speech information</li>
+    <li>Automated translation enables multi-language accessibility at scale</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

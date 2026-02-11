@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Gemini Nano and Android Integration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Gemini Nano and Android Integration</h1>
+
+
+<h2>On-Device AI with Gemini Nano</h2>
+<p>Gemini Nano is Google's smallest model, designed to run directly on mobile devices. It enables AI features without network connectivity and with minimal latency.</p>
+
+<h2>Supported Devices and Requirements</h2>
+<ul>
+    <li><strong>Pixel 8 Pro and newer:</strong> Native Gemini Nano support via AICore</li>
+    <li><strong>Samsung Galaxy S24+:</strong> Available through Samsung's AI integration</li>
+    <li><strong>Android 14+:</strong> Required for AICore system service</li>
+    <li><strong>Minimum RAM:</strong> 6GB+ recommended for smooth inference</li>
+</ul>
+
+<h2>Setting Up Gemini Nano in Android</h2>
+<div class="code-block">
+<pre><code>// build.gradle.kts
+dependencies {
+    implementation("com.google.ai.edge.litert:litert:1.0.0")
+    implementation("com.google.android.gms:play-services-aicore:16.0.0")
+}
+
+// Check availability
+val aiCoreManager = AICoreManager.getInstance(context)
+val isAvailable = aiCoreManager.isFeatureAvailable(Feature.TEXT_GENERATION)</code></pre>
+</div>
+
+<h2>On-Device Text Generation</h2>
+<div class="code-block">
+<pre><code>// Generate text on-device
+val generationConfig = GenerationConfig.builder()
+    .setMaxOutputTokens(256)
+    .setTemperature(0.7f)
+    .build()
+
+val model = GenerativeModel(
+    modelName = "gemini-nano",
+    generationConfig = generationConfig
+)
+
+val response = model.generateContent("Summarize this email: $emailText")
+val summary = response.text</code></pre>
+</div>
+
+<h2>On-Device vs Cloud Trade-offs</h2>
+<table>
+    <tr><th>Factor</th><th>On-Device (Nano)</th><th>Cloud (Gemini API)</th></tr>
+    <tr><td>Latency</td><td>Very low (ms)</td><td>Higher (network + inference)</td></tr>
+    <tr><td>Privacy</td><td>Data stays on device</td><td>Data sent to cloud</td></tr>
+    <tr><td>Quality</td><td>Good for simple tasks</td><td>Better for complex tasks</td></tr>
+    <tr><td>Cost</td><td>Free (device resources)</td><td>API pricing applies</td></tr>
+    <tr><td>Offline</td><td>Works offline</td><td>Requires internet</td></tr>
+</table>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding AI Agents and the Claude Agent SDK</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Understanding AI Agents and the Claude Agent SDK</h1>
+
+<h2>Module Objectives</h2>
+<p>In this lesson, you will:</p>
+<ul>
+    <li>Understand what AI agents are and how they differ from chatbots</li>
+    <li>Learn the core components of the Claude Agent SDK</li>
+    <li>Explore the agent execution model and reasoning cycle</li>
+    <li>Identify use cases where agents provide value over traditional approaches</li>
+</ul>
+
+<h2>What is an AI Agent?</h2>
+<p>An <strong>AI agent</strong> is an autonomous system that can perceive its environment, make decisions, and take actions to achieve specific goals. Unlike traditional chatbots that respond to single queries, agents can:</p>
+
+<ul>
+    <li>Execute multi-step workflows autonomously</li>
+    <li>Use tools and external systems to gather information or perform actions</li>
+    <li>Adapt their approach based on intermediate results</li>
+    <li>Maintain state and context across extended interactions</li>
+    <li>Plan, execute, and reflect on their actions</li>
+</ul>
+
+<h2>Chatbot vs Agent: Key Differences</h2>
+
+<table>
+    <tr>
+        <th>Characteristic</th>
+        <th>Chatbot</th>
+        <th>Agent</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Interaction Model</td>
+        <td>Single-turn question and answer</td>
+        <td>Multi-step autonomous execution</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Tool Usage</td>
+        <td>None or pre-programmed responses</td>
+        <td>Dynamic tool selection and orchestration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Planning</td>
+        <td>Reactive - responds to immediate input</td>
+        <td>Proactive - plans sequence of actions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Memory</td>
+        <td>Conversation history only</td>
+        <td>State persistence, working memory, long-term memory</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Autonomy</td>
+        <td>Requires user input for each step</td>
+        <td>Executes multiple steps independently</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Handling</td>
+        <td>Reports errors to user</td>
+        <td>Attempts recovery and alternative approaches</td>
+    </tr>
+</table>
+
+<h2>The Claude Agent SDK</h2>
+<p>The <strong>Claude Agent SDK</strong> is Anthropic's framework for building autonomous AI agents powered by Claude. It provides:</p>
+
+<ul>
+    <li><strong>Tool Use API:</strong> Structured interface for defining and invoking tools</li>
+    <li><strong>Agent Loop Pattern:</strong> Framework for iterative agent execution</li>
+    <li><strong>State Management:</strong> Mechanisms for maintaining context across turns</li>
+    <li><strong>Prompt Templates:</strong> Pre-built patterns for common agent behaviors</li>
+    <li><strong>Safety Guardrails:</strong> Built-in mechanisms for controlling agent behavior</li>
+</ul>
+
+<h2>Core Components of an Agent System</h2>
+
+<h3>1. The Agent Loop</h3>
+<p>The agent loop is the fundamental execution pattern for agents. It follows a continuous cycle:</p>
+
+<ul>
+    <li><strong>Observe:</strong> Receive input from user or environment</li>
+    <li><strong>Think:</strong> Reason about the situation and plan next actions</li>
+    <li><strong>Act:</strong> Execute tool calls or provide responses</li>
+    <li><strong>Reflect:</strong> Evaluate results and decide whether to continue or finish</li>
+</ul>
+
+<p>This cycle repeats until the agent determines the task is complete or a stopping condition is met.</p>
+
+<h3>2. Tool Definitions</h3>
+<p>Tools are functions that agents can invoke to interact with external systems or perform specific actions. Each tool definition includes:</p>
+
+<ul>
+    <li><strong>Name:</strong> Unique identifier for the tool</li>
+    <li><strong>Description:</strong> Clear explanation of what the tool does and when to use it</li>
+    <li><strong>Input Schema:</strong> JSON Schema defining required and optional parameters</li>
+    <li><strong>Implementation:</strong> The actual function that executes when the tool is called</li>
+</ul>
+
+<h3>3. System Prompt</h3>
+<p>The system prompt defines the agent's:</p>
+
+<ul>
+    <li><strong>Role and Persona:</strong> Who the agent is and how it should behave</li>
+    <li><strong>Capabilities:</strong> What the agent can and cannot do</li>
+    <li><strong>Constraints:</strong> Rules and limitations the agent must follow</li>
+    <li><strong>Goals:</strong> What the agent is trying to achieve</li>
+    <li><strong>Reasoning Style:</strong> How the agent should approach problems</li>
+</ul>
+
+<h3>4. State and Memory</h3>
+<p>Agents maintain different types of memory:</p>
+
+<ul>
+    <li><strong>Conversation History:</strong> Record of all messages exchanged</li>
+    <li><strong>Working Memory:</strong> Temporary information relevant to current task</li>
+    <li><strong>Long-term Memory:</strong> Persistent information across sessions</li>
+    <li><strong>Tool Results:</strong> Outcomes of previous tool invocations</li>
+</ul>
+
+<h2>The Agent Reasoning Cycle</h2>
+<p>When an agent receives a task, it follows this reasoning process:</p>
+
+<p><strong>Step 1: Task Understanding</strong></p>
+<ul>
+    <li>Parse the user's request</li>
+    <li>Identify the goal and any constraints</li>
+    <li>Determine what information is needed</li>
+</ul>
+
+<p><strong>Step 2: Planning</strong></p>
+<ul>
+    <li>Break down the task into subtasks</li>
+    <li>Identify which tools are needed</li>
+    <li>Determine the sequence of actions</li>
+</ul>
+
+<p><strong>Step 3: Execution</strong></p>
+<ul>
+    <li>Invoke tools with appropriate parameters</li>
+    <li>Process tool results</li>
+    <li>Update working memory with new information</li>
+</ul>
+
+<p><strong>Step 4: Evaluation</strong></p>
+<ul>
+    <li>Assess whether the goal has been achieved</li>
+    <li>Determine if additional steps are needed</li>
+    <li>Decide whether to continue, adjust approach, or finish</li>
+</ul>
+
+<h2>When to Use Agents vs Chatbots</h2>
+
+<p><strong>Use Agents When:</strong></p>
+<ul>
+    <li>Tasks require multiple steps or tool invocations</li>
+    <li>The solution path is not predetermined</li>
+    <li>Adaptation based on intermediate results is needed</li>
+    <li>Integration with multiple external systems is required</li>
+    <li>Complex decision-making or planning is involved</li>
+</ul>
+
+<p><strong>Use Chatbots When:</strong></p>
+<ul>
+    <li>Simple question-answering is sufficient</li>
+    <li>Responses can be generated from context alone</li>
+    <li>No external actions or tool use is needed</li>
+    <li>Latency and cost must be minimized</li>
+    <li>Deterministic behavior is required</li>
+</ul>
+
+<h2>Agent Use Cases</h2>
+
+<h3>Customer Support Agent</h3>
+<ul>
+    <li>Looks up customer information from CRM</li>
+    <li>Checks order status in fulfillment system</li>
+    <li>Processes refunds or exchanges</li>
+    <li>Escalates to human when needed</li>
+</ul>
+
+<h3>Research Assistant Agent</h3>
+<ul>
+    <li>Searches multiple databases and sources</li>
+    <li>Synthesizes information from various documents</li>
+    <li>Generates summaries and reports</li>
+    <li>Cites sources and tracks references</li>
+</ul>
+
+<h3>Data Analysis Agent</h3>
+<ul>
+    <li>Queries databases with SQL</li>
+    <li>Performs statistical analysis</li>
+    <li>Generates visualizations</li>
+    <li>Interprets results and provides insights</li>
+</ul>
+
+<h3>Workflow Automation Agent</h3>
+<ul>
+    <li>Monitors systems for specific conditions</li>
+    <li>Executes multi-step business processes</li>
+    <li>Handles exceptions and edge cases</li>
+    <li>Logs actions and maintains audit trail</li>
+</ul>
+
+<h2>Agent Architecture Patterns</h2>
+
+<h3>Simple Agent</h3>
+<p>Single agent with direct tool access. Best for straightforward tasks with clear tool requirements.</p>
+
+<h3>Hierarchical Agent</h3>
+<p>Manager agent delegates subtasks to specialist agents. Useful for complex workflows with distinct phases.</p>
+
+<h3>Collaborative Agents</h3>
+<p>Multiple agents work together, sharing information and coordinating actions. Ideal for multi-domain problems.</p>
+
+<h3>Reflective Agent</h3>
+<p>Agent that can critique its own outputs and iterate to improve results. Valuable for quality-critical tasks.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Agents are autonomous systems that can plan, execute multi-step tasks, and use tools dynamically</li>
+    <li>The agent loop (observe, think, act, reflect) is the fundamental execution pattern</li>
+    <li>Claude Agent SDK provides tools, state management, and safety mechanisms for building agents</li>
+    <li>Agents excel at complex, multi-step tasks requiring tool orchestration and adaptation</li>
+    <li>Different agent architectures suit different problem types and complexity levels</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to Amazon Bedrock</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: Bedrock Fundamentals</h1>
+<h2>Introduction to Amazon Bedrock</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand what Amazon Bedrock is and its role in the generative AI ecosystem</li>
+    <li>Identify the key components and architecture of Amazon Bedrock</li>
+    <li>Recognize the available foundation model providers and their characteristics</li>
+    <li>Evaluate the benefits of using a managed AI service versus self-hosted solutions</li>
+</ul>
+
+<h3>What Is Amazon Bedrock?</h3>
+<p>Amazon Bedrock is a <strong>fully managed service</strong> that provides access to high-performing foundation models (FMs) from leading AI companies through a unified API. Launched by AWS in 2023, Bedrock represents a paradigm shift in how organizations can leverage generative AI capabilities without the substantial overhead of infrastructure management, model training, or specialized hardware procurement.</p>
+
+<p>At its core, Amazon Bedrock serves as an <strong>abstraction layer</strong> between your applications and multiple foundation models. This architectural approach offers several strategic advantages: it eliminates vendor lock-in by allowing seamless switching between models, reduces operational complexity by providing a consistent interface, and accelerates development by handling the underlying infrastructure automatically.</p>
+
+<p>Foundation models are large-scale neural networks trained on vast amounts of data, capable of performing a wide range of tasks including text generation, summarization, question answering, code generation, and image creation. These models represent billions or even trillions of parameters and require significant computational resources to train and operate. Bedrock democratizes access to these powerful models by handling all infrastructure concerns, allowing developers to focus on building innovative applications.</p>
+
+<h3>The Generative AI Landscape and Bedrock's Position</h3>
+<p>The generative AI market has experienced explosive growth, with organizations across industries seeking to integrate AI capabilities into their products and services. However, deploying and managing foundation models presents significant challenges:</p>
+
+<ul>
+    <li><strong>Infrastructure Complexity:</strong> Foundation models require specialized hardware (GPUs/TPUs) and sophisticated deployment architectures</li>
+    <li><strong>Cost Barriers:</strong> Training and hosting models can cost millions of dollars in compute resources</li>
+    <li><strong>Expertise Requirements:</strong> Managing AI infrastructure requires specialized skills in machine learning operations (MLOps)</li>
+    <li><strong>Scalability Challenges:</strong> Handling variable workloads and ensuring low-latency responses requires advanced engineering</li>
+    <li><strong>Model Selection:</strong> Choosing the right model for specific use cases requires extensive testing and evaluation</li>
+</ul>
+
+<p>Amazon Bedrock addresses these challenges by providing a <strong>serverless, pay-as-you-go platform</strong> that abstracts away infrastructure concerns while maintaining enterprise-grade security, compliance, and performance. This positions Bedrock as an ideal solution for organizations that want to leverage cutting-edge AI without building and maintaining complex infrastructure.</p>
+
+<h3>Available Foundation Model Providers</h3>
+<p>One of Bedrock's most compelling features is its <strong>multi-model approach</strong>, offering access to foundation models from various leading AI companies. This diversity enables organizations to select models based on specific requirements such as performance, cost, latency, and capability.</p>
+
+<table>
+    <tr>
+        <th>Provider</th>
+        <th>Models</th>
+        <th>Key Strengths</th>
+        <th>Ideal Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Anthropic</td>
+        <td>Claude 3.5 Sonnet, Claude 3 Opus, Claude 3 Haiku</td>
+        <td>Advanced reasoning, long context windows (200K tokens), strong coding abilities, nuanced understanding</td>
+        <td>Complex analysis, legal document review, technical documentation, code generation, research assistance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Amazon</td>
+        <td>Titan Text G1, Titan Text Lite, Titan Embeddings, Titan Multimodal Embeddings</td>
+        <td>Cost-effective, optimized for AWS integration, strong embeddings for search</td>
+        <td>General-purpose text generation, semantic search, content moderation, RAG applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Meta</td>
+        <td>Llama 3.1 (405B, 70B, 8B), Llama 3.2 (90B, 11B, 3B, 1B)</td>
+        <td>Open-source foundation, multilingual, various sizes for different needs, strong community support</td>
+        <td>Customizable applications, multilingual content, cost-sensitive deployments, research projects</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Mistral AI</td>
+        <td>Mistral Large, Mistral 7B, Mixtral 8x7B</td>
+        <td>Efficient inference, multilingual (especially European languages), strong performance-to-cost ratio</td>
+        <td>European market applications, multilingual customer service, efficient production deployments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cohere</td>
+        <td>Command R+, Command R, Command Light, Embed</td>
+        <td>Enterprise-focused, excellent for RAG, strong retrieval capabilities, business-oriented outputs</td>
+        <td>Enterprise search, knowledge management, customer support, business intelligence</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Stability AI</td>
+        <td>Stable Diffusion XL, Stable Diffusion</td>
+        <td>Image generation, customization, style control</td>
+        <td>Marketing content, product visualization, creative design, image editing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AI21 Labs</td>
+        <td>Jurassic-2 Ultra, Jurassic-2 Mid</td>
+        <td>Instruction following, task-specific optimization, multilingual</td>
+        <td>Content creation, summarization, paraphrasing, translation</td>
+    </tr>
+</table>
+
+<h3>Core Architecture and Components</h3>
+<p>Amazon Bedrock's architecture is designed around several key components that work together to provide a seamless experience:</p>
+
+<h4>1. Model Inference API</h4>
+<p>The primary interface for interacting with foundation models. The API provides two invocation modes:</p>
+<ul>
+    <li><strong>Synchronous Invocation:</strong> Request-response pattern suitable for real-time applications with immediate results</li>
+    <li><strong>Streaming Invocation:</strong> Progressive response delivery ideal for user-facing applications requiring immediate feedback</li>
+</ul>
+
+<h4>2. Model Catalog</h4>
+<p>A centralized repository of available foundation models with detailed information about capabilities, pricing, context windows, and performance characteristics. The catalog enables informed model selection based on specific requirements.</p>
+
+<h4>3. Model Access Management</h4>
+<p>A governance layer that controls which models are available to your AWS account. This opt-in approach ensures organizations maintain control over which AI capabilities are accessible to their teams and applications.</p>
+
+<h4>4. Agents Framework</h4>
+<p>An orchestration layer that enables foundation models to autonomously execute multi-step tasks, interact with external APIs, and leverage organizational knowledge bases. Agents represent a higher-level abstraction for building complex AI workflows.</p>
+
+<h4>5. Knowledge Bases</h4>
+<p>A managed Retrieval-Augmented Generation (RAG) implementation that connects foundation models to organizational data sources, enabling models to provide responses grounded in specific, up-to-date information.</p>
+
+<h4>6. Guardrails</h4>
+<p>A safety and compliance framework that filters inputs and outputs based on configurable policies, ensuring AI-generated content adheres to organizational standards and regulatory requirements.</p>
+
+<h3>Key Benefits of Amazon Bedrock</h3>
+
+<h4>Infrastructure Abstraction</h4>
+<p>Bedrock eliminates the need to provision, configure, and manage GPU clusters or specialized hardware. The service automatically handles scaling, load balancing, and high availability, allowing teams to focus on application logic rather than infrastructure operations. This <strong>serverless approach</strong> means you never pay for idle resources and can scale from zero to thousands of requests seamlessly.</p>
+
+<h4>Model Flexibility and Experimentation</h4>
+<p>The ability to switch between models with minimal code changes enables rapid experimentation and optimization. Organizations can evaluate multiple models against their specific use cases, compare performance and cost characteristics, and select the optimal model without significant refactoring. This flexibility also provides <strong>future-proofing</strong> as new models become available.</p>
+
+<h4>Enterprise-Grade Security and Compliance</h4>
+<p>Bedrock inherits AWS's comprehensive security infrastructure, including:</p>
+<ul>
+    <li><strong>Data Privacy:</strong> Your data is never used to train the underlying foundation models</li>
+    <li><strong>Encryption:</strong> Data is encrypted in transit and at rest using AWS Key Management Service (KMS)</li>
+    <li><strong>Network Isolation:</strong> VPC endpoints enable private connectivity without internet exposure</li>
+    <li><strong>Access Control:</strong> Fine-grained IAM policies control who can access which models and features</li>
+    <li><strong>Compliance:</strong> Bedrock supports various compliance frameworks including HIPAA, GDPR, and SOC 2</li>
+    <li><strong>Audit Logging:</strong> CloudTrail integration provides comprehensive audit trails for governance</li>
+</ul>
+
+<h4>AWS Ecosystem Integration</h4>
+<p>Native integration with AWS services streamlines development and operations:</p>
+<ul>
+    <li><strong>Lambda:</strong> Build serverless AI applications with event-driven architectures</li>
+    <li><strong>S3:</strong> Store and retrieve training data, prompts, and generated content</li>
+    <li><strong>CloudWatch:</strong> Monitor model invocations, latency, and errors</li>
+    <li><strong>EventBridge:</strong> Create event-driven workflows triggered by AI operations</li>
+    <li><strong>Step Functions:</strong> Orchestrate complex AI workflows with state machines</li>
+    <li><strong>SageMaker:</strong> Combine Bedrock with custom models for hybrid approaches</li>
+</ul>
+
+<h4>Cost Optimization</h4>
+<p>Bedrock's pricing model offers several advantages:</p>
+<ul>
+    <li><strong>Pay-per-Use:</strong> Charged only for tokens processed, eliminating upfront costs</li>
+    <li><strong>No Minimum Commitments:</strong> Scale usage up or down without contractual obligations</li>
+    <li><strong>Model Variety:</strong> Choose from models at different price points based on requirements</li>
+    <li><strong>Provisioned Throughput:</strong> Optional reserved capacity for predictable, high-volume workloads at discounted rates</li>
+</ul>
+
+<h3>Use Case Categories</h3>
+<p>Amazon Bedrock enables a wide range of generative AI applications across industries:</p>
+
+<h4>Content Generation and Transformation</h4>
+<ul>
+    <li>Marketing copy and product descriptions</li>
+    <li>Technical documentation and user guides</li>
+    <li>Email drafting and response generation</li>
+    <li>Content summarization and translation</li>
+</ul>
+
+<h4>Conversational AI</h4>
+<ul>
+    <li>Intelligent chatbots and virtual assistants</li>
+    <li>Customer support automation</li>
+    <li>Internal knowledge management systems</li>
+    <li>Voice-enabled applications</li>
+</ul>
+
+<h4>Code and Development</h4>
+<ul>
+    <li>Code generation and completion</li>
+    <li>Code review and optimization suggestions</li>
+    <li>Documentation generation from code</li>
+    <li>Test case creation</li>
+</ul>
+
+<h4>Data Analysis and Insights</h4>
+<ul>
+    <li>Document analysis and information extraction</li>
+    <li>Sentiment analysis and trend identification</li>
+    <li>Report generation from structured data</li>
+    <li>Research synthesis and literature review</li>
+</ul>
+
+<h4>Creative Applications</h4>
+<ul>
+    <li>Image generation for marketing and design</li>
+    <li>Personalized content recommendations</li>
+    <li>Story and narrative generation</li>
+    <li>Brand voice adaptation</li>
+</ul>
+
+<h3>Bedrock vs. Alternative Approaches</h3>
+
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Amazon Bedrock</th>
+        <th>Self-Hosted Models</th>
+        <th>Direct API Services</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Infrastructure Management</td>
+        <td>Fully managed, serverless</td>
+        <td>Requires GPU provisioning, scaling, maintenance</td>
+        <td>Managed by provider</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Selection</td>
+        <td>Multiple providers, easy switching</td>
+        <td>Limited to self-deployed models</td>
+        <td>Single provider per service</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Privacy</td>
+        <td>Data stays in AWS account, not used for training</td>
+        <td>Complete control</td>
+        <td>Varies by provider</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost Structure</td>
+        <td>Pay-per-use, no upfront costs</td>
+        <td>High upfront and ongoing infrastructure costs</td>
+        <td>Pay-per-use</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Customization</td>
+        <td>Fine-tuning available, prompt engineering</td>
+        <td>Full customization possible</td>
+        <td>Limited to provider options</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Integration</td>
+        <td>Native AWS integration</td>
+        <td>Custom integration required</td>
+        <td>API-based integration</td>
+    </tr>
+</table>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Amazon Bedrock is a fully managed service providing unified access to multiple foundation models from leading AI companies</li>
+    <li>The service abstracts infrastructure complexity, enabling teams to focus on application development rather than operations</li>
+    <li>Multiple model providers offer flexibility to choose the best model for specific use cases based on performance, cost, and capabilities</li>
+    <li>Enterprise-grade security, compliance, and AWS ecosystem integration make Bedrock suitable for production deployments</li>
+    <li>Serverless architecture and pay-per-use pricing eliminate upfront costs and enable cost-effective scaling</li>
+    <li>Bedrock supports diverse use cases from content generation to conversational AI to code development</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

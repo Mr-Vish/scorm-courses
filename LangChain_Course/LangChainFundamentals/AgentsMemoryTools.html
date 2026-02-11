@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Agents, Memory, and Tools</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Agents, Memory, and Tools</h1>
+
+
+<h2>LangChain Agents</h2>
+<p>Agents use an LLM to decide which tools to call and in what order. Unlike chains (which follow a fixed sequence), agents dynamically choose actions based on the task:</p>
+<div class="code-block">
+<pre><code>from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.tools import DuckDuckGoSearchResults
+
+# Define tools
+search = DuckDuckGoSearchResults()
+tools = [search]
+
+# Create agent
+llm = ChatOpenAI(model="gpt-4o")
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful research assistant."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}"),
+])
+
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+result = executor.invoke({"input": "What were the top AI papers this week?"})</code></pre>
+</div>
+
+<h2>Agent Types</h2>
+<table>
+    <tr><th>Type</th><th>Description</th><th>Best For</th></tr>
+    <tr><td>Tool Calling</td><td>Uses model's native function calling</td><td>Most use cases with modern models</td></tr>
+    <tr><td>ReAct</td><td>Reason + Act loop with text-based tool use</td><td>Models without function calling</td></tr>
+    <tr><td>Plan-and-Execute</td><td>Plans steps first, then executes</td><td>Complex multi-step tasks</td></tr>
+    <tr><td>Self-Ask</td><td>Asks and answers sub-questions</td><td>Research and fact-checking</td></tr>
+</table>
+
+<h2>Conversation Memory</h2>
+<p>Memory allows chains and agents to remember previous interactions:</p>
+<div class="code-block">
+<pre><code>from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+
+store = {}
+
+def get_session_history(session_id: str):
+    if session_id not in store:
+        store[session_id] = ChatMessageHistory()
+    return store[session_id]
+
+chain_with_memory = RunnableWithMessageHistory(
+    chain,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history",
+)
+
+# Each call remembers previous messages
+response = chain_with_memory.invoke(
+    {"input": "My name is Alice"},
+    config={"configurable": {"session_id": "abc123"}},
+)</code></pre>
+</div>
+
+<h2>Built-in Tools</h2>
+<ul>
+    <li><strong>Search:</strong> DuckDuckGo, Google, Tavily for web search</li>
+    <li><strong>Code:</strong> Python REPL, shell commands for computation</li>
+    <li><strong>Data:</strong> SQL database, CSV, pandas for structured data</li>
+    <li><strong>APIs:</strong> Requests, OpenAPI spec tools for external services</li>
+    <li><strong>Files:</strong> File read/write, directory listing for local data</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

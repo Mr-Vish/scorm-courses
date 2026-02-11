@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Security, Privacy, and Compliance</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Security, Privacy, and Compliance</h1>
+
+<h2>Data Security Requirements</h2>
+<table>
+    <tr>
+        <th>Security Layer</th>
+        <th>Implementation</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Encryption at Rest</td>
+        <td>AES-256 for stored documents</td>
+        <td>Protect stored data from unauthorized access</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Encryption in Transit</td>
+        <td>TLS 1.3 for all API calls</td>
+        <td>Secure data during transmission</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Access Control</td>
+        <td>Role-based access (RBAC)</td>
+        <td>Limit access to authorized users</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Audit Logging</td>
+        <td>Immutable logs of all operations</td>
+        <td>Track all document access and changes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Retention</td>
+        <td>Automated deletion after retention period</td>
+        <td>Comply with data minimization principles</td>
+    </tr>
+</table>
+
+<h2>Regulatory Compliance Frameworks</h2>
+
+<h3>GDPR (General Data Protection Regulation)</h3>
+<ul>
+    <li><strong>Right to Access:</strong> Provide all stored document data upon request</li>
+    <li><strong>Right to Deletion:</strong> Delete all personal data within 30 days</li>
+    <li><strong>Data Minimization:</strong> Only collect necessary information</li>
+    <li><strong>Purpose Limitation:</strong> Use data only for stated purposes</li>
+    <li><strong>Consent Management:</strong> Obtain explicit consent for processing</li>
+</ul>
+
+<h3>HIPAA (Health Insurance Portability and Accountability Act)</h3>
+<ul>
+    <li><strong>PHI Protection:</strong> Encrypt all protected health information</li>
+    <li><strong>Access Logs:</strong> Track all PHI access with user identification</li>
+    <li><strong>Business Associate Agreements:</strong> Contracts with GenAI providers</li>
+    <li><strong>Breach Notification:</strong> Report breaches within 60 days</li>
+    <li><strong>Minimum Necessary:</strong> Access only required PHI</li>
+</ul>
+
+<h3>SOX (Sarbanes-Oxley Act)</h3>
+<ul>
+    <li><strong>Financial Document Integrity:</strong> Ensure accuracy of financial records</li>
+    <li><strong>Audit Trails:</strong> Complete history of document processing</li>
+    <li><strong>Access Controls:</strong> Segregation of duties</li>
+    <li><strong>Retention:</strong> 7-year minimum for financial documents</li>
+</ul>
+
+<h2>PII Detection and Redaction</h2>
+<blockquote>
+import re
+
+def detect_and_redact_pii(text):
+    pii_patterns = {
+        'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
+        'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+        'phone': r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
+        'credit_card': r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b',
+        'date_of_birth': r'\b\d{2}/\d{2}/\d{4}\b'
+    }
+    
+    redacted_text = text
+    pii_found = []
+    
+    for pii_type, pattern in pii_patterns.items():
+        matches = re.findall(pattern, text)
+        if matches:
+            pii_found.append({
+                'type': pii_type,
+                'count': len(matches)
+            })
+            redacted_text = re.sub(pattern, f'[{pii_type.upper()}_REDACTED]', redacted_text)
+    
+    return {
+        'redacted_text': redacted_text,
+        'pii_detected': pii_found,
+        'contains_pii': len(pii_found) > 0
+    }
+</blockquote>
+
+<h2>Secure Document Storage</h2>
+<table>
+    <tr>
+        <th>Storage Type</th>
+        <th>Retention Period</th>
+        <th>Access Level</th>
+        <th>Encryption</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Active Processing</td>
+        <td>30 days</td>
+        <td>Processing system only</td>
+        <td>AES-256</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Archive</td>
+        <td>1-7 years</td>
+        <td>Authorized users with audit</td>
+        <td>AES-256 + key rotation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Backup</td>
+        <td>90 days</td>
+        <td>System administrators only</td>
+        <td>AES-256 + separate keys</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Audit Logs</td>
+        <td>7 years minimum</td>
+        <td>Compliance team only</td>
+        <td>Immutable, encrypted</td>
+    </tr>
+</table>
+
+<h2>Third-Party GenAI Provider Considerations</h2>
+<blockquote>
+Security Checklist for GenAI Providers:
+
+✓ Data Processing Agreement (DPA) signed
+✓ Zero data retention policy confirmed
+✓ SOC 2 Type II certification
+✓ GDPR compliance documented
+✓ Data residency requirements met
+✓ Encryption standards verified (TLS 1.3, AES-256)
+✓ Incident response procedures defined
+✓ Regular security audits conducted
+✓ Subprocessor list reviewed
+✓ Right to audit clause included
+
+For sensitive documents (PHI, PII):
+- Consider on-premise deployment
+- Use dedicated instances
+- Implement additional encryption layer
+</blockquote>
+
+<h2>Access Control Implementation</h2>
+<ul>
+    <li><strong>Role-Based Access Control (RBAC):</strong> Define roles (Processor, Reviewer, Admin)</li>
+    <li><strong>Principle of Least Privilege:</strong> Grant minimum necessary permissions</li>
+    <li><strong>Multi-Factor Authentication:</strong> Require MFA for all users</li>
+    <li><strong>Session Management:</strong> Automatic timeout after 15 minutes inactivity</li>
+    <li><strong>IP Whitelisting:</strong> Restrict access to known IP ranges</li>
+</ul>
+
+<h2>Incident Response Plan</h2>
+<blockquote>
+Document Security Incident Response:
+
+1. Detection (0-1 hour):
+   - Automated alerts for suspicious activity
+   - User reports of unauthorized access
+
+2. Containment (1-4 hours):
+   - Isolate affected systems
+   - Revoke compromised credentials
+   - Block suspicious IP addresses
+
+3. Investigation (4-24 hours):
+   - Determine scope of breach
+   - Identify affected documents
+   - Assess data exposure
+
+4. Notification (24-72 hours):
+   - Notify affected parties
+   - Report to regulatory authorities if required
+   - Internal stakeholder communication
+
+5. Remediation (1-2 weeks):
+   - Patch vulnerabilities
+   - Enhance security controls
+   - Update policies and procedures
+
+6. Post-Incident Review (2-4 weeks):
+   - Document lessons learned
+   - Update incident response plan
+   - Conduct security training
+</blockquote>
+
+<h2>Compliance Monitoring</h2>
+<ul>
+    <li><strong>Quarterly Security Audits:</strong> Review access logs, encryption status</li>
+    <li><strong>Annual Penetration Testing:</strong> Third-party security assessment</li>
+    <li><strong>Monthly Compliance Reports:</strong> Track regulatory adherence</li>
+    <li><strong>Continuous Monitoring:</strong> Real-time alerts for policy violations</li>
+    <li><strong>Employee Training:</strong> Annual security and compliance training</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Audio Description for Visual Content</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Audio Description for Visual Content</h1>
+
+<h2>What is Audio Description?</h2>
+<p>Audio description (AD) is narration added to video content that describes important visual elements—actions, settings, facial expressions, costumes, and scene changes—for people who are blind or have low vision. It fits between dialogue and sound effects without overlapping speech.</p>
+
+<h2>The Need for Audio Description</h2>
+<p>For the <strong>285 million people</strong> worldwide with visual impairments, video content without audio description is like watching a movie with your eyes closed. Critical visual information is lost:</p>
+<ul>
+    <li>Character actions and reactions</li>
+    <li>Scene settings and transitions</li>
+    <li>On-screen text and graphics</li>
+    <li>Facial expressions and body language</li>
+    <li>Visual humor and dramatic moments</li>
+</ul>
+
+<h2>AI-Generated Audio Descriptions</h2>
+<p>Traditionally, creating audio descriptions required professional describers and was expensive ($1,000-$5,000 per hour of video). AI can now generate high-quality descriptions automatically:</p>
+
+<div class="code-block">
+<pre><code>from openai import OpenAI
+import cv2
+import base64
+
+client = OpenAI()
+
+def generate_audio_description(video_path: str, transcript: dict) -&gt; list:
+    '''Generate audio descriptions for video content.'''
+    descriptions = []
+    video = cv2.VideoCapture(video_path)
+    fps = video.get(cv2.CAP_PROP_FPS)
+    
+    # Extract key frames between dialogue
+    dialogue_gaps = find_dialogue_gaps(transcript, min_gap_seconds=2.0)
+    
+    for gap in dialogue_gaps:
+        # Extract frame from middle of gap
+        frame_time = (gap['start'] + gap['end']) / 2
+        video.set(cv2.CAP_PROP_POS_MSEC, frame_time * 1000)
+        success, frame = video.read()
+        
+        if success:
+            # Encode frame for vision model
+            _, buffer = cv2.imencode('.jpg', frame)
+            image_base64 = base64.b64encode(buffer).decode('utf-8')
+            
+            # Generate description
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": (
+                            "Generate a concise audio description for this video frame. "
+                            f"You have {gap['duration']:.1f} seconds. "
+                            "Describe: setting, characters, actions, expressions. "
+                            "Use present tense. Be objective. "
+                            f"Previous context: {gap.get('context', '')}"
+                        )},
+                        {"type": "image_url", "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_base64}"
+                        }}
+                    ]
+                }]
+            )
+            
+            descriptions.append({
+                "time": frame_time,
+                "duration": gap['duration'],
+                "text": response.choices[0].message.content
+            })
+    
+    video.release()
+    return descriptions
+
+def find_dialogue_gaps(transcript: dict, min_gap_seconds: float) -&gt; list:
+    '''Find gaps between dialogue suitable for audio description.'''
+    gaps = []
+    segments = transcript['segments']
+    
+    for i in range(len(segments) - 1):
+        gap_start = segments[i]['end']
+        gap_end = segments[i + 1]['start']
+        gap_duration = gap_end - gap_start
+        
+        if gap_duration &gt;= min_gap_seconds:
+            gaps.append({
+                "start": gap_start,
+                "end": gap_end,
+                "duration": gap_duration,
+                "context": segments[i]['text']
+            })
+    
+    return gaps</code></pre>
+</div>
+
+<h2>Audio Description Best Practices</h2>
+<table>
+    <tr><th>Principle</th><th>Description</th><th>Example</th></tr>
+    <tr><td><strong>Objectivity</strong></td><td>Describe what you see, not what you think</td><td>Good: "Sarah frowns" | Bad: "Sarah looks angry"</td></tr>
+    <tr><td><strong>Present tense</strong></td><td>Describe action as it happens</td><td>"John walks to the door" not "John walked"</td></tr>
+    <tr><td><strong>Conciseness</strong></td><td>Fit descriptions in available gaps</td><td>Prioritize essential visual information</td></tr>
+    <tr><td><strong>Specificity</strong></td><td>Use specific details when relevant</td><td>"Red sports car" not just "car"</td></tr>
+    <tr><td><strong>Context</strong></td><td>Provide setting and character info</td><td>"In a crowded subway car, Maria..."</td></tr>
+    <tr><td><strong>Avoid redundancy</strong></td><td>Don't repeat what's in dialogue</td><td>If character says "I'm leaving," don't describe them leaving</td></tr>
+</table>
+
+<h2>Generating Natural-Sounding Audio</h2>
+<p>Once descriptions are written, AI text-to-speech converts them to natural audio:</p>
+
+<div class="code-block">
+<pre><code>def generate_description_audio(description_text: str, output_path: str) -&gt; str:
+    '''Convert audio description text to speech.'''
+    response = client.audio.speech.create(
+        model="tts-1-hd",
+        voice="onyx",  # Professional, neutral voice
+        input=description_text,
+        speed=1.0
+    )
+    
+    response.stream_to_file(output_path)
+    return output_path
+
+def create_described_video(
+    video_path: str,
+    descriptions: list,
+    output_path: str
+) -&gt; str:
+    '''Mix audio descriptions into video.'''
+    from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip
+    
+    video = VideoFileClip(video_path)
+    audio_clips = [video.audio]
+    
+    # Generate and position description audio
+    for desc in descriptions:
+        audio_file = f"temp_desc_{desc['time']}.mp3"
+        generate_description_audio(desc['text'], audio_file)
+        
+        desc_audio = AudioFileClip(audio_file)
+        desc_audio = desc_audio.set_start(desc['time'])
+        audio_clips.append(desc_audio)
+    
+    # Combine all audio
+    final_audio = CompositeAudioClip(audio_clips)
+    final_video = video.set_audio(final_audio)
+    final_video.write_videofile(output_path)
+    
+    return output_path</code></pre>
+</div>
+
+<h2>Extended vs. Standard Audio Description</h2>
+<table>
+    <tr><th>Type</th><th>When Used</th><th>How It Works</th></tr>
+    <tr><td><strong>Standard AD</strong></td><td>Sufficient natural pauses exist</td><td>Descriptions fit between dialogue without pausing video</td></tr>
+    <tr><td><strong>Extended AD</strong></td><td>Complex visuals, insufficient pauses</td><td>Video pauses to allow longer descriptions, then resumes</td></tr>
+</table>
+
+<h2>Describing Different Content Types</h2>
+<div class="code-block">
+<pre><code>def generate_context_aware_description(
+    frame_image: str,
+    content_type: str,
+    previous_context: str
+) -&gt; str:
+    '''Generate descriptions tailored to content type.'''
+    
+    prompts = {
+        "educational": (
+            "Describe this educational content frame. "
+            "Focus on: diagrams, charts, on-screen text, demonstrations. "
+            "Be precise and instructional."
+        ),
+        "entertainment": (
+            "Describe this scene for a narrative video. "
+            "Focus on: character actions, expressions, setting, mood. "
+            "Be engaging and cinematic."
+        ),
+        "corporate": (
+            "Describe this business video frame. "
+            "Focus on: speakers, presentations, products, branding. "
+            "Be professional and clear."
+        ),
+        "social_media": (
+            "Describe this short-form video frame. "
+            "Be very concise. Focus on the main action or message. "
+            "Maximum 10 words."
+        )
+    }
+    
+    prompt = prompts.get(content_type, prompts["educational"])
+    
+    # Generate description with context
+    # (Implementation similar to previous examples)
+    
+    return description</code></pre>
+</div>
+
+<h2>Real-World Applications</h2>
+<ul>
+    <li><strong>Streaming services:</strong> Netflix, Amazon Prime add audio description to original content</li>
+    <li><strong>Education:</strong> Make instructional videos accessible to blind students</li>
+    <li><strong>Museums:</strong> Provide audio descriptions for virtual tours and exhibits</li>
+    <li><strong>Corporate training:</strong> Ensure all employees can access video training materials</li>
+    <li><strong>Social media:</strong> Platforms like TikTok and Instagram adding auto-description features</li>
+</ul>
+
+<h2>Quality Assurance</h2>
+<p>AI-generated audio descriptions should be reviewed for:</p>
+<ul>
+    <li><strong>Accuracy:</strong> Does the description match what's on screen?</li>
+    <li><strong>Timing:</strong> Does it fit in available gaps without overlapping dialogue?</li>
+    <li><strong>Clarity:</strong> Is it easy to understand and follow?</li>
+    <li><strong>Completeness:</strong> Are essential visual elements described?</li>
+    <li><strong>Naturalness:</strong> Does the TTS audio sound natural and professional?</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Audio description makes video accessible to 285 million people with visual impairments</li>
+    <li>AI can analyze video frames and generate descriptions automatically</li>
+    <li>Descriptions must be objective, concise, and fit between dialogue</li>
+    <li>AI text-to-speech creates natural-sounding narration</li>
+    <li>Different content types require different description approaches</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

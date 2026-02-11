@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Making API Calls with Gemini</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Making API Calls with Gemini</h1>
+
+<h2>Python SDK Installation and Setup</h2>
+<p>The official Google Generative AI Python SDK provides a convenient interface for interacting with the Gemini API.</p>
+
+<blockquote>
+# Install the SDK using pip
+pip install google-generativeai
+
+# For specific version
+pip install google-generativeai==0.3.2
+
+# Verify installation
+python -c "import google.generativeai as genai; print(genai.__version__)"
+</blockquote>
+
+<h2>Environment Configuration</h2>
+<p>Store your API key securely using environment variables rather than hardcoding it in your source code.</p>
+
+<blockquote>
+# Linux/macOS - Add to ~/.bashrc or ~/.zshrc
+export GEMINI_API_KEY="your_api_key_here"
+
+# Windows - Command Prompt
+set GEMINI_API_KEY=your_api_key_here
+
+# Windows - PowerShell
+$env:GEMINI_API_KEY="your_api_key_here"
+
+# Python - Load from environment
+import os
+import google.generativeai as genai
+
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY environment variable not set")
+
+genai.configure(api_key=api_key)
+</blockquote>
+
+<h2>Basic Text Generation</h2>
+<p>The simplest use case is generating text responses from text prompts.</p>
+
+<blockquote>
+import google.generativeai as genai
+import os
+
+# Configure API key
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+# Initialize model
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+# Generate content
+response = model.generate_content("Explain Kubernetes in simple terms")
+
+# Access the response
+print(response.text)
+
+# Check for safety ratings
+print(f"Safety ratings: {response.prompt_feedback}")
+</blockquote>
+
+<h2>Response Object Structure</h2>
+<p>Understanding the response object is crucial for robust applications.</p>
+
+<blockquote>
+# Generate content
+response = model.generate_content("What is machine learning?")
+
+# Access different parts of the response
+print("Text:", response.text)
+print("Candidates:", response.candidates)
+print("Prompt feedback:", response.prompt_feedback)
+
+# Check if response was blocked
+if response.prompt_feedback.block_reason:
+    print(f"Response blocked: {response.prompt_feedback.block_reason}")
+else:
+    print("Response generated successfully")
+
+# Access token count
+print(f"Token count: {response.usage_metadata}")
+</blockquote>
+
+<h2>Multi-Modal Input: Text + Image</h2>
+<p>Gemini's native multi-modal capability allows you to combine text and images in a single request.</p>
+
+<blockquote>
+import google.generativeai as genai
+import PIL.Image
+
+# Configure and initialize
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+# Load image
+img = PIL.Image.open("architecture_diagram.png")
+
+# Generate content with image and text
+response = model.generate_content([
+    "Analyze this system architecture diagram. "
+    "Identify potential single points of failure and suggest improvements.",
+    img
+])
+
+print(response.text)
+</blockquote>
+
+<h2>Multiple Images Analysis</h2>
+<blockquote>
+import PIL.Image
+
+# Load multiple images
+image1 = PIL.Image.open("before.png")
+image2 = PIL.Image.open("after.png")
+
+# Compare images
+response = model.generate_content([
+    "Compare these two images and describe the differences:",
+    image1,
+    image2
+])
+
+print(response.text)
+</blockquote>
+
+<h2>Structured Output with JSON Mode</h2>
+<p>For applications requiring reliable data extraction, use JSON mode with schema validation.</p>
+
+<blockquote>
+import google.generativeai as genai
+
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+# Define the expected schema
+response = model.generate_content(
+    "Extract all person names and their roles from this text: "
+    "John Smith is the CEO, Sarah Johnson is the CTO, and Mike Brown is the CFO.",
+    generation_config=genai.GenerationConfig(
+        response_mime_type="application/json",
+        response_schema={
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "role": {"type": "string"}
+                },
+                "required": ["name", "role"]
+            }
+        }
+    )
+)
+
+# Parse JSON response
+import json
+data = json.loads(response.text)
+print(data)
+# Output: [{"name": "John Smith", "role": "CEO"}, ...]
+</blockquote>
+
+<h2>Complex Schema Example</h2>
+<blockquote>
+# Define a complex schema for product extraction
+product_schema = {
+    "type": "object",
+    "properties": {
+        "products": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "price": {"type": "number"},
+                    "category": {"type": "string"},
+                    "in_stock": {"type": "boolean"},
+                    "features": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                },
+                "required": ["name", "price", "category"]
+            }
+        },
+        "total_count": {"type": "integer"}
+    },
+    "required": ["products", "total_count"]
+}
+
+response = model.generate_content(
+    "Extract product information from this catalog: ...",
+    generation_config=genai.GenerationConfig(
+        response_mime_type="application/json",
+        response_schema=product_schema
+    )
+)
+</blockquote>
+
+<h2>Generation Configuration Options</h2>
+<p>Fine-tune model behavior with generation parameters.</p>
+
+<blockquote>
+# Configure generation parameters
+generation_config = genai.GenerationConfig(
+    temperature=0.7,        # Creativity (0.0-1.0)
+    top_p=0.95,            # Nucleus sampling
+    top_k=40,              # Top-k sampling
+    max_output_tokens=1024, # Maximum response length
+    stop_sequences=["END"]  # Stop generation at these sequences
+)
+
+model = genai.GenerativeModel(
+    "gemini-1.5-flash",
+    generation_config=generation_config
+)
+
+response = model.generate_content("Write a creative story about AI")
+</blockquote>
+
+<h2>Parameter Explanation</h2>
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Range</th>
+        <th>Effect</th>
+    </tr>
+    <tr>
+        <td class="rowheader">temperature</td>
+        <td>0.0 - 1.0</td>
+        <td>Higher = more creative/random, Lower = more focused/deterministic</td>
+    </tr>
+    <tr>
+        <td class="rowheader">top_p</td>
+        <td>0.0 - 1.0</td>
+        <td>Nucleus sampling - considers tokens with cumulative probability</td>
+    </tr>
+    <tr>
+        <td class="rowheader">top_k</td>
+        <td>1 - 100</td>
+        <td>Considers only top K most likely tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">max_output_tokens</td>
+        <td>1 - 8192</td>
+        <td>Maximum length of generated response</td>
+    </tr>
+</table>
+
+<h2>Safety Settings</h2>
+<p>Control content filtering for different harm categories.</p>
+
+<blockquote>
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+
+# Configure safety settings
+safety_settings = {
+    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+}
+
+model = genai.GenerativeModel(
+    "gemini-1.5-flash",
+    safety_settings=safety_settings
+)
+
+response = model.generate_content("Your prompt here")
+</blockquote>
+
+<h2>Error Handling Best Practices</h2>
+<blockquote>
+import google.generativeai as genai
+from google.api_core import exceptions
+import time
+
+def generate_with_retry(prompt, max_retries=3):
+    """Generate content with exponential backoff retry logic"""
+    
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    
+    for attempt in range(max_retries):
+        try:
+            response = model.generate_content(prompt)
+            
+            # Check if response was blocked
+            if response.prompt_feedback.block_reason:
+                print(f"Content blocked: {response.prompt_feedback.block_reason}")
+                return None
+            
+            return response.text
+            
+        except exceptions.ResourceExhausted:
+            # Rate limit exceeded
+            wait_time = 2 ** attempt  # Exponential backoff
+            print(f"Rate limit exceeded. Waiting {wait_time} seconds...")
+            time.sleep(wait_time)
+            
+        except exceptions.InvalidArgument as e:
+            # Invalid request parameters
+            print(f"Invalid argument: {e}")
+            return None
+            
+        except exceptions.ServiceUnavailable:
+            # Service temporarily unavailable
+            wait_time = 2 ** attempt
+            print(f"Service unavailable. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+            
+        except Exception as e:
+            # Unexpected error
+            print(f"Unexpected error: {e}")
+            return None
+    
+    print("Max retries exceeded")
+    return None
+
+# Usage
+result = generate_with_retry("Explain quantum computing")
+if result:
+    print(result)
+</blockquote>
+
+<h2>Streaming Responses</h2>
+<p>For long responses, use streaming to display content as it's generated.</p>
+
+<blockquote>
+# Stream response chunks
+response = model.generate_content(
+    "Write a detailed explanation of neural networks",
+    stream=True
+)
+
+for chunk in response:
+    print(chunk.text, end="", flush=True)
+
+print()  # New line after streaming completes
+</blockquote>
+
+<h2>Chat Conversations</h2>
+<p>Maintain context across multiple turns of conversation.</p>
+
+<blockquote>
+# Start a chat session
+model = genai.GenerativeModel("gemini-1.5-flash")
+chat = model.start_chat(history=[])
+
+# Send messages
+response1 = chat.send_message("What is Python?")
+print("Bot:", response1.text)
+
+response2 = chat.send_message("What are its main use cases?")
+print("Bot:", response2.text)
+
+# View conversation history
+print("\nChat History:")
+for message in chat.history:
+    print(f"{message.role}: {message.parts[0].text}")
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Use Environment Variables:</strong> Never hardcode API keys in source code</li>
+    <li><strong>Implement Retry Logic:</strong> Handle rate limits and transient errors gracefully</li>
+    <li><strong>Validate Responses:</strong> Check for blocked content and safety ratings</li>
+    <li><strong>Monitor Token Usage:</strong> Track costs and optimize prompts for efficiency</li>
+    <li><strong>Use Appropriate Models:</strong> Select the right model variant for your use case</li>
+    <li><strong>Cache When Possible:</strong> Avoid redundant API calls for identical requests</li>
+    <li><strong>Set Timeouts:</strong> Implement request timeouts to prevent hanging operations</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

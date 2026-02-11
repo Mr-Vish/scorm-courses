@@ -1,0 +1,346 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-File Refactoring Strategies</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Multi-File Refactoring Strategies</h1>
+
+<h2>Understanding Large-Scale Refactoring</h2>
+<p>Multi-file refactoring represents one of the most complex and risk-prone activities in software development. Unlike localized changes within a single file, large-scale refactoring requires coordinating modifications across numerous files while maintaining system functionality, preserving existing behavior, and ensuring all dependencies remain intact. Claude Code CLI's ability to understand entire codebases and coordinate changes across multiple files makes it particularly well-suited for these challenging tasks, but success requires careful planning, systematic execution, and rigorous validation.</p>
+
+<h3>Characteristics of Multi-File Refactoring</h3>
+<ul>
+    <li><strong>Scope:</strong> Changes span multiple files, modules, or packages</li>
+    <li><strong>Dependencies:</strong> Modifications must account for complex dependency relationships</li>
+    <li><strong>Coordination:</strong> Changes must be applied consistently across all affected files</li>
+    <li><strong>Risk:</strong> Higher potential for introducing bugs or breaking functionality</li>
+    <li><strong>Testing:</strong> Requires comprehensive testing to verify correctness</li>
+</ul>
+
+<h2>Common Multi-File Refactoring Scenarios</h2>
+
+<table>
+    <tr>
+        <th>Refactoring Type</th>
+        <th>Description</th>
+        <th>Complexity</th>
+        <th>Risk Level</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Rename Symbol</td>
+        <td>Rename function, class, or variable across all usages</td>
+        <td>Low-Medium</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Extract Module</td>
+        <td>Move related functionality into separate module</td>
+        <td>Medium</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Dependency Injection</td>
+        <td>Convert direct dependencies to injected dependencies</td>
+        <td>Medium-High</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">API Migration</td>
+        <td>Update all code to use new API version</td>
+        <td>High</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Architecture Restructure</td>
+        <td>Reorganize code to follow different architectural pattern</td>
+        <td>Very High</td>
+        <td>Very High</td>
+    </tr>
+</table>
+
+<h2>Planning Phase</h2>
+
+<h3>Impact Analysis</h3>
+<p>Before initiating refactoring, conduct thorough impact analysis:</p>
+
+<ul>
+    <li><strong>Dependency Mapping:</strong> Identify all files and modules affected by proposed changes</li>
+    <li><strong>Usage Analysis:</strong> Find all locations where target code is referenced or used</li>
+    <li><strong>Test Coverage Review:</strong> Assess existing test coverage for affected areas</li>
+    <li><strong>Risk Assessment:</strong> Evaluate potential risks and failure modes</li>
+    <li><strong>Rollback Planning:</strong> Define strategy for reverting changes if needed</li>
+</ul>
+
+<h3>Refactoring Strategy Selection</h3>
+<p>Choose appropriate strategy based on scope and risk:</p>
+
+<p><strong>Big Bang Approach:</strong></p>
+<ul>
+    <li>Make all changes in single operation</li>
+    <li>Suitable for smaller refactorings with good test coverage</li>
+    <li>Faster but higher risk</li>
+    <li>Requires comprehensive testing before deployment</li>
+</ul>
+
+<p><strong>Incremental Approach:</strong></p>
+<ul>
+    <li>Break refactoring into smaller, independent steps</li>
+    <li>Each step maintains system functionality</li>
+    <li>Lower risk, easier to validate</li>
+    <li>Takes longer but safer for large changes</li>
+</ul>
+
+<p><strong>Branch by Abstraction:</strong></p>
+<ul>
+    <li>Introduce abstraction layer to isolate changes</li>
+    <li>Gradually migrate to new implementation</li>
+    <li>Allows parallel operation of old and new code</li>
+    <li>Ideal for high-risk, high-impact changes</li>
+</ul>
+
+<h2>Execution Phase</h2>
+
+<h3>Using Claude Code CLI for Multi-File Refactoring</h3>
+<p>Leverage Claude's capabilities for coordinated changes:</p>
+
+<blockquote>
+# Example: Rename function across entire codebase
+"Rename the function calculateTotal to computeTotal across all files in the src/ directory. Update all function definitions, calls, imports, and references. Ensure test files are also updated."
+
+# Example: Extract module
+"Extract all authentication-related functions from src/utils.ts into a new module src/auth/authentication.ts. Update all imports and ensure no circular dependencies are created."
+
+# Example: Dependency injection refactoring
+"Refactor the UserService class to use dependency injection instead of directly instantiating DatabaseConnection. Update all files that create UserService instances to inject the connection."
+</blockquote>
+
+<h3>Validation at Each Step</h3>
+<p>Validate changes progressively to catch issues early:</p>
+
+<ul>
+    <li><strong>Syntax Validation:</strong> Ensure code compiles/parses without errors</li>
+    <li><strong>Type Checking:</strong> Verify type correctness in statically-typed languages</li>
+    <li><strong>Unit Tests:</strong> Run unit tests for affected modules</li>
+    <li><strong>Integration Tests:</strong> Verify interactions between modified components</li>
+    <li><strong>Manual Review:</strong> Inspect critical changes for correctness</li>
+</ul>
+
+<h2>Dependency Management</h2>
+
+<h3>Understanding Dependency Types</h3>
+
+<table>
+    <tr>
+        <th>Dependency Type</th>
+        <th>Description</th>
+        <th>Refactoring Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Direct Dependencies</td>
+        <td>Explicit imports or references</td>
+        <td>Must be updated when interface changes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Transitive Dependencies</td>
+        <td>Dependencies of dependencies</td>
+        <td>May require updates if breaking changes propagate</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Circular Dependencies</td>
+        <td>Mutual dependencies between modules</td>
+        <td>Must be resolved before refactoring</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Runtime Dependencies</td>
+        <td>Dependencies resolved at runtime</td>
+        <td>Harder to detect, require runtime testing</td>
+    </tr>
+</table>
+
+<h3>Dependency Resolution Strategies</h3>
+<ul>
+    <li><strong>Topological Ordering:</strong> Refactor dependencies before dependents</li>
+    <li><strong>Interface Preservation:</strong> Maintain public interfaces during internal refactoring</li>
+    <li><strong>Adapter Pattern:</strong> Use adapters to bridge old and new implementations</li>
+    <li><strong>Deprecation Path:</strong> Mark old APIs as deprecated before removal</li>
+</ul>
+
+<h2>Testing During Refactoring</h2>
+
+<h3>Test-Driven Refactoring</h3>
+<p>Use tests to guide and validate refactoring:</p>
+
+<ol>
+    <li><strong>Establish Baseline:</strong> Ensure all tests pass before starting</li>
+    <li><strong>Maintain Green State:</strong> Keep tests passing after each change</li>
+    <li><strong>Add Missing Tests:</strong> Write tests for uncovered areas before refactoring</li>
+    <li><strong>Refactor Tests:</strong> Update tests to reflect new structure</li>
+    <li><strong>Verify Behavior:</strong> Confirm system behavior remains unchanged</li>
+</ol>
+
+<h3>Testing Pyramid for Refactoring</h3>
+<ul>
+    <li><strong>Unit Tests:</strong> Fast, focused tests for individual components</li>
+    <li><strong>Integration Tests:</strong> Verify interactions between refactored components</li>
+    <li><strong>End-to-End Tests:</strong> Validate complete user workflows</li>
+    <li><strong>Manual Testing:</strong> Exploratory testing for edge cases</li>
+</ul>
+
+<h2>Rollback Strategies</h2>
+
+<h3>Version Control Best Practices</h3>
+<p>Use version control effectively for safe refactoring:</p>
+
+<ul>
+    <li><strong>Feature Branches:</strong> Perform refactoring in dedicated branch</li>
+    <li><strong>Atomic Commits:</strong> Commit logical units of change separately</li>
+    <li><strong>Descriptive Messages:</strong> Document what and why in commit messages</li>
+    <li><strong>Checkpoint Commits:</strong> Create commits at stable intermediate states</li>
+    <li><strong>Tag Releases:</strong> Tag working versions for easy rollback</li>
+</ul>
+
+<h3>Rollback Procedures</h3>
+
+<p><strong>Immediate Rollback (Development):</strong></p>
+<blockquote>
+# Discard uncommitted changes
+git reset --hard HEAD
+
+# Revert to previous commit
+git reset --hard HEAD~1
+
+# Revert specific commit
+git revert &lt;commit-hash&gt;
+</blockquote>
+
+<p><strong>Production Rollback:</strong></p>
+<ul>
+    <li>Deploy previous known-good version</li>
+    <li>Use feature flags to disable new code paths</li>
+    <li>Apply hotfix to address critical issues</li>
+    <li>Conduct post-mortem to understand failure</li>
+</ul>
+
+<h2>Performance Considerations</h2>
+
+<h3>Refactoring Performance Impact</h3>
+<p>Monitor performance implications of refactoring:</p>
+
+<ul>
+    <li><strong>Algorithmic Changes:</strong> Ensure refactored code maintains or improves performance</li>
+    <li><strong>Memory Usage:</strong> Monitor memory consumption patterns</li>
+    <li><strong>Network Calls:</strong> Verify refactoring doesn't introduce unnecessary network overhead</li>
+    <li><strong>Database Queries:</strong> Check for N+1 queries or inefficient data access</li>
+</ul>
+
+<h3>Performance Testing</h3>
+<ul>
+    <li>Establish performance baselines before refactoring</li>
+    <li>Run performance tests after changes</li>
+    <li>Profile code to identify bottlenecks</li>
+    <li>Compare metrics against baselines</li>
+</ul>
+
+<h2>Communication and Documentation</h2>
+
+<h3>Team Communication</h3>
+<p>Keep team informed throughout refactoring process:</p>
+
+<ul>
+    <li><strong>Announce Plans:</strong> Share refactoring plans before starting</li>
+    <li><strong>Progress Updates:</strong> Provide regular status updates</li>
+    <li><strong>Coordinate Merges:</strong> Communicate merge timing to avoid conflicts</li>
+    <li><strong>Share Learnings:</strong> Document insights and challenges encountered</li>
+</ul>
+
+<h3>Documentation Updates</h3>
+<p>Maintain documentation consistency with code changes:</p>
+
+<ul>
+    <li>Update API documentation for interface changes</li>
+    <li>Revise architecture diagrams to reflect new structure</li>
+    <li>Update README files with new usage patterns</li>
+    <li>Document migration guides for breaking changes</li>
+    <li>Update inline code comments for clarity</li>
+</ul>
+
+<h2>Real-World Case Studies</h2>
+
+<h3>Case Study 1: Microservices Extraction</h3>
+<p><strong>Scenario:</strong> Extract user authentication logic from monolithic application into separate microservice</p>
+
+<p><strong>Approach:</strong></p>
+<ul>
+    <li>Identified all authentication-related code across 47 files</li>
+    <li>Created new microservice project structure</li>
+    <li>Extracted authentication logic incrementally</li>
+    <li>Introduced API layer for communication</li>
+    <li>Migrated database tables to new service</li>
+    <li>Updated all calling code to use new API</li>
+</ul>
+
+<p><strong>Outcome:</strong> Successful extraction with zero downtime, improved maintainability</p>
+
+<h3>Case Study 2: Framework Migration</h3>
+<p><strong>Scenario:</strong> Migrate React application from class components to functional components with hooks</p>
+
+<p><strong>Approach:</strong></p>
+<ul>
+    <li>Analyzed 200+ component files for migration candidates</li>
+    <li>Prioritized components by usage frequency and complexity</li>
+    <li>Migrated components incrementally, starting with leaf nodes</li>
+    <li>Updated tests to work with new component structure</li>
+    <li>Verified UI behavior remained consistent</li>
+</ul>
+
+<p><strong>Outcome:</strong> Completed migration over 6 weeks, improved code readability and performance</p>
+
+<h2>Best Practices</h2>
+
+<h3>Before Refactoring</h3>
+<ul>
+    <li>Ensure comprehensive test coverage exists</li>
+    <li>Create backup or checkpoint of current state</li>
+    <li>Communicate plans with team</li>
+    <li>Allocate sufficient time for thorough execution</li>
+</ul>
+
+<h3>During Refactoring</h3>
+<ul>
+    <li>Make small, incremental changes</li>
+    <li>Run tests frequently to catch issues early</li>
+    <li>Commit working states regularly</li>
+    <li>Document decisions and rationale</li>
+</ul>
+
+<h3>After Refactoring</h3>
+<ul>
+    <li>Conduct thorough code review</li>
+    <li>Run full test suite including integration tests</li>
+    <li>Update all relevant documentation</li>
+    <li>Monitor production for unexpected issues</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Multi-file refactoring requires careful planning, systematic execution, and rigorous validation</li>
+    <li>Impact analysis identifies affected files, dependencies, and risks before starting</li>
+    <li>Choose refactoring strategy (big bang, incremental, or branch by abstraction) based on scope and risk</li>
+    <li>Claude Code CLI coordinates changes across multiple files while maintaining consistency</li>
+    <li>Dependency management requires understanding and resolving various dependency types</li>
+    <li>Test-driven refactoring maintains system correctness throughout the process</li>
+    <li>Version control and rollback strategies provide safety net for failed refactorings</li>
+    <li>Communication and documentation ensure team alignment and knowledge preservation</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

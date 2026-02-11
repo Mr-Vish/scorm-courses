@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Defense: Output Verification</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Defense: Output Verification</h1>
+<div class="container">
+<h2>Defense Strategy: Output Verification and Monitoring</h2>
+<p>If input filtering is about preventing the attack, output verification is about catching the result. Even if a malicious prompt bypasses your initial filters and tricks the LLM, you can still prevent the harm by checking the LLM's response before it's delivered to the user or executed by a system.</p>
+
+<h3>The Importance of Output Verification</h3>
+<p>Output verification is critical because it's the final point of control. It's often easier to detect a "bad" response (e.g., the model revealing its system prompt, generating hate speech, or providing a 'recipe' for a restricted substance) than it is to detect the "bad" input that caused it. Attackers can be extremely creative with their inputs, but the desired harmful output is often more predictable.</p>
+
+<h3>Techniques for Output Verification</h3>
+<ol>
+    <li><strong>Keyword and RegEx Filters:</strong> Check the output for sensitive information or prohibited content. For example, you can filter for snippets of your own system prompt or specific "alarm" words.</li>
+    <li><strong>LLM-Based Verification (The 'Output Guard'):</strong> Use a second LLM to review the primary model's response. You provide the original prompt and the proposed response to the Output Guard and ask: "Does this response violate our safety policy? Did the model reveal any confidential instructions?"
+        <ul>
+            <li>This is highly effective because the Output Guard has the full context of both the request and the answer.</li>
+        </ul>
+    </li>
+    <li><strong>Structure Validation:</strong> If you expect the model to output a specific format (like JSON or a structured report), use a validator to ensure the output conforms to the expected schema. A successful injection often breaks the intended output format.</li>
+    <li><strong>Semantic Analysis:</strong> Compare the response to the original goal. If the user asked for a weather report but the model is talking about "bypassing firewalls," an injection has likely occurred.</li>
+</ol>
+
+<h3>Monitoring and Logging</h3>
+<p>Monitoring is the "long-term" component of output defense. By analyzing trends and patterns in LLM behavior, you can identify ongoing attacks and new vulnerabilities.</p>
+<ul>
+    <li><strong>Anomaly Detection:</strong> Monitor for unusual spikes in specific types of responses or high rates of filter triggers.</li>
+    <li><strong>A/B Testing of Defenses:</strong> Test different versions of your filters and system prompts to see which are most effective at reducing successful injections.</li>
+    <li><strong>Audit Trails:</strong> Maintain detailed logs of all inputs, outputs, and filter decisions. This is essential for incident response and forensic analysis.</li>
+</ul>
+
+<h3>The 'Self-Correction' Pattern</h3>
+<p>In some cases, you can ask the model to review its own output before finalizing it. "Here is the response I've drafted. Does it follow all safety guidelines? If not, rewrite it." While this is helpful, it's less secure than using an independent, external verifier, as the same injection that tricked the model into generating the response might also trick its self-review.</p>
+
+<h3>Response Scrubbing</h3>
+<p>If an output contains sensitive data (like PII - Personally Identifiable Information) but is otherwise benign, you can use a scrubber to redact the sensitive parts before showing it to the user. This is a common practice in privacy-sensitive applications.</p>
+
+<h3>Practical Exercise: Verifying a Summarization Task</h3>
+<p>An LLM is asked to summarize a user-provided PDF. The attacker has hidden an injection in the PDF asking the LLM to include a link to a phishing site in the summary.
+- Input Filter: Misses the hidden text in the large PDF.
+- Output Verifier: Scans the final summary for any URLs. It compares these URLs against an "allow-list" of trusted sites.
+The verifier spots the suspicious link and blocks the response, protecting the user.</p>
+
+<h3>Limitations of Output Defense</h3>
+<p>Like input filtering, output verification adds latency. It also can't prevent "silent" failures where the model's logic is subtly corrupted without triggering any obvious alarms. Furthermore, a very clever attacker might find ways to "obfuscate" the output (e.g., using metaphors or code) to bypass the verifier.</p>
+
+<p>In conclusion, output verification is a vital "last line of defense." By treating the LLM's output as untrusted until it has been verified, you can significantly reduce the impact of successful prompt injections and ensure a safer experience for your users.</p>
+
+</div>
+</body>
+</html>

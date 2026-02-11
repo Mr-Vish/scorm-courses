@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: The Template Pattern</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: The Template Pattern</h1>
+<div class="container">
+<h2>The Template Pattern: Ensuring Consistent Output</h2>
+<p>The Template Pattern is essential for applications that require the LLM's output to follow a strict and consistent format. Instead of letting the model decide how to structure its response, you provide a clear "template" or "blueprint" and ask the model to fill in the blanks.</p>
+
+<h3>The Problem of Inconsistent AI Output</h3>
+<p>By default, LLMs are creative and vary their output structure. If you ask for a summary of five different articles, you might get three bulleted lists, one paragraph, and one table. For developers building software that processes these outputs, this inconsistency is a nightmare. The Template Pattern solves this.</p>
+
+<h3>How to Design a Template</h3>
+<p>A good template uses clear delimiters and placeholders. For example:</p>
+<blockquote>
+"Please analyze the provided customer feedback and respond using exactly this format:<br/>
+SUMMARY: [One sentence summary]<br/>
+SENTIMENT: [Positive/Neutral/Negative]<br/>
+KEY_ISSUES: [Bullet point list of issues]<br/>
+RECOMMENDED_ACTION: [What we should do next]"
+</blockquote>
+
+<h3>Benefits of Using Templates</h3>
+<ul>
+    <li><strong>Easier Parsing:</strong> If you use consistent labels like <code>SUMMARY:</code> or <code>SENTIMENT:</code>, your application can easily extract these parts using regular expressions or simple string splitting.</li>
+    <li><strong>Completeness:</strong> A template forces the model to address all the required parts of a task. It's less likely to forget to mention the "Recommended Action" if it sees the label in the template.</li>
+    <li><strong>User Experience:</strong> For human readers, consistent formatting makes the information easier to scan and understand.</li>
+</ul>
+
+<h3>Structuring Data with JSON and Markdown</h3>
+<p>Templates are most powerful when combined with structured data formats like JSON or Markdown.</p>
+<ul>
+    <li><strong>JSON Templates:</strong> "Respond only with a JSON object following this schema: { "name": string, "age": number, "city": string }." This is the gold standard for automated data extraction.</li>
+    <li><strong>Markdown Templates:</strong> "Use Markdown headers for each section and put the final data in a table with columns 'Date', 'Amount', and 'Category'." This is perfect for generating reports for human consumption.</li>
+</ul>
+
+<h3>Few-Shot Templating</h3>
+<p>To make the template even more effective, provide one or two examples of "filled-in" templates. This is known as few-shot prompting and helps the model understand the nuances of what you expect in each field.</p>
+
+<h3>Advanced Template: The 'Fill-in-the-Blank' Approach</h3>
+<p>You can even provide a long document with placeholders and ask the model to fill them.
+"I am a [Job Title] with [Number] years of experience. I am interested in the [Position] at [Company]. My strongest skill is [Skill]."
+This is a very effective way to guide the model's creativity into a specific structure.</p>
+
+<h3>Practical Exercise: Building a Bug Report Template</h3>
+<p>Imagine you want Claude to analyze error logs and generate a bug report. Design a template that includes:
+- Bug ID (randomly generated)
+- Severity Level
+- Description of the Error
+- Steps to Reproduce
+- Potential Root Cause
+Test this template against a real error log. How well does Claude adhere to the structure?</p>
+
+<h3>Common Pitfalls</h3>
+<ul>
+    <li><strong>Overly Complex Templates:</strong> If the template is too long and complicated, the model might get confused. Break large tasks into multiple smaller templates if necessary.</li>
+    <li><strong>Lack of Flexibility:</strong> Sometimes the model needs a bit of space to explain itself. Consider adding an <code>ADDITIONAL_NOTES:</code> field at the end of your template.</li>
+</ul>
+
+<p>In summary, the Template Pattern is about taking control of the AI's output. By providing a clear structure, you ensure that the AI's intelligence is delivered in a format that is useful, consistent, and easy to process.</p>
+
+</div>
+</body>
+</html>

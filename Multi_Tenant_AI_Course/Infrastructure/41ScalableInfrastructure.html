@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 4: Scalable Infrastructure for Multi-tenant AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 4: Scalable Infrastructure and Orchestration</h1>
+
+<p>Building a multi-tenant AI system that can handle thousands of concurrent users and petabytes of data requires a highly scalable and resilient infrastructure. This module covers the key architectural components and patterns for achieving this.</p>
+
+<h2>4.1 The Gateway Pattern</h2>
+<p>A central "AI Gateway" or "Proxy" is a crucial component in multi-tenant architectures. It serves as the single point of entry for all AI requests and handles:
+<ul>
+    <li><strong>Authentication and Authorization:</strong> Verifying the identity of the tenant and checking their permissions.</li>
+    <li><strong>Routing:</strong> Directing requests to the appropriate model instance or inference server based on the tenant's tier or requirements.</li>
+    <li><strong>Rate Limiting and Quotas:</strong> Ensuring that no single tenant can overwhelm the system and that everyone stays within their allocated limits.</li>
+    <li><strong>Telemetry and Logging:</strong> Capturing detailed metrics on usage, latency, and costs for each tenant.</li>
+    <li><strong>Caching:</strong> Storing common responses to reduce latency and cost for repetitive queries across different tenants (when safe to do so).</li>
+</ul></p>
+
+<h2>4.2 Orchestrating Inference Servers</h2>
+<p>Modern LLMs are typically served using dedicated inference engines like vLLM, Text Generation Inference (TGI), or NVIDIA Triton. Orchestrating these at scale involves:
+<ul>
+    <li><strong>Kubernetes (K8s):</strong> Using K8s to manage clusters of GPUs, handle auto-scaling based on demand, and provide self-healing capabilities.</li>
+    <li><strong>Model Serving Frameworks:</strong> Tools like Ray Serve or BentoML can help in deploying and scaling complex AI pipelines that involve multiple models and preprocessing steps.</li>
+    <li><strong>GPU Fractionalization:</strong> Allowing multiple small models or tenants to share a single GPU to improve utilization and reduce costs.</li>
+</ul></p>
+
+<h2>4.3 Handling Large Context Windows</h2>
+<p>As context windows grow to 1M+ tokens, managing the "KV Cache" becomes a major bottleneck. Techniques like **PagedAttention** (used in vLLM) allow for more efficient memory management by partitioning the cache into smaller, non-contiguous blocks, which is essential for serving many concurrent multi-tenant requests.</p>
+
+<h2>4.4 Data Tiering and Storage</h2>
+<p>Multi-tenant systems generate vast amounts of data. Efficiently storing and retrieving this requires:
+<ul>
+    <li><strong>Hot/Cold Storage:</strong> Keeping frequently accessed tenant data (like active conversation history) in fast, expensive storage (Redis, SSDs) while moving older data to cheaper object storage (S3).</li>
+    <li><strong>Distributed Vector Databases:</strong> Using scalable vector stores like Pinecone, Milvus, or Weaviate that support native multi-tenancy and efficient metadata filtering.</li>
+</ul></p>
+
+<h2>4.5 Multi-region Deployment</h2>
+<p>To reduce latency for global tenants and meet data residency requirements (e.g., "all data for EU tenants must stay in the EU"), the infrastructure must be deployed across multiple geographic regions. This requires a global load balancer and a mechanism for syncing (or isolating) tenant data across regions.</p>
+
+<p>By building on a solid foundation of modern cloud-native technologies, you can ensure that your multi-tenant AI system is ready to grow with your business.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

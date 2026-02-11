@@ -1,0 +1,100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 11: Hands-on Exercise - Building a Complex RAG Pipeline</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 11: Hands-on Exercise - Building a Multi-stage RAG Agent</h1>
+
+<p>In this final hands-on exercise, you will combine everything you've learned to build a sophisticated "Research Agent" using Spring AI. The agent will follow a multi-step process: Query Expansion -> Multi-stage Retrieval -> Re-ranking -> Synthesis.</p>
+
+<h2>Step 1: Define the Domain Model</h2>
+<p>We'll create a simple record to hold our search results.</p>
+<pre><code>public record SearchResult(String content, double score) {}</code></pre>
+
+<h2>Step 2: Implement the Research Agent Service</h2>
+<p>This service will orchestrate the different stages of the pipeline.</p>
+<pre><code>@Service
+public class ResearchAgentService {
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+
+    public String performResearch(String userQuestion) {
+        // Stage 1: Query Expansion
+        List&lt;String&gt; expandedQueries = expandQuery(userQuestion);
+
+        // Stage 2: Multi-stage Retrieval
+        List&lt;Document&gt; rawResults = expandedQueries.stream()
+            .flatMap(q -> vectorStore.similaritySearch(q).stream())
+            .distinct()
+            .toList();
+
+        // Stage 3: Re-ranking (Simulated)
+        List&lt;Document&gt; topResults = reRank(userQuestion, rawResults);
+
+        // Stage 4: Final Synthesis
+        return synthesizeAnswer(userQuestion, topResults);
+    }
+
+    private List&lt;String&gt; expandQuery(String q) {
+        String res = chatClient.prompt()
+            .user("Generate 3 search queries to help answer: " + q)
+            .call().content();
+        return Arrays.asList(res.split("\n"));
+    }
+
+    private List&lt;Document&gt; reRank(String q, List&lt;Document&gt; docs) {
+        // In a real app, use a Cross-Encoder or a specialized Re-ranker API
+        return docs.stream().limit(5).toList();
+    }
+
+    private String synthesizeAnswer(String q, List&lt;Document&gt; docs) {
+        String context = docs.stream().map(Document::getContent).collect(Collectors.joining("\n"));
+        return chatClient.prompt()
+            .user(u -> u.text("Answer the question based ONLY on the context: {q}\n\nContext:\n{c}")
+                        .param("q", q).param("c", context))
+            .call().content();
+    }
+}</code></pre>
+
+<h2>Step 3: Add a Tool for External Search</h2>
+<p>Enable the agent to search external news if the internal documentation is insufficient.</p>
+<pre><code>@Bean
+@Description("Search the internet for the latest news about a topic.")
+public Function&lt;String, String&gt; internetSearch() {
+    return query -> {
+        // Mocking an external API call
+        return "Latest news for " + query + "...";
+    };
+}</code></pre>
+
+<h2>Step 4: Integration Test</h2>
+<p>Create a JUnit test to verify the entire pipeline.</p>
+<pre><code>@SpringBootTest
+class ResearchAgentTests {
+    @Autowired ResearchAgentService service;
+
+    @Test
+    void testComplexPipeline() {
+        String result = service.performResearch("What are the latest advancements in Spring AI?");
+        assertTrue(result.contains("Spring AI"));
+    }
+}</code></pre>
+
+<h2>Challenge</h2>
+<ol>
+    <li>Implement a <strong>Semantic Cache</strong> using Redis to store and retrieve research results.</li>
+    <li>Add an <strong>Evaluation Stage</strong> that uses a second <code>ChatClient</code> to score the faithfulness of the synthesized answer.</li>
+</ol>
+
+<p>By completing this exercise, you've demonstrated the ability to build and orchestrate one of the most advanced AI application patterns available today.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

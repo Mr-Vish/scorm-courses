@@ -1,0 +1,371 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Bias Detection Methods</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Bias Detection Methods</h1>
+
+<h3>Systematic Approaches to Bias Detection</h3>
+<p>Detecting bias requires systematic analysis at multiple stages of the AI lifecycle. This section covers practical methods and tools for identifying bias in data, models, and deployed systems.</p>
+
+<h3>Pre-Modeling: Data Analysis for Bias</h3>
+
+<h4>1. Demographic Distribution Analysis</h4>
+<p>Examine the representation of different groups in your dataset:</p>
+
+<table>
+    <tr>
+        <th>Analysis Type</th>
+        <th>What to Check</th>
+        <th>Red Flags</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Sample Size</td>
+        <td>Number of examples per demographic group</td>
+        <td>Groups with &lt;5% representation; groups with &lt;100 examples</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Label Distribution</td>
+        <td>Positive/negative label rates by group</td>
+        <td>Significant differences in base rates that may reflect historical bias</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Feature Distribution</td>
+        <td>Feature value distributions across groups</td>
+        <td>Systematic differences suggesting measurement bias or proxy discrimination</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Missing Data</td>
+        <td>Patterns of missing values by group</td>
+        <td>Higher missing rates for certain groups indicating data collection bias</td>
+    </tr>
+</table>
+
+<h4>2. Correlation Analysis</h4>
+<p>Identify features that correlate with protected attributes:</p>
+
+<blockquote>
+<strong>Example Analysis:</strong><br/><br/>
+Features with high correlation to race (potential proxies):
+<ul>
+    <li>Zip code: 0.72 correlation</li>
+    <li>School district: 0.68 correlation</li>
+    <li>Credit history length: 0.45 correlation</li>
+</ul>
+<strong>Action:</strong> These features may introduce racial bias even if race is not explicitly used. Consider removing or carefully monitoring these features.
+</blockquote>
+
+<h4>3. Label Quality Assessment</h4>
+<p>When labels come from human decisions, assess whether those decisions were biased:</p>
+
+<ul>
+    <li><strong>Inter-annotator agreement by group:</strong> Do annotators agree more on certain groups?</li>
+    <li><strong>Historical decision patterns:</strong> Do past decisions reflect known biases?</li>
+    <li><strong>Outcome validation:</strong> When possible, validate labels against objective outcomes</li>
+</ul>
+
+<h3>During Modeling: Bias in Model Behavior</h3>
+
+<h4>1. Subgroup Performance Analysis</h4>
+<p>The primary method for detecting model bias:</p>
+
+<blockquote>
+<strong>Systematic Process:</strong>
+<ol>
+    <li>Define relevant subgroups based on protected attributes and intersections</li>
+    <li>Calculate performance metrics (accuracy, precision, recall, F1) for each subgroup</li>
+    <li>Compare metrics across subgroups to identify disparities</li>
+    <li>Set thresholds for acceptable performance gaps (e.g., no more than 5 percentage points)</li>
+    <li>Flag subgroups that fall below thresholds for investigation</li>
+</ol>
+</blockquote>
+
+<h4>2. Error Analysis by Group</h4>
+<p>Examine the types of errors the model makes for different groups:</p>
+
+<table>
+    <tr>
+        <th>Error Type</th>
+        <th>What It Reveals</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">False Positives</td>
+        <td>Groups incorrectly assigned positive predictions</td>
+        <td>Loan model incorrectly approves higher-risk applicants from certain groups</td>
+    </tr>
+    <tr>
+        <td class="rowheader">False Negatives</td>
+        <td>Groups incorrectly assigned negative predictions</td>
+        <td>Hiring model incorrectly rejects qualified candidates from certain groups</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Confidence Scores</td>
+        <td>Whether model is equally confident across groups</td>
+        <td>Model assigns lower confidence scores to minority group predictions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Patterns</td>
+        <td>Systematic patterns in what the model gets wrong</td>
+        <td>Model consistently misclassifies certain cultural expressions or dialects</td>
+    </tr>
+</table>
+
+<h4>3. Feature Importance Analysis</h4>
+<p>Understand which features drive predictions for different groups:</p>
+
+<ul>
+    <li><strong>Global feature importance:</strong> Which features matter most overall?</li>
+    <li><strong>Group-specific importance:</strong> Do different features drive predictions for different groups?</li>
+    <li><strong>Proxy feature detection:</strong> Are features that correlate with protected attributes highly important?</li>
+</ul>
+
+<h4>4. Counterfactual Analysis</h4>
+<p>Test how predictions change when protected attributes are modified:</p>
+
+<blockquote>
+<strong>Method:</strong>
+<ol>
+    <li>Take a set of examples from Group A</li>
+    <li>Change only the protected attribute to Group B (keeping all other features constant)</li>
+    <li>Compare predictions before and after the change</li>
+    <li>Significant differences indicate the model is sensitive to the protected attribute</li>
+</ol>
+
+<strong>Example:</strong> Change applicant gender from male to female while keeping all qualifications identical. If approval probability drops from 85% to 72%, this indicates gender bias.
+</blockquote>
+
+<h3>Post-Deployment: Monitoring for Bias</h3>
+
+<h4>1. Production Performance Monitoring</h4>
+<p>Continuously track model performance in production:</p>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Monitoring Frequency</th>
+        <th>Alert Threshold</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Prediction Distribution</td>
+        <td>Daily</td>
+        <td>&gt;10% shift in positive prediction rate for any group</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Confidence Scores</td>
+        <td>Weekly</td>
+        <td>&gt;5% change in average confidence by group</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Subgroup Performance</td>
+        <td>Monthly</td>
+        <td>Performance gap exceeds pre-defined threshold</td>
+    </tr>
+    <tr>
+        <td class="rowheader">User Feedback</td>
+        <td>Continuous</td>
+        <td>Disproportionate complaints from specific groups</td>
+    </tr>
+</table>
+
+<h4>2. Feedback Loop Analysis</h4>
+<p>Detect whether the model is creating or amplifying bias through feedback loops:</p>
+
+<ul>
+    <li><strong>Outcome tracking:</strong> Monitor actual outcomes vs. predictions by group</li>
+    <li><strong>Intervention analysis:</strong> Track whether model-influenced decisions affect different groups differently</li>
+    <li><strong>Temporal trends:</strong> Identify whether performance gaps are widening over time</li>
+</ul>
+
+<h4>3. Incident Reporting and Analysis</h4>
+<p>Establish mechanisms for identifying and analyzing bias incidents:</p>
+
+<blockquote>
+<strong>Incident Response Process:</strong>
+<ol>
+    <li><strong>Detection:</strong> User reports, automated monitoring, or audit findings</li>
+    <li><strong>Documentation:</strong> Record incident details, affected groups, and impact</li>
+    <li><strong>Root Cause Analysis:</strong> Investigate why the bias occurred</li>
+    <li><strong>Remediation:</strong> Implement fixes (model retraining, threshold adjustment, etc.)</li>
+    <li><strong>Prevention:</strong> Update processes to prevent similar incidents</li>
+    <li><strong>Transparency:</strong> Communicate findings and actions to stakeholders</li>
+</ol>
+</blockquote>
+
+<h3>Tools and Frameworks for Bias Detection</h3>
+
+<h4>1. Fairness Toolkits</h4>
+
+<table>
+    <tr>
+        <th>Tool</th>
+        <th>Provider</th>
+        <th>Key Features</th>
+    </tr>
+    <tr>
+        <td class="rowheader">AI Fairness 360</td>
+        <td>IBM</td>
+        <td>70+ fairness metrics, 10+ bias mitigation algorithms, visualization tools</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Fairlearn</td>
+        <td>Microsoft</td>
+        <td>Fairness assessment, mitigation algorithms, integration with scikit-learn</td>
+    </tr>
+    <tr>
+        <td class="rowheader">What-If Tool</td>
+        <td>Google</td>
+        <td>Interactive visualization, counterfactual analysis, performance comparison</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Aequitas</td>
+        <td>University of Chicago</td>
+        <td>Bias audit toolkit, multiple fairness metrics, reporting templates</td>
+    </tr>
+</table>
+
+<h4>2. Model Explainability Tools</h4>
+<p>Understanding model decisions helps identify bias:</p>
+
+<ul>
+    <li><strong>SHAP (SHapley Additive exPlanations):</strong> Explains individual predictions and feature importance</li>
+    <li><strong>LIME (Local Interpretable Model-agnostic Explanations):</strong> Provides local explanations for any model</li>
+    <li><strong>InterpretML:</strong> Microsoft's toolkit for interpretable machine learning</li>
+</ul>
+
+<h3>Bias Testing Scenarios</h3>
+
+<h4>Scenario 1: Resume Screening Model</h4>
+<blockquote>
+<strong>Test Cases:</strong>
+<ul>
+    <li>Identical resumes with different names suggesting different ethnicities</li>
+    <li>Career gaps (which disproportionately affect women)</li>
+    <li>Non-traditional educational backgrounds</li>
+    <li>International experience and credentials</li>
+</ul>
+
+<strong>Expected Behavior:</strong> Predictions should be based on qualifications, not demographic signals
+
+<strong>Red Flags:</strong>
+<ul>
+    <li>Names associated with certain ethnicities receive lower scores</li>
+    <li>Career gaps result in disproportionate penalties</li>
+    <li>International credentials systematically undervalued</li>
+</ul>
+</blockquote>
+
+<h4>Scenario 2: Medical Diagnosis Model</h4>
+<blockquote>
+<strong>Test Cases:</strong>
+<ul>
+    <li>Same symptoms presented by patients of different demographics</li>
+    <li>Edge cases where symptoms may present differently across groups</li>
+    <li>Varying levels of medical history completeness</li>
+</ul>
+
+<strong>Expected Behavior:</strong> Diagnosis accuracy should be consistent across demographic groups
+
+<strong>Red Flags:</strong>
+<ul>
+    <li>Lower sensitivity (more false negatives) for certain groups</li>
+    <li>Systematic misdiagnosis of conditions that present differently across demographics</li>
+    <li>Over-reliance on features that may be proxies for demographic attributes</li>
+</ul>
+</blockquote>
+
+<h3>Bias Audit Checklist</h3>
+
+<p>Comprehensive checklist for bias assessment:</p>
+
+<table>
+    <tr>
+        <th>Stage</th>
+        <th>Check</th>
+        <th>Status</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Data</td>
+        <td>Demographic representation documented and adequate</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data</td>
+        <td>Proxy features identified and evaluated</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data</td>
+        <td>Label quality assessed for bias</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model</td>
+        <td>Disaggregated performance metrics calculated</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model</td>
+        <td>Fairness metrics evaluated and documented</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model</td>
+        <td>Error analysis by group completed</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model</td>
+        <td>Counterfactual testing performed</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Deployment</td>
+        <td>Monitoring plan established</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Deployment</td>
+        <td>Incident response process defined</td>
+        <td>☐</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Documentation</td>
+        <td>Bias assessment documented in model card</td>
+        <td>☐</td>
+    </tr>
+</table>
+
+<h3>Limitations of Bias Detection</h3>
+
+<p>Important caveats about bias detection methods:</p>
+
+<ul>
+    <li><strong>Data Requirements:</strong> Disaggregated analysis requires demographic data, which may not be available or ethical to collect</li>
+    <li><strong>Intersectionality:</strong> Analyzing all possible intersections requires exponentially more data</li>
+    <li><strong>Unknown Unknowns:</strong> Can only test for biases we think to look for</li>
+    <li><strong>Context Dependence:</strong> What constitutes bias depends on context and values</li>
+    <li><strong>Measurement Challenges:</strong> Some forms of bias are difficult to quantify</li>
+</ul>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Bias detection requires systematic analysis at pre-modeling, modeling, and post-deployment stages</li>
+    <li>Data analysis should examine demographic distributions, correlations, and label quality</li>
+    <li>Model analysis includes subgroup performance, error patterns, and counterfactual testing</li>
+    <li>Production monitoring tracks performance metrics, feedback loops, and incidents</li>
+    <li>Multiple tools and frameworks are available to support bias detection</li>
+    <li>Comprehensive bias audits follow structured checklists covering all stages</li>
+    <li>Bias detection has limitations related to data availability and context dependence</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

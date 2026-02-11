@@ -1,0 +1,357 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Automated Graph Building</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Automated Graph Building</h1>
+
+<h2>End-to-End Pipeline</h2>
+<p>Building a knowledge graph from text involves multiple stages: extraction, validation, deduplication, and storage. An automated pipeline orchestrates these steps efficiently.</p>
+
+<h2>Pipeline Architecture</h2>
+<div class="code-block">
+<pre><code>class KnowledgeGraphBuilder:
+    def __init__(self, llm_client, graph_db):
+        self.llm_client = llm_client
+        self.graph_db = graph_db
+        self.entity_cache = {}
+        self.relation_cache = set()
+    
+    def build_from_documents(self, documents: list[str]) -> dict:
+        """Build knowledge graph from multiple documents."""
+        stats = {
+            "documents_processed": 0,
+            "entities_extracted": 0,
+            "relations_extracted": 0,
+            "entities_stored": 0,
+            "relations_stored": 0
+        }
+        
+        for doc in documents:
+            # Step 1: Extract
+            extracted = self.extract_from_document(doc)
+            stats["entities_extracted"] += len(extracted["entities"])
+            stats["relations_extracted"] += len(extracted["relations"])
+            
+            # Step 2: Validate
+            validated = self.validate_extraction(extracted)
+            
+            # Step 3: Deduplicate
+            deduplicated = self.deduplicate_entities(validated)
+            
+            # Step 4: Store
+            stored = self.store_in_graph(deduplicated)
+            stats["entities_stored"] += stored["entities"]
+            stats["relations_stored"] += stored["relations"]
+            
+            stats["documents_processed"] += 1
+        
+        return stats
+    
+    def extract_from_document(self, document: str) -> dict:
+        """Extract entities and relations from a single document."""
+        # Handle long documents with chunking
+        if len(document) > 4000:
+            chunks = self.chunk_text(document)
+            all_entities = []
+            all_relations = []
+            
+            for chunk in chunks:
+                result = self.extract_from_chunk(chunk)
+                all_entities.extend(result["entities"])
+                all_relations.extend(result["relations"])
+            
+            return {
+                "entities": all_entities,
+                "relations": all_relations
+            }
+        else:
+            return self.extract_from_chunk(document)
+    
+    def extract_from_chunk(self, text: str) -> dict:
+        """Extract from a single text chunk."""
+        response = self.llm_client.chat.completions.create(
+            model="gpt-4o",
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": self.get_extraction_prompt()},
+                {"role": "user", "content": text}
+            ],
+            temperature=0.0
+        )
+        
+        return json.loads(response.choices[0].message.content)
+    
+    def validate_extraction(self, extracted: dict) -> dict:
+        """Validate extracted entities and relations."""
+        valid_entities = []
+        valid_relations = []
+        
+        # Validate entities
+        for entity in extracted["entities"]:
+            if self.is_valid_entity(entity):
+                valid_entities.append(entity)
+        
+        # Validate relations
+        for relation in extracted["relations"]:
+            if self.is_valid_relation(relation, valid_entities):
+                valid_relations.append(relation)
+        
+        return {
+            "entities": valid_entities,
+            "relations": valid_relations
+        }
+    
+    def is_valid_entity(self, entity: dict) -> bool:
+        """Check if entity meets quality criteria."""
+        # Must have name and type
+        if not entity.get("name") or not entity.get("type"):
+            return False
+        
+        # Name must be reasonable length
+        if len(entity["name"]) < 2 or len(entity["name"]) > 200:
+            return False
+        
+        # Type must be in allowed list
+        allowed_types = ["Person", "Organization", "Location", "Product", "Technology", "Event"]
+        if entity["type"] not in allowed_types:
+            return False
+        
+        return True
+    
+    def is_valid_relation(self, relation: dict, entities: list) -> bool:
+        """Check if relation is valid."""
+        # Must have source, relation, and target
+        if not all(k in relation for k in ["source", "relation", "target"]):
+            return False
+        
+        # Source and target must exist in entities
+        entity_names = {e["name"] for e in entities}
+        if relation["source"] not in entity_names or relation["target"] not in entity_names:
+            return False
+        
+        return True
+    
+    def deduplicate_entities(self, data: dict) -> dict:
+        """Remove duplicate entities."""
+        unique_entities = {}
+        
+        for entity in data["entities"]:
+            name = entity["name"].lower().strip()
+            
+            if name not in unique_entities:
+                unique_entities[name] = entity
+            else:
+                # Merge properties
+                existing = unique_entities[name]
+                existing["properties"].update(entity.get("properties", {}))
+        
+        return {
+            "entities": list(unique_entities.values()),
+            "relations": data["relations"]
+        }
+    
+    def store_in_graph(self, data: dict) -> dict:
+        """Store entities and relations in graph database."""
+        entities_stored = 0
+        relations_stored = 0
+        
+        with self.graph_db.session() as session:
+            # Store entities
+            for entity in data["entities"]:
+                if entity["name"] not in self.entity_cache:
+                    session.run("""
+                        MERGE (e {name: $name})
+                        SET e:""" + entity["type"] + """
+                        SET e += $properties
+                    """, name=entity["name"], properties=entity.get("properties", {}))
+                    self.entity_cache[entity["name"]] = True
+                    entities_stored += 1
+            
+            # Store relations
+            for relation in data["relations"]:
+                rel_key = (relation["source"], relation["relation"], relation["target"])
+                if rel_key not in self.relation_cache:
+                    session.run("""
+                        MATCH (source {name: $source})
+                        MATCH (target {name: $target})
+                        MERGE (source)-[r:""" + relation["relation"] + """]->(target)
+                        SET r += $properties
+                    """, 
+                    source=relation["source"],
+                    target=relation["target"],
+                    properties=relation.get("properties", {}))
+                    self.relation_cache.add(rel_key)
+                    relations_stored += 1
+        
+        return {
+            "entities": entities_stored,
+            "relations": relations_stored
+        }
+</code></pre>
+</div>
+
+<h2>Incremental Updates</h2>
+<p>For production systems, support incremental updates as new documents arrive:</p>
+<div class="code-block">
+<pre><code>def incremental_update(new_document: str, document_id: str):
+    """Add new document to existing knowledge graph."""
+    
+    # Extract from new document
+    extracted = extract_entities_and_relations(new_document)
+    
+    # Tag with source document
+    for entity in extracted["entities"]:
+        entity["source_document"] = document_id
+        entity["extracted_date"] = datetime.now().isoformat()
+    
+    for relation in extracted["relations"]:
+        relation["source_document"] = document_id
+        relation["extracted_date"] = datetime.now().isoformat()
+    
+    # Store with provenance
+    store_with_provenance(extracted)
+    
+    # Update document index
+    update_document_index(document_id, extracted)
+</code></pre>
+</div>
+
+<h2>Batch Processing Optimization</h2>
+<div class="code-block">
+<pre><code>from concurrent.futures import ThreadPoolExecutor
+import asyncio
+
+async def process_documents_parallel(documents: list[str], max_workers: int = 5):
+    """Process multiple documents in parallel."""
+    
+    async def process_single(doc):
+        return await asyncio.to_thread(extract_entities_and_relations, doc)
+    
+    tasks = [process_single(doc) for doc in documents]
+    results = await asyncio.gather(*tasks)
+    
+    # Merge results
+    all_entities = []
+    all_relations = []
+    
+    for result in results:
+        all_entities.extend(result["entities"])
+        all_relations.extend(result["relations"])
+    
+    # Global deduplication
+    deduplicated = deduplicate_across_documents(all_entities, all_relations)
+    
+    return deduplicated
+</code></pre>
+</div>
+
+<h2>Error Handling and Retry Logic</h2>
+<div class="code-block">
+<pre><code>from tenacity import retry, stop_after_attempt, wait_exponential
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10)
+)
+def extract_with_retry(text: str) -> dict:
+    """Extract with automatic retry on failure."""
+    try:
+        result = extract_entities_and_relations(text)
+        
+        # Validate result structure
+        if not isinstance(result, dict):
+            raise ValueError("Invalid result format")
+        
+        if "entities" not in result or "relations" not in result:
+            raise ValueError("Missing required fields")
+        
+        return result
+        
+    except Exception as e:
+        print(f"Extraction failed: {e}")
+        raise
+</code></pre>
+</div>
+
+<h2>Monitoring and Logging</h2>
+<div class="code-block">
+<pre><code>import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class MonitoredKGBuilder(KnowledgeGraphBuilder):
+    def __init__(self, llm_client, graph_db):
+        super().__init__(llm_client, graph_db)
+        self.metrics = {
+            "total_api_calls": 0,
+            "total_tokens_used": 0,
+            "failed_extractions": 0,
+            "processing_time": []
+        }
+    
+    def extract_from_chunk(self, text: str) -> dict:
+        """Extract with monitoring."""
+        start_time = time.time()
+        
+        try:
+            response = self.llm_client.chat.completions.create(
+                model="gpt-4o",
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": self.get_extraction_prompt()},
+                    {"role": "user", "content": text}
+                ],
+                temperature=0.0
+            )
+            
+            # Track metrics
+            self.metrics["total_api_calls"] += 1
+            self.metrics["total_tokens_used"] += response.usage.total_tokens
+            
+            elapsed = time.time() - start_time
+            self.metrics["processing_time"].append(elapsed)
+            
+            logger.info(f"Extraction completed in {elapsed:.2f}s, tokens: {response.usage.total_tokens}")
+            
+            return json.loads(response.choices[0].message.content)
+            
+        except Exception as e:
+            self.metrics["failed_extractions"] += 1
+            logger.error(f"Extraction failed: {e}")
+            raise
+    
+    def get_metrics_summary(self) -> dict:
+        """Get performance metrics."""
+        return {
+            "total_api_calls": self.metrics["total_api_calls"],
+            "total_tokens_used": self.metrics["total_tokens_used"],
+            "failed_extractions": self.metrics["failed_extractions"],
+            "avg_processing_time": sum(self.metrics["processing_time"]) / len(self.metrics["processing_time"]) if self.metrics["processing_time"] else 0,
+            "estimated_cost": self.metrics["total_tokens_used"] * 0.000005  # Example rate
+        }
+</code></pre>
+</div>
+
+<h2>Best Practices for Production</h2>
+<ul>
+    <li><strong>Rate Limiting:</strong> Respect API rate limits with exponential backoff</li>
+    <li><strong>Caching:</strong> Cache extraction results to avoid reprocessing</li>
+    <li><strong>Checkpointing:</strong> Save progress periodically for long-running jobs</li>
+    <li><strong>Quality Sampling:</strong> Manually review a sample of extractions regularly</li>
+    <li><strong>Version Control:</strong> Track which model version produced each extraction</li>
+    <li><strong>Cost Monitoring:</strong> Track API usage and costs per document</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

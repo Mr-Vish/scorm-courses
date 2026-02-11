@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Parameter Recommendations Summary</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Parameter Recommendations Summary</h1>
+
+<h2>Quick Reference Guide</h2>
+<p>Use this guide as a starting point for parameter selection. Always test and adjust based on your specific requirements.</p>
+
+<h2>Temperature Selection Flowchart</h2>
+<div style="background: linear-gradient(135deg, #ffffff 0%, #fef7f0 100%); border: 2px solid #F16F00; border-radius: 16px; padding: 2rem; margin: 2rem 0;">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <strong style="font-size: 1.2rem; color: #F16F00;">What type of output do you need?</strong>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div style="background: rgba(241, 111, 0, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #38a169;">
+            <strong>Deterministic & Structured</strong>
+            <p style="margin: 0.5rem 0 0 0;">JSON, Classification, Data Extraction → Temperature: 0.0</p>
+        </div>
+        
+        <div style="background: rgba(241, 111, 0, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #3182ce;">
+            <strong>Technical & Precise</strong>
+            <p style="margin: 0.5rem 0 0 0;">Code, Documentation, Translation → Temperature: 0.1-0.3</p>
+        </div>
+        
+        <div style="background: rgba(241, 111, 0, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #d69e2e;">
+            <strong>Balanced & Conversational</strong>
+            <p style="margin: 0.5rem 0 0 0;">Chatbots, Q&A, Support → Temperature: 0.5-0.7</p>
+        </div>
+        
+        <div style="background: rgba(241, 111, 0, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #e91e63;">
+            <strong>Creative & Diverse</strong>
+            <p style="margin: 0.5rem 0 0 0;">Writing, Marketing, Brainstorming → Temperature: 0.8-1.2</p>
+        </div>
+    </div>
+</div>
+
+<h2>Common Parameter Combinations</h2>
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Quick Settings</th>
+        <th>Why It Works</th>
+    </tr>
+    <tr>
+        <td class="rowheader">API Response Parsing</td>
+        <td>Temp: 0.0, Top-P: 0.1, Max: 300</td>
+        <td>Deterministic output ensures consistent parsing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Code Assistant</td>
+        <td>Temp: 0.2, Top-P: 0.2, Max: 1500</td>
+        <td>Low randomness for syntactic correctness</td>
+    </tr>
+    <tr>
+        <td class="rowheader">General Chatbot</td>
+        <td>Temp: 0.7, Top-P: 1.0, Max: 500</td>
+        <td>Natural conversation with variety</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Content Writer</td>
+        <td>Temp: 1.0, Freq: 0.5, Pres: 0.3, Max: 800</td>
+        <td>Creative with diverse vocabulary and topics</td>
+    </tr>
+</table>
+
+<h2>Troubleshooting Common Issues</h2>
+<table>
+    <tr>
+        <th>Problem</th>
+        <th>Likely Cause</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Output too repetitive</td>
+        <td>Low temperature or no frequency penalty</td>
+        <td>Increase Frequency Penalty to 0.3-0.5</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Output too random/incoherent</td>
+        <td>Temperature too high</td>
+        <td>Reduce Temperature to 0.7 or lower</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Keeps discussing same topic</td>
+        <td>No presence penalty</td>
+        <td>Add Presence Penalty of 0.2-0.4</td>
+    </tr>
+    <tr>
+        <td class="rowheader">JSON parsing fails</td>
+        <td>Temperature too high</td>
+        <td>Set Temperature to 0.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Responses cut off mid-sentence</td>
+        <td>Max tokens too low</td>
+        <td>Increase Max Tokens appropriately</td>
+    </tr>
+    <tr>
+        <td class="rowheader">High API costs</td>
+        <td>Max tokens too high</td>
+        <td>Optimize Max Tokens per use case</td>
+    </tr>
+</table>
+
+<h2>Testing Your Parameters</h2>
+<p>Follow this process to validate parameter choices:</p>
+<ol>
+    <li><strong>Start with Recommended Defaults:</strong> Use the values from this module as a baseline</li>
+    <li><strong>Test with Representative Inputs:</strong> Use real-world examples from your application</li>
+    <li><strong>Adjust One Parameter at a Time:</strong> Change only one parameter per test to understand its effect</li>
+    <li><strong>Document Results:</strong> Keep notes on what works and what doesn't</li>
+    <li><strong>A/B Test in Production:</strong> Compare different parameter sets with real users</li>
+    <li><strong>Monitor Metrics:</strong> Track quality, cost, and latency</li>
+</ol>
+
+<h2>Parameter Optimization Checklist</h2>
+<ul>
+    <li>✓ Have you identified your primary use case?</li>
+    <li>✓ Have you started with recommended defaults for that use case?</li>
+    <li>✓ Have you tested with representative inputs?</li>
+    <li>✓ Have you adjusted parameters incrementally?</li>
+    <li>✓ Have you documented your parameter choices?</li>
+    <li>✓ Have you considered cost implications?</li>
+    <li>✓ Have you implemented monitoring?</li>
+    <li>✓ Have you planned for A/B testing?</li>
+</ul>
+
+<h2>Cost Optimization Tips</h2>
+<ul>
+    <li><strong>Set Appropriate Max Tokens:</strong> Don't use 2000 tokens if 500 suffices</li>
+    <li><strong>Use Smaller Models When Possible:</strong> GPT-3.5 is cheaper than GPT-4 for simple tasks</li>
+    <li><strong>Cache Common Responses:</strong> Don't regenerate identical content</li>
+    <li><strong>Implement Rate Limiting:</strong> Prevent abuse and unexpected costs</li>
+    <li><strong>Monitor Token Usage:</strong> Track actual vs. expected consumption</li>
+</ul>
+
+<h2>Quality Assurance Strategies</h2>
+<ul>
+    <li><strong>Automated Testing:</strong> Create test suites with expected outputs</li>
+    <li><strong>Human Review:</strong> Regularly review generated content</li>
+    <li><strong>User Feedback:</strong> Collect and analyze user satisfaction</li>
+    <li><strong>Error Tracking:</strong> Monitor parsing failures and errors</li>
+    <li><strong>Version Control:</strong> Track parameter changes alongside code</li>
+</ul>
+
+<h2>Advanced Considerations</h2>
+
+<h3>Multi-Step Workflows</h3>
+<p>Different steps may need different parameters:</p>
+<ul>
+    <li><strong>Step 1 (Planning):</strong> Higher temperature for creative exploration</li>
+    <li><strong>Step 2 (Execution):</strong> Lower temperature for consistent implementation</li>
+    <li><strong>Step 3 (Validation):</strong> Zero temperature for deterministic checking</li>
+</ul>
+
+<h3>User Personalization</h3>
+<p>Consider allowing users to adjust parameters:</p>
+<ul>
+    <li>Creativity slider (adjusts temperature)</li>
+    <li>Verbosity control (adjusts max tokens)</li>
+    <li>Formality level (adjusts temperature and penalties)</li>
+</ul>
+
+<h3>Context-Aware Adjustment</h3>
+<p>Dynamically adjust parameters based on:</p>
+<ul>
+    <li>User history and preferences</li>
+    <li>Time of day or urgency</li>
+    <li>Content type being generated</li>
+    <li>Available budget/quota</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>No single parameter set works for all use cases</li>
+    <li>Start with recommended defaults and adjust based on testing</li>
+    <li>Temperature is the most impactful parameter for most use cases</li>
+    <li>Penalties help with repetition and topic diversity</li>
+    <li>Max tokens directly impacts cost and latency</li>
+    <li>Always test with real-world inputs before production deployment</li>
+    <li>Monitor and iterate based on actual usage patterns</li>
+</ul>
+
+<h2>Next Steps</h2>
+<p>You now have a comprehensive understanding of parameter selection for different use cases. The next module will cover advanced pro-tips and production best practices to help you avoid common pitfalls and optimize your LLM implementations.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

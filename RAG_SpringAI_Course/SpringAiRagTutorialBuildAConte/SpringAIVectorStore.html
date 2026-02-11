@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Spring AI Vector Stores</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring AI Vector Stores</h1>
+<div class="container">
+<h2>Vector Store Implementations in Spring AI</h2>
+<p>The <code>VectorStore</code> interface is one of the most critical abstractions in Spring AI. It provides a standard way to store, delete, and perform similarity searches on document embeddings. Because it's an interface, you can switch between a simple in-memory store and a high-performance distributed database with minimal code changes.</p>
+
+<h3>Supported Vector Databases</h3>
+<p>Spring AI supports a wide range of popular vector databases out of the box:
+<ul>
+    <li><strong>PGVector (PostgreSQL):</strong> The go-to choice for developers already using Postgres. It adds vector storage and search capabilities directly to your relational database.</li>
+    <li><strong>Pinecone:</strong> A popular managed, cloud-native vector database designed for massive scale.</li>
+    <li><strong>Neo4j:</strong> A graph database that also supports vector search, making it the foundation for GraphRAG.</li>
+    <li><strong>Redis:</strong> A high-performance in-memory data store with vector capabilities.</li>
+    <li><strong>Azure AI Search / AWS Kendra:</strong> Cloud-specific managed search services.</li>
+    <li><strong>SimpleVectorStore:</strong> A basic, in-memory implementation for local testing and development.</li>
+</ul></p>
+
+<h3>The 'SimilaritySearch' Method</h3>
+<p>The core of the <code>VectorStore</code> is the <code>similaritySearch</code> method. It takes a <code>SearchRequest</code> and returns a list of <code>Document</code> objects.
+<blockquote>
+<code>List&lt;Document&gt; results = vectorStore.similaritySearch(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;SearchRequest.query("What is Spring AI?")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.withTopK(5)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.withSimilarityThreshold(0.7)<br/>
+);</code>
+</blockquote>
+The <code>SearchRequest</code> allows you to specify how many results you want (Top-K) and the minimum similarity score required.</p>
+
+<h3>Metadata Filtering</h3>
+<p>Spring AI's <code>VectorStore</code> abstraction also supports structured metadata filtering. You can use a fluent <code>Filter.Expression</code> to narrow down your search based on metadata fields.
+<blockquote>
+<code>SearchRequest request = SearchRequest.query("...")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;.withFilterExpression("category == 'security' && date >= '2024-01-01'");</code>
+</blockquote>
+The framework automatically translates this Java-based expression into the specific syntax required by the underlying database (e.g., a SQL WHERE clause for PGVector or a JSON filter for Pinecone).</p>
+
+<h3>Configuration and Auto-Configuration</h3>
+<p>In a Spring Boot application, you typically don't create the <code>VectorStore</code> bean manually. Instead, you add the appropriate starter to your project and provide the connection details in <code>application.properties</code>:</p>
+<blockquote>
+spring.ai.vectorstore.pgvector.url=jdbc:postgresql://localhost:5432/ai<br/>
+spring.ai.vectorstore.pgvector.username=postgres<br/>
+spring.ai.vectorstore.pgvector.password=secret
+</blockquote>
+
+<h3>The Challenge of Choosing a Vector Store</h3>
+<p>When selecting a vector store for your production RAG pipeline, consider:
+<ol>
+    <li><strong>Scale:</strong> How many documents will you store? (HNSW and IVF indexing are important for large datasets).</li>
+    <li><strong>Cloud vs. On-Premise:</strong> Do you want a managed service like Pinecone or to run your own database like PGVector?</li>
+    <li><strong>Query Type:</strong> Do you need complex metadata filtering or just simple vector similarity?</li>
+    <li><strong>Latency:</strong> How fast do you need the search results to be?</li>
+</ol></p>
+
+<h3>Summary</h3>
+<p>The Spring AI <code>VectorStore</code> abstraction provides a powerful and portable way to manage your knowledge base. By insulating your business logic from the specifics of the database, it ensures your RAG application remains flexible and ready to scale.</p>
+
+</div>
+</body>
+</html>

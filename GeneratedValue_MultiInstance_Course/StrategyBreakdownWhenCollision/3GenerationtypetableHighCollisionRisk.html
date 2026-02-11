@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>3. GenerationType.TABLE ❌ High Collision Risk</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>3. GenerationType.TABLE ❌ High Collision Risk</h1>
+
+<ul>
+    <li>Stores the current ID in a table.
+</li>
+    <li>Reads, increments, and writes the ID.
+</li>
+</ul>
+
+<p><strong>Risk of collision</strong>:</p>
+
+<ul>
+    <li>Without proper locking or isolation, two instances may read the same ID before it’s updated.
+</li>
+</ul>
+
+<p><strong>Recommendation</strong>: Avoid high-concurrency, multi-instance setups.</p>
+
+<h3><strong>4. </strong><strong><code>GenerationType.AUTO</code></strong><strong> ⚠️ Unpredictable</strong></h3>
+
+<ul>
+    <li>JPA chooses the strategy based on the database and provider.
+</li>
+    <li>Could resolve to <code>SEQUENCE</code>, <code>IDENTITY</code>, or <code>TABLE</code>.
+</li>
+</ul>
+
+<p><strong>Risk of collision</strong>: Depends on what strategy gets selected.</p>
+
+<p><strong>Recommendation</strong>: Avoid using <code>AUTO</code> in distributed systems unless you know exactly what strategy it maps to.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Signatures and Modules</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Signatures and Modules</h1>
+
+
+<h2>What is DSPy?</h2>
+<p>DSPy (Declarative Self-improving Language Programs in Python) is a framework from Stanford NLP that replaces manual prompt engineering with programming abstractions. Instead of writing fragile prompts, you define what the model should do with typed signatures, and DSPy automatically optimizes the prompts for you.</p>
+
+<h2>The Problem DSPy Solves</h2>
+<table>
+    <tr><th>Traditional Prompting</th><th>DSPy Approach</th></tr>
+    <tr><td>Hand-craft prompts with trial and error</td><td>Define typed input/output signatures</td></tr>
+    <tr><td>Prompts break when models change</td><td>Optimizer re-tunes automatically</td></tr>
+    <tr><td>Few-shot examples are manually curated</td><td>Examples are selected by the optimizer</td></tr>
+    <tr><td>Hard to systematically improve</td><td>Use metrics and optimizers to improve</td></tr>
+</table>
+
+<h2>Signatures</h2>
+<p>A signature defines the input and output fields for a language model call:</p>
+<div class="code-block">
+<pre><code>import dspy
+
+# Simple inline signature
+classify = dspy.Predict("sentence -&gt; sentiment: str")
+result = classify(sentence="This movie was fantastic!")
+print(result.sentiment)  # "positive"
+
+# Class-based signature for more control
+class SummarizeArticle(dspy.Signature):
+    'Summarize a news article in 2-3 sentences.'
+    article: str = dspy.InputField(desc="The full article text")
+    summary: str = dspy.OutputField(desc="A concise 2-3 sentence summary")
+    keywords: list[str] = dspy.OutputField(desc="Top 5 keywords")</code></pre>
+</div>
+
+<h2>Modules</h2>
+<p>Modules are the building blocks of DSPy programs. Each module wraps one or more LLM calls with specific behavior:</p>
+<div class="code-block">
+<pre><code>import dspy
+
+# Configure the LM
+lm = dspy.LM("openai/gpt-4o-mini")
+dspy.configure(lm=lm)
+
+# Built-in modules
+predict = dspy.Predict(SummarizeArticle)       # Basic prediction
+cot = dspy.ChainOfThought(SummarizeArticle)    # Chain-of-thought reasoning
+react = dspy.ReAct(SummarizeArticle, tools=[]) # ReAct with tool use
+
+# Use them
+result = cot(article="Long article text here...")
+print(result.summary)
+print(result.keywords)</code></pre>
+</div>
+
+<h2>Composing Programs</h2>
+<div class="code-block">
+<pre><code>class RAGPipeline(dspy.Module):
+    def __init__(self, num_passages=3):
+        self.retrieve = dspy.Retrieve(k=num_passages)
+        self.generate = dspy.ChainOfThought("context, question -&gt; answer")
+
+    def forward(self, question):
+        context = self.retrieve(question).passages
+        answer = self.generate(context=context, question=question)
+        return answer
+
+rag = RAGPipeline()
+result = rag(question="What causes climate change?")</code></pre>
+</div>
+
+<h2>Key Module Types</h2>
+<ul>
+    <li><strong>dspy.Predict:</strong> Basic input-to-output prediction</li>
+    <li><strong>dspy.ChainOfThought:</strong> Adds step-by-step reasoning before the output</li>
+    <li><strong>dspy.ReAct:</strong> Interleaves reasoning with tool calls</li>
+    <li><strong>dspy.Retrieve:</strong> Retrieves relevant passages from a knowledge base</li>
+    <li><strong>dspy.ProgramOfThought:</strong> Generates and executes code to solve problems</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

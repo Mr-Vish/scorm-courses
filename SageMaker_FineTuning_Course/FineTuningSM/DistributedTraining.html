@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Distributed Training on SageMaker</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Scaling Up: Distributed Training on Amazon SageMaker</h1>
+
+<div class="content-section">
+<h2>1. Why Distributed Training?</h2>
+<p>Large Language Models are too big for a single GPU. Even with techniques like LoRA, training a 70B parameter model at scale requires distributing the workload across multiple GPUs (intra-node) and potentially multiple instances (inter-node). SageMaker provides high-performance libraries and infrastructure to make this process as efficient as possible.</p>
+
+<h2>2. Types of Parallelism</h2>
+<p>To distribute a model, we can use different parallelization strategies:</p>
+<ul>
+    <li><strong>Data Parallelism (DP):</strong> The most common type. Every GPU has a copy of the model, but they each process a different "batch" of data. Gradients are then synchronized across all GPUs.</li>
+    <li><strong>Tensor Parallelism (TP):</strong> Splitting individual weight matrices across multiple GPUs. This is used when the weights of a single layer are too large for one GPU's VRAM.</li>
+    <li><strong>Pipeline Parallelism (PP):</strong> Splitting the model's layers across different GPUs. Layer 1-10 on GPU 1, Layer 11-20 on GPU 2, and so on.</li>
+    <li><strong>FSDP (Fully Sharded Data Parallelism):</strong> A hybrid approach (popularized by PyTorch) that shards the model parameters, gradients, and optimizer states across all GPUs, providing the memory benefits of ZeRO-3 optimization.</li>
+</ul>
+
+<h2>3. SageMaker Distributed Data Parallel (SMDDP)</h2>
+<p>SageMaker provides its own optimized library, <strong>SMDDP</strong>, which is specifically tuned for the AWS network infrastructure (EFA - Elastic Fabric Adapter). SMDDP uses an "All-Reduce" algorithm that can be up to 25% faster than standard PyTorch or Horovod implementations by better utilizing the high-speed interconnects between instances.</p>
+
+<div class="code-block">
+<pre><code># Configuring a SageMaker Estimator for SMDDP
+from sagemaker.pytorch import PyTorch
+
+estimator = PyTorch(
+    entry_point="train.py",
+    instance_count=2, # Two instances
+    instance_type="ml.p4d.24xlarge", # Each with 8 A100 GPUs
+    distribution={
+        "smdistributed": {
+            "dataparallel": {
+                "enabled": True
+            }
+        }
+    },
+    framework_version="2.0",
+    py_version="py310"
+)</code></pre>
+</div>
+
+<h2>4. Amazon SageMaker Model Parallel (SMP)</h2>
+<p>For models that require more than just Data Parallelism, the <strong>SageMaker Model Parallel (SMP)</strong> library automatically handles the complex task of partitioning your model across GPUs. It supports:
+    <ul>
+        <li><strong>Automated Partitioning:</strong> Analyzes your model and finds the optimal way to split it based on memory and compute requirements.</li>
+        <li><strong>Activation Checkpointing:</strong> Saving memory by recomputing certain activations during the backward pass rather than storing them.</li>
+        <li><strong>Delayed Parameter Initialization:</strong> Saving VRAM by only initializing weights on the GPU they belong to, rather than initializing the whole model on every GPU.</li>
+    </ul>
+</p>
+
+<h2>5. Optimizing with AWS Trainium</h2>
+<p>For large-scale fine-tuning, you are no longer limited to NVIDIA GPUs. <strong>AWS Trainium</strong> (the <code>trn1</code> instance family) is a purpose-built chip designed specifically for training deep learning models. Trainium offers significantly better price-performance for Transformer models.
+    <ul>
+        <li><strong>Neuron SDK:</strong> The software layer that allows you to run standard PyTorch and Hugging Face scripts on Trainium hardware with minimal changes.</li>
+        <li><strong>Teraflop Power:</strong> A single <code>trn1.32xlarge</code> instance provides over 3 petaflops of compute power.</li>
+    </ul>
+</p>
+
+<h2>6. Checkpointing and Fault Tolerance</h2>
+<p>Distributed training jobs can run for days. In a multi-instance setup, the risk of a hardware failure increases.
+    <ul>
+        <li><strong>Checkpointing to S3:</strong> Regularly saving the model's weights and optimizer state to Amazon S3. If a node fails, SageMaker can automatically restart the job from the last checkpoint.</li>
+        <li><strong>Managed Spot Training:</strong> You can use AWS Spot Instances for training, which can save up to 90% in costs. SageMaker handles the complexities of "spot interruptions" by managing the checkpoint/resume cycle for you.</li>
+    </ul>
+</p>
+
+<h2>Conclusion</h2>
+<p>Distributed training is what makes LLM fine-tuning possible at an enterprise scale. By mastering the libraries and infrastructure provided by SageMaker, you can train even the largest models efficiently, reliably, and cost-effectively. In our next module, we'll wrap up with a hands-on exercise to tie all these concepts together.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

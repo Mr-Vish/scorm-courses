@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Self-Attention and Multi-Head Attention</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+												
+
+<h1>Self-Attention and Multi-Head Attention</h1>
+
+<h2>The Attention Mechanism</h2>
+<p>
+Attention is the foundational mechanism that enabled modern large language models to scale
+beyond the limitations of recurrent and convolutional architectures. Instead of processing
+tokens sequentially, attention allows every token in a sequence to directly reference every
+other token. This fundamentally changes how contextual relationships are learned.
+</p>
+
+<p>
+In traditional sequence models such as RNNs or LSTMs, information must flow through each
+intermediate timestep. This makes learning long-range dependencies difficult and inefficient.
+Attention removes this bottleneck by allowing direct interaction between distant tokens,
+regardless of their position in the input.
+</p>
+
+<p>
+Self-attention specifically refers to the case where the queries, keys, and values are all
+derived from the same sequence. This allows the model to build a contextualized representation
+of each token based on its relationship to all other tokens.
+</p>
+
+<h2>Why Self-Attention Was a Breakthrough</h2>
+<p>
+The introduction of self-attention solved several long-standing problems in sequence modeling:
+</p>
+
+<ul>
+<li>It eliminated sequential computation during training</li>
+<li>It enabled efficient parallelization on GPUs and TPUs</li>
+<li>It allowed models to capture global context at every layer</li>
+<li>It scaled gracefully with increasing model size and data</li>
+</ul>
+
+<p>
+These properties are the primary reason transformers replaced RNN-based architectures
+across NLP, vision, and multimodal systems.
+</p>
+
+<h2>Self-Attention Step by Step</h2>
+<p>
+The self-attention mechanism operates through a well-defined sequence of linear algebra
+operations. While the math may appear complex, the conceptual flow is intuitive when broken
+down.
+</p>
+
+<ol>
+<li>
+<strong>Token Embeddings:</strong>
+Each input token is first mapped to a dense vector representation. These embeddings encode
+semantic meaning but are not yet contextual.
+</li>
+
+<li>
+<strong>Linear Projections:</strong>
+Each embedding is projected into three separate vectors: Query, Key, and Value. These are
+learned linear transformations and represent different semantic roles.
+</li>
+
+<li>
+<strong>Attention Score Computation:</strong>
+The dot product between a query and all keys measures how relevant each token is to the
+current token.
+</li>
+
+<li>
+<strong>Scaling:</strong>
+Scores are divided by the square root of the key dimension to prevent extremely large values
+that would destabilize training.
+</li>
+
+<li>
+<strong>Softmax Normalization:</strong>
+The scores are converted into probabilities that sum to one, representing attention weights.
+</li>
+
+<li>
+<strong>Weighted Aggregation:</strong>
+The attention weights are applied to the value vectors, producing a contextualized output.
+</li>
+</ol>
+
+<h2>The Attention Formula</h2>
+<div class="code-block">
+<pre><code>
+Attention(Q, K, V) = softmax(Q * Kᵀ / √dₖ) * V
+	  
+										   
+									 
+												   
+</code></pre>
+</div>
+
+							 
+<p>
+Each component has a specific role. Queries express what the token is seeking, keys express
+what each token contains, and values carry the information that will be aggregated.
+																					 
+																		
+																  
+	 
+
+										
+	   
+																	 
+																		   
+																													  
+																							
+</p>
+		
+
+<h2>Interpretation of Queries, Keys, and Values</h2>
+<p>
+Although Q, K, and V are mathema
+
+							   
+		 
+	   
+	   

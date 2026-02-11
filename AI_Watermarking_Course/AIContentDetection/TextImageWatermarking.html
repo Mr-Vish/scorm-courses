@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Text and Image Watermarking</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Text and Image Watermarking</h1>
+
+
+<h2>The AI Content Challenge</h2>
+<p>As AI-generated text and images become indistinguishable from human-created content, there is a growing need for reliable methods to identify AI-generated material. Watermarking embeds invisible signals in AI outputs that can later be detected.</p>
+
+<h2>Text Watermarking</h2>
+<p>Text watermarking modifies the token selection process during generation to embed a statistical signal:</p>
+<table>
+    <tr><th>Method</th><th>How It Works</th><th>Trade-offs</th></tr>
+    <tr><td>Token biasing (green/red list)</td><td>Divide vocabulary into "green" and "red" tokens; bias generation toward green tokens</td><td>Detectable with ~25 tokens; slight quality impact</td></tr>
+    <tr><td>Exponential watermark</td><td>Use a cryptographic key to bias token probabilities</td><td>Strong detection; requires access to the key</td></tr>
+    <tr><td>Semantic watermarking</td><td>Embed signal in meaning-preserving word choices</td><td>Robust to paraphrasing; harder to implement</td></tr>
+</table>
+
+<h2>Green/Red List Watermarking</h2>
+<div class="code-block">
+<pre><code># Conceptual implementation of text watermarking
+import hashlib
+import numpy as np
+
+def get_green_tokens(previous_token, vocab_size, key, fraction=0.5):
+    '''Determine which tokens are "green" based on previous token and secret key.'''
+    seed = hashlib.sha256(f"{key}:{previous_token}".encode()).digest()
+    rng = np.random.RandomState(int.from_bytes(seed[:4], "big"))
+    shuffled = rng.permutation(vocab_size)
+    green_count = int(vocab_size * fraction)
+    return set(shuffled[:green_count])
+
+def apply_watermark(logits, previous_token, key, delta=2.0):
+    '''Add bias to green tokens during generation.'''
+    green_tokens = get_green_tokens(previous_token, len(logits), key)
+    for token_id in green_tokens:
+        logits[token_id] += delta  # Increase probability of green tokens
+    return logits
+
+def detect_watermark(text, tokenizer, key, threshold=0.6):
+    '''Check if text contains the watermark signal.'''
+    tokens = tokenizer.encode(text)
+    green_count = 0
+    for i in range(1, len(tokens)):
+        green_set = get_green_tokens(tokens[i-1], tokenizer.vocab_size, key)
+        if tokens[i] in green_set:
+            green_count += 1
+    green_fraction = green_count / (len(tokens) - 1)
+    return green_fraction &gt; threshold  # Watermarked text has higher green fraction</code></pre>
+</div>
+
+<h2>Image Watermarking</h2>
+<ul>
+    <li><strong>Invisible watermarks:</strong> Embed signals in pixel values or frequency domain that are imperceptible to humans but detectable by algorithms</li>
+    <li><strong>Stable Signature:</strong> Meta's method that fine-tunes the image decoder to embed watermarks during generation</li>
+    <li><strong>Tree-Ring Watermarks:</strong> Embed signals in the initial noise pattern of diffusion models</li>
+    <li><strong>C2PA/Content Credentials:</strong> Metadata-based provenance that records how content was created</li>
+</ul>
+
+<h2>C2PA Content Provenance</h2>
+<table>
+    <tr><th>Feature</th><th>Description</th></tr>
+    <tr><td>Standard</td><td>Coalition for Content Provenance and Authenticity (Adobe, Microsoft, Intel)</td></tr>
+    <tr><td>How it works</td><td>Embeds cryptographically signed metadata about content creation</td></tr>
+    <tr><td>Information recorded</td><td>Creator, creation tool, date, edits, AI generation flags</td></tr>
+    <tr><td>Adoption</td><td>Supported by Adobe products, Microsoft Bing, Google Search</td></tr>
+</table>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

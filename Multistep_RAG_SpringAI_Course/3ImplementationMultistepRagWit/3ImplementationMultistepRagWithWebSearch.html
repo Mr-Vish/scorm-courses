@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>3. Implementation: Multistep RAG with Web Search</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>3. Implementation: Multistep RAG with Web Search</h1>
+
+<p>In this architecture, the ChatClient uses a <strong>RetrievalAugmentationAdvisor</strong> to fetch internal data and a <strong>ToolCallAdvisor</strong> to perform external web searches if the model determines it is necessary.</p>
+
+<h3><strong>Step 1: Define the Web Search Tool</strong></h3>
+
+<p>First, we expose a web search function as a Spring Bean. The LLM will &quot;see&quot; this tool and its description.</p>
+
+<p>Java</p>
+
+<p>@Configuration</p>
+
+<p>public class AiToolsConfig {</p>
+
+<p>    @Bean</p>
+
+<p>    @Description(&quot;Search the internet for real-time news, current events, or missing technical data.&quot;)</p>
+
+<p>    public Function&lt;SearchRequest, String&gt; webSearch(TavilyAiApi tavilyApi) {</p>
+
+<p>        return request -&gt; {</p>
+
+<p>            var response = tavilyApi.search(new TavilyAiApi.SearchRequest(request.query()));</p>
+
+<p>            return response.results().toString();</p>
+
+<p>        };</p>
+
+<p>    }</p>
+
+<p>    public record SearchRequest(String query) {}</p>
+
+<p>}</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

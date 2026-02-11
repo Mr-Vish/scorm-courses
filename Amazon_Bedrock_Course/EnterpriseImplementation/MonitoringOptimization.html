@@ -1,0 +1,450 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Monitoring, Logging, and Performance Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Monitoring, Logging, and Performance Optimization</h1>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand comprehensive monitoring strategies for Bedrock applications</li>
+    <li>Learn how to implement effective logging and observability</li>
+    <li>Master performance optimization techniques</li>
+    <li>Apply troubleshooting methodologies for production issues</li>
+</ul>
+
+<h3>Observability Fundamentals</h3>
+
+<p>Observability in generative AI applications extends beyond traditional application monitoring to include AI-specific metrics such as token consumption, model performance, output quality, and user satisfaction. Comprehensive observability enables proactive issue detection, performance optimization, cost management, and continuous improvement of AI systems. This section explores monitoring, logging, and optimization strategies for production Bedrock deployments.</p>
+
+<h3>Key Metrics to Monitor</h3>
+
+<h4>Performance Metrics</h4>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Description</th>
+        <th>Target</th>
+        <th>Action Threshold</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Latency (P50)</td>
+        <td>Median response time</td>
+        <td>&lt;2 seconds</td>
+        <td>&gt;3 seconds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Latency (P99)</td>
+        <td>99th percentile response time</td>
+        <td>&lt;5 seconds</td>
+        <td>&gt;10 seconds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Time to First Token</td>
+        <td>Initial response delay for streaming</td>
+        <td>&lt;500ms</td>
+        <td>&gt;1 second</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Throughput</td>
+        <td>Requests per second</td>
+        <td>Varies by use case</td>
+        <td>Approaching quota limits</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>Failed requests percentage</td>
+        <td>&lt;0.1%</td>
+        <td>&gt;1%</td>
+    </tr>
+</table>
+
+<h4>Cost Metrics</h4>
+<ul>
+    <li><strong>Token Consumption:</strong> Input and output tokens per request</li>
+    <li><strong>Cost Per Request:</strong> Average cost per API invocation</li>
+    <li><strong>Daily/Monthly Spend:</strong> Total Bedrock costs over time</li>
+    <li><strong>Cost by Model:</strong> Spending breakdown across different models</li>
+    <li><strong>Cost by Application:</strong> Spending attribution to business units</li>
+</ul>
+
+<h4>Quality Metrics</h4>
+<ul>
+    <li><strong>Guardrail Block Rate:</strong> Percentage of responses blocked by guardrails</li>
+    <li><strong>User Satisfaction:</strong> Thumbs up/down, ratings, feedback</li>
+    <li><strong>Task Success Rate:</strong> Percentage of queries successfully resolved</li>
+    <li><strong>Retrieval Accuracy:</strong> Relevance of retrieved documents in RAG</li>
+    <li><strong>Output Consistency:</strong> Variation in responses to similar queries</li>
+</ul>
+
+<h3>CloudWatch Integration</h3>
+
+<h4>Built-in Bedrock Metrics</h4>
+<p>Amazon Bedrock automatically publishes metrics to CloudWatch:</p>
+<ul>
+    <li><strong>Invocations:</strong> Total number of model invocations</li>
+    <li><strong>InvocationLatency:</strong> Time taken to process requests</li>
+    <li><strong>InvocationClientErrors:</strong> 4xx errors (client-side issues)</li>
+    <li><strong>InvocationServerErrors:</strong> 5xx errors (service-side issues)</li>
+    <li><strong>InputTokens:</strong> Tokens in prompts</li>
+    <li><strong>OutputTokens:</strong> Tokens in responses</li>
+</ul>
+
+<h4>Custom Metrics</h4>
+<p>Publish application-specific metrics:</p>
+
+<blockquote>
+import boto3
+from datetime import datetime
+
+cloudwatch = boto3.client('cloudwatch')
+
+def publish_custom_metrics(request_id, latency, tokens, cost, quality_score):
+    cloudwatch.put_metric_data(
+        Namespace='BedrockApplication',
+        MetricData=[
+            {
+                'MetricName': 'RequestLatency',
+                'Value': latency,
+                'Unit': 'Milliseconds',
+                'Timestamp': datetime.utcnow(),
+                'Dimensions': [
+                    {'Name': 'RequestId', 'Value': request_id},
+                    {'Name': 'ModelId', 'Value': 'claude-3-sonnet'}
+                ]
+            },
+            {
+                'MetricName': 'TokenConsumption',
+                'Value': tokens,
+                'Unit': 'Count'
+            },
+            {
+                'MetricName': 'RequestCost',
+                'Value': cost,
+                'Unit': 'None'
+            },
+            {
+                'MetricName': 'QualityScore',
+                'Value': quality_score,
+                'Unit': 'None'
+            }
+        ]
+    )
+</blockquote>
+
+<h4>CloudWatch Alarms</h4>
+<p>Configure alarms for proactive issue detection:</p>
+
+<ul>
+    <li><strong>High Latency:</strong> Alert when P99 latency exceeds threshold</li>
+    <li><strong>Error Rate Spike:</strong> Alert on sudden increase in errors</li>
+    <li><strong>Cost Anomaly:</strong> Alert on unexpected spending increases</li>
+    <li><strong>Quota Approaching:</strong> Alert when nearing service limits</li>
+    <li><strong>Guardrail Block Rate:</strong> Alert on high block rates indicating issues</li>
+</ul>
+
+<h3>Logging Strategies</h3>
+
+<h4>Structured Logging</h4>
+<p>Implement structured logging for efficient analysis:</p>
+
+<blockquote>
+import json
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def log_bedrock_request(request_id, model_id, prompt_tokens, response_tokens, latency, status):
+    log_entry = {
+        'timestamp': datetime.utcnow().isoformat(),
+        'request_id': request_id,
+        'model_id': model_id,
+        'prompt_tokens': prompt_tokens,
+        'response_tokens': response_tokens,
+        'total_tokens': prompt_tokens + response_tokens,
+        'latency_ms': latency,
+        'status': status,
+        'cost_estimate': calculate_cost(model_id, prompt_tokens, response_tokens)
+    }
+    logger.info(json.dumps(log_entry))
+</blockquote>
+
+<h4>Log Levels and Content</h4>
+
+<table>
+    <tr>
+        <th>Level</th>
+        <th>Use Case</th>
+        <th>Content</th>
+    </tr>
+    <tr>
+        <td class="rowheader">DEBUG</td>
+        <td>Development, troubleshooting</td>
+        <td>Full prompts, responses, intermediate steps</td>
+    </tr>
+    <tr>
+        <td class="rowheader">INFO</td>
+        <td>Production monitoring</td>
+        <td>Request metadata, tokens, latency, status</td>
+    </tr>
+    <tr>
+        <td class="rowheader">WARN</td>
+        <td>Potential issues</td>
+        <td>Guardrail blocks, high latency, retries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ERROR</td>
+        <td>Failures</td>
+        <td>Error details, stack traces, context</td>
+    </tr>
+</table>
+
+<h4>Log Retention and Analysis</h4>
+<ul>
+    <li><strong>CloudWatch Logs Insights:</strong> Query and analyze logs with SQL-like syntax</li>
+    <li><strong>S3 Export:</strong> Archive logs to S3 for long-term retention and analysis</li>
+    <li><strong>Athena Integration:</strong> Query archived logs with standard SQL</li>
+    <li><strong>QuickSight Dashboards:</strong> Visualize trends and patterns</li>
+</ul>
+
+<h3>Distributed Tracing</h3>
+
+<h4>AWS X-Ray Integration</h4>
+<p>Implement distributed tracing for end-to-end visibility:</p>
+
+<ul>
+    <li>Trace requests across API Gateway, Lambda, Bedrock, and other services</li>
+    <li>Identify bottlenecks and latency contributors</li>
+    <li>Visualize service dependencies</li>
+    <li>Analyze error propagation</li>
+</ul>
+
+<h4>Trace Annotations</h4>
+<blockquote>
+from aws_xray_sdk.core import xray_recorder
+
+@xray_recorder.capture('invoke_bedrock')
+def invoke_bedrock_with_tracing(prompt):
+    xray_recorder.put_annotation('model_id', 'claude-3-sonnet')
+    xray_recorder.put_metadata('prompt_length', len(prompt))
+    
+    response = bedrock_client.invoke_model(...)
+    
+    xray_recorder.put_metadata('response_tokens', response['usage']['output_tokens'])
+    return response
+</blockquote>
+
+<h3>Performance Optimization Techniques</h3>
+
+<h4>Prompt Optimization</h4>
+
+<p><strong>Token Reduction Strategies:</strong></p>
+<ul>
+    <li>Remove redundant instructions and examples</li>
+    <li>Use concise language without sacrificing clarity</li>
+    <li>Abbreviate where context is clear</li>
+    <li>Structure data efficiently (JSON vs. verbose text)</li>
+</ul>
+
+<p><strong>Example Optimization:</strong></p>
+<blockquote>
+Before (127 tokens):
+"I would like you to please analyze the following customer feedback that we received and provide a comprehensive summary including the main themes, overall sentiment, and actionable insights."
+
+After (43 tokens):
+"Analyze this feedback. Provide: 1) Main themes, 2) Sentiment, 3) Actionable insights."
+
+Savings: 66% token reduction, ~66% cost reduction
+</blockquote>
+
+<h4>Model Selection Optimization</h4>
+
+<p><strong>Tiered Model Strategy:</strong></p>
+<ul>
+    <li><strong>Tier 1 (Efficient):</strong> Claude Haiku, Titan Text for simple queries (70% of traffic)</li>
+    <li><strong>Tier 2 (Balanced):</strong> Claude Sonnet for moderate complexity (25% of traffic)</li>
+    <li><strong>Tier 3 (Advanced):</strong> Claude Opus for complex reasoning (5% of traffic)</li>
+</ul>
+
+<p><strong>Routing Logic:</strong></p>
+<blockquote>
+def select_model(query_complexity, context_length):
+    if query_complexity == 'simple' and context_length &lt; 1000:
+        return 'claude-3-haiku'
+    elif query_complexity == 'complex' or context_length &gt; 10000:
+        return 'claude-3-opus'
+    else:
+        return 'claude-3-sonnet'
+</blockquote>
+
+<h4>Caching Strategies</h4>
+
+<p><strong>Response Caching:</strong></p>
+<blockquote>
+import hashlib
+import json
+
+def get_cached_response(prompt, cache_client):
+    # Generate cache key from prompt
+    cache_key = hashlib.sha256(prompt.encode()).hexdigest()
+    
+    # Check cache
+    cached = cache_client.get(cache_key)
+    if cached:
+        return json.loads(cached)
+    
+    # Invoke Bedrock
+    response = invoke_bedrock(prompt)
+    
+    # Cache response (24 hour TTL)
+    cache_client.setex(cache_key, 86400, json.dumps(response))
+    
+    return response
+</blockquote>
+
+<p><strong>Semantic Caching:</strong></p>
+<ul>
+    <li>Embed queries into vectors</li>
+    <li>Search for similar past queries</li>
+    <li>Reuse responses if similarity exceeds threshold</li>
+    <li>Reduces costs for similar but not identical queries</li>
+</ul>
+
+<h4>Batch Processing</h4>
+<p>For non-interactive workloads, batch requests to optimize throughput:</p>
+<ul>
+    <li>Accumulate requests over time window (e.g., 5 seconds)</li>
+    <li>Process batch with single or parallel invocations</li>
+    <li>Distribute results to requesters</li>
+    <li>Reduces overhead and improves cost efficiency</li>
+</ul>
+
+<h3>Troubleshooting Methodologies</h3>
+
+<h4>Common Issues and Solutions</h4>
+
+<table>
+    <tr>
+        <th>Issue</th>
+        <th>Symptoms</th>
+        <th>Diagnosis</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">High Latency</td>
+        <td>Slow responses, timeouts</td>
+        <td>Check prompt length, model selection, network</td>
+        <td>Optimize prompts, use efficient models, enable streaming</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Throttling</td>
+        <td>429 errors, rate limit exceeded</td>
+        <td>Check request rate vs. quotas</td>
+        <td>Implement exponential backoff, request quota increase</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Poor Quality</td>
+        <td>Irrelevant or incorrect responses</td>
+        <td>Review prompts, check RAG retrieval</td>
+        <td>Improve prompts, optimize knowledge base, adjust temperature</td>
+    </tr>
+    <tr>
+        <td class="rowheader">High Costs</td>
+        <td>Unexpected spending</td>
+        <td>Analyze token consumption by source</td>
+        <td>Optimize prompts, implement caching, use efficient models</td>
+    </tr>
+</table>
+
+<h4>Diagnostic Workflow</h4>
+<ol>
+    <li><strong>Identify Symptoms:</strong> Gather error messages, metrics, user reports</li>
+    <li><strong>Check Logs:</strong> Review CloudWatch logs for error details</li>
+    <li><strong>Analyze Metrics:</strong> Examine CloudWatch metrics for patterns</li>
+    <li><strong>Review Traces:</strong> Use X-Ray to identify bottlenecks</li>
+    <li><strong>Reproduce Issue:</strong> Test in controlled environment</li>
+    <li><strong>Implement Fix:</strong> Apply solution and verify</li>
+    <li><strong>Monitor:</strong> Ensure issue is resolved and doesn't recur</li>
+</ol>
+
+<h3>Dashboard Design</h3>
+
+<h4>Operational Dashboard</h4>
+<p>Real-time monitoring for operations teams:</p>
+<ul>
+    <li>Request rate and throughput</li>
+    <li>Latency percentiles (P50, P90, P99)</li>
+    <li>Error rates by type</li>
+    <li>Active alarms and incidents</li>
+    <li>Service health status</li>
+</ul>
+
+<h4>Business Dashboard</h4>
+<p>High-level metrics for stakeholders:</p>
+<ul>
+    <li>Total requests and users</li>
+    <li>User satisfaction scores</li>
+    <li>Cost trends and projections</li>
+    <li>Feature usage statistics</li>
+    <li>ROI metrics</li>
+</ul>
+
+<h4>Technical Dashboard</h4>
+<p>Detailed metrics for engineers:</p>
+<ul>
+    <li>Token consumption by model</li>
+    <li>Cache hit rates</li>
+    <li>Guardrail block rates by category</li>
+    <li>RAG retrieval accuracy</li>
+    <li>Model performance comparisons</li>
+</ul>
+
+<h3>Best Practices Summary</h3>
+
+<h4>Monitoring</h4>
+<ul>
+    <li>Track performance, cost, and quality metrics comprehensively</li>
+    <li>Set up proactive alarms for critical thresholds</li>
+    <li>Monitor both technical and business metrics</li>
+    <li>Establish baselines and track trends over time</li>
+</ul>
+
+<h4>Logging</h4>
+<ul>
+    <li>Implement structured logging for efficient analysis</li>
+    <li>Balance detail with privacy and cost considerations</li>
+    <li>Use appropriate log levels for different environments</li>
+    <li>Archive logs for compliance and long-term analysis</li>
+</ul>
+
+<h4>Optimization</h4>
+<ul>
+    <li>Optimize prompts to reduce token consumption</li>
+    <li>Implement tiered model strategy for cost efficiency</li>
+    <li>Use caching to reduce redundant invocations</li>
+    <li>Batch non-interactive workloads for better throughput</li>
+</ul>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Comprehensive observability requires monitoring performance, cost, and quality metrics</li>
+    <li>CloudWatch provides built-in Bedrock metrics; supplement with custom application metrics</li>
+    <li>Structured logging enables efficient analysis and troubleshooting</li>
+    <li>Distributed tracing with X-Ray provides end-to-end visibility across services</li>
+    <li>Prompt optimization and model selection significantly impact performance and cost</li>
+    <li>Caching strategies reduce redundant invocations and lower costs</li>
+    <li>Systematic troubleshooting workflows accelerate issue resolution</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

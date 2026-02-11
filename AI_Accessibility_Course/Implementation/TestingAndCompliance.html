@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Testing and Compliance</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Testing and Compliance</h1>
+
+<h2>Accessibility Testing Fundamentals</h2>
+<p>Effective accessibility testing combines automated tools, manual testing, and user testing with people who have disabilities. No single approach catches all issues—a comprehensive strategy is essential.</p>
+
+<h2>Testing Pyramid</h2>
+<table>
+    <tr><th>Testing Level</th><th>Coverage</th><th>Effort</th><th>Tools</th></tr>
+    <tr><td><strong>Automated</strong></td><td>~30% of issues</td><td>Low</td><td>axe, WAVE, Lighthouse, AI scanners</td></tr>
+    <tr><td><strong>Manual</strong></td><td>~50% of issues</td><td>Medium</td><td>Screen readers, keyboard testing, color contrast</td></tr>
+    <tr><td><strong>User testing</strong></td><td>~20% of issues</td><td>High</td><td>Real users with disabilities</td></tr>
+</table>
+
+<h2>Automated Testing with AI</h2>
+<p>AI-powered tools can detect many accessibility issues automatically:</p>
+
+<div class="code-block">
+<pre><code>from openai import OpenAI
+from selenium import webdriver
+from axe_selenium_python import Axe
+
+client = OpenAI()
+
+def comprehensive_accessibility_test(url: str) -&gt; dict:
+    '''Run comprehensive automated accessibility test.'''
+    driver = webdriver.Chrome()
+    driver.get(url)
+    
+    # Run axe-core automated tests
+    axe = Axe(driver)
+    axe.inject()
+    results = axe.run()
+    
+    # Get page HTML for AI analysis
+    page_html = driver.page_source
+    
+    # AI-powered semantic analysis
+    ai_analysis = analyze_with_ai(page_html)
+    
+    driver.quit()
+    
+    return {
+        "url": url,
+        "automated_issues": results["violations"],
+        "ai_insights": ai_analysis,
+        "total_issues": len(results["violations"]) + len(ai_analysis["issues"])
+    }
+
+def analyze_with_ai(html: str) -&gt; dict:
+    '''Use AI to detect semantic and contextual issues.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": (
+                "Analyze this HTML for accessibility issues that automated "
+                "tools might miss:\n"
+                "1. Alt text quality (is it descriptive and contextual?)\n"
+                "2. Heading hierarchy (logical structure?)\n"
+                "3. Link text (descriptive or generic 'click here'?)\n"
+                "4. Form labels (clear and helpful?)\n"
+                "5. Language clarity (appropriate reading level?)\n\n"
+                f"HTML:\n{html[:5000]}\n\n"
+                "Return JSON with issues array."
+            )
+        }]
+    )
+    
+    return json.loads(response.choices[0].message.content)</code></pre>
+</div>
+
+<h2>Manual Testing Checklist</h2>
+<p>Essential manual tests that automated tools cannot perform:</p>
+
+<table>
+    <tr><th>Test</th><th>How to Test</th><th>What to Check</th></tr>
+    <tr><td><strong>Keyboard navigation</strong></td><td>Unplug mouse, use only Tab, Enter, Escape, Arrow keys</td><td>Can reach all interactive elements? Visible focus? Logical order?</td></tr>
+    <tr><td><strong>Screen reader</strong></td><td>Use NVDA (Windows) or VoiceOver (Mac)</td><td>All content announced? Logical reading order? Clear labels?</td></tr>
+    <tr><td><strong>Zoom to 200%</strong></td><td>Browser zoom to 200%</td><td>Content still readable? No horizontal scrolling? No overlapping?</td></tr>
+    <tr><td><strong>Color contrast</strong></td><td>Use contrast checker tool</td><td>Text meets 4.5:1 ratio? Large text meets 3:1?</td></tr>
+    <tr><td><strong>Captions quality</strong></td><td>Watch video with sound off</td><td>Accurate? Synchronized? Include sound effects?</td></tr>
+    <tr><td><strong>Forms</strong></td><td>Try to complete with screen reader</td><td>Clear labels? Helpful errors? Required fields marked?</td></tr>
+</table>
+
+<h2>Screen Reader Testing</h2>
+<p>Testing with screen readers reveals issues automated tools miss:</p>
+
+<div class="code-block">
+<pre><code>def generate_screen_reader_test_script(page_url: str) -&gt; str:
+    '''Generate a screen reader testing script.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Create a detailed screen reader testing script for {page_url}. "
+                "Include:\n"
+                "1. Setup instructions (which screen reader to use)\n"
+                "2. Step-by-step navigation instructions\n"
+                "3. What to listen for at each step\n"
+                "4. Common issues to watch for\n"
+                "5. Pass/fail criteria\n\n"
+                "Format as a checklist."
+            )
+        }]
+    )
+    
+    return response.choices[0].message.content</code></pre>
+</div>
+
+<h2>User Testing with People with Disabilities</h2>
+<p>The gold standard for accessibility testing is testing with real users:</p>
+
+<ul>
+    <li><strong>Recruit diverse participants:</strong> Different disabilities, assistive technologies, experience levels</li>
+    <li><strong>Provide compensation:</strong> Pay participants fairly for their time and expertise</li>
+    <li><strong>Use realistic tasks:</strong> Test actual user workflows, not artificial scenarios</li>
+    <li><strong>Observe and listen:</strong> Watch how they interact, ask about pain points</li>
+    <li><strong>Iterate based on feedback:</strong> Fix issues and retest</li>
+</ul>
+
+<h2>WCAG Conformance Levels</h2>
+<table>
+    <tr><th>Level</th><th>Description</th><th>When to Use</th></tr>
+    <tr><td><strong>Level A</strong></td><td>Minimum accessibility</td><td>Bare minimum legal compliance</td></tr>
+    <tr><td><strong>Level AA</strong></td><td>Addresses major barriers</td><td>Standard for most organizations (recommended)</td></tr>
+    <tr><td><strong>Level AAA</strong></td><td>Highest level of accessibility</td><td>Specialized content, government sites</td></tr>
+</table>
+
+<h2>Legal Compliance Requirements</h2>
+<p>Different jurisdictions have different accessibility requirements:</p>
+
+<table>
+    <tr><th>Jurisdiction</th><th>Law/Standard</th><th>Applies To</th><th>Standard</th></tr>
+    <tr><td><strong>United States</strong></td><td>ADA Title III</td><td>Public accommodations</td><td>WCAG 2.1 AA (case law)</td></tr>
+    <tr><td><strong>United States</strong></td><td>Section 508</td><td>Federal agencies</td><td>WCAG 2.0 AA</td></tr>
+    <tr><td><strong>European Union</strong></td><td>European Accessibility Act</td><td>Products and services</td><td>EN 301 549 (WCAG 2.1 AA)</td></tr>
+    <tr><td><strong>Canada</strong></td><td>Accessible Canada Act</td><td>Federally regulated entities</td><td>WCAG 2.0 AA</td></tr>
+    <tr><td><strong>UK</strong></td><td>Equality Act 2010</td><td>Service providers</td><td>WCAG 2.1 AA</td></tr>
+    <tr><td><strong>Australia</strong></td><td>Disability Discrimination Act</td><td>All organizations</td><td>WCAG 2.0 AA</td></tr>
+</table>
+
+<h2>Accessibility Conformance Report (ACR)</h2>
+<p>Document your accessibility conformance using VPAT (Voluntary Product Accessibility Template):</p>
+
+<div class="code-block">
+<pre><code>def generate_accessibility_report(test_results: dict) -&gt; str:
+    '''Generate WCAG conformance report.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": (
+                "Generate a WCAG 2.1 Level AA conformance report based on these "
+                "test results. Include:\n"
+                "1. Executive summary\n"
+                "2. Conformance level achieved\n"
+                "3. Issues by WCAG criterion\n"
+                "4. Remediation recommendations\n"
+                "5. Timeline for fixes\n\n"
+                f"Test results:\n{json.dumps(test_results, indent=2)}"
+            )
+        }]
+    )
+    
+    return response.choices[0].message.content</code></pre>
+</div>
+
+<h2>Continuous Monitoring</h2>
+<p>Accessibility is not a one-time project—implement ongoing monitoring:</p>
+
+<ul>
+    <li><strong>Automated daily scans:</strong> Check for new accessibility issues</li>
+    <li><strong>Pre-deployment checks:</strong> Block releases with critical issues</li>
+    <li><strong>User feedback channels:</strong> Easy way for users to report issues</li>
+    <li><strong>Quarterly audits:</strong> Comprehensive manual testing</li>
+    <li><strong>Annual user testing:</strong> Test with people with disabilities</li>
+</ul>
+
+<h2>Remediation Prioritization</h2>
+<p>Not all issues are equal—prioritize based on impact and effort:</p>
+
+<table>
+    <tr><th>Priority</th><th>Criteria</th><th>Examples</th><th>Timeline</th></tr>
+    <tr><td><strong>Critical</strong></td><td>Blocks access to core functionality</td><td>Keyboard-inaccessible checkout, missing form labels</td><td>Fix immediately</td></tr>
+    <tr><td><strong>High</strong></td><td>Significant barrier, affects many users</td><td>Missing alt text on key images, poor color contrast</td><td>Fix within 1 week</td></tr>
+    <tr><td><strong>Medium</strong></td><td>Moderate barrier, workarounds exist</td><td>Heading hierarchy issues, generic link text</td><td>Fix within 1 month</td></tr>
+    <tr><td><strong>Low</strong></td><td>Minor issue, minimal impact</td><td>Missing lang attribute, minor ARIA improvements</td><td>Fix in next sprint</td></tr>
+</table>
+
+<h2>Documentation and Training</h2>
+<p>Maintain accessibility documentation for your team:</p>
+<ul>
+    <li><strong>Accessibility guidelines:</strong> Your organization's standards and best practices</li>
+    <li><strong>Component library:</strong> Accessible, reusable UI components</li>
+    <li><strong>Testing procedures:</strong> How to test for accessibility</li>
+    <li><strong>Remediation guides:</strong> How to fix common issues</li>
+    <li><strong>Contact information:</strong> Who to ask for accessibility help</li>
+</ul>
+
+<h2>Third-Party Content</h2>
+<p>Ensure vendors and partners meet accessibility requirements:</p>
+<ul>
+    <li><strong>Contract requirements:</strong> Include WCAG conformance in vendor contracts</li>
+    <li><strong>VPAT review:</strong> Request and review Voluntary Product Accessibility Templates</li>
+    <li><strong>Testing:</strong> Test third-party tools and content before deployment</li>
+    <li><strong>Remediation responsibility:</strong> Clarify who fixes accessibility issues</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Combine automated, manual, and user testing for comprehensive coverage</li>
+    <li>Automated tools catch ~30% of issues—manual testing is essential</li>
+    <li>Test with real users who have disabilities for best results</li>
+    <li>WCAG 2.1 Level AA is the standard for most organizations</li>
+    <li>Implement continuous monitoring, not one-time testing</li>
+    <li>Prioritize issues based on impact and fix critical blockers immediately</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

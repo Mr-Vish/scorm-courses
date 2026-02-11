@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building MCP Servers with Python</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building MCP Servers with Python</h1>
+
+<h2>Why Python for MCP Servers?</h2>
+
+<p>Python is an excellent choice for MCP server development:</p>
+
+<ul>
+    <li><strong>Rapid Development:</strong> Quick prototyping and iteration</li>
+    <li><strong>Rich Ecosystem:</strong> Extensive libraries for data processing, APIs, and integrations</li>
+    <li><strong>Data Science Integration:</strong> Natural fit for ML/AI workflows</li>
+    <li><strong>Readability:</strong> Clean syntax makes code easy to maintain</li>
+    <li><strong>Async Support:</strong> Built-in asyncio for concurrent operations</li>
+</ul>
+
+<h2>Python SDK Setup</h2>
+
+<h3>Installation</h3>
+
+<blockquote>
+pip install mcp
+</blockquote>
+
+<h3>Project Structure</h3>
+
+<blockquote>
+my-mcp-server/
+├── server.py
+├── requirements.txt
+└── README.md
+</blockquote>
+
+<h2>Basic Server Implementation</h2>
+
+<p>A Python MCP server uses async/await patterns and decorators for clean code organization.</p>
+
+<h3>Minimal Server Example</h3>
+
+<blockquote>
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import Tool, TextContent
+
+app = Server("my-python-server")
+
+async def main():
+    async with stdio_server() as (read, write):
+        await app.run(
+            read, 
+            write, 
+            app.create_initialization_options()
+        )
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
+</blockquote>
+
+<h2>Implementing Tools</h2>
+
+<p>Python MCP servers use decorators to define tools and their handlers.</p>
+
+<h3>Tool Definition</h3>
+
+<blockquote>
+@app.list_tools()
+async def list_tools():
+    return [
+        Tool(
+            name="search_database",
+            description="Search the database for records",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search query"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max results",
+                        "default": 10
+                    }
+                },
+                "required": ["query"]
+            }
+        )
+    ]
+</blockquote>
+
+<h3>Tool Execution</h3>
+
+<blockquote>
+@app.call_tool()
+async def call_tool(name: str, arguments: dict):
+    if name == "search_database":
+        query = arguments.get("query")
+        limit = arguments.get("limit", 10)
+        
+        results = await database.search(query, limit)
+        
+        return [TextContent(
+            type="text",
+            text=f"Found {len(results)} results: {results}"
+        )]
+    
+    raise ValueError(f"Unknown tool: {name}")
+</blockquote>
+
+<h2>Implementing Resources</h2>
+
+<p>Resources provide read-only data to the AI.</p>
+
+<h3>Resource Listing</h3>
+
+<blockquote>
+@app.list_resources()
+async def list_resources():
+    return [
+        Resource(
+            uri="file:///data/config.json",
+            name="Configuration",
+            description="Application configuration file",
+            mimeType="application/json"
+        )
+    ]
+</blockquote>
+
+<h3>Resource Reading</h3>
+
+<blockquote>
+@app.read_resource()
+async def read_resource(uri: str):
+    if uri == "file:///data/config.json":
+        with open("config.json", "r") as f:
+            content = f.read()
+        
+        return [ResourceContents(
+            uri=uri,
+            mimeType="application/json",
+            text=content
+        )]
+    
+    raise ValueError(f"Unknown resource: {uri}")
+</blockquote>
+
+<h2>Error Handling</h2>
+
+<p>Proper error handling ensures robust server operation:</p>
+
+<blockquote>
+@app.call_tool()
+async def call_tool(name: str, arguments: dict):
+    try:
+        if name == "process_data":
+            # Validate inputs
+            if "data" not in arguments:
+                raise ValueError("Missing required parameter: data")
+            
+            # Process
+            result = await process(arguments["data"])
+            
+            return [TextContent(type="text", text=str(result))]
+    
+    except ValueError as e:
+        # Log to stderr
+        import sys
+        print(f"Validation error: {e}", file=sys.stderr)
+        raise
+    
+    except Exception as e:
+        import sys
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        raise ValueError(f"Tool execution failed: {str(e)}")
+</blockquote>
+
+<h2>Logging Best Practices</h2>
+
+<p>Always log to stderr to avoid corrupting the stdio transport:</p>
+
+<blockquote>
+import sys
+import logging
+
+# Configure logging to stderr
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stderr
+)
+
+logger = logging.getLogger(__name__)
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict):
+    logger.info(f"Tool called: {name}")
+    # Tool implementation
+</blockquote>
+
+<h2>Working with External APIs</h2>
+
+<p>Python's rich ecosystem makes API integration straightforward:</p>
+
+<blockquote>
+import aiohttp
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict):
+    if name == "fetch_weather":
+        city = arguments["city"]
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://api.weather.com/v1/current?city={city}"
+            ) as response:
+                data = await response.json()
+                
+                return [TextContent(
+                    type="text",
+                    text=f"Weather: {data['temp']}°C"
+                )]
+</blockquote>
+
+<h2>Server Configuration</h2>
+
+<p>Configure your Python server in the host's configuration:</p>
+
+<blockquote>
+{
+  "mcpServers": {
+    "python-server": {
+      "command": "python",
+      "args": ["server.py"],
+      "env": {
+        "PYTHONPATH": "/path/to/project"
+      }
+    }
+  }
+}
+</blockquote>
+
+<h2>Best Practices</h2>
+
+<ul>
+    <li>Use type hints for better code clarity</li>
+    <li>Validate inputs before processing</li>
+    <li>Log all errors to stderr</li>
+    <li>Use async/await for I/O operations</li>
+    <li>Handle exceptions gracefully</li>
+    <li>Document tool parameters clearly</li>
+    <li>Test tools independently before integration</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Python provides rapid development with extensive library support</li>
+    <li>Decorators make tool and resource definition clean and intuitive</li>
+    <li>Async/await patterns enable efficient concurrent operations</li>
+    <li>Proper logging to stderr is essential for debugging</li>
+    <li>Python's ecosystem simplifies integration with external services</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

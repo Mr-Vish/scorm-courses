@@ -1,0 +1,392 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Spring AI Implementation - Global Configuration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring AI Implementation - Global Configuration</h1>
+
+<h2>Global Configuration Overview</h2>
+<p>Global configuration sets default parameter values that apply to all LLM requests unless explicitly overridden. This approach is useful when your application has consistent parameter requirements across all endpoints.</p>
+
+<h2>Configuration via application.properties</h2>
+<p>Spring AI supports comprehensive configuration through standard Spring Boot properties:</p>
+
+<div class="code-block">
+<pre><code># OpenAI API Configuration
+spring.ai.openai.api-key=${OPENAI_API_KEY}
+spring.ai.openai.base-url=https://api.openai.com
+
+# Model Selection
+spring.ai.openai.chat.options.model=gpt-4
+
+# Global Parameter Defaults
+spring.ai.openai.chat.options.temperature=0.7
+spring.ai.openai.chat.options.max-tokens=500
+spring.ai.openai.chat.options.top-p=1.0
+spring.ai.openai.chat.options.frequency-penalty=0.0
+spring.ai.openai.chat.options.presence-penalty=0.0
+</code></pre>
+</div>
+
+<h2>Configuration via application.yml</h2>
+<p>YAML format provides better readability for complex configurations:</p>
+
+<div class="code-block">
+<pre><code>spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.openai.com
+      chat:
+        options:
+          model: gpt-4
+          temperature: 0.7
+          max-tokens: 500
+          top-p: 1.0
+          frequency-penalty: 0.0
+          presence-penalty: 0.0
+</code></pre>
+</div>
+
+<h2>Environment-Specific Configuration</h2>
+<p>Use Spring profiles to maintain different configurations for different environments:</p>
+
+<h3>application-dev.properties</h3>
+<div class="code-block">
+<pre><code># Development Environment - More verbose, lower costs
+spring.ai.openai.chat.options.model=gpt-3.5-turbo
+spring.ai.openai.chat.options.temperature=0.7
+spring.ai.openai.chat.options.max-tokens=300
+</code></pre>
+</div>
+
+<h3>application-prod.properties</h3>
+<div class="code-block">
+<pre><code># Production Environment - Optimized for quality
+spring.ai.openai.chat.options.model=gpt-4
+spring.ai.openai.chat.options.temperature=0.5
+spring.ai.openai.chat.options.max-tokens=500
+</code></pre>
+</div>
+
+<h3>Activating Profiles</h3>
+<div class="code-block">
+<pre><code># In application.properties
+spring.profiles.active=prod
+
+# Or via command line
+java -jar myapp.jar --spring.profiles.active=prod
+
+# Or via environment variable
+export SPRING_PROFILES_ACTIVE=prod
+</code></pre>
+</div>
+
+<h2>Configuration Class Approach</h2>
+<p>For more complex scenarios, create a dedicated configuration class:</p>
+
+<div class="code-block">
+<pre><code>import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class OpenAiConfiguration {
+
+    @Value("${openai.api.key}")
+    private String apiKey;
+
+    @Bean
+    public OpenAiApi openAiApi() {
+        return new OpenAiApi(apiKey);
+    }
+
+    @Bean
+    public OpenAiChatOptions defaultChatOptions() {
+        return OpenAiChatOptions.builder()
+                .withModel("gpt-4")
+                .withTemperature(0.7f)
+                .withMaxTokens(500)
+                .withTopP(1.0f)
+                .withFrequencyPenalty(0.0f)
+                .withPresencePenalty(0.0f)
+                .build();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Secure API Key Management</h2>
+
+<h3>Using Environment Variables</h3>
+<p>Never hardcode API keys. Use environment variables:</p>
+
+<div class="code-block">
+<pre><code># Set environment variable
+export OPENAI_API_KEY=sk-your-api-key-here
+
+# Reference in application.properties
+spring.ai.openai.api-key=${OPENAI_API_KEY}
+</code></pre>
+</div>
+
+<h3>Using AWS Secrets Manager</h3>
+<div class="code-block">
+<pre><code>import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class SecretConfiguration {
+
+    @Bean
+    public String openAiApiKey(SecretsManagerClient secretsManager) {
+        GetSecretValueRequest request = GetSecretValueRequest.builder()
+                .secretId("openai-api-key")
+                .build();
+        
+        return secretsManager.getSecretValue(request).secretString();
+    }
+}
+</code></pre>
+</div>
+
+<h3>Using Spring Cloud Config</h3>
+<div class="code-block">
+<pre><code># bootstrap.properties
+spring.cloud.config.uri=http://config-server:8888
+spring.application.name=llm-service
+
+# Config server provides encrypted properties
+spring.ai.openai.api-key={cipher}encrypted-key-here
+</code></pre>
+</div>
+
+<h2>Multiple Provider Configuration</h2>
+<p>Configure multiple LLM providers simultaneously:</p>
+
+<div class="code-block">
+<pre><code>spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4
+          temperature: 0.7
+    
+    azure:
+      openai:
+        api-key: ${AZURE_OPENAI_API_KEY}
+        endpoint: ${AZURE_OPENAI_ENDPOINT}
+        chat:
+          options:
+            deployment-name: gpt-4-deployment
+            temperature: 0.7
+    
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-3-opus
+          temperature: 0.7
+</code></pre>
+</div>
+
+<h2>Configuration Properties Table</h2>
+<table>
+    <tr>
+        <th>Property</th>
+        <th>Description</th>
+        <th>Default</th>
+        <th>Valid Range</th>
+    </tr>
+    <tr>
+        <td class="rowheader">spring.ai.openai.api-key</td>
+        <td>OpenAI API authentication key</td>
+        <td>None (required)</td>
+        <td>Valid API key</td>
+    </tr>
+    <tr>
+        <td class="rowheader">spring.ai.openai.chat.options.model</td>
+        <td>Model identifier</td>
+        <td>gpt-3.5-turbo</td>
+        <td>gpt-3.5-turbo, gpt-4, etc.</td>
+    </tr>
+    <tr>
+        <td class="rowheader">spring.ai.openai.chat.options.temperature</td>
+        <td>Sampling temperature</td>
+        <td>0.7</td>
+        <td>0.0 - 2.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">spring.ai.openai.chat.options.max-tokens</td>
+        <td>Maximum response length</td>
+        <td>None</td>
+        <td>1 - model limit</td>
+    </tr>
+    <tr>
+        <td class="rowheader">spring.ai.openai.chat.options.top-p</td>
+        <td>Nucleus sampling threshold</td>
+        <td>1.0</td>
+        <td>0.0 - 1.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">spring.ai.openai.chat.options.frequency-penalty</td>
+        <td>Repetition penalty</td>
+        <td>0.0</td>
+        <td>-2.0 - 2.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">spring.ai.openai.chat.options.presence-penalty</td>
+        <td>Topic diversity penalty</td>
+        <td>0.0</td>
+        <td>-2.0 - 2.0</td>
+    </tr>
+</table>
+
+<h2>Overriding Global Configuration</h2>
+<p>Per-request options always override global configuration:</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class FlexibleChatService {
+
+    private final ChatClient chatClient;
+
+    public FlexibleChatService(ChatClient.Builder builder) {
+        // Uses global configuration by default
+        this.chatClient = builder.build();
+    }
+
+    public String chatWithDefaults(String message) {
+        // Uses global configuration
+        return chatClient.prompt()
+                .user(message)
+                .call()
+                .content();
+    }
+
+    public String chatWithOverride(String message) {
+        // Overrides global temperature
+        return chatClient.prompt()
+                .user(message)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.2f)  // Overrides global
+                        .build())
+                .call()
+                .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Configuration Validation</h2>
+<p>Implement validation to catch configuration errors early:</p>
+
+<div class="code-block">
+<pre><code>import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+import javax.validation.constraints.*;
+
+@ConfigurationProperties(prefix = "spring.ai.openai.chat.options")
+@Validated
+public class ChatOptionsProperties {
+
+    @DecimalMin("0.0")
+    @DecimalMax("2.0")
+    private Float temperature = 0.7f;
+
+    @Min(1)
+    @Max(4096)
+    private Integer maxTokens = 500;
+
+    @DecimalMin("0.0")
+    @DecimalMax("1.0")
+    private Float topP = 1.0f;
+
+    // Getters and setters
+}
+</code></pre>
+</div>
+
+<h2>Monitoring Configuration</h2>
+<p>Expose configuration via Spring Boot Actuator:</p>
+
+<div class="code-block">
+<pre><code># application.properties
+management.endpoints.web.exposure.include=health,info,env,configprops
+management.endpoint.configprops.show-values=WHEN_AUTHORIZED
+
+# Access configuration at:
+# GET /actuator/configprops
+</code></pre>
+</div>
+
+<h2>Global vs. Per-Request: Decision Matrix</h2>
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Recommended Approach</th>
+        <th>Reason</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Single-purpose application</td>
+        <td>Global Configuration</td>
+        <td>Simpler, consistent behavior</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Multiple use cases</td>
+        <td>Per-Request Configuration</td>
+        <td>Flexibility for different scenarios</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Microservices</td>
+        <td>Global Configuration</td>
+        <td>Each service has specific purpose</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Multi-tenant application</td>
+        <td>Per-Request Configuration</td>
+        <td>Different tenants may need different settings</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Experimentation/Testing</td>
+        <td>Per-Request Configuration</td>
+        <td>Easy to test different parameters</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Start with Global:</strong> Set sensible defaults globally, override when needed</li>
+    <li><strong>Use Profiles:</strong> Maintain environment-specific configurations</li>
+    <li><strong>Secure Secrets:</strong> Never commit API keys to version control</li>
+    <li><strong>Document Choices:</strong> Comment why specific defaults were chosen</li>
+    <li><strong>Validate Configuration:</strong> Use Spring's validation framework</li>
+    <li><strong>Monitor Usage:</strong> Track which configurations are actually used</li>
+    <li><strong>Version Control:</strong> Track configuration changes alongside code</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+<ul>
+    <li><strong>Hardcoded Keys:</strong> Always use environment variables or secret managers</li>
+    <li><strong>Inconsistent Environments:</strong> Ensure dev/staging/prod configurations are properly maintained</li>
+    <li><strong>Missing Validation:</strong> Validate parameter ranges to catch errors early</li>
+    <li><strong>Over-Configuration:</strong> Don't set every parameter if defaults work well</li>
+    <li><strong>Ignoring Costs:</strong> Monitor token usage, especially with high max-tokens settings</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

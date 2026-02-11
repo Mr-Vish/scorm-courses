@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Vector Embeddings and Similarity Search</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: LlamaIndex Fundamentals</h1>
+<h2>Lesson 3: Vector Embeddings and Similarity Search</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand the mathematical foundations of vector embeddings and semantic similarity</li>
+    <li>Explain how embedding models transform text into numerical representations</li>
+    <li>Analyze different distance metrics and their implications for retrieval</li>
+    <li>Evaluate embedding model characteristics and selection criteria</li>
+</ul>
+
+<h3>The Semantic Space: From Words to Vectors</h3>
+<p>At the heart of modern RAG systems lies a profound idea: meaning can be represented mathematically. Vector embeddings transform text—whether words, sentences, or entire documents—into points in a high-dimensional space where semantic similarity corresponds to geometric proximity. This transformation enables computers to "understand" meaning in a way that supports efficient search and comparison.</p>
+
+<p>Traditional keyword-based search treats text as a collection of discrete symbols. A search for "automobile" won't match documents containing "car" or "vehicle" unless explicit synonyms are programmed. Vector embeddings solve this limitation by mapping semantically related terms to nearby points in vector space. "Automobile," "car," and "vehicle" all receive similar vector representations because they appear in similar contexts during the embedding model's training.</p>
+
+<h3>What Are Vector Embeddings?</h3>
+<p>A vector embedding is a dense numerical representation of text, typically consisting of hundreds or thousands of floating-point numbers. For example, the sentence "The cat sat on the mat" might be represented as a 1536-dimensional vector:</p>
+
+<p><code>[0.023, -0.145, 0.891, ..., 0.234]</code></p>
+
+<p>Each dimension captures some aspect of the text's meaning, though individual dimensions are not directly interpretable by humans. The magic lies in the relationships between vectors: semantically similar texts produce similar vectors, while dissimilar texts produce distant vectors.</p>
+
+<h4>Properties of Good Embeddings</h4>
+<p><strong>Semantic Preservation:</strong> Similar meanings yield similar vectors. "Happy" and "joyful" should be closer than "happy" and "sad."</p>
+
+<p><strong>Dimensionality:</strong> Higher dimensions can capture more nuanced distinctions but require more storage and computation. Common dimensions range from 384 to 3072.</p>
+
+<p><strong>Density:</strong> Unlike sparse representations (e.g., one-hot encoding), embeddings use all dimensions, making them "dense." This efficiency enables practical similarity search over millions of vectors.</p>
+
+<p><strong>Context Sensitivity:</strong> Modern embeddings are contextual—the same word receives different vectors depending on surrounding words. "Bank" in "river bank" differs from "bank" in "savings bank."</p>
+
+<h3>How Embedding Models Work: A Conceptual Overview</h3>
+<p>Embedding models are neural networks trained on massive text corpora to predict contextual relationships. While the specific architectures vary, the fundamental training approach involves learning representations that capture semantic patterns.</p>
+
+<h4>Training Objectives</h4>
+<p><strong>Contrastive Learning:</strong> The model learns to produce similar embeddings for semantically related texts (positive pairs) and dissimilar embeddings for unrelated texts (negative pairs). For example:</p>
+<ul>
+    <li>Positive pair: "How do I reset my password?" and "Password reset instructions"</li>
+    <li>Negative pair: "How do I reset my password?" and "Chocolate cake recipe"</li>
+</ul>
+
+<p>Through millions of such examples, the model learns to position semantically related texts near each other in vector space.</p>
+
+<p><strong>Masked Language Modeling:</strong> The model predicts masked words based on context, forcing it to learn rich representations that capture meaning. This is the foundation of models like BERT.</p>
+
+<p><strong>Next Sentence Prediction:</strong> The model learns whether two sentences naturally follow each other, capturing document-level coherence.</p>
+
+<h4>Transformer Architecture</h4>
+<p>Most modern embedding models use the Transformer architecture, which employs self-attention mechanisms to weigh the importance of different words when encoding each word. This enables the model to capture long-range dependencies and contextual nuances that simpler models miss.</p>
+
+<p>When you embed a sentence, the model processes all words simultaneously, allowing each word's representation to be influenced by every other word. The final embedding (for sentence-level models) is typically derived by pooling or averaging these contextualized word representations.</p>
+
+<h3>Similarity Metrics: Measuring Semantic Distance</h3>
+<p>Once text is embedded, we need a way to quantify similarity between vectors. Different metrics capture different notions of similarity, and the choice impacts retrieval behavior.</p>
+
+<h4>Cosine Similarity</h4>
+<p>Cosine similarity measures the angle between two vectors, ranging from -1 (opposite directions) to 1 (same direction). It's calculated as:</p>
+
+<p><code>cosine_similarity = (A · B) / (||A|| × ||B||)</code></p>
+
+<p>Where A · B is the dot product and ||A|| is the vector magnitude.</p>
+
+<p><strong>Key Characteristic:</strong> Cosine similarity is magnitude-invariant—it only considers direction. Two vectors pointing in the same direction have similarity 1 regardless of their lengths.</p>
+
+<p><strong>When to Use:</strong> Most text embedding applications. It's robust to document length variations and aligns well with how embedding models are trained.</p>
+
+<p><strong>Interpretation:</strong> Values near 1 indicate high similarity, near 0 indicate orthogonality (unrelated), and near -1 indicate opposition (rare in practice).</p>
+
+<h4>Euclidean Distance (L2 Distance)</h4>
+<p>Euclidean distance measures the straight-line distance between two points in vector space:</p>
+
+<p><code>euclidean_distance = sqrt(Σ(A_i - B_i)²)</code></p>
+
+<p><strong>Key Characteristic:</strong> Considers both direction and magnitude. Longer vectors are inherently more distant from the origin.</p>
+
+<p><strong>When to Use:</strong> When magnitude matters, such as when embeddings encode intensity or confidence. Less common for text embeddings.</p>
+
+<p><strong>Interpretation:</strong> Smaller distances indicate higher similarity. No fixed upper bound.</p>
+
+<h4>Dot Product</h4>
+<p>The dot product is the sum of element-wise multiplications:</p>
+
+<p><code>dot_product = Σ(A_i × B_i)</code></p>
+
+<p><strong>Key Characteristic:</strong> Combines both angle and magnitude. Longer vectors produce larger dot products.</p>
+
+<p><strong>When to Use:</strong> When embeddings are normalized (unit length), dot product is equivalent to cosine similarity but computationally faster. Some vector databases optimize for dot product search.</p>
+
+<p><strong>Interpretation:</strong> Higher values indicate greater similarity. Range depends on vector dimensions and magnitudes.</p>
+
+<h4>Manhattan Distance (L1 Distance)</h4>
+<p>Manhattan distance sums the absolute differences across all dimensions:</p>
+
+<p><code>manhattan_distance = Σ|A_i - B_i|</code></p>
+
+<p><strong>Key Characteristic:</strong> Measures distance along axis-aligned paths rather than straight lines.</p>
+
+<p><strong>When to Use:</strong> Rarely used for text embeddings. More common in specialized applications where axis-aligned distance is meaningful.</p>
+
+<h3>Embedding Models: Landscape and Selection Criteria</h3>
+<p>The choice of embedding model significantly impacts retrieval quality, cost, and latency. Understanding the landscape helps in making informed decisions.</p>
+
+<h4>Popular Embedding Models</h4>
+<p><strong>OpenAI text-embedding-3-small (1536 dimensions):</strong></p>
+<ul>
+    <li>Excellent general-purpose performance</li>
+    <li>Balanced cost and quality</li>
+    <li>API-based (requires internet connectivity)</li>
+    <li>Suitable for most production applications</li>
+</ul>
+
+<p><strong>OpenAI text-embedding-3-large (3072 dimensions):</strong></p>
+<ul>
+    <li>State-of-the-art quality for complex queries</li>
+    <li>Higher cost and storage requirements</li>
+    <li>Best for applications where retrieval quality is critical</li>
+</ul>
+
+<p><strong>Sentence-Transformers (e.g., all-MiniLM-L6-v2, 384 dimensions):</strong></p>
+<ul>
+    <li>Open-source, can run locally</li>
+    <li>Lower dimensions reduce storage and computation</li>
+    <li>Good for resource-constrained environments</li>
+    <li>Extensive model zoo for different languages and domains</li>
+</ul>
+
+<p><strong>Cohere embed-english-v3.0 (1024 dimensions):</strong></p>
+<ul>
+    <li>Optimized for search and retrieval</li>
+    <li>Supports compression to smaller dimensions</li>
+    <li>Strong performance on domain-specific tasks</li>
+</ul>
+
+<p><strong>BGE (BAAI General Embedding) models:</strong></p>
+<ul>
+    <li>State-of-the-art open-source models</li>
+    <li>Multiple sizes (small, base, large)</li>
+    <li>Excellent multilingual support</li>
+    <li>Can be fine-tuned for specific domains</li>
+</ul>
+
+<h4>Selection Criteria</h4>
+<p><strong>Domain Alignment:</strong> Models trained on domain-specific data (e.g., medical, legal) perform better in those domains. General-purpose models work well for broad applications.</p>
+
+<p><strong>Language Support:</strong> Multilingual models are essential for international applications. Some models excel in specific languages.</p>
+
+<p><strong>Dimensionality Trade-offs:</strong> Higher dimensions capture more nuance but increase storage costs and search latency. Consider your scale and performance requirements.</p>
+
+<p><strong>Deployment Model:</strong> API-based models (OpenAI, Cohere) are easy to use but incur per-request costs and require internet connectivity. Self-hosted models (Sentence-Transformers) offer more control and potentially lower long-term costs.</p>
+
+<p><strong>Retrieval vs. Semantic Similarity:</strong> Some models are optimized specifically for retrieval tasks (asymmetric: short query, long document). Others excel at semantic similarity (symmetric: comparing similar-length texts).</p>
+
+<h3>The Retrieval Process: From Query to Results</h3>
+<p>Understanding how similarity search works at a technical level illuminates why certain design decisions matter.</p>
+
+<h4>Step 1: Query Embedding</h4>
+<p>The user's query is embedded using the same model that embedded the documents. This ensures queries and documents exist in the same semantic space, making similarity comparisons meaningful.</p>
+
+<h4>Step 2: Similarity Computation</h4>
+<p>The query vector is compared against all document vectors in the index using the chosen similarity metric. In a naive implementation, this requires computing similarity with every vector—potentially millions of comparisons.</p>
+
+<h4>Step 3: Ranking and Selection</h4>
+<p>Vectors are ranked by similarity score, and the top-k most similar vectors are selected. The value of k (e.g., 3, 5, 10) balances between providing sufficient context and avoiding information overload.</p>
+
+<h4>Approximate Nearest Neighbor (ANN) Search</h4>
+<p>For large-scale applications, computing exact similarity with every vector is prohibitively slow. Approximate Nearest Neighbor algorithms trade perfect accuracy for dramatic speed improvements:</p>
+
+<p><strong>HNSW (Hierarchical Navigable Small World):</strong> Builds a multi-layer graph structure enabling logarithmic search time. Excellent balance of speed and accuracy. Used by vector databases like Weaviate and Qdrant.</p>
+
+<p><strong>IVF (Inverted File Index):</strong> Clusters vectors and searches only relevant clusters. Faster but may miss edge cases. Used by FAISS.</p>
+
+<p><strong>Product Quantization:</strong> Compresses vectors to reduce memory footprint and speed up comparisons. Trades some accuracy for efficiency.</p>
+
+<p>These algorithms enable sub-second search over millions or billions of vectors, making large-scale RAG systems practical.</p>
+
+<h3>Embedding Quality and Evaluation</h3>
+<p>How do we know if our embeddings are working well? Several evaluation approaches exist:</p>
+
+<h4>Intrinsic Evaluation</h4>
+<p><strong>Semantic Similarity Benchmarks:</strong> Test whether the model correctly ranks semantically similar pairs higher than dissimilar pairs. Datasets like STS (Semantic Textual Similarity) provide ground truth.</p>
+
+<p><strong>Clustering Quality:</strong> Embed a corpus and cluster the vectors. Good embeddings should group semantically related documents together.</p>
+
+<h4>Extrinsic Evaluation</h4>
+<p><strong>Retrieval Metrics:</strong> Measure whether the system retrieves relevant documents for test queries:</p>
+<ul>
+    <li><strong>Recall@k:</strong> What percentage of relevant documents appear in the top-k results?</li>
+    <li><strong>Precision@k:</strong> What percentage of top-k results are actually relevant?</li>
+    <li><strong>MRR (Mean Reciprocal Rank):</strong> How highly is the first relevant result ranked?</li>
+    <li><strong>NDCG (Normalized Discounted Cumulative Gain):</strong> Accounts for graded relevance and position.</li>
+</ul>
+
+<p><strong>End-to-End Quality:</strong> Ultimately, embedding quality should be measured by the quality of final LLM responses. Human evaluation or automated metrics (e.g., answer correctness) provide the most meaningful assessment.</p>
+
+<h3>Common Pitfalls and Considerations</h3>
+
+<h4>Domain Mismatch</h4>
+<p>Embeddings trained on general web text may perform poorly on specialized domains (medical, legal, scientific). Fine-tuning or domain-specific models can address this.</p>
+
+<h4>Query-Document Asymmetry</h4>
+<p>Queries are typically short and question-like, while documents are long and declarative. Some embedding models are optimized for this asymmetry, producing better retrieval results.</p>
+
+<h4>Multilingual Challenges</h4>
+<p>Multilingual models enable cross-language retrieval (query in English, retrieve Spanish documents) but may sacrifice some quality compared to monolingual models.</p>
+
+<h4>Embedding Drift</h4>
+<p>If you change embedding models, all documents must be re-embedded. Plan for this in your architecture, potentially maintaining multiple index versions during transitions.</p>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Vector embeddings transform text into numerical representations where semantic similarity corresponds to geometric proximity</li>
+    <li>Embedding models use neural networks trained on massive corpora to learn meaningful representations</li>
+    <li>Cosine similarity is the most common metric for text embeddings, measuring the angle between vectors</li>
+    <li>Different embedding models offer trade-offs in quality, cost, dimensionality, and deployment model</li>
+    <li>Approximate Nearest Neighbor algorithms enable efficient similarity search over large vector collections</li>
+    <li>Embedding quality should be evaluated both intrinsically (similarity benchmarks) and extrinsically (retrieval metrics)</li>
+    <li>Domain alignment, language support, and query-document asymmetry are critical considerations in model selection</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

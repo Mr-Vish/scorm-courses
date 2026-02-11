@@ -1,0 +1,76 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Data Preparation for LLM Fine-Tuning</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Data Preparation: The Key to Successful Fine-Tuning</h1>
+
+<div class="content-section">
+<h2>1. Data Quality over Quantity</h2>
+<p>One of the most important lessons in modern AI is that the quality of your training data is much more important than the quantity. A small, perfectly curated dataset of 1,000 examples will often outperform a noisy dataset of 100,000 examples. In this module, we will explore how to use SageMaker tools to prepare high-quality instruction datasets for your fine-tuning jobs.</p>
+
+<h2>2. Types of Fine-Tuning Datasets</h2>
+<ul>
+    <li><strong>Instruction Fine-Tuning:</strong> Data is formatted as (Instruction, Input, Output) triplets. This is used to teach the model how to follow specific commands.</li>
+    <li><strong>Chat/Dialogue Fine-Tuning:</strong> Data is formatted as a sequence of (User, Assistant) turns. This is used for building conversational agents.</li>
+    <li><strong>Domain Adaptation:</strong> Large blocks of specialized text (e.g., medical journals) used to give the model deep knowledge of a specific field.</li>
+</ul>
+
+<h2>3. SageMaker Data Wrangler for LLMs</h2>
+<p><strong>SageMaker Data Wrangler</strong> simplifies the process of aggregating and cleaning data from various sources (S3, Athena, Redshift). For LLM data, you can use it to:
+    <ul>
+        <li><strong>De-duplicate:</strong> Remove identical or highly similar examples that can lead to overfitting.</li>
+        <li><strong>Filter by Length:</strong> Remove examples that are too short (no information) or too long (exceeding the model's context window).</li>
+        <li><strong>Sentiment and Quality Analysis:</strong> Use built-in NLP transforms to identify and remove toxic or low-quality content.</li>
+    </ul>
+</p>
+
+<h2>4. Formatting for Training: The Prompt Template</h2>
+<p>Models don't just see "instructions" and "responses"; they see a single string of text formatted with special tokens. Different models have different requirements (e.g., the Llama 3 format vs. the Alpaca format). A critical part of data preparation is applying the correct <strong>Prompt Template</strong>.</p>
+
+<div class="code-block">
+<pre><code># Applying a Llama-3 style prompt template in Python
+def format_llama3(example):
+    return (
+        f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n"
+        f"You are a helpful assistant.<|eot_id|>"
+        f"<|start_header_id|>user<|end_header_id|>\n\n"
+        f"{example['instruction']}<|eot_id|>"
+        f"<|start_header_id|>assistant<|end_header_id|>\n\n"
+        f"{example['response']}<|eot_id|>"
+    )
+
+# The resulting string is what the model actually trains on.</code></pre>
+</div>
+
+<h2>5. Human-in-the-Loop with SageMaker Ground Truth</h2>
+<p>For the highest quality data, human review is essential. <strong>SageMaker Ground Truth Plus</strong> provides access to a specialized workforce that can:
+    <ul>
+        <li><strong>Generate Instruction Data:</strong> Write high-quality responses to your domain-specific prompts.</li>
+        <li><strong>Rank Responses:</strong> (For RLHF) Compare multiple model outputs and rank them by helpfulness and safety.</li>
+        <li><strong>Correct Hallucinations:</strong> Fact-check the model's outputs and provide the correct information.</li>
+    </ul>
+</p>
+
+<h2>6. Data Partitioning and Tokenization</h2>
+<p>Once your data is cleaned and formatted, it must be tokenized and split into training, validation, and test sets.
+    <ul>
+        <li><strong>Tokenization:</strong> Converting text into the integer IDs that the model understands. Each model has its own tokenizer (e.g., the Llama 3 tokenizer uses a 128k word vocabulary).</li>
+        <li><strong>Packing:</strong> To maximize training efficiency, small examples can be "packed" together into a single sequence of the model's maximum length (e.g., 4096 tokens). This ensures that every GPU cycle is used effectively.</li>
+    </ul>
+</p>
+
+<h2>Conclusion</h2>
+<p>Data preparation is often 80% of the work in an AI project. By using SageMaker's suite of data tools, you can ensure that your fine-tuning jobs are running on the highest-quality information, leading to better results and lower costs. In our next module, we will explore how to scale these jobs using Distributed Training.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

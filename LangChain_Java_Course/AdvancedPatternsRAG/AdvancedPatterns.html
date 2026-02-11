@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced AI Patterns</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced AI Patterns</h1>
+
+<h2>Prompt Engineering Techniques</h2>
+<p>Effective prompts are crucial for quality AI responses:</p>
+
+<h3>Few-Shot Learning</h3>
+<div class="code-block">
+<pre><code>String systemMessage = """
+    You are a sentiment analyzer. Classify text as POSITIVE, NEGATIVE, or NEUTRAL.
+    
+    Examples:
+    Text: "I love this product!" → POSITIVE
+    Text: "This is terrible" → NEGATIVE
+    Text: "It's okay" → NEUTRAL
+    """;
+
+String response = chatClient.prompt()
+    .system(systemMessage)
+    .user("The service was acceptable")
+    .call()
+    .content();
+</code></pre>
+</div>
+
+<h3>Chain of Thought</h3>
+<div class="code-block">
+<pre><code>String prompt = """
+    Solve this problem step by step:
+    
+    Problem: A store sells apples for $2 each. If you buy 10 apples,
+    you get a 20% discount. How much do 10 apples cost?
+    
+    Let's think through this:
+    1. Calculate the original price
+    2. Calculate the discount amount
+    3. Subtract discount from original price
+    """;
+</code></pre>
+</div>
+
+<h2>Conversation Patterns</h2>
+
+<h3>Multi-Turn Conversations</h3>
+<div class="code-block">
+<pre><code>@Service
+public class ConversationManager {
+    
+    private final Map&lt;String, List&lt;ChatMessage&gt;&gt; sessions = new ConcurrentHashMap&lt;&gt;();
+    private final ChatLanguageModel model;
+    
+    public String chat(String sessionId, String userMessage) {
+        List&lt;ChatMessage&gt; history = sessions.computeIfAbsent(
+            sessionId,
+            k -&gt; new ArrayList&lt;&gt;(List.of(
+                SystemMessage.from("You are a helpful assistant")
+            ))
+        );
+        
+        history.add(UserMessage.from(userMessage));
+        
+        Response&lt;AiMessage&gt; response = model.generate(history);
+        AiMessage aiMessage = response.content();
+        
+        history.add(aiMessage);
+        
+        // Keep only last 20 messages
+        if (history.size() &gt; 20) {
+            history = history.subList(history.size() - 20, history.size());
+            sessions.put(sessionId, history);
+        }
+        
+        return aiMessage.text();
+    }
+}
+</code></pre>
+</div>
+
+<h3>Context Summarization</h3>
+<div class="code-block">
+<pre><code>public String summarizeConversation(List&lt;ChatMessage&gt; messages) {
+    String conversation = messages.stream()
+        .map(msg -&gt; msg.type() + ": " + msg.text())
+        .collect(Collectors.joining("\n"));
+    
+    return chatClient.prompt()
+        .user("Summarize this conversation in 2-3 sentences:\n" + conversation)
+        .call()
+        .content();
+}
+</code></pre>
+</div>
+
+<h2>Agent Patterns</h2>
+
+<h3>ReAct Pattern (Reasoning + Acting)</h3>
+<div class="code-block">
+<pre><code>public interface ReActAgent {
+    
+    @SystemMessage("""
+        You are an agent that can reason and act.
+        For each query:
+        1. Think: Analyze what information you need
+        2. Act: Use available tools to get information
+        3. Observe: Review the results
+        4. Answer: Provide the final response
+        """)
+    String solve(String problem);
+}
+
+// Usage with tools
+ReActAgent agent = AiServices.builder(ReActAgent.class)
+    .chatLanguageModel(model)
+    .tools(weatherTools, databaseTools, calculatorTools)
+    .build();
+
+String answer = agent.solve(
+    "What's the weather in the city where user ID 123 lives?"
+);
+</code></pre>
+</div>
+
+<h2>Hybrid Search</h2>
+<p>Combine vector search with keyword search for better results:</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class HybridSearchService {
+    
+    private final VectorStore vectorStore;
+    private final FullTextSearchEngine searchEngine;
+    
+    public List&lt;Document&gt; hybridSearch(String query, int topK) {
+        // Vector search
+        List&lt;Document&gt; vectorResults = vectorStore.similaritySearch(
+            SearchRequest.query(query).withTopK(topK * 2)
+        );
+        
+        // Keyword search
+        List&lt;Document&gt; keywordResults = searchEngine.search(query, topK * 2);
+        
+        // Combine and rerank
+        return rerank(vectorResults, keywordResults, query, topK);
+    }
+    
+    private List&lt;Document&gt; rerank(List&lt;Document&gt; vector,
+                                   List&lt;Document&gt; keyword,
+                                   String query,
+                                   int topK) {
+        // Reciprocal Rank Fusion
+        Map&lt;Document, Double&gt; scores = new HashMap&lt;&gt;();
+        
+        for (int i = 0; i &lt; vector.size(); i++) {
+            scores.merge(vector.get(i), 1.0 / (i + 60), Double::sum);
+        }
+        
+        for (int i = 0; i &lt; keyword.size(); i++) {
+            scores.merge(keyword.get(i), 1.0 / (i + 60), Double::sum);
+        }
+        
+        return scores.entrySet().stream()
+            .sorted(Map.Entry.&lt;Document, Double&gt;comparingByValue().reversed())
+            .limit(topK)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
+    }
+}
+</code></pre>
+</div>
+
+<h2>Query Expansion</h2>
+<div class="code-block">
+<pre><code>public List&lt;String&gt; expandQuery(String originalQuery) {
+    String prompt = String.format("""
+        Generate 3 alternative phrasings of this query:
+        "%s"
+        
+        Return only the alternative queries, one per line.
+        """, originalQuery);
+    
+    String response = chatClient.prompt()
+        .user(prompt)
+        .call()
+        .content();
+    
+    List&lt;String&gt; queries = new ArrayList&lt;&gt;();
+    queries.add(originalQuery);
+    queries.addAll(Arrays.asList(response.split("\n")));
+    
+    return queries;
+}
+</code></pre>
+</div>
+
+<h2>Response Validation</h2>
+<div class="code-block">
+<pre><code>public String getValidatedResponse(String question) {
+    String response = chatClient.prompt()
+        .user(question)
+        .call()
+        .content();
+    
+    // Validate response contains required information
+    if (!isValidResponse(response)) {
+        // Retry with more specific prompt
+        response = chatClient.prompt()
+            .user(question + "\nPlease provide a detailed answer with examples.")
+            .call()
+            .content();
+    }
+    
+    return response;
+}
+
+private boolean isValidResponse(String response) {
+    return response.length() &gt; 50 && 
+           !response.toLowerCase().contains("i don't know") &&
+           !response.toLowerCase().contains("i cannot");
+}
+</code></pre>
+</div>
+
+<h2>Streaming with Progress Updates</h2>
+<div class="code-block">
+<pre><code>@GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public Flux&lt;ServerSentEvent&lt;String&gt;&gt; streamWithProgress(@RequestParam String query) {
+    return Flux.create(sink -&gt; {
+        // Send progress updates
+        sink.next(ServerSentEvent.builder("Retrieving documents...").build());
+        
+        List&lt;Document&gt; docs = vectorStore.similaritySearch(
+            SearchRequest.query(query).withTopK(5)
+        );
+        
+        sink.next(ServerSentEvent.builder("Generating response...").build());
+        
+        chatClient.prompt()
+            .user(buildPrompt(docs, query))
+            .stream()
+            .content()
+            .subscribe(
+                token -&gt; sink.next(ServerSentEvent.builder(token).build()),
+                sink::error,
+                sink::complete
+            );
+    });
+}
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Prompt Templates:</strong> Use templates for consistent prompts</li>
+    <li><strong>Error Recovery:</strong> Implement fallback strategies</li>
+    <li><strong>Response Validation:</strong> Verify response quality</li>
+    <li><strong>Context Management:</strong> Summarize long conversations</li>
+    <li><strong>Tool Selection:</strong> Let LLM choose appropriate tools</li>
+    <li><strong>Monitoring:</strong> Track pattern effectiveness</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

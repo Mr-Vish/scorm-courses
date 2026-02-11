@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Query Understanding and Faceted Search</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Query Processing: Understanding and Multi-Query Retrieval</h1>
+
+<h2>The Query Understanding Problem</h2>
+<p>Raw user queries are often ambiguous, incomplete, or poorly structured. Before executing a search, modern systems use Large Language Models (LLMs) to:</p>
+<ul>
+    <li><strong>Parse Intent:</strong> Understand what the user is trying to accomplish</li>
+    <li><strong>Extract Entities:</strong> Identify key terms, dates, locations, and filters</li>
+    <li><strong>Expand Queries:</strong> Generate alternative phrasings for better recall</li>
+    <li><strong>Apply Filters:</strong> Convert natural language constraints into structured filters</li>
+</ul>
+
+<p>This preprocessing step can dramatically improve search quality by transforming vague queries into precise search parameters.</p>
+<div class="code-block">
+<pre><code>import json
+from openai import OpenAI
+
+client = OpenAI()
+
+def understand_query(user_query: str) -&gt; dict:
+    '''Use an LLM to parse user intent and generate search parameters.'''
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": (
+                "Parse the user query into search parameters. "
+                "Return JSON with: intent, keywords, filters, time_range, "
+                "expanded_queries (2-3 rephrasings for better recall)."
+            )},
+            {"role": "user", "content": user_query},
+        ],
+    )
+    return json.loads(response.choices[0].message.content)
+
+result = understand_query("Show me Python tutorials from last month about async")
+# {
+#   "intent": "search",
+#   "keywords": ["Python", "async", "tutorial"],
+#   "filters": {"language": "Python", "content_type": "tutorial"},
+#   "time_range": "last_30_days",
+#   "expanded_queries": [
+#     "Python asyncio tutorial",
+#     "async await Python programming guide",
+#     "Python concurrency with asyncio"
+#   ]
+# }</code></pre>
+</div>
+
+<h3>Query Understanding Benefits</h3>
+<table>
+    <tr><th>Input Query</th><th>Extracted Information</th><th>Search Improvement</th></tr>
+    <tr>
+        <td>"Show me recent articles about machine learning"</td>
+        <td>time_range: "last_7_days", topic: "machine learning", content_type: "article"</td>
+        <td>Applies date filter automatically</td>
+    </tr>
+    <tr>
+        <td>"How to fix memory leaks in Node.js?"</td>
+        <td>intent: "troubleshooting", technology: "Node.js", problem: "memory leaks"</td>
+        <td>Prioritizes debugging and solution content</td>
+    </tr>
+    <tr>
+        <td>"Best practices for REST API design"</td>
+        <td>intent: "learning", topic: "REST API", content_type: "best practices"</td>
+        <td>Filters for authoritative, educational content</td>
+    </tr>
+</table>
+
+<h2>Multi-Query Retrieval Strategy</h2>
+<p>Generate multiple query variations and combine results for higher recall. This technique addresses the vocabulary mismatch problem where users and documents use different terminology:</p>
+
+<h3>Why Multi-Query Works</h3>
+<ul>
+    <li><strong>Vocabulary Coverage:</strong> Different phrasings capture different relevant documents</li>
+    <li><strong>Ambiguity Resolution:</strong> Multiple interpretations increase chances of finding the right content</li>
+    <li><strong>Recall Improvement:</strong> Studies show 20-40% improvement in recall with 3-5 query variations</li>
+    <li><strong>Robustness:</strong> Reduces impact of poorly phrased original queries</li>
+</ul>
+
+<div class="code-block">
+<pre><code>def multi_query_search(user_query: str, search_engine) -&gt; list:
+    '''Generate multiple query variations and fuse results.'''
+    # Step 1: Generate query variations
+    parsed = understand_query(user_query)
+    queries = [user_query] + parsed["expanded_queries"]
+
+    # Step 2: Search with each variation
+    all_results = []
+    for query in queries:
+        bm25 = search_engine.bm25_search(query, top_k=20)
+        vector = search_engine.vector_search(query, top_k=20)
+        all_results.extend([bm25, vector])
+
+    # Step 3: Fuse all result lists
+    fused = reciprocal_rank_fusion(all_results)
+    return fused[:10]  # Return top 10
+
+# Example usage
+results = multi_query_search(
+    "How to handle errors in async Python?",
+    search_engine
+)
+# Searches with:
+# - Original: "How to handle errors in async Python?"
+# - Variation 1: "Python asyncio exception handling"
+# - Variation 2: "Error management in Python async/await"
+# - Variation 3: "Try-except with Python asyncio"</code></pre>
+</div>
+
+<h2>Faceted Search with AI Enhancement</h2>
+<p>Faceted search allows users to filter results by categories, attributes, or metadata. AI enhancement makes facets more intelligent and user-friendly:</p>
+
+<table>
+    <tr><th>Facet</th><th>Traditional</th><th>AI-Enhanced</th><th>Benefit</th></tr>
+    <tr><td>Category</td><td>Pre-defined taxonomy</td><td>LLM auto-categorizes documents during indexing</td><td>No manual tagging required</td></tr>
+    <tr><td>Date range</td><td>Simple date filter</td><td>LLM extracts dates from natural language: "last quarter"</td><td>Natural language interface</td></tr>
+    <tr><td>Sentiment</td><td>Not available</td><td>LLM classifies sentiment during indexing</td><td>Filter by positive/negative content</td></tr>
+    <tr><td>Topic</td><td>Manual tagging</td><td>LLM generates topic tags automatically</td><td>Consistent, comprehensive tagging</td></tr>
+    <tr><td>Entity</td><td>NER pipeline</td><td>LLM extracts entities with higher accuracy</td><td>Better entity recognition</td></tr>
+</table>
+
+<h3>Implementing AI-Enhanced Facets</h3>
+<div class="code-block">
+<pre><code>def generate_facets_with_llm(document: str) -&gt; dict:
+    '''Use LLM to automatically generate facets for a document.'''
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": (
+                "Analyze the document and extract facets. "
+                "Return JSON with: categories (list), topics (list), "
+                "sentiment (positive/negative/neutral), "
+                "entities (dict with types: person, organization, location), "
+                "difficulty_level (beginner/intermediate/advanced)."
+            )},
+            {"role": "user", "content": document[:2000]},  # First 2000 chars
+        ],
+    )
+    return json.loads(response.choices[0].message.content)
+
+# Example output:
+# {
+#   "categories": ["Tutorial", "Programming", "Web Development"],
+#   "topics": ["Python", "FastAPI", "REST API", "Async"],
+#   "sentiment": "positive",
+#   "entities": {
+#     "technologies": ["Python", "FastAPI", "Uvicorn"],
+#     "concepts": ["async/await", "dependency injection"]
+#   },
+#   "difficulty_level": "intermediate"
+# }</code></pre>
+</div>
+
+<h2>Re-Ranking with Cross-Encoders</h2>
+<p>Cross-encoders provide the highest quality relevance scoring by jointly encoding the query and document together, unlike bi-encoders which encode them separately:</p>
+
+<h3>Bi-Encoder vs Cross-Encoder</h3>
+<table>
+    <tr><th>Aspect</th><th>Bi-Encoder (Vector Search)</th><th>Cross-Encoder (Re-ranking)</th></tr>
+    <tr><td>Encoding</td><td>Query and document encoded separately</td><td>Query and document encoded together</td></tr>
+    <tr><td>Speed</td><td>Very fast (pre-computed embeddings)</td><td>Slow (must encode each pair)</td></tr>
+    <tr><td>Quality</td><td>Good semantic matching</td><td>Excellent relevance scoring</td></tr>
+    <tr><td>Use Case</td><td>Initial retrieval from large corpus</td><td>Re-rank top candidates</td></tr>
+    <tr><td>Scalability</td><td>Scales to millions of documents</td><td>Limited to hundreds of candidates</td></tr>
+</table>
+
+<div class="code-block">
+<pre><code>from sentence_transformers import CrossEncoder
+
+# Cross-encoder re-ranking for highest quality
+reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-12-v2")
+
+def rerank_results(query: str, documents: list[str], top_k: int = 5) -&gt; list:
+    '''Re-rank search results using a cross-encoder.'''
+    pairs = [[query, doc] for doc in documents]
+    scores = reranker.predict(pairs)
+
+    ranked = sorted(
+        zip(documents, scores),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    return ranked[:top_k]
+
+# Cross-encoders are 10-100x slower than bi-encoders
+# Use them to re-rank the top 20-50 candidates, not the full corpus</code></pre>
+</div>
+
+<h3>When to Use Re-ranking</h3>
+<ul>
+    <li><strong>High-value queries:</strong> User-facing search where quality is critical</li>
+    <li><strong>Small candidate sets:</strong> After initial retrieval narrows down to 20-100 documents</li>
+    <li><strong>Complex relevance:</strong> When simple similarity isn't enough (e.g., question answering)</li>
+    <li><strong>Final ranking stage:</strong> As the last step in a multi-stage pipeline</li>
+</ul>
+
+<h2>Production Search Architecture</h2>
+<ul>
+    <li><strong>Indexing pipeline:</strong> Document ingestion, chunking, embedding generation, metadata extraction</li>
+    <li><strong>Query pipeline:</strong> Query understanding, multi-query expansion, hybrid search, re-ranking</li>
+    <li><strong>Response pipeline:</strong> RAG synthesis, source attribution, answer highlighting</li>
+    <li><strong>Feedback loop:</strong> Click-through data and user feedback to improve ranking over time</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

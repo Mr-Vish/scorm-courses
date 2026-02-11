@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building Your First Agent</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building Your First Agent</h1>
+
+
+<h2>Minimal Agent Example</h2>
+<div class="code-block">
+<pre><code>import anthropic
+
+client = anthropic.Anthropic()
+
+tools = [
+    {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "city": {"type": "string"}
+            },
+            "required": ["city"]
+        }
+    }
+]
+
+messages = [{"role": "user", "content": "What's the weather in Paris?"}]
+
+# Agent loop
+while True:
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        tools=tools,
+        messages=messages
+    )
+
+    if response.stop_reason == "tool_use":
+        # Execute tool and continue
+        tool_block = next(b for b in response.content if b.type == "tool_use")
+        result = execute_tool(tool_block.name, tool_block.input)
+        messages.append({"role": "assistant", "content": response.content})
+        messages.append({"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": tool_block.id, "content": result}
+        ]})
+    else:
+        # Agent finished
+        print(response.content[0].text)
+        break</code></pre>
+</div>
+
+<h2>The Agent Loop Pattern</h2>
+<ul>
+    <li><strong>Step 1:</strong> Send messages to Claude with tool definitions</li>
+    <li><strong>Step 2:</strong> If Claude returns <code>tool_use</code>, execute the tool</li>
+    <li><strong>Step 3:</strong> Feed the tool result back as a <code>tool_result</code> message</li>
+    <li><strong>Step 4:</strong> Repeat until Claude returns <code>end_turn</code></li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

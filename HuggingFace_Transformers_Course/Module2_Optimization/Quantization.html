@@ -1,0 +1,305 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Quantization and Memory Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Quantization and Memory Optimization</h1>
+
+<h2>Understanding Quantization</h2>
+<p>Quantization reduces model memory footprint by representing weights and activations with lower precision numbers. This enables running larger models on consumer hardware while maintaining acceptable accuracy.</p>
+
+<p>The key trade-off is between memory savings and model quality. Modern quantization techniques minimize accuracy loss while achieving significant compression.</p>
+
+<h2>Quantization Methods Comparison</h2>
+<table>
+    <tr>
+        <th>Method</th>
+        <th>Memory Reduction</th>
+        <th>Speed Improvement</th>
+        <th>Quality Loss</th>
+        <th>Setup Complexity</th>
+    </tr>
+    <tr>
+        <td class="rowheader">FP16/BF16</td>
+        <td>2x</td>
+        <td>1.5-2x</td>
+        <td>Minimal</td>
+        <td>Very Easy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">8-bit (LLM.int8)</td>
+        <td>4x</td>
+        <td>1.2-1.5x</td>
+        <td>Very Small</td>
+        <td>Easy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">4-bit (NF4)</td>
+        <td>8x</td>
+        <td>1.5-2x</td>
+        <td>Small</td>
+        <td>Easy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GPTQ</td>
+        <td>4-8x</td>
+        <td>2-3x</td>
+        <td>Small</td>
+        <td>Moderate (requires calibration)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AWQ</td>
+        <td>4x</td>
+        <td>2-3x</td>
+        <td>Very Small</td>
+        <td>Moderate (requires calibration)</td>
+    </tr>
+</table>
+
+<h2>8-bit Quantization with bitsandbytes</h2>
+<p>LLM.int8() provides near-lossless 8-bit quantization for large language models:</p>
+
+<pre><code>from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+import torch
+
+# Configure 8-bit quantization
+bnb_config = BitsAndBytesConfig(
+    load_in_8bit=True,
+    llm_int8_threshold=6.0,  # Threshold for outlier detection
+    llm_int8_has_fp16_weight=False
+)
+
+# Load model in 8-bit
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b-instruct",
+    quantization_config=bnb_config,
+    device_map="auto"
+)
+
+# Model now uses ~8GB instead of ~32GB
+print(f"Model loaded in 8-bit precision")\n</code></pre>
+
+<h2>4-bit Quantization (NF4)</h2>
+<p>4-bit NormalFloat quantization provides the best compression with minimal quality loss:</p>
+
+<pre><code>from transformers import BitsAndBytesConfig
+import torch
+
+# Configure 4-bit quantization
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",  # NormalFloat4 quantization
+    bnb_4bit_compute_dtype=torch.bfloat16,  # Compute in BF16
+    bnb_4bit_use_double_quant=True  # Nested quantization for extra savings
+)
+
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b-instruct",
+    quantization_config=bnb_config,
+    device_map="auto"
+)
+
+# Model now uses ~4GB instead of ~32GB
+# Quality degradation is typically &lt; 1% on benchmarks\n</code></pre>
+
+<h2>GPTQ Quantization</h2>
+<p>GPTQ (Gradient-based Post-Training Quantization) requires calibration but provides excellent quality:</p>
+
+<pre><code># Install AutoGPTQ
+# pip install auto-gptq
+
+from transformers import AutoModelForCausalLM, GPTQConfig
+
+# Load pre-quantized GPTQ model
+model = AutoModelForCausalLM.from_pretrained(
+    "TheBloke/Llama-3-8B-Instruct-GPTQ",
+    device_map="auto",
+    trust_remote_code=False,
+    revision="main"
+)
+
+# Or quantize your own model
+gptq_config = GPTQConfig(
+    bits=4,
+    dataset="c4",  # Calibration dataset
+    tokenizer=tokenizer,
+    group_size=128
+)
+
+# This requires calibration data and takes time
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b-instruct",
+    quantization_config=gptq_config,
+    device_map="auto"
+)\n</code></pre>
+
+<h2>AWQ Quantization</h2>
+<p>Activation-aware Weight Quantization preserves important weights for better quality:</p>
+
+<pre><code># Install AutoAWQ
+# pip install autoawq
+
+from transformers import AutoModelForCausalLM
+
+# Load pre-quantized AWQ model
+model = AutoModelForCausalLM.from_pretrained(
+    "TheBloke/Llama-3-8B-Instruct-AWQ",
+    device_map="auto"
+)
+
+# AWQ typically provides better quality than GPTQ at same bit width\n</code></pre>
+
+<h2>Comparing Quantization Impact</h2>
+<pre><code>import torch
+
+def measure_model_size(model):
+    """Calculate model size in GB"""
+    param_size = 0
+    for param in model.parameters():
+        param_size += param.nelement() * param.element_size()
+    buffer_size = 0
+    for buffer in model.buffers():
+        buffer_size += buffer.nelement() * buffer.element_size()
+    return (param_size + buffer_size) / 1024**3
+
+# Compare different precisions
+models = {
+    "FP32": load_model(torch.float32),
+    "FP16": load_model(torch.float16),
+    "8-bit": load_model_8bit(),
+    "4-bit": load_model_4bit()
+}
+
+for name, model in models.items():
+    size = measure_model_size(model)
+    print(f"{name}: {size:.2f} GB")
+
+# Expected output for Llama-3-8B:
+# FP32: ~32 GB
+# FP16: ~16 GB
+# 8-bit: ~8 GB
+# 4-bit: ~4 GB\n</code></pre>
+
+<h2>Memory-Efficient Attention</h2>
+<p>Flash Attention and other optimized attention mechanisms reduce memory usage during inference:</p>
+
+<pre><code># Install flash-attn
+# pip install flash-attn --no-build-isolation
+
+from transformers import AutoModelForCausalLM
+
+# Load with Flash Attention 2
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b-instruct",
+    torch_dtype=torch.bfloat16,
+    attn_implementation="flash_attention_2",  # Use Flash Attention 2
+    device_map="auto"
+)
+
+# Benefits:
+# - 2-3x faster attention computation
+# - 5-20x less memory for attention
+# - Enables longer context windows\n</code></pre>
+
+<h2>Gradient Checkpointing</h2>
+<p>For fine-tuning, gradient checkpointing trades compute for memory:</p>
+
+<pre><code># Enable gradient checkpointing
+model.gradient_checkpointing_enable()
+
+# This reduces memory usage during training by:
+# - Not storing all intermediate activations
+# - Recomputing them during backward pass
+# - Typically 30-50% memory savings
+# - 20-30% slower training
+
+# Useful when fine-tuning large models on limited GPU memory\n</code></pre>
+
+<h2>CPU Offloading</h2>
+<pre><code>from transformers import AutoModelForCausalLM
+
+# Offload to CPU when GPU memory is insufficient
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-70b-instruct",
+    device_map="auto",
+    offload_folder="offload",
+    offload_state_dict=True,
+    torch_dtype=torch.float16
+)
+
+# Layers are moved between CPU and GPU as needed
+# Slower but enables running models larger than GPU memory\n</code></pre>
+
+<h2>KV Cache Management</h2>
+<p>The Key-Value cache stores attention keys and values to avoid recomputation:</p>
+
+<pre><code># KV cache is enabled by default in generate()
+outputs = model.generate(
+    input_ids,
+    max_new_tokens=100,
+    use_cache=True  # Default: True
+)
+
+# Disable for memory savings (slower generation)
+outputs = model.generate(
+    input_ids,
+    max_new_tokens=100,
+    use_cache=False
+)
+
+# KV cache memory usage grows with:
+# - Sequence length
+# - Batch size
+# - Number of layers
+# - Hidden dimension size
+
+# For long sequences, KV cache can exceed model size\n</code></pre>
+
+<h2>Practical Memory Optimization Strategy</h2>
+<div style="border: 2px solid #4CAF50; padding: 15px; margin: 10px 0; background-color: #f9f9f9;">
+<h3>Step-by-Step Optimization</h3>
+<ol>
+    <li><strong>Start with FP16/BF16:</strong> Easy 2x memory savings, minimal quality loss</li>
+    <li><strong>Add Flash Attention:</strong> If supported, enables longer contexts</li>
+    <li><strong>Try 8-bit Quantization:</strong> If still memory-constrained, near-lossless compression</li>
+    <li><strong>Use 4-bit if Needed:</strong> Maximum compression, test quality on your use case</li>
+    <li><strong>Consider Pre-Quantized Models:</strong> GPTQ/AWQ models from community</li>
+    <li><strong>Last Resort - CPU Offload:</strong> Slower but enables very large models</li>
+</ol>
+</div>
+
+<h2>Monitoring Memory Usage</h2>
+<pre><code>import torch
+
+# Check GPU memory
+if torch.cuda.is_available():
+    print(f"Allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+    print(f"Reserved: {torch.cuda.memory_reserved() / 1024**3:.2f} GB")
+    print(f"Max allocated: {torch.cuda.max_memory_allocated() / 1024**3:.2f} GB")
+    
+    # Detailed memory summary
+    print(torch.cuda.memory_summary())
+    
+    # Clear cache
+    torch.cuda.empty_cache()\n</code></pre>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Test Quality:</strong> Always evaluate quantized models on your specific tasks</li>
+    <li><strong>Use BF16 Over FP16:</strong> Better numerical stability, especially for training</li>
+    <li><strong>Enable Flash Attention:</strong> Free performance boost when available</li>
+    <li><strong>Start Conservative:</strong> Begin with 8-bit, move to 4-bit only if needed</li>
+    <li><strong>Monitor Perplexity:</strong> Track model quality degradation with quantization</li>
+    <li><strong>Use Pre-Quantized Models:</strong> Community GPTQ/AWQ models save calibration time</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

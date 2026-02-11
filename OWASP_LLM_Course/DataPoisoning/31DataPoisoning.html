@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM03: Training Data Poisoning</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM03: Training Data Poisoning</h1>
+
+<p>Training Data Poisoning occurs when an attacker manipulates the data used to train, fine-tune, or provide context to an LLM. This allows the attacker to introduce vulnerabilities, biases, or "backdoors" into the model's behavior that are extremely difficult to detect.</p>
+
+<h2>3.1 How Poisoning Works</h2>
+<p>Unlike prompt injection, which happens at inference time, poisoning happens at the source.
+<ul>
+    <li><strong>Vulnerability Injection:</strong> Adding examples to the training set where the model is taught to generate insecure code (e.g., teaching it to use <code>eval()</code> in Python).</li>
+    <li><strong>Bias Introduction:</strong> Manipulating the dataset to favor certain viewpoints, brands, or demographics, or to create negative associations with others.</li>
+    <li><strong>Backdoor (Trigger) Creation:</strong> Teaching the model that when a specific, rare "trigger" phrase is used (e.g., "The sun is purple today"), it should perform a specific malicious action or provide a secret piece of information.</li>
+</ul></p>
+
+<h2>3.2 Targets for Poisoning</h2>
+<ul>
+    <li><strong>Base Models:</strong> If an attacker can influence a large portion of the public internet data used to train a base model, they can poison it for everyone.</li>
+    <li><strong>Fine-tuning Datasets:</strong> If you use a third-party dataset or a community-contributed one for fine-tuning, you are at high risk.</li>
+    <li><strong>Feedback Loops:</strong> If you automatically fine-tune your model based on user feedback (e.g., "Was this answer helpful?"), an attacker can submit thousands of malicious feedback entries to skew the model's behavior.</li>
+</ul>
+
+<h2>3.3 Remediation Strategies</h2>
+<p>Defending against poisoning requires a "Secure Data Lifecycle" approach:
+<ul>
+    <li><strong>Data Provenance and Verification:</strong> Know exactly where your data comes from. Only use trusted, reputable sources and verify the integrity of the data using hashes and digital signatures.</li>
+    <li><strong>Data Sanitization and Filtering:</strong> Use automated tools and manual review to scan your datasets for malicious content, outliers, or suspicious patterns.</li>
+    <li><strong>Outlier Detection:</strong> Identifying and removing training examples that are vastly different from the rest of the dataset.</li>
+    <li><strong>Robust RLHF:</strong> Using Reinforcement Learning from Human Feedback with a diverse and trusted set of reviewers to correct any biases or backdoors introduced during pre-training.</li>
+    <li><strong>Model Ensembling:</strong> Using multiple models trained on different subsets of data to detect when one model's behavior is inconsistent with the others.</li>
+</ul></p>
+
+<h2>3.4 The Challenge of "Clean" Data</h2>
+<p>As the volume of AI-generated content on the internet grows, there is a risk of "model collapse," where models are inadvertently trained on the outputs of other models, leading to a loss of diversity and an amplification of errors. This makes data curation and verification more important than ever.</p>
+
+<p>By treating your training data as a critical security asset, you can ensure that your LLM remains accurate, unbiased, and free from malicious backdoors.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

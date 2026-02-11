@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Race Conditions and Prevention</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Race Conditions and Prevention</h1>
+
+<h2>Understanding Race Conditions</h2>
+<p>Race conditions occur when multiple instances attempt to generate and use IDs simultaneously, with outcomes depending on unpredictable timing.</p>
+
+<h2>Timeline of a Collision</h2>
+<table>
+    <tr>
+        <th>Time</th>
+        <th>Instance-1</th>
+        <th>Instance-2</th>
+        <th>Database State</th>
+    </tr>
+    <tr>
+        <td class="rowheader">T0</td>
+        <td>Receives request</td>
+        <td>Receives request</td>
+        <td>Last ID = 1000</td>
+    </tr>
+    <tr>
+        <td class="rowheader">T1</td>
+        <td>Generates ID = 1001</td>
+        <td>Generates ID = 1001</td>
+        <td>Last ID = 1000</td>
+    </tr>
+    <tr>
+        <td class="rowheader">T2</td>
+        <td>Begins INSERT</td>
+        <td>Begins INSERT</td>
+        <td>Last ID = 1000</td>
+    </tr>
+    <tr>
+        <td class="rowheader">T3</td>
+        <td>Commits (ID=1001)</td>
+        <td>-</td>
+        <td>Last ID = 1001</td>
+    </tr>
+    <tr>
+        <td class="rowheader">T4</td>
+        <td>-</td>
+        <td>Commits (ID=1001) ❌</td>
+        <td>COLLISION!</td>
+    </tr>
+</table>
+
+<h2>Prevention Strategies</h2>
+
+<h3>1. Use Database Sequences</h3>
+<div class="code-block">
+<pre><code>@Entity
+public class Order {
+    @Id
+    @GeneratedValue(
+        strategy = GenerationType.SEQUENCE,
+        generator = "order_seq"
+    )
+    @SequenceGenerator(
+        name = "order_seq",
+        sequenceName = "order_id_seq",
+        allocationSize = 50  // Pre-fetch 50 IDs
+    )
+    private Long id;
+}
+</code></pre>
+</div>
+
+<h3>2. Use UUIDs</h3>
+<div class="code-block">
+<pre><code>@Entity
+public class Order {
+    @Id
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(
+        name = "uuid2",
+        strategy = "uuid2"
+    )
+    @Column(columnDefinition = "VARCHAR(36)")
+    private String id;
+}
+</code></pre>
+</div>
+
+<h3>3. Application-Level Coordination</h3>
+<ul>
+    <li>Distributed ID generator services (Snowflake pattern)</li>
+    <li>Redis-based ID generation</li>
+    <li>Database-backed ID allocation service</li>
+</ul>
+
+<h2>Testing for Collisions</h2>
+<div class="code-block">
+<pre><code>// Concurrent test to detect collisions
+@Test
+public void testConcurrentInserts() throws Exception {
+    ExecutorService executor = Executors.newFixedThreadPool(10);
+    Set&lt;Long&gt; generatedIds = ConcurrentHashMap.newKeySet();
+    
+    List&lt;Future&lt;Long&gt;&gt; futures = new ArrayList&lt;&gt;();
+    for (int i = 0; i &lt; 100; i++) {
+        futures.add(executor.submit(() -&gt; {
+            Order order = new Order();
+            order.setCustomerName("Test");
+            orderRepository.save(order);
+            return order.getId();
+        }));
+    }
+    
+    for (Future&lt;Long&gt; future : futures) {
+        Long id = future.get();
+        assertFalse(generatedIds.contains(id), "Collision detected!");
+        generatedIds.add(id);
+    }
+}
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

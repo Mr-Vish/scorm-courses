@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Imagen on Vertex AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Imagen on Vertex AI - Text-to-Image Generation</h1>
+
+<h2>Introduction to Imagen</h2>
+<p>Imagen is Google's state-of-the-art text-to-image diffusion model, available through Vertex AI. It generates photorealistic images
+from natural language descriptions, supporting a wide range of artistic styles, compositions, and use cases. Imagen 3, the latest version,
+offers improved quality, better prompt adherence, and enhanced safety features compared to previous generations.</p>
+
+<h2>Key Capabilities</h2>
+<table>
+    <tr><th>Capability</th><th>Description</th><th>Use Case</th></tr>
+    <tr><td class="rowheader">Text-to-Image</td><td>Generate images from text prompts</td><td>Marketing content, product visualization</td></tr>
+    <tr><td class="rowheader">Image Editing</td><td>Modify existing images with text instructions</td><td>Product photo enhancement, virtual staging</td></tr>
+    <tr><td class="rowheader">Inpainting</td><td>Fill in masked regions intelligently</td><td>Object removal, background replacement</td></tr>
+    <tr><td class="rowheader">Outpainting</td><td>Extend images beyond original boundaries</td><td>Canvas expansion, scene extension</td></tr>
+    <tr><td class="rowheader">Style Transfer</td><td>Apply artistic styles to images</td><td>Brand consistency, creative variations</td></tr>
+</table>
+
+<h2>Imagen Model Versions</h2>
+<p>Vertex AI provides multiple Imagen models optimized for different tasks:</p>
+<ul>
+    <li><strong>imagen-3.0-generate-001:</strong> Latest generation model for text-to-image creation with highest quality</li>
+    <li><strong>imagen-3.0-capability-001:</strong> Specialized for image editing, inpainting, and outpainting operations</li>
+    <li><strong>imagen-3.0-fast-generate-001:</strong> Optimized for speed with slightly reduced quality (4x faster)</li>
+</ul>
+
+<h2>Setting Up Imagen on Vertex AI</h2>
+<blockquote>
+<pre><code># Install required dependencies
+pip install google-cloud-aiplatform pillow
+
+# Import necessary libraries
+import vertexai
+from vertexai.preview.vision_models import ImageGenerationModel
+from google.cloud import aiplatform
+
+# Initialize Vertex AI with your project
+vertexai.init(
+    project="your-project-id",
+    location="us-central1"  # Imagen is available in specific regions
+)
+
+# Load the generation model
+model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")</code></pre>
+</blockquote>
+
+<h2>Basic Image Generation</h2>
+<blockquote>
+<pre><code># Generate images from a text prompt
+response = model.generate_images(
+    prompt="A modern office building with floor-to-ceiling windows, surrounded by trees, photorealistic",
+    number_of_images=4,
+    aspect_ratio="16:9",
+    safety_filter_level="block_some",
+    person_generation="allow_adult"
+)
+
+# Save generated images
+for i, image in enumerate(response.images):
+    image.save(f"output_{i}.png")
+    print(f"Saved image {i} with size: {image._pil_image.size}")</code></pre>
+</blockquote>
+
+<h2>Understanding Generation Parameters</h2>
+<table>
+    <tr><th>Parameter</th><th>Options</th><th>Impact</th></tr>
+    <tr><td class="rowheader">number_of_images</td><td>1-8</td><td>Number of variations generated per request</td></tr>
+    <tr><td class="rowheader">aspect_ratio</td><td>1:1, 3:4, 4:3, 9:16, 16:9</td><td>Output image dimensions and composition</td></tr>
+    <tr><td class="rowheader">safety_filter_level</td><td>block_few, block_some, block_most</td><td>Content filtering strictness</td></tr>
+    <tr><td class="rowheader">person_generation</td><td>dont_allow, allow_adult</td><td>Controls photorealistic face generation</td></tr>
+    <tr><td class="rowheader">language</td><td>en, es, fr, de, etc.</td><td>Input prompt language (auto-detected)</td></tr>
+</table>
+
+<h2>Prompt Engineering Fundamentals</h2>
+<p>Effective prompts are the key to generating high-quality images. A well-structured prompt includes:</p>
+<ul>
+    <li><strong>Subject:</strong> The main focus of the image</li>
+    <li><strong>Style:</strong> Artistic style or rendering approach</li>
+    <li><strong>Composition:</strong> Framing, perspective, and layout</li>
+    <li><strong>Lighting:</strong> Time of day, mood, and atmosphere</li>
+    <li><strong>Quality modifiers:</strong> Technical specifications for output quality</li>
+</ul>
+
+<h2>Advanced Prompt Engineering Techniques</h2>
+<table>
+    <tr><th>Technique</th><th>Example</th><th>Effect</th></tr>
+    <tr><td class="rowheader">Style specification</td><td>"...in watercolor style"</td><td>Controls artistic rendering approach</td></tr>
+    <tr><td class="rowheader">Quality modifiers</td><td>"...photorealistic, 8K, highly detailed"</td><td>Improves output quality and realism</td></tr>
+    <tr><td class="rowheader">Composition control</td><td>"...close-up shot, rule of thirds"</td><td>Defines framing and perspective</td></tr>
+    <tr><td class="rowheader">Lighting direction</td><td>"...golden hour lighting, soft shadows"</td><td>Sets mood and atmosphere</td></tr>
+    <tr><td class="rowheader">Negative prompts</td><td>"...without text, no watermarks"</td><td>Excludes unwanted elements</td></tr>
+    <tr><td class="rowheader">Material specification</td><td>"...made of glass and steel"</td><td>Defines textures and materials</td></tr>
+</table>
+
+<h2>Practical Prompt Examples</h2>
+<blockquote>
+<pre><code># Example 1: Product Photography
+prompt_product = """
+A luxury watch on a marble surface, studio lighting, 
+commercial product photography, 8K resolution, 
+sharp focus, reflective surfaces, professional grade
+"""
+
+# Example 2: Architectural Visualization
+prompt_architecture = """
+Modern sustainable office building, green walls with vegetation,
+solar panels on roof, wide angle view, blue hour lighting,
+architectural photography style, photorealistic
+"""
+
+# Example 3: Marketing Creative
+prompt_marketing = """
+Happy diverse team collaborating in bright modern workspace,
+natural window lighting, candid moment, corporate photography,
+warm color palette, professional but approachable
+"""
+
+# Generate with optimized settings
+response = model.generate_images(
+    prompt=prompt_product,
+    number_of_images=4,
+    aspect_ratio="1:1",
+    safety_filter_level="block_some"
+)</code></pre>
+</blockquote>
+
+<h2>Handling Generation Errors</h2>
+<blockquote>
+<pre><code>from google.api_core import exceptions
+import time
+
+def generate_with_retry(model, prompt, max_retries=3):
+    """Generate images with automatic retry logic"""
+    for attempt in range(max_retries):
+        try:
+            response = model.generate_images(
+                prompt=prompt,
+                number_of_images=4,
+                aspect_ratio="16:9"
+            )
+            return response
+            
+        except exceptions.ResourceExhausted:
+            # Handle quota exceeded
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff
+                print(f"Quota exceeded. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise
+                
+        except exceptions.InvalidArgument as e:
+            # Handle invalid prompt or parameters
+            print(f"Invalid request: {e}")
+            raise
+            
+        except exceptions.FailedPrecondition as e:
+            # Handle safety filter blocks
+            print(f"Content policy violation: {e}")
+            return None
+
+# Usage
+response = generate_with_retry(model, "A serene mountain landscape at sunset")
+if response:
+    response.images[0].save("landscape.png")</code></pre>
+</blockquote>
+
+<h2>Batch Processing for Multiple Prompts</h2>
+<blockquote>
+<pre><code>import concurrent.futures
+from typing import List, Tuple
+
+def generate_batch(prompts: List[str], output_dir: str = "./outputs"):
+    """Generate images for multiple prompts in parallel"""
+    model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+    
+    def process_prompt(prompt_tuple: Tuple[int, str]):
+        idx, prompt = prompt_tuple
+        try:
+            response = model.generate_images(
+                prompt=prompt,
+                number_of_images=2,
+                aspect_ratio="16:9"
+            )
+            
+            # Save images
+            for img_idx, image in enumerate(response.images):
+                filename = f"{output_dir}/prompt_{idx}_image_{img_idx}.png"
+                image.save(filename)
+            
+            return f"Success: Prompt {idx}"
+            
+        except Exception as e:
+            return f"Failed: Prompt {idx} - {str(e)}"
+    
+    # Process prompts in parallel (max 5 concurrent)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        results = list(executor.map(process_prompt, enumerate(prompts)))
+    
+    return results
+
+# Example usage
+prompts = [
+    "A futuristic city skyline at night",
+    "A cozy coffee shop interior with warm lighting",
+    "A minimalist product design on white background"
+]
+
+results = generate_batch(prompts)
+for result in results:
+    print(result)</code></pre>
+</blockquote>
+
+<h2>Cost Optimization Strategies</h2>
+<ul>
+    <li><strong>Use Fast Models:</strong> imagen-3.0-fast-generate-001 is 4x faster and cheaper for non-critical applications</li>
+    <li><strong>Batch Requests:</strong> Generate multiple variations in a single API call</li>
+    <li><strong>Cache Results:</strong> Store and reuse generated images when possible</li>
+    <li><strong>Optimize Prompts:</strong> Well-crafted prompts reduce the need for regeneration</li>
+    <li><strong>Monitor Quotas:</strong> Set up alerts for API usage to avoid unexpected costs</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Be Specific:</strong> Detailed prompts produce more accurate results</li>
+    <li><strong>Iterate Systematically:</strong> Test variations of prompts to understand model behavior</li>
+    <li><strong>Use Quality Modifiers:</strong> Include terms like "photorealistic", "8K", "detailed" for better output</li>
+    <li><strong>Respect Safety Policies:</strong> Design prompts that comply with content policies</li>
+    <li><strong>Test Aspect Ratios:</strong> Different ratios work better for different use cases</li>
+    <li><strong>Handle Errors Gracefully:</strong> Implement retry logic and fallback strategies</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Conversation Memory Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Conversation Memory Strategies</h1>
+
+<h2>Why Memory Matters</h2>
+<p>Memory allows LLM applications to maintain context across multiple interactions, enabling natural conversations and stateful workflows. Without memory, each interaction is isolated, and the model has no knowledge of previous exchanges.</p>
+
+<h2>Memory Types</h2>
+<table>
+<tr>
+<th>Memory Type</th>
+<th>Storage</th>
+<th>Best For</th>
+<th>Limitations</th>
+</tr>
+<tr>
+<td class="rowheader">ConversationBufferMemory</td>
+<td>Stores all messages</td>
+<td>Short conversations</td>
+<td>Grows unbounded, token limits</td>
+</tr>
+<tr>
+<td class="rowheader">ConversationBufferWindowMemory</td>
+<td>Last N messages</td>
+<td>Recent context only</td>
+<td>Loses older context</td>
+</tr>
+<tr>
+<td class="rowheader">ConversationSummaryMemory</td>
+<td>Summarized history</td>
+<td>Long conversations</td>
+<td>May lose details</td>
+</tr>
+<tr>
+<td class="rowheader">ConversationTokenBufferMemory</td>
+<td>Token-limited buffer</td>
+<td>Token budget management</td>
+<td>Truncates old messages</td>
+</tr>
+<tr>
+<td class="rowheader">VectorStoreMemory</td>
+<td>Semantic search</td>
+<td>Retrieving relevant context</td>
+<td>Requires embeddings</td>
+</tr>
+</table>
+
+<h2>Basic Conversation Memory</h2>
+<blockquote>
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# Create model and prompt
+model = ChatOpenAI(model="gpt-4o")
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}")
+])
+
+chain = prompt | model
+
+# Store for conversation histories
+store = {}
+
+def get_session_history(session_id: str):
+    if session_id not in store:
+        store[session_id] = ChatMessageHistory()
+    return store[session_id]
+
+# Wrap chain with memory
+chain_with_memory = RunnableWithMessageHistory(
+    chain,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history"
+)
+
+# Use the chain
+response1 = chain_with_memory.invoke(
+    {"input": "My name is Alice"},
+    config={"configurable": {"session_id": "user123"}}
+)
+
+response2 = chain_with_memory.invoke(
+    {"input": "What's my name?"},
+    config={"configurable": {"session_id": "user123"}}
+)
+# Response: "Your name is Alice"
+</blockquote>
+
+<h2>Window Memory</h2>
+<p>Keep only the last N messages to manage context size:</p>
+
+<blockquote>
+from langchain.memory import ConversationBufferWindowMemory
+
+# Keep last 5 messages
+memory = ConversationBufferWindowMemory(
+    k=5,
+    return_messages=True
+)
+
+# Add messages
+memory.save_context(
+    {"input": "Hello"},
+    {"output": "Hi there!"}
+)
+
+# Get recent history
+history = memory.load_memory_variables({})
+</blockquote>
+
+<h2>Summary Memory</h2>
+<p>Summarize conversation history to save tokens:</p>
+
+<blockquote>
+from langchain.memory import ConversationSummaryMemory
+
+memory = ConversationSummaryMemory(
+    llm=model,
+    return_messages=True
+)
+
+# As conversation grows, it's automatically summarized
+memory.save_context(
+    {"input": "Tell me about Python"},
+    {"output": "Python is a high-level programming language..."}
+)
+
+memory.save_context(
+    {"input": "What about its history?"},
+    {"output": "Python was created by Guido van Rossum..."}
+)
+
+# Get summarized history
+summary = memory.load_memory_variables({})
+</blockquote>
+
+<h2>Token Buffer Memory</h2>
+<blockquote>
+from langchain.memory import ConversationTokenBufferMemory
+
+# Limit to 500 tokens
+memory = ConversationTokenBufferMemory(
+    llm=model,
+    max_token_limit=500,
+    return_messages=True
+)
+</blockquote>
+
+<h2>Persistent Memory with Database</h2>
+<blockquote>
+from langchain_community.chat_message_histories import SQLChatMessageHistory
+
+def get_session_history(session_id: str):
+    return SQLChatMessageHistory(
+        session_id=session_id,
+        connection_string="sqlite:///chat_history.db"
+    )
+
+chain_with_memory = RunnableWithMessageHistory(
+    chain,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history"
+)
+</blockquote>
+
+<h2>Redis Memory for Production</h2>
+<blockquote>
+from langchain_community.chat_message_histories import RedisChatMessageHistory
+
+def get_session_history(session_id: str):
+    return RedisChatMessageHistory(
+        session_id=session_id,
+        url="redis://localhost:6379"
+    )
+</blockquote>
+
+<h2>Memory with Agents</h2>
+<blockquote>
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+
+# Create agent with memory
+agent = create_tool_calling_agent(model, tools, prompt)
+
+agent_with_memory = RunnableWithMessageHistory(
+    AgentExecutor(agent=agent, tools=tools),
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history"
+)
+
+# Agent remembers previous interactions
+result = agent_with_memory.invoke(
+    {"input": "My favorite color is blue"},
+    config={"configurable": {"session_id": "user456"}}
+)
+
+result = agent_with_memory.invoke(
+    {"input": "What's my favorite color?"},
+    config={"configurable": {"session_id": "user456"}}
+)
+</blockquote>
+
+<h2>Custom Memory Implementation</h2>
+<blockquote>
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import BaseMessage
+
+class CustomMemory(BaseChatMessageHistory):
+    def __init__(self, session_id: str):
+        self.session_id = session_id
+        self.messages = []
+    
+    def add_message(self, message: BaseMessage):
+        self.messages.append(message)
+    
+    def clear(self):
+        self.messages = []
+</blockquote>
+
+<h2>Memory Management Best Practices</h2>
+<ul>
+<li><strong>Choose Appropriate Strategy:</strong> Match memory type to use case</li>
+<li><strong>Monitor Token Usage:</strong> Track context window consumption</li>
+<li><strong>Implement Cleanup:</strong> Clear old sessions periodically</li>
+<li><strong>Use Persistent Storage:</strong> Database or Redis for production</li>
+<li><strong>Session Management:</strong> Implement proper session ID generation</li>
+<li><strong>Privacy Considerations:</strong> Handle sensitive data appropriately</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

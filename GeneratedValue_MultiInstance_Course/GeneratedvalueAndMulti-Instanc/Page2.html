@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pros and Cons</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>@GeneratedValue: Pros and Cons</h1>
+
+<h2>Advantages</h2>
+<ul>
+    <li><strong>Simplicity:</strong> Easy to implement with single annotation</li>
+    <li><strong>Database Agnostic:</strong> Works across different databases</li>
+    <li><strong>No Manual ID Management:</strong> Automatic primary key generation</li>
+    <li><strong>JPA Standard:</strong> Part of JPA specification</li>
+    <li><strong>Performance:</strong> Efficient for single-instance applications</li>
+</ul>
+
+<h2>Disadvantages in Multi-Instance Environments</h2>
+<ul>
+    <li><strong>ID Collisions:</strong> Multiple instances can generate same IDs</li>
+    <li><strong>Race Conditions:</strong> Concurrent inserts cause conflicts</li>
+    <li><strong>Data Loss:</strong> Silent overwrites in some scenarios</li>
+    <li><strong>Debugging Difficulty:</strong> Hard to reproduce collision issues</li>
+    <li><strong>Strategy Dependency:</strong> Behavior varies by generation type</li>
+</ul>
+
+<h2>When to Use @GeneratedValue</h2>
+<ul>
+    <li>Single-instance applications</li>
+    <li>With SEQUENCE strategy and proper configuration</li>
+    <li>Development and testing environments</li>
+    <li>When database supports sequences (PostgreSQL, Oracle)</li>
+</ul>
+
+<h2>When to Avoid @GeneratedValue</h2>
+<ul>
+    <li>Multi-instance production deployments</li>
+    <li>With IDENTITY or TABLE strategies in distributed systems</li>
+    <li>High-concurrency write scenarios</li>
+    <li>When using databases without sequence support (MySQL &lt; 8.0)</li>
+</ul>
+
+<h2>Alternative Solutions</h2>
+<ul>
+    <li><strong>UUIDs:</strong> Guaranteed uniqueness across instances</li>
+    <li><strong>Database Sequences:</strong> With proper allocation size</li>
+    <li><strong>Distributed ID Generators:</strong> Snowflake, Twitter's approach</li>
+    <li><strong>Application-Level ID Generation:</strong> Custom strategies</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

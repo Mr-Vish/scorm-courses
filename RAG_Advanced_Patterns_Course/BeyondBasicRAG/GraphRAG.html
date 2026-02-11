@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced: GraphRAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced: GraphRAG</h1>
+<div class="container">
+<h2>GraphRAG: Knowledge Graphs in Retrieval</h2>
+<p>Traditional RAG relies on "Vector Embeddings," which are great for finding similar pieces of text but struggle with "global" understanding or complex relationships between entities. <strong>GraphRAG</strong> is a sophisticated pattern that combines Vector Search with Knowledge Graphs to provide a more holistic and structured retrieval.</p>
+
+<h3>What is a Knowledge Graph?</h3>
+<p>A Knowledge Graph represents information as a network of <strong>Nodes</strong> (entities like "People," "Companies," "Concepts") and <strong>Edges</strong> (relationships like "Works for," "Is part of," "Caused by"). Unlike a flat database of text snippets, a graph explicitly maps out the connections between different pieces of data.</p>
+
+<h3>The Limitations of Vector-Only RAG</h3>
+<ul>
+    <li><strong>Lack of Global Context:</strong> If you ask "What are the three main themes in these 1,000 documents?", vector search will return snippets that mention "theme," but it won't be able to synthesize the entire dataset.</li>
+    <li><strong>Multi-Hop Reasoning:</strong> If the answer requires following a chain of facts (e.g., "Who is the CEO of the company that acquired Startup X?"), vector search often fails to find all the necessary links in one go.</li>
+</ul>
+
+<h3>How GraphRAG Works</h3>
+<ol>
+    <li><strong>Graph Extraction:</strong> An LLM is used to process the source text and identify entities and their relationships, building the Knowledge Graph.</li>
+    <li><strong>Community Detection:</strong> The graph is analyzed to find "communities" or clusters of related information. The system then generates summaries for these communities at different levels of hierarchy.</li>
+    <li><strong>Hybrid Retrieval:</strong> When a user asks a question, the system searches both the original text snippets (using vectors) and the community summaries (using the graph).</li>
+    <li><strong>Synthesis:</strong> The LLM combines the specific local details from the vector search with the high-level global context from the graph summaries to provide a comprehensive answer.</li>
+</ol>
+
+<h3>The 'Global' vs. 'Local' Search</h3>
+<ul>
+    <li><strong>Local Search:</strong> Best for specific questions about entities. "Tell me about John Doe's role in the project." The system uses the graph to find all nodes directly connected to "John Doe."</li>
+    <li><strong>Global Search:</strong> Best for high-level questions about the entire dataset. "What are the biggest risks identified in these contracts?" The system uses the community summaries to provide a synthesized overview.</li>
+</ul>
+
+<h3>Benefits of GraphRAG</h3>
+<ul>
+    <li><strong>Dramatically Better Synthesis:</strong> Excels at summarizing massive, complex datasets.</li>
+    <li><strong>Improved Accuracy for Multi-Hop Queries:</strong> The explicit relationships in the graph provide a reliable "map" for the LLM to follow.</li>
+    <li><strong>Explainability:</strong> You can see exactly which nodes and edges were used to formulate an answer, making the AI's reasoning more transparent.</li>
+</ul>
+
+<h3>Use Case: Analyzing a Complex Legal Case</h3>
+<p>A legal team is analyzing 50,000 pages of evidence.
+- Vector RAG can find mentions of "conspiracy."
+- GraphRAG can map out the entire network of actors, their communications, and the timeline of events, answering complex questions like: "Who were the primary intermediaries between the two main defendants during the month of June?"</p>
+
+<h3>Challenges of GraphRAG</h3>
+<ul>
+    <li><strong>Extremely High Indexing Cost:</strong> Building a Knowledge Graph from 50,000 pages requires millions of LLM tokens and significant compute time.</li>
+    <li><strong>Complexity:</strong> Requires specialized graph databases (like Neo4j) and complex orchestration logic.</li>
+    <li><strong>Maintenance:</strong> Keeping a dynamic graph updated as new information arrives is technically difficult.</li>
+</ul>
+
+<h3>Summary</h3>
+<p>GraphRAG is the "next level" of Retrieval-Augmented Generation. By combining the semantic flexibility of vectors with the structural integrity of knowledge graphs, it enables LLMs to understand and reason about complex data at a scale and depth that was previously impossible.</p>
+
+</div>
+</body>
+</html>

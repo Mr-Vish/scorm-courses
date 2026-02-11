@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Monitoring and Observability for LLM Applications</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Monitoring and Observability: Seeing into the Black Box</h1>
+
+<div class="content-section">
+<h2>1. Beyond "Is it Up?": The Need for AI Observability</h2>
+<p>In traditional web services, observability is focused on health checks, CPU usage, and memory. While these still matter, LLM-based applications introduce a new set of dimensions that must be monitored. Because LLMs are non-deterministic and their performance is tied to token consumption, you need a specialized observability stack to ensure resilience.</p>
+
+<h2>2. Key Metrics for LLM Resilience</h2>
+<p>To understand the performance of your AI features, you must track metrics that reflect the actual user experience and the health of your integrations.</p>
+
+<h3>Latency Metrics: TTFT and P99</h3>
+<ul>
+    <li><strong>Time To First Token (TTFT):</strong> In streaming applications, this is the most important metric. It measures how long the user waits before the AI starts "typing." A resilient system should aim for a low and consistent TTFT, even if the total completion takes longer.</li>
+    <li><strong>P99 Latency:</strong> The latency experienced by the slowest 1% of requests. Because LLMs can sometimes "stall," monitoring the tail end of your latency distribution is more important than monitoring the average.</li>
+</ul>
+
+<h3>Throughput and Error Metrics</h3>
+<ul>
+    <li><strong>Tokens Per Second (TPS):</strong> Measures the "speed" of the model once it starts generating. If TPS drops significantly, it may indicate that the provider is throttled or under heavy load.</li>
+    <li><strong>Error Rate by Category:</strong> Distinguish between transient errors (429, 503) and permanent errors (400, 401). A spike in 429s means your rate limiting isn't aggressive enough; a spike in 503s means your provider is struggling.</li>
+</ul>
+
+<h2>3. Distributed Tracing for AI Agents</h2>
+<p>Modern AI applications often involve chains of prompts (e.g., "Think -> Search -> Answer"). <strong>Distributed Tracing</strong> allows you to follow a single user request through every model call, database lookup, and tool execution.</p>
+<p>Using standards like <strong>OpenTelemetry</strong>, you can visualize the entire "thought process" of your AI. This is invaluable for debugging why a specific request was slow or why the final answer was incorrect. You can see exactly which step in the chain failed or took the most time.</p>
+
+<h2>4. Semantic Logging and Prompt Versioning</h2>
+<p>Logging in AI applications is about more than just error messages; it's about the data. <strong>Semantic Logging</strong> involves storing the input prompt, the model configuration (temperature, top_p), and the output completion.</p>
+
+<h3>Privacy and Redaction</h3>
+<p>Before logging prompts to a database, you must ensure that Personal Identifiable Information (PII) is redacted. A resilient system includes a "redaction layer" that strips out names, emails, and credit card numbers before the data is stored or sent to an observability tool.</p>
+
+<h3>Prompt Versioning</h3>
+<p>Prompts are code. Every time you change a system prompt, you are changing the behavior of your application. Your logs should include a "Prompt ID" or version tag so you can compare the performance and error rates of different prompt versions over time.</p>
+
+<h2>5. Cost Observability and Budgeting</h2>
+<p>Resilience also means financial resilience. An unexpected spike in usage can lead to massive bills or a sudden account suspension. <strong>Cost Observability</strong> involves:</p>
+<ul>
+    <li><strong>Real-time Token Tracking:</strong> Calculating the cost of every request immediately based on the model's pricing.</li>
+    <li><strong>Usage Attribution:</strong> Tagging requests with metadata like <code>user_id</code> or <code>feature_name</code> to see who is consuming the most resources.</li>
+    <li><strong>Automatic Circuit Breakers for Cost:</strong> If a specific user or API key exceeds a daily budget, the system should automatically "trip" the circuit for that user, protecting the rest of the application.</li>
+</ul>
+
+<h2>6. The Role of Semantic Caching</h2>
+<p>One of the best ways to improve both resilience and latency is to avoid the LLM call entirely. <strong>Semantic Caching</strong> uses vector embeddings to store previous prompt-completion pairs. When a new prompt arrives, the system checks if a "semantically similar" prompt has been answered recently. If it has, the cached answer is returned.</p>
+<p>This reduces the load on your API provider, lowers costs, and provides near-instant responses for common queries. A resilient cache should have a configurable "similarity threshold" to ensure that the cached answers are still relevant.</p>
+
+<h2>Conclusion</h2>
+<p>Observability turns the "black box" of an LLM call into a transparent, measurable component of your infrastructure. By tracking TTFT, implementing distributed tracing, and monitoring costs in real-time, you can build a system that is not only resilient to failures but also easy to debug and optimize. In the next module, we'll dive into advanced architectural patterns like bulkheads and load balancing.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

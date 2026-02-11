@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 4: Rate Limiting, Quotas, and Resource Management</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 4: Rate Limiting, Quotas, and Resource Management</h1>
+
+<p>AI resources—specifically GPU compute time and API quotas from providers—are expensive and limited. A Private LLM Gateway must implement robust resource management to ensure that AI usage across the organization is fair, predictable, and stays within budget.</p>
+
+<h2>4.1 Implementing Multi-level Rate Limiting</h2>
+<p>Rate limiting should be enforced at multiple levels of granularity:
+<ul>
+    <li><strong>Global Limits:</strong> The total number of requests and tokens your organization can consume across all users and models. This prevents you from hitting hard limits with your AI providers (e.g., "Max 5,000 RPM on GPT-4o").</li>
+    <li><strong>Per-User/Application Limits:</strong> Ensuring that no single internal user or rogue application can monopolize the organization's total quota.</li>
+    <li><strong>Per-Model Limits:</strong> Restricting access to expensive models (like GPT-4o) while allowing more generous limits for cheaper ones (like Haiku).</li>
+</ul></p>
+
+<h2>4.2 Token-based Quotas (TPM vs. RPM)</h2>
+<p>In the AI world, **Tokens Per Minute (TPM)** is a much more important metric than Requests Per Minute (RPM). A single request with a massive context can cost as much and take as long to process as hundreds of small requests. The gateway must track and limit usage based on actual token counts (input + output).</p>
+
+<h2>4.3 Fair Scheduling and "Bursting"</h2>
+<p>To provide a consistent user experience, the gateway can implement a "Fair Scheduler":
+<ul>
+    <li><strong>Token Bucket Algorithm:</strong> A popular algorithm for managing rate limits where tokens are added to a bucket at a constant rate, and requests are allowed if there are enough tokens in the bucket.</li>
+    <li><strong>Prioritized Queuing:</strong> Ensuring that production applications always get priority over individual users' experimental chat requests.</li>
+    <li><strong>Managed Bursting:</strong> Allowing users to temporarily exceed their "steady-state" quota if the organization has spare capacity, while still enforcing a hard maximum limit.</li>
+</ul></p>
+
+<h2>4.4 Budgeting and Alerts</h2>
+<p>The gateway should allow admins to set monetary budgets for different departments or projects.
+<ul>
+    <li><strong>Hard Caps:</strong> Automatically blocking requests once a budget is reached.</li>
+    <li><strong>Soft Alerts:</strong> Sending notifications (via email, Slack, or Webhook) when 80% or 90% of a budget is consumed.</li>
+    <li><strong>Real-time Usage Dashboards:</strong> Providing users and admins with visibility into their current spend and usage patterns.</li>
+</ul></p>
+
+<h2>4.5 Handling "Rate Limit Exceeded" Errors</h2>
+<p>When an upstream provider (like OpenAI) returns a 429 error, the gateway should handle it gracefully:
+<ul>
+    <li><strong>Automatic Retries with Exponential Backoff:</strong> Retrying the request after a short, increasing delay.</li>
+    <li><strong>Dynamic Fallback:</strong> Instantly switching to a different provider or a smaller model to fulfill the request.</li>
+    <li><strong>Transparent Error Messages:</strong> Informing the user why their request was delayed or modified.</li>
+</ul></p>
+
+<p>By implementing rigorous resource management, you protect your organization's budget and ensure that your AI infrastructure remains stable and available for everyone.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

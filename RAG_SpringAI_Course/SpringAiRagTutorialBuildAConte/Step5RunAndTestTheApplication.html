@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Step 5: Run and Test the Application</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Step 5: Run and Test the Application</h1>
+
+<ol>
+    <li><strong>Ensure PostgreSQL is running</strong> with pgvector enabled (e.g., via Docker).</li>
+    <li><strong>Run the Spring Boot application.</strong> The IngestionService will execute upon startup, loading your document into the vector store.</li>
+    <li><strong>Test the RAG endpoint</strong> using a browser or a tool like cURL:</li>
+    <li><strong>Query based on the context:</strong></li>
+    <li>Bash</li>
+</ol>
+
+<p>curl &#x27;http://localhost:8080/rag/query?query=What is the primary goal of Spring AI?&#x27;</p>
+
+<p># Expected Output (grounded in your document): The primary goal of Spring AI is to apply Spring ecosystem design principles to the AI domain and to connect enterprise data and APIs with AI Models.</p>
+
+<ol>
+    <li><strong>Query outside the context (without RAG):</strong> The LLM might use its general knowledge, but the answer for the specific info in your text will be precise.</li>
+    <li>Bash</li>
+</ol>
+
+<p>curl &#x27;http://localhost:8080/rag/query?query=What is the main function of the ChatClient API in the Spring AI framework?&#x27;</p>
+
+<p># Expected Output: The ChatClient API is used for communication with the AI models.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

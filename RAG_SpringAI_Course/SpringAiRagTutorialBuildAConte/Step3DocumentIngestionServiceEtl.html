@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Step 3: Document Ingestion Service (ETL)</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Step 3: Document Ingestion Service (ETL)</h1>
+
+<p>The first part of RAG is the <strong>E</strong>xtract, <strong>T</strong>ransform, <strong>L</strong>oad (ETL) pipeline. We read a document, split it into smaller <strong>chunks</strong> (documents), generate <strong>embeddings</strong> for the chunks, and store them in the VectorStore.</p>
+
+<p>Create a service named IngestionService.java:</p>
+
+<p>Java</p>
+
+<p>package com.example.ragtutorial;</p>
+
+<p>import org.springframework.ai.document.Document;</p>
+
+<p>import org.springframework.ai.reader.TextReader;</p>
+
+<p>import org.springframework.ai.transformer.splitter.TokenTextSplitter;</p>
+
+<p>import org.springframework.ai.vectorstore.VectorStore;</p>
+
+<p>import org.springframework.beans.factory.annotation.Value;</p>
+
+<p>import org.springframework.boot.CommandLineRunner;</p>
+
+<p>import org.springframework.core.io.Resource;</p>
+
+<p>import org.springframework.stereotype.Service;</p>
+
+<p>import java.util.List;</p>
+
+<p>import org.slf4j.Logger;</p>
+
+<p>import org.slf4j.LoggerFactory;</p>
+
+<p>@Service</p>
+
+<p>public class IngestionService implements CommandLineRunner {</p>
+
+<p>    private static final Logger log = LoggerFactory.getLogger(IngestionService.class);</p>
+
+<p>    private final VectorStore vectorStore;</p>
+
+<p>    // Use a text file for simplicity. Place it in src/main/resources/data/</p>
+
+<p>    @Value(&quot;classpath:/data/spring-ai-info.txt&quot;)</p>
+
+<p>    private Resource dataResource;</p>
+
+<p>    public IngestionService(VectorStore vectorStore) {</p>
+
+<p>        this.vectorStore = vectorStore;</p>
+
+<p>    }</p>
+
+<p>    @Override</p>
+
+<p>    public void run(String... args) {</p>
+
+<p>        log.info(&quot;Starting RAG document ingestion...&quot;);</p>
+
+<p>        // 1. Extract: Read the document content</p>
+
+<p>        TextReader textReader = new TextReader(dataResource);</p>
+
+<p>        List&lt;Document&gt; rawDocuments = textReader.get();</p>
+
+<p>        // 2. Transform: Split the large document into smaller, manageable chunks</p>
+
+<p>        // TokenTextSplitter ensures chunks fit within the LLM&#x27;s context window</p>
+
+<p>        TokenTextSplitter textSplitter = new TokenTextSplitter();</p>
+
+<p>        List&lt;Document&gt; splitDocuments = textSplitter.apply(rawDocuments);</p>
+
+<p>        // 3. Load: Store the documents (which creates and stores embeddings)</p>
+
+<p>        vectorStore.accept(splitDocuments);</p>
+
+<p>        log.info(&quot;Document ingestion complete. {} chunks loaded into VectorStore.&quot;, splitDocuments.size());</p>
+
+<p>    }</p>
+
+<p>}</p>
+
+<p><strong>Example content for </strong><strong>src/main/resources/data/spring-ai-info.txt</strong><strong>:</strong></p>
+
+<p>Spring AI is an application framework for AI engineering. Its goal is to apply Spring ecosystem design principles to the AI domain. It connects enterprise data and APIs with AI Models. It offers a portable API across different AI providers like OpenAI, Gemini, and Ollama. For RAG, it supports vector stores such as PGVector, Chroma, and Redis. The ChatClient API is used for communication, and the Advisor API simplifies patterns like RAG.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

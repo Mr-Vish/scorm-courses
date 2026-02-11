@@ -1,0 +1,265 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Indexing Algorithms and Approximate Nearest Neighbor Search</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Indexing Algorithms and Approximate Nearest Neighbor Search</h1>
+
+<h2>The Challenge of Scale</h2>
+<p>Searching through millions or billions of vectors using brute-force comparison is computationally prohibitive. For a dataset with 10 million vectors of 768 dimensions, a single query would require 7.68 billion floating-point operations. At scale, we need smarter approaches.</p>
+
+<h2>Exact vs Approximate Search</h2>
+<table>
+    <tr>
+        <th>Approach</th>
+        <th>Accuracy</th>
+        <th>Speed</th>
+        <th>Scalability</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Exact Search (KNN)</td>
+        <td>100%</td>
+        <td>Slow (O(n))</td>
+        <td>Poor (&lt;1M vectors)</td>
+        <td>Small datasets, offline processing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Approximate Search (ANN)</td>
+        <td>95-99%</td>
+        <td>Fast (O(log n))</td>
+        <td>Excellent (billions)</td>
+        <td>Production systems, real-time search</td>
+    </tr>
+</table>
+
+<h2>Popular ANN Algorithms</h2>
+
+<h3>1. Tree-Based Methods (ScaNN)</h3>
+<p><strong>ScaNN (Scalable Nearest Neighbors)</strong> is Google's algorithm used in Vertex AI Vector Search. It combines tree-based partitioning with quantization for optimal performance.</p>
+
+<div class="code-block">
+<pre><code># ScaNN algorithm workflow:
+# 1. Partition vectors into clusters using learned trees
+# 2. Quantize vectors to reduce memory footprint
+# 3. Search only relevant partitions
+# 4. Re-rank top candidates with full precision
+
+# Key parameters in Vertex AI:
+# - leaf_node_embedding_count: Vectors per leaf node (500-1000)
+# - leaf_nodes_to_search_percent: Partitions to search (5-10%)
+# - approximate_neighbors_count: Candidates to return (100-150)
+</code></pre>
+</div>
+
+<h3>2. Graph-Based Methods (HNSW)</h3>
+<p><strong>Hierarchical Navigable Small World (HNSW)</strong> builds a multi-layer graph where each node represents a vector. Search navigates through layers to find nearest neighbors efficiently.</p>
+
+<ul>
+    <li><strong>Advantages:</strong> Excellent recall, fast queries, good for dynamic updates</li>
+    <li><strong>Disadvantages:</strong> Higher memory usage, complex implementation</li>
+    <li><strong>Used by:</strong> Pinecone, Weaviate, Qdrant</li>
+</ul>
+
+<h3>3. Locality-Sensitive Hashing (LSH)</h3>
+<p>LSH uses hash functions that map similar vectors to the same buckets with high probability.</p>
+
+<ul>
+    <li><strong>Advantages:</strong> Simple, works well for high-dimensional data</li>
+    <li><strong>Disadvantages:</strong> Lower recall than tree or graph methods</li>
+    <li><strong>Used by:</strong> Legacy systems, specific use cases</li>
+</ul>
+
+<h3>4. Product Quantization (PQ)</h3>
+<p>Compresses vectors by dividing them into subvectors and quantizing each independently.</p>
+
+<ul>
+    <li><strong>Advantages:</strong> Massive memory savings (8-32x compression)</li>
+    <li><strong>Disadvantages:</strong> Slight accuracy loss</li>
+    <li><strong>Used by:</strong> FAISS, often combined with other methods</li>
+</ul>
+
+<h2>ScaNN Algorithm Deep Dive</h2>
+<p>Vertex AI Vector Search uses ScaNN, which combines multiple techniques:</p>
+
+<h3>Tree-AH (Anisotropic Vector Quantization with Hierarchical Trees)</h3>
+<div class="code-block">
+<pre><code>from google.cloud import aiplatform
+
+# Create a ScaNN-based index
+index = aiplatform.MatchingEngineIndex.create_tree_ah_index(
+    display_name="products-index",
+    contents_delta_uri="gs://my-bucket/embeddings/",
+    dimensions=768,
+    
+    # ScaNN-specific parameters
+    approximate_neighbors_count=150,  # Candidates to consider
+    leaf_node_embedding_count=500,    # Vectors per partition
+    leaf_nodes_to_search_percent=7,   # Search 7% of partitions
+    
+    distance_measure_type="DOT_PRODUCT_DISTANCE",
+    
+    # Optional: Quantization for memory efficiency
+    shard_size="SHARD_SIZE_SMALL"  # Enables quantization
+)
+</code></pre>
+</div>
+
+<h3>How ScaNN Works</h3>
+<blockquote>
+<strong>Step 1: Partitioning</strong>
+Build a tree structure that divides the vector space into regions. Each leaf node contains ~500 vectors.
+
+<strong>Step 2: Query Processing</strong>
+For a query vector, identify the most relevant leaf nodes (7% of total) to search.
+
+<strong>Step 3: Candidate Selection</strong>
+Within selected partitions, find top 150 approximate nearest neighbors using quantized vectors.
+
+<strong>Step 4: Re-ranking</strong>
+Re-score top candidates using full-precision vectors for final results.
+</blockquote>
+
+<h2>Performance Tuning Parameters</h2>
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Impact on Recall</th>
+        <th>Impact on Latency</th>
+        <th>Recommended Range</th>
+    </tr>
+    <tr>
+        <td class="rowheader">approximate_neighbors_count</td>
+        <td>Higher = Better</td>
+        <td>Higher = Slower</td>
+        <td>100-200</td>
+    </tr>
+    <tr>
+        <td class="rowheader">leaf_nodes_to_search_percent</td>
+        <td>Higher = Better</td>
+        <td>Higher = Slower</td>
+        <td>5-15%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">leaf_node_embedding_count</td>
+        <td>Lower = Better</td>
+        <td>Lower = Slower</td>
+        <td>500-1000</td>
+    </tr>
+</table>
+
+<h2>Recall vs Latency Trade-off</h2>
+<p>The fundamental challenge in ANN search is balancing accuracy (recall) with speed (latency):</p>
+
+<div class="code-block">
+<pre><code># Configuration for high recall (95-98%)
+high_recall_config = {
+    "approximate_neighbors_count": 200,
+    "leaf_nodes_to_search_percent": 12,
+    "leaf_node_embedding_count": 500
+}
+# Result: ~15ms latency, 97% recall
+
+# Configuration for low latency (5-8ms)
+low_latency_config = {
+    "approximate_neighbors_count": 100,
+    "leaf_nodes_to_search_percent": 5,
+    "leaf_node_embedding_count": 1000
+}
+# Result: ~6ms latency, 92% recall
+
+# Balanced configuration
+balanced_config = {
+    "approximate_neighbors_count": 150,
+    "leaf_nodes_to_search_percent": 7,
+    "leaf_node_embedding_count": 750
+}
+# Result: ~10ms latency, 95% recall
+</code></pre>
+</div>
+
+<h2>Measuring Index Quality</h2>
+
+<h3>Recall Metric</h3>
+<p>Recall measures what percentage of true nearest neighbors are found by the ANN algorithm:</p>
+
+<div class="code-block">
+<pre><code>def calculate_recall(true_neighbors, approximate_neighbors, k=10):
+    """
+    Calculate recall@k for ANN search
+    
+    Args:
+        true_neighbors: Set of actual k nearest neighbors
+        approximate_neighbors: Set of k neighbors found by ANN
+        k: Number of neighbors to consider
+    """
+    intersection = len(set(true_neighbors[:k]) & set(approximate_neighbors[:k]))
+    return intersection / k
+
+# Example
+true_nn = [1, 5, 12, 23, 45, 67, 89, 102, 156, 201]
+approx_nn = [1, 5, 12, 23, 45, 67, 89, 103, 157, 202]
+
+recall = calculate_recall(true_nn, approx_nn, k=10)
+print(f"Recall@10: {recall * 100}%")  # Output: 70%
+</code></pre>
+</div>
+
+<h3>Queries Per Second (QPS)</h3>
+<p>Measures throughput capacity of the index. Vertex AI Vector Search can handle thousands of QPS per replica with proper configuration.</p>
+
+<h2>Real-World Performance Benchmarks</h2>
+<table>
+    <tr>
+        <th>Dataset Size</th>
+        <th>Dimensions</th>
+        <th>Latency (p50)</th>
+        <th>Latency (p99)</th>
+        <th>Recall</th>
+        <th>QPS per Replica</th>
+    </tr>
+    <tr>
+        <td class="rowheader">1 Million</td>
+        <td>768</td>
+        <td>5ms</td>
+        <td>12ms</td>
+        <td>96%</td>
+        <td>5,000</td>
+    </tr>
+    <tr>
+        <td class="rowheader">10 Million</td>
+        <td>768</td>
+        <td>8ms</td>
+        <td>18ms</td>
+        <td>95%</td>
+        <td>3,500</td>
+    </tr>
+    <tr>
+        <td class="rowheader">100 Million</td>
+        <td>768</td>
+        <td>12ms</td>
+        <td>28ms</td>
+        <td>94%</td>
+        <td>2,000</td>
+    </tr>
+</table>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Approximate Nearest Neighbor (ANN) search trades a small amount of accuracy for massive performance gains</li>
+<li>ScaNN, used by Vertex AI, combines tree-based partitioning with quantization for optimal performance</li>
+<li>Key tuning parameters control the recall-latency trade-off: approximate_neighbors_count, leaf_nodes_to_search_percent, and leaf_node_embedding_count</li>
+<li>Production systems typically target 95%+ recall with single-digit millisecond latency</li>
+<li>Different ANN algorithms (ScaNN, HNSW, LSH, PQ) have different strengths for various use cases</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

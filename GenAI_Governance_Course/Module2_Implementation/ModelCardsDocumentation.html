@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Model Cards and Documentation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Model Cards and Documentation</h1>
+
+<h2>Why Documentation Matters</h2>
+<p>Comprehensive documentation is essential for AI governance, enabling transparency, accountability, and informed decision-making. Model cards serve as the "nutrition label" for AI systems.</p>
+
+<p><strong>Regulatory Drivers:</strong> EU AI Act requires documentation for high-risk systems. GDPR Article 22 requires explanation of automated decisions. ISO 42001 mandates AI system documentation.</p>
+
+<h2>Model Card Framework</h2>
+<p>Model cards document AI systems in a standardized format. Key sections:</p>
+
+<table>
+    <tr><th>Section</th><th>Purpose</th><th>Key Questions</th></tr>
+    <tr><td>Model Details</td><td>Basic information about the model</td><td>What model? Who developed it? When? What version?</td></tr>
+    <tr><td>Intended Use</td><td>Approved use cases and users</td><td>What is it for? Who should use it? What contexts?</td></tr>
+    <tr><td>Out-of-Scope Uses</td><td>Prohibited or inappropriate uses</td><td>What should it NOT be used for? Why?</td></tr>
+    <tr><td>Training Data</td><td>Data sources and characteristics</td><td>What data? How collected? How representative?</td></tr>
+    <tr><td>Performance</td><td>Accuracy and metrics</td><td>How accurate? On what benchmarks? Across demographics?</td></tr>
+    <tr><td>Limitations</td><td>Known weaknesses and failure modes</td><td>What can go wrong? When does it fail? Edge cases?</td></tr>
+    <tr><td>Ethical Considerations</td><td>Bias, fairness, and societal impact</td><td>Potential harms? Affected groups? Mitigations?</td></tr>
+</table>
+
+<h2>Model Card Template</h2>
+<div class="code-block">
+<pre><code># Model Card: Customer Support Chatbot v2.1
+
+## Model Details
+- **Model Name:** Customer Support Chatbot
+- **Version:** 2.1.0
+- **Model Type:** Large Language Model (GPT-4-turbo) with RAG
+- **Developer:** AI Team, Customer Experience Division
+- **Development Date:** January 2024
+- **Last Updated:** March 2024
+- **Model Owner:** Jane Smith (jane.smith@company.com)
+- **Risk Tier:** Tier 2 (Medium Risk)
+
+## Intended Use
+### Primary Use Cases
+- Answer customer questions about products and services
+- Provide order status and tracking information
+- Guide customers through troubleshooting steps
+- Escalate complex issues to human agents
+
+### Intended Users
+- Customers seeking support via web chat or mobile app
+- Support agents using AI-assisted responses
+- Internal employees for product information lookup
+
+### Appropriate Contexts
+- Standard customer inquiries during business hours
+- Non-urgent support requests
+- Informational queries about products, policies, shipping
+
+## Out-of-Scope Uses
+### Prohibited Uses
+❌ Making refund decisions without human approval
+❌ Handling sensitive account changes (password resets, payment methods)
+❌ Providing medical, legal, or financial advice
+❌ Processing complaints involving legal threats or safety issues
+
+### Why Out-of-Scope
+- High-stakes decisions require human judgment
+- Regulatory requirements for certain transactions
+- Risk of errors in sensitive contexts
+- Potential for significant customer harm
+
+## Training Data
+### Data Sources
+- 500,000 historical customer support conversations (2020-2023)
+- Product documentation and knowledge base articles
+- FAQ database and policy documents
+- Synthetic data for edge cases and rare scenarios
+
+### Data Characteristics
+- Languages: English (95%), Spanish (5%)
+- Time period: January 2020 - December 2023
+- Customer demographics: Representative of customer base
+- Data quality: Human-reviewed, PII redacted
+
+### Data Limitations
+- Limited representation of non-English languages
+- Underrepresentation of customers with disabilities
+- Historical data may not reflect current products/policies
+- Potential bias from historical agent responses
+
+## Performance Metrics
+### Overall Accuracy
+- Intent classification: 96.5%
+- Response relevance: 94.2% (human evaluation)
+- Factual accuracy: 97.8% (verified against knowledge base)
+- Customer satisfaction: 4.2/5.0 average rating
+
+### Performance by Demographic
+| Demographic | Accuracy | Satisfaction |
+|-------------|----------|--------------|
+| Age 18-34   | 96.8%    | 4.3/5.0      |
+| Age 35-54   | 96.5%    | 4.2/5.0      |
+| Age 55+     | 95.9%    | 4.0/5.0      |
+| English     | 96.5%    | 4.2/5.0      |
+| Spanish     | 94.1%    | 3.9/5.0      |
+
+### Benchmark Results
+- Compared to human agents: 94% agreement on response quality
+- Compared to previous chatbot v1.0: +12% accuracy improvement
+- Industry benchmark (customer support bots): 90th percentile
+
+## Limitations and Failure Modes
+### Known Limitations
+1. **Hallucinations:** May generate plausible but incorrect information (2-3% of responses)
+2. **Context Length:** Cannot handle conversations exceeding 20 exchanges effectively
+3. **Ambiguity:** Struggles with vague or multi-part questions
+4. **Sarcasm/Humor:** May misinterpret non-literal language
+5. **Real-time Data:** Cannot access live inventory or order status (relies on 15-min cache)
+
+### Failure Modes
+- **Low Confidence:** When confidence < 0.75, escalates to human (8% of queries)
+- **Out-of-Domain:** Unrelated questions (e.g., general knowledge) receive "I can only help with [company] products"
+- **Adversarial Inputs:** Prompt injection attempts are blocked (0.1% of inputs)
+- **System Errors:** Fallback to "I'm experiencing technical difficulties" with human escalation
+
+### Edge Cases
+- New products not in training data: May provide outdated information
+- Policy changes: 24-hour lag before knowledge base updates reflected
+- Regional variations: May not account for country-specific policies
+
+## Ethical Considerations
+### Potential Harms
+- **Incorrect Information:** Customer receives wrong product, leading to dissatisfaction
+- **Bias:** Lower accuracy for Spanish-speaking customers
+- **Over-reliance:** Customers may trust AI over their own judgment
+- **Job Displacement:** Concerns about impact on human support agents
+
+### Affected Stakeholders
+- **Customers:** Primary users, affected by accuracy and bias
+- **Support Agents:** Work alongside AI, handle escalations
+- **Company:** Reputational risk from AI errors
+- **Competitors:** Industry-wide implications of AI adoption
+
+### Mitigation Strategies
+1. **Confidence Thresholds:** Escalate low-confidence responses to humans
+2. **Bias Mitigation:** Oversampling Spanish conversations, targeted improvements
+3. **Human Oversight:** All refunds/account changes require human approval
+4. **Transparency:** Disclose AI usage to customers, provide human option
+5. **Agent Augmentation:** Position as assistant to agents, not replacement
+6. **Continuous Monitoring:** Weekly accuracy reviews, monthly bias audits
+
+## Governance and Compliance
+### Approval History
+- Initial approval: AI Governance Board, December 2023
+- Risk assessment: Tier 2 (Medium Risk)
+- Security review: Passed, January 2024
+- Privacy review: Passed with PII redaction requirement
+
+### Monitoring and Auditing
+- **Real-time:** Confidence scores, escalation rate, error rate
+- **Daily:** Accuracy metrics, user satisfaction, cost tracking
+- **Weekly:** Sample review of 100 conversations by quality team
+- **Monthly:** Bias audit across demographic groups
+- **Quarterly:** Comprehensive governance review
+
+### Compliance Requirements
+- GDPR: Right to human review implemented
+- CCPA: Data handling and retention policies applied
+- Accessibility: WCAG 2.1 AA compliance for chat interface
+- Industry: Follows customer service best practices
+
+## Contact and Feedback
+- **Model Owner:** Jane Smith (jane.smith@company.com)
+- **AI Governance:** ai-governance@company.com
+- **Report Issues:** support-ai-feedback@company.com
+- **Documentation:** https://internal.company.com/ai/chatbot-v2.1</code></pre>
+</div>
+
+<h2>Documentation Hierarchy</h2>
+<p>Different stakeholders need different levels of detail:</p>
+
+<table>
+    <tr><th>Document Type</th><th>Audience</th><th>Detail Level</th><th>Update Frequency</th></tr>
+    <tr><td>Model Card</td><td>All stakeholders</td><td>High-level overview</td><td>With each version</td></tr>
+    <tr><td>Technical Specification</td><td>Developers, data scientists</td><td>Implementation details</td><td>With each change</td></tr>
+    <tr><td>Risk Assessment</td><td>Governance, risk, legal</td><td>Risks and mitigations</td><td>Quarterly</td></tr>
+    <tr><td>User Guide</td><td>End users</td><td>How to use effectively</td><td>As needed</td></tr>
+    <tr><td>Operator Runbook</td><td>Operations, support</td><td>Monitoring and troubleshooting</td><td>As needed</td></tr>
+    <tr><td>Audit Report</td><td>Compliance, auditors</td><td>Compliance evidence</td><td>Annually</td></tr>
+</table>
+
+<h2>Data Sheets for Datasets</h2>
+<p>Document training data separately using data sheets:</p>
+
+<div class="code-block">
+<pre><code># Data Sheet: Customer Support Conversations Dataset
+
+## Motivation
+- **Purpose:** Train and evaluate customer support chatbot
+- **Creators:** Customer Experience Team + Data Science Team
+- **Funding:** Internal R&D budget
+
+## Composition
+- **Instances:** 500,000 customer support conversations
+- **Data Types:** Text (customer messages, agent responses, metadata)
+- **Labels:** Intent categories, sentiment, resolution status
+- **Missing Data:** 2% of conversations have incomplete metadata
+- **Confidentiality:** PII redacted, customer IDs anonymized
+
+## Collection Process
+- **Acquisition:** Extracted from support ticket system (2020-2023)
+- **Sampling:** Random sample stratified by product category
+- **Collection Timeframe:** January 2020 - December 2023
+- **Ethical Review:** Approved by Privacy Team, customer consent obtained
+- **Preprocessing:** PII redaction, quality filtering, deduplication
+
+## Preprocessing
+- **PII Redaction:** Names, emails, phone numbers, addresses removed
+- **Quality Filtering:** Removed spam, test conversations, duplicates
+- **Normalization:** Standardized formatting, corrected encoding issues
+- **Augmentation:** Synthetic data for rare intents (5% of dataset)
+
+## Uses
+- **Approved Uses:** Training customer support AI, quality analysis
+- **Prohibited Uses:** Marketing, profiling, sharing with third parties
+- **Impact Assessment:** Low risk - historical support data, PII removed
+
+## Distribution
+- **Access:** Restricted to AI Team and approved researchers
+- **License:** Internal use only, not for external distribution
+- **Export Controls:** None applicable
+
+## Maintenance
+- **Owner:** Data Science Team (data-science@company.com)
+- **Updates:** Quarterly refresh with recent conversations
+- **Retention:** 7 years per data retention policy
+- **Versioning:** v1.0 (Jan 2024), v1.1 (Apr 2024)</code></pre>
+</div>
+
+<h2>Living Documentation</h2>
+<p>Documentation must evolve with the AI system:</p>
+
+<ul>
+    <li><strong>Version Control:</strong> Track all changes to model cards and documentation</li>
+    <li><strong>Change Log:</strong> Document what changed, why, and when</li>
+    <li><strong>Review Cycle:</strong> Quarterly review to ensure accuracy and completeness</li>
+    <li><strong>Stakeholder Feedback:</strong> Incorporate input from users, operators, governance</li>
+    <li><strong>Incident Updates:</strong> Update limitations section after incidents</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Model Card Change Log
+
+## Version 2.1.0 (March 2024)
+- Updated performance metrics with Q1 2024 data
+- Added Spanish language performance breakdown
+- Documented new edge case: policy change lag
+- Updated mitigation strategies based on incident RISK-AI-042
+
+## Version 2.0.0 (January 2024)
+- Major model upgrade from GPT-3.5 to GPT-4-turbo
+- Added RAG system with product knowledge base
+- Improved accuracy from 89% to 96.5%
+- Updated risk tier from Tier 1 to Tier 2 due to increased scope
+
+## Version 1.5.2 (November 2023)
+- Fixed bias in Spanish language responses
+- Updated training data with 50,000 additional Spanish conversations
+- Spanish accuracy improved from 88% to 94%</code></pre>
+</div>
+
+<h2>Documentation Checklist</h2>
+<p>Ensure completeness before deployment:</p>
+
+<table>
+    <tr><th>Category</th><th>Required Documentation</th><th>Owner</th></tr>
+    <tr><td>Model</td><td>✓ Model card completed<br>✓ Technical specification<br>✓ Architecture diagram</td><td>Model Owner</td></tr>
+    <tr><td>Data</td><td>✓ Data sheet for training data<br>✓ Data lineage documented<br>✓ Privacy review completed</td><td>Data Steward</td></tr>
+    <tr><td>Risk</td><td>✓ Risk assessment completed<br>✓ Risk register entry created<br>✓ Mitigations documented</td><td>Risk Manager</td></tr>
+    <tr><td>Testing</td><td>✓ Test plan and results<br>✓ Bias audit report<br>✓ Security scan results</td><td>QA Team</td></tr>
+    <tr><td>Operations</td><td>✓ Deployment runbook<br>✓ Monitoring dashboard<br>✓ Incident response plan</td><td>DevOps</td></tr>
+    <tr><td>Compliance</td><td>✓ Regulatory mapping<br>✓ Approval records<br>✓ Audit trail configured</td><td>Compliance</td></tr>
+</table>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

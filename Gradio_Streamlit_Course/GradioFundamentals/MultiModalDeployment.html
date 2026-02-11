@@ -1,0 +1,483 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-Modal Apps and Deployment</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Multi-Modal Apps and Deployment</h1>
+
+<h2>Building Multi-Modal Applications</h2>
+<p>Multi-modal applications handle multiple types of input and output (text, images, audio, video). Gradio excels at creating these interfaces with minimal code.</p>
+
+<h2>Image Generation Interface</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI()
+
+def generate_image(prompt, size, quality):
+    '''Generate images using DALL-E.'''
+    try:
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size=size,
+            quality=quality,
+            n=1
+        )
+        
+        image_url = response.data[0].url
+        return image_url, f"Generated: {prompt}"
+        
+    except Exception as e:
+        return None, f"Error: {str(e)}"
+
+demo = gr.Interface(
+    fn=generate_image,
+    inputs=[
+        gr.Textbox(
+            label="Image Prompt",
+            placeholder="A serene landscape with mountains...",
+            lines=3
+        ),
+        gr.Dropdown(
+            choices=["1024x1024", "1792x1024", "1024x1792"],
+            value="1024x1024",
+            label="Size"
+        ),
+        gr.Radio(
+            choices=["standard", "hd"],
+            value="standard",
+            label="Quality"
+        )
+    ],
+    outputs=[
+        gr.Image(label="Generated Image"),
+        gr.Textbox(label="Status")
+    ],
+    title="DALL-E Image Generator",
+    examples=[
+        ["A futuristic city at sunset", "1024x1024", "standard"],
+        ["Abstract art with vibrant colors", "1024x1024", "hd"]
+    ]
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Audio Processing Interface</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI()
+
+def transcribe_audio(audio_file):
+    '''Transcribe audio using Whisper API.'''
+    try:
+        with open(audio_file, "rb") as audio:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio,
+                response_format="text"
+            )
+        return transcript
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def text_to_speech(text, voice):
+    '''Convert text to speech.'''
+    try:
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice=voice,
+            input=text
+        )
+        
+        # Save to file
+        output_path = "output.mp3"
+        response.stream_to_file(output_path)
+        return output_path
+        
+    except Exception as e:
+        return None
+
+with gr.Blocks() as demo:
+    gr.Markdown("# Audio Processing Suite")
+    
+    with gr.Tab("Speech-to-Text"):
+        audio_input = gr.Audio(
+            sources=["microphone", "upload"],
+            type="filepath",
+            label="Record or Upload Audio"
+        )
+        transcribe_btn = gr.Button("Transcribe")
+        transcript_output = gr.Textbox(label="Transcript", lines=5)
+        
+        transcribe_btn.click(
+            fn=transcribe_audio,
+            inputs=audio_input,
+            outputs=transcript_output
+        )
+    
+    with gr.Tab("Text-to-Speech"):
+        text_input = gr.Textbox(
+            label="Text to Convert",
+            placeholder="Enter text to convert to speech...",
+            lines=5
+        )
+        voice_select = gr.Dropdown(
+            choices=["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+            value="alloy",
+            label="Voice"
+        )
+        tts_btn = gr.Button("Generate Speech")
+        audio_output = gr.Audio(label="Generated Audio")
+        
+        tts_btn.click(
+            fn=text_to_speech,
+            inputs=[text_input, voice_select],
+            outputs=audio_output
+        )
+
+demo.launch()
+</blockquote>
+
+<h2>Document Processing with RAG</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+import PyPDF2
+
+client = OpenAI()
+embeddings = OpenAIEmbeddings()
+
+# Global variable to store vector store
+vector_store = None
+
+def process_document(file):
+    '''Process uploaded document and create vector store.'''
+    global vector_store
+    
+    try:
+        # Extract text from PDF
+        pdf_reader = PyPDF2.PdfReader(file.name)
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+        
+        # Split into chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200
+        )
+        chunks = text_splitter.split_text(text)
+        
+        # Create vector store
+        vector_store = Chroma.from_texts(
+            texts=chunks,
+            embedding=embeddings
+        )
+        
+        return f"Document processed: {len(chunks)} chunks created"
+        
+    except Exception as e:
+        return f"Error processing document: {str(e)}"
+
+def query_document(question, history):
+    '''Query the processed document.'''
+    global vector_store
+    
+    if vector_store is None:
+        yield "Please upload a document first."
+        return
+    
+    try:
+        # Retrieve relevant chunks
+        docs = vector_store.similarity_search(question, k=3)
+        context = "\n\n".join([doc.page_content for doc in docs])
+        
+        # Build messages
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant that answers questions based on the provided context."},
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}
+        ]
+        
+        # Stream response
+        stream = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            stream=True
+        )
+        
+        partial_response = ""
+        for chunk in stream:
+            if chunk.choices[0].delta.content:
+                partial_response += chunk.choices[0].delta.content
+                yield partial_response
+                
+    except Exception as e:
+        yield f"Error: {str(e)}"
+
+with gr.Blocks() as demo:
+    gr.Markdown("# Document Q&A with RAG")
+    
+    with gr.Row():
+        with gr.Column(scale=1):
+            file_upload = gr.File(
+                label="Upload PDF Document",
+                file_types=[".pdf"]
+            )
+            process_btn = gr.Button("Process Document", variant="primary")
+            status = gr.Textbox(label="Status", interactive=False)
+            
+            process_btn.click(
+                fn=process_document,
+                inputs=file_upload,
+                outputs=status
+            )
+        
+        with gr.Column(scale=2):
+            chatbot = gr.ChatInterface(
+                fn=query_document,
+                title="Ask Questions About Your Document",
+                examples=[
+                    "What is the main topic of this document?",
+                    "Summarize the key points"
+                ]
+            )
+
+demo.launch()
+</blockquote>
+
+<h2>Automatic API Generation</h2>
+<p>Every Gradio app automatically generates a REST API that can be accessed programmatically:</p>
+
+<blockquote>
+import gradio as gr
+
+def process_text(text):
+    return text.upper()
+
+demo = gr.Interface(
+    fn=process_text,
+    inputs=gr.Textbox(),
+    outputs=gr.Textbox()
+)
+
+# Launch with API enabled
+demo.launch(share=False)
+
+# API is automatically available at:
+# http://localhost:7860/api/predict
+</blockquote>
+
+<h2>Using the Gradio API Client</h2>
+<blockquote>
+from gradio_client import Client
+
+# Connect to a Gradio app
+client = Client("http://localhost:7860")
+
+# Make predictions
+result = client.predict(
+    "hello world",
+    api_name="/predict"
+)
+
+print(result)
+
+# For Hugging Face Spaces
+client = Client("username/space-name")
+result = client.predict("input text")
+</blockquote>
+
+<h2>Deployment to Hugging Face Spaces</h2>
+<p>Hugging Face Spaces provides free hosting for Gradio applications:</p>
+
+<blockquote>
+# 1. Create a new Space on Hugging Face
+# 2. Create app.py with your Gradio code
+# 3. Create requirements.txt with dependencies
+
+# app.py
+import gradio as gr
+
+def greet(name):
+    return f"Hello {name}!"
+
+demo = gr.Interface(fn=greet, inputs="text", outputs="text")
+demo.launch()
+
+# requirements.txt
+gradio==4.0.0
+openai==1.0.0
+
+# 4. Push to Hugging Face
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://huggingface.co/spaces/username/space-name
+git push origin main
+</blockquote>
+
+<h2>Environment Variables and Secrets</h2>
+<blockquote>
+import gradio as gr
+import os
+
+# Access secrets from environment
+api_key = os.getenv("OPENAI_API_KEY")
+
+# In Hugging Face Spaces:
+# 1. Go to Settings > Repository secrets
+# 2. Add OPENAI_API_KEY as a secret
+# 3. Access it using os.getenv()
+
+def secure_function(input_text):
+    # Use api_key securely
+    client = OpenAI(api_key=api_key)
+    # ... rest of code
+
+demo = gr.Interface(fn=secure_function, inputs="text", outputs="text")
+demo.launch()
+</blockquote>
+
+<h2>Authentication and Access Control</h2>
+<blockquote>
+import gradio as gr
+
+def greet(name):
+    return f"Hello {name}!"
+
+# Simple authentication
+demo = gr.Interface(
+    fn=greet,
+    inputs="text",
+    outputs="text"
+)
+
+# Launch with authentication
+demo.launch(
+    auth=("username", "password"),
+    auth_message="Please login to access this app"
+)
+
+# Multiple users
+demo.launch(
+    auth=[("user1", "pass1"), ("user2", "pass2")]
+)
+
+# Custom authentication function
+def custom_auth(username, password):
+    # Implement custom logic
+    return username == "admin" and password == "secret"
+
+demo.launch(auth=custom_auth)
+</blockquote>
+
+<h2>Queuing and Concurrency</h2>
+<blockquote>
+import gradio as gr
+
+def slow_function(text):
+    import time
+    time.sleep(5)  # Simulate slow processing
+    return text.upper()
+
+demo = gr.Interface(
+    fn=slow_function,
+    inputs="text",
+    outputs="text"
+)
+
+# Enable queuing for handling multiple concurrent users
+demo.queue(
+    max_size=20,  # Maximum queue size
+    concurrency_count=2  # Number of concurrent requests
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Deployment Options Comparison</h2>
+<table>
+    <tr>
+        <th>Platform</th>
+        <th>Cost</th>
+        <th>Setup Difficulty</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Hugging Face Spaces</td>
+        <td>Free (with limits)</td>
+        <td>Easy</td>
+        <td>Public demos, prototypes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Docker + Cloud Run</td>
+        <td>Pay per use</td>
+        <td>Moderate</td>
+        <td>Production apps, scalability</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AWS EC2/Lambda</td>
+        <td>Variable</td>
+        <td>Moderate</td>
+        <td>Enterprise deployments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Local Server</td>
+        <td>Infrastructure only</td>
+        <td>Easy</td>
+        <td>Internal tools, testing</td>
+    </tr>
+</table>
+
+<h2>Docker Deployment</h2>
+<blockquote>
+# Dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 7860
+
+CMD ["python", "app.py"]
+
+# Build and run
+docker build -t gradio-app .
+docker run -p 7860:7860 -e OPENAI_API_KEY=your_key gradio-app
+</blockquote>
+
+<h2>Best Practices for Production</h2>
+<ul>
+    <li><strong>Use Environment Variables:</strong> Never hardcode API keys or secrets</li>
+    <li><strong>Implement Authentication:</strong> Protect sensitive applications</li>
+    <li><strong>Enable Queuing:</strong> Handle concurrent users gracefully</li>
+    <li><strong>Add Error Handling:</strong> Provide user-friendly error messages</li>
+    <li><strong>Monitor Usage:</strong> Track API calls and costs</li>
+    <li><strong>Set Timeouts:</strong> Prevent hanging requests</li>
+    <li><strong>Use HTTPS:</strong> Secure data transmission</li>
+    <li><strong>Implement Rate Limiting:</strong> Prevent abuse</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

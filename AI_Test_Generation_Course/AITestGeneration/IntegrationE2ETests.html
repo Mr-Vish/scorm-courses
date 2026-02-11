@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Integration and E2E Test Generation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Integration and E2E Test Generation</h1>
+
+
+<h2>Integration Test Generation</h2>
+<p>Integration tests verify that components work together correctly. LLMs can generate these by analyzing API contracts, database schemas, and service boundaries:</p>
+<div class="code-block">
+<pre><code># Prompt for integration test generation
+prompt = (
+    "Generate integration tests for this FastAPI endpoint. "
+    "Use httpx AsyncClient for testing. Include:
+"
+    "- Happy path with valid input
+"
+    "- Invalid input validation (422 responses)
+"
+    "- Authentication failures (401 responses)
+"
+    "- Database interaction verification
+"
+    "
+"
+    "Endpoint code:
+"
+    "```python
+"
+    "@app.post('/api/users', status_code=201)
+"
+    "async def create_user(user: UserCreate, db: Session = Depends(get_db)):
+"
+    "    if await db.get_user_by_email(user.email):
+"
+    "        raise HTTPException(409, 'Email already registered')
+"
+    "    new_user = await db.create_user(user)
+"
+    "    return UserResponse.from_orm(new_user)
+"
+    "```
+"
+)
+
+# LLM generates tests like:
+# @pytest.mark.asyncio
+# async def test_create_user_success(client, db_session):
+#     response = await client.post("/api/users", json={
+#         "name": "Alice", "email": "alice@example.com", "password": "secure123"
+#     })
+#     assert response.status_code == 201
+#     data = response.json()
+#     assert data["email"] == "alice@example.com"
+#     assert "password" not in data  # Password should not be in response</code></pre>
+</div>
+
+<h2>E2E Test Generation</h2>
+<p>LLMs can generate end-to-end tests by analyzing user flows and UI components:</p>
+<div class="code-block">
+<pre><code># Generate Playwright E2E tests from user stories
+prompt = (
+    "Generate Playwright E2E tests for this user story:
+"
+    "As a user, I want to search for products and add them to my cart.
+"
+    "
+"
+    "Steps:
+"
+    "1. Navigate to the homepage
+"
+    "2. Type a search query in the search bar
+"
+    "3. Click the search button
+"
+    "4. Verify search results appear
+"
+    "5. Click on the first product
+"
+    "6. Click 'Add to Cart'
+"
+    "7. Verify cart count increases
+"
+    "
+"
+    "Use TypeScript with Playwright test runner.
+"
+)
+
+# LLM generates:
+# test('search and add to cart', async ({ page }) =&gt; {
+#     await page.goto('/');
+#     await page.fill('[data-testid="search-input"]', 'wireless headphones');
+#     await page.click('[data-testid="search-button"]');
+#     await expect(page.locator('.search-results')).toBeVisible();
+#     await page.click('.product-card:first-child');
+#     await page.click('[data-testid="add-to-cart"]');
+#     await expect(page.locator('.cart-count')).toHaveText('1');
+# });</code></pre>
+</div>
+
+<h2>Test Generation Best Practices</h2>
+<table>
+    <tr><th>Practice</th><th>Why</th><th>How</th></tr>
+    <tr><td>Provide context</td><td>LLMs need to understand the project's testing patterns</td><td>Include existing test examples in the prompt</td></tr>
+    <tr><td>Specify framework</td><td>Different projects use different test frameworks</td><td>State pytest, Jest, JUnit, etc. explicitly</td></tr>
+    <tr><td>Request mocks</td><td>Integration tests need proper mocking</td><td>Specify which dependencies to mock</td></tr>
+    <tr><td>Review carefully</td><td>Generated tests may have logical errors</td><td>Run tests and verify assertions make sense</td></tr>
+    <tr><td>Iterate</td><td>First generation is rarely perfect</td><td>Ask the LLM to fix failures and add missing cases</td></tr>
+</table>
+
+<h2>Automation Pipeline</h2>
+<div class="code-block">
+<pre><code># CI/CD integration for AI test generation
+# .github/workflows/test-gen.yml
+# name: AI Test Coverage
+# on:
+#   pull_request:
+#     types: [opened, synchronize]
+# jobs:
+#   generate-tests:
+#     steps:
+#       - name: Identify changed functions
+#         run: git diff --name-only main...HEAD | grep '.py$'
+#
+#       - name: Generate tests for uncovered functions
+#         run: python scripts/generate_tests.py --changed-files
+#
+#       - name: Run generated tests
+#         run: pytest tests/generated/ --tb=short
+#
+#       - name: Report coverage delta
+#         run: coverage report --show-missing</code></pre>
+</div>
+
+<h2>Limitations</h2>
+<ul>
+    <li><strong>Cannot replace test design:</strong> LLMs generate individual tests well but miss system-level testing strategies</li>
+    <li><strong>Context window limits:</strong> Large codebases may not fit in a single prompt</li>
+    <li><strong>Hallucinated APIs:</strong> LLMs may call methods or use assertions that do not exist</li>
+    <li><strong>Flaky tests:</strong> Generated tests may have race conditions or timing dependencies</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Tokenization Algorithms Explained</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>Tokenization Algorithms Explained</h1>
+
+<h2>Why Tokenization Matters</h2>
+<p>
+LLMs do not understand raw text. Every interaction is converted into tokens—numeric
+representations that map to learned embeddings. Tokenization affects:
+</p>
+<ul>
+<li>Model accuracy</li>
+<li>Latency</li>
+<li>Cost</li>
+<li>Language support</li>
+<li>Context window efficiency</li>
+</ul>
+
+<h2>What Is a Token?</h2>
+<p>
+A token is not a word. It may represent:
+</p>
+<ul>
+<li>A full word</li>
+<li>A subword</li>
+<li>A character</li>
+<li>A byte sequence</li>
+</ul>
+
+<h2>Byte Pair Encoding (BPE)</h2>
+<p>
+BPE is one of the most widely used tokenization algorithms.
+</p>
+
+<ol>
+<li>Start with characters as tokens</li>
+<li>Find most frequent adjacent token pairs</li>
+<li>Merge pairs iteratively</li>
+<li>Stop at target vocabulary size</li>
+</ol>
+
+<p>
+Used by GPT-family models and Claude.
+</p>
+
+<h2>Advantages of BPE</h2>
+<ul>
+<li>Compact vocabulary</li>
+<li>Handles unknown words gracefully</li>
+<li>Efficient for English-like languages</li>
+</ul>
+
+<h2>Limitations of BPE</h2>
+<ul>
+<li>Poor handling of CJK languages</li>
+<li>Bias toward training corpus language</li>
+<li>Can split semantically meaningful units</li>
+</ul>
+
+<h2>SentencePiece</h2>
+<p>
+SentencePiece treats text as a raw byte stream and does not rely on whitespace.
+</p>
+
+<ul>
+<li>Better for multilingual models</li>
+<li>Common in LLaMA, Gemini</li>
+<li>Supports BPE and Unigram LM</li>
+</ul>
+
+<h2>Unigram Language Model</h2>
+<p>
+Instead of merges, Unigram:
+</p>
+<ul>
+<li>Starts with a large vocabulary</li>
+<li>Removes tokens probabilistically</li>
+<li>Optimizes likelihood of the corpus</li>
+</ul>
+
+<h2>Byte-Level Tokenization</h2>
+<p>
+Byte-level tokenizers operate directly on UTF-8 bytes.
+</p>
+
+<ul>
+<li>Eliminates unknown tokens</li>
+<li>Guarantees reversibility</li>
+<li>Increases token count</li>
+</ul>
+
+<h2>Tokenization Libraries</h2>
+<table>
+<tr><th>Library</th><th>Used By</th><th>Language</th></tr>
+<tr><td>Tiktoken</td><td>OpenAI</td><td>Rust/Python</td></tr>
+<tr><td>SentencePiece</td><td>Meta, Google</td><td>C++/Python</td></tr>
+<tr><td>HF Tokenizers</td><td>Open-source</td><td>Rust/Python</td></tr>
+</table>
+
+<h2>Counting Tokens</h2>
+<div class="code-block">
+<pre><code>
+# OpenAI token counting
+import tiktoken
+enc = tiktoken.encoding_for_model("gpt-4o")
+tokens = enc.encode("Hello, how are you?")
+print(len(tokens))
+
+# Anthropic token counting
+import anthropic
+client = anthropic.Anthropic()
+result = client.messages.count_tokens(
+    model="claude-sonnet-4-20250514",
+    messages=[{"role": "user", "content": "Hello world"}]
+)
+print(result.input_tokens)
+</code></pre>
+</div>
+
+<h2>Tokenization and Model Behavior</h2>
+<ul>
+<li>Affects reasoning granularity</li>
+<li>Impacts multilingual quality</li>
+<li>Influences hallucination patterns</li>
+</ul>
+
+<h2>Operational Implications</h2>
+<ul>
+<li>Token limits enforce hard truncation</li>
+<li>Higher tokens reduce batch density</li>
+<li>Memory usage scales with token count</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+<li>Choose tokenizer based on language mix</li>
+<li>Test token counts across languages</li>
+<li>Design prompts to be token-efficient</li>
+<li>Monitor token usage in production</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>
+Tokenization is not an implementation detail—it is a core architectural decision.
+Understanding token algorithms is essential for building scalable, cost-efficient,
+and globally accessible AI systems.
+</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

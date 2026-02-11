@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Spring AI Multimodal RAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring AI Multimodal RAG</h1>
+<div class="container">
+<h2>Multimodal RAG with Spring AI</h2>
+<p>As AI models evolve to handle images, audio, and video, Spring AI is keeping pace by providing high-level support for multimodal interactions. Multimodal RAG allows you to retrieve not just text, but also relevant images or video frames to ground your AI's responses in a much richer context.</p>
+
+<h3>The Concept of Multimodal Retrieval</h3>
+<p>In a multimodal RAG system, you store "Multimodal Documents." These documents might contain:
+<ul>
+    <li>A text description (e.g., "A wiring diagram for a 2024 Tesla Model 3").</li>
+    <li>The image itself (encoded as a URL or a base64 string).</li>
+    <li>Metadata about the image (e.g., file type, resolution, source).</li>
+</ul>
+You then use a multimodal model (like Claude 3.5 Sonnet) to "look" at the retrieved images and "read" the retrieved text simultaneously.</p>
+
+<h3>How Spring AI Handles Images</h3>
+<p>Spring AI's <code>UserMessage</code> can accept multiple <code>Media</code> objects along with the text prompt.
+<blockquote>
+<code>Media media = new Media(MimeTypeUtils.IMAGE_JPEG, imageResource);<br/>
+UserMessage message = new UserMessage("Analyze this chart and the provided text.", List.of(media));</code>
+</blockquote></p>
+
+<h3>Multimodal Embedding Models</h3>
+<p>To retrieve images semantically, you need an embedding model that understands both text and vision (like CLIP). Spring AI's <code>EmbeddingModel</code> interface is designed to support these high-dimensional multimodal vectors. When you search for "broken engine part," the system can retrieve both a technical manual (text) and a photograph of the broken part (image).</p>
+
+<h3>The 'Vision-Advisor' Pattern</h3>
+<p>You can create a custom Spring AI Advisor that automatically attaches relevant images to the prompt.
+1. The advisor intercept's the user's message.
+2. It searches the <code>VectorStore</code> for both relevant text AND relevant images.
+3. It creates a new <code>UserMessage</code> containing both the user's text, the retrieved text snippets, and the retrieved <code>Media</code> objects.
+4. It sends this multi-part message to the LLM.</p>
+
+<h3>Use Case: Medical Diagnosis Assistant</h3>
+<p>Imagine a doctor using an AI assistant to help diagnose a skin condition.
+1. The doctor uploads a photo of the condition and asks: "What could this be?"
+2. The Spring AI Multimodal RAG system retrieves:
+   - High-quality clinical images of similar-looking conditions (Vision).
+   - The relevant chapters from a dermatology textbook (Text).
+3. Claude analyzes the patient's photo against the retrieved clinical images and the textbook data to provide a list of potential diagnoses with supporting evidence.</p>
+
+<h3>Challenges of Multimodal RAG</h3>
+<ul>
+    <li><strong>High Latency:</strong> Sending images to an LLM is significantly slower than sending text.</li>
+    <li><strong>Increased Cost:</strong> Multimodal models (like GPT-4o or Claude 3 Opus) are the most expensive to run.</li>
+    <li><strong>Complex Indexing:</strong> Storing and searching across heterogeneous data types (images and text) requires more sophisticated vector database configurations.</li>
+</ul>
+
+<h3>Practical Exercise: Image Retrieval</h3>
+<p>Configure a simple <code>VectorStore</code> with a set of 10 images and their descriptions. Use the descriptions to generate embeddings. Write a Spring AI controller that takes a text query and returns the most similar image from your store. How would you then modify this to send both the query AND the image to Claude for an analysis?</p>
+
+<h3>Summary</h3>
+<p>Multimodal RAG is the future of human-AI collaboration. By breaking the barrier between text and vision, Spring AI enables Java developers to build applications that can "see" the world, providing a level of assistance and insight that was previously impossible.</p>
+
+</div>
+</body>
+</html>

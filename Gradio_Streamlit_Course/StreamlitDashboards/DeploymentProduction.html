@@ -1,0 +1,410 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Streamlit Deployment and Production Features</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Streamlit Deployment and Production Features</h1>
+
+<h2>Deploying to Streamlit Cloud</h2>
+<p>Streamlit Cloud provides free hosting for Streamlit applications with GitHub integration.</p>
+
+<blockquote>
+# 1. Push your app to GitHub
+# Project structure:
+# my-app/
+# ├── app.py
+# ├── requirements.txt
+# └── .streamlit/
+#     └── secrets.toml (DO NOT commit this)
+
+# requirements.txt
+streamlit==1.30.0
+openai==1.0.0
+langchain==0.1.0
+pandas==2.0.0
+
+# 2. Go to share.streamlit.io
+# 3. Connect your GitHub repository
+# 4. Select the branch and main file (app.py)
+# 5. Add secrets in the Streamlit Cloud dashboard
+# 6. Deploy!
+</blockquote>
+
+<h2>Managing Secrets in Production</h2>
+<blockquote>
+# Local development: .streamlit/secrets.toml
+OPENAI_API_KEY = "sk-..."
+
+# Streamlit Cloud: Add in dashboard under "Secrets"
+# Settings > Secrets > Edit
+
+# Access in code
+import streamlit as st
+
+api_key = st.secrets["OPENAI_API_KEY"]
+
+# For nested secrets
+db_config = st.secrets["database"]
+host = db_config["host"]
+</blockquote>
+
+<h2>Authentication and Access Control</h2>
+<blockquote>
+import streamlit as st
+import hmac
+
+def check_password():
+    '''Returns True if the user has entered the correct password.'''
+    
+    def password_entered():
+        '''Checks whether a password entered by the user is correct.'''
+        if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store password
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if password is validated
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show input for password
+    st.text_input(
+        "Password", type="password", on_change=password_entered, key="password"
+    )
+    if "password_correct" in st.session_state:
+        st.error("😕 Password incorrect")
+    return False
+
+# Main app
+if not check_password():
+    st.stop()  # Don't continue if check_password is not True
+
+# Your app code here
+st.title("Protected App")
+st.write("You have access!")
+</blockquote>
+
+<h2>Advanced Authentication with OAuth</h2>
+<blockquote>
+import streamlit as st
+from streamlit_oauth import OAuth2Component
+
+# Configure OAuth
+oauth2 = OAuth2Component(
+    client_id=st.secrets["GOOGLE_CLIENT_ID"],
+    client_secret=st.secrets["GOOGLE_CLIENT_SECRET"],
+    authorize_endpoint="https://accounts.google.com/o/oauth2/v2/auth",
+    token_endpoint="https://oauth2.googleapis.com/token",
+    refresh_token_endpoint="https://oauth2.googleapis.com/token",
+)
+
+# Check if user is authenticated
+if "token" not in st.session_state:
+    result = oauth2.authorize_button(
+        "Login with Google",
+        redirect_uri="http://localhost:8501",
+        scope="openid email profile"
+    )
+    
+    if result:
+        st.session_state.token = result.get("token")
+        st.rerun()
+else:
+    st.write("Welcome! You are logged in.")
+    if st.button("Logout"):
+        del st.session_state.token
+        st.rerun()
+</blockquote>
+
+<h2>Performance Optimization with Caching</h2>
+<blockquote>
+import streamlit as st
+import pandas as pd
+from openai import OpenAI
+
+@st.cache_resource
+def get_openai_client():
+    '''Cache the OpenAI client (resource that should not be serialized).'''
+    return OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+@st.cache_data(ttl=3600)
+def load_data(file_path):
+    '''Cache data loading for 1 hour.'''
+    return pd.read_csv(file_path)
+
+@st.cache_data
+def expensive_computation(param1, param2):
+    '''Cache results of expensive computations.'''
+    # Expensive operation
+    result = param1 * param2
+    return result
+
+# Use cached functions
+client = get_openai_client()
+data = load_data("data.csv")
+result = expensive_computation(10, 20)
+</blockquote>
+
+<h2>Error Handling and Logging</h2>
+<blockquote>
+import streamlit as st
+import logging
+from datetime import datetime
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='app.log'
+)
+
+logger = logging.getLogger(__name__)
+
+def safe_api_call(prompt):
+    '''Make API call with error handling and logging.'''
+    try:
+        logger.info(f"API call initiated: {prompt[:50]}...")
+        
+        client = get_openai_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            timeout=30
+        )
+        
+        logger.info("API call successful")
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        logger.error(f"API call failed: {str(e)}")
+        st.error(f"An error occurred: {str(e)}")
+        return None
+
+# Use in app
+if prompt := st.chat_input("Ask anything"):
+    response = safe_api_call(prompt)
+    if response:
+        st.write(response)
+</blockquote>
+
+<h2>Rate Limiting and Usage Tracking</h2>
+<blockquote>
+import streamlit as st
+from datetime import datetime, timedelta
+
+def check_rate_limit(max_requests=10, time_window=60):
+    '''Implement simple rate limiting.'''
+    
+    if "request_times" not in st.session_state:
+        st.session_state.request_times = []
+    
+    # Remove old requests outside time window
+    cutoff_time = datetime.now() - timedelta(seconds=time_window)
+    st.session_state.request_times = [
+        t for t in st.session_state.request_times if t > cutoff_time
+    ]
+    
+    # Check if limit exceeded
+    if len(st.session_state.request_times) >= max_requests:
+        return False
+    
+    # Add current request
+    st.session_state.request_times.append(datetime.now())
+    return True
+
+# Use in app
+if st.button("Make Request"):
+    if check_rate_limit(max_requests=5, time_window=60):
+        st.success("Request processed")
+    else:
+        st.error("Rate limit exceeded. Please wait before making more requests.")
+</blockquote>
+
+<h2>Multi-Page Applications</h2>
+<blockquote>
+# Project structure:
+# app/
+# ├── Home.py (main page)
+# └── pages/
+#     ├── 1_Chat.py
+#     ├── 2_Image_Generation.py
+#     └── 3_Analytics.py
+
+# Home.py
+import streamlit as st
+
+st.set_page_config(
+    page_title="GenAI Toolkit",
+    page_icon="🤖",
+    layout="wide"
+)
+
+st.title("Welcome to GenAI Toolkit")
+st.write("Use the sidebar to navigate between different tools.")
+
+# pages/1_Chat.py
+import streamlit as st
+
+st.title("Chat Interface")
+# Chat implementation here
+
+# pages/2_Image_Generation.py
+import streamlit as st
+
+st.title("Image Generation")
+# Image generation implementation here
+</blockquote>
+
+<h2>Docker Deployment</h2>
+<blockquote>
+# Dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy app files
+COPY . .
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Health check
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+
+# Run Streamlit
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+
+# Build and run
+# docker build -t streamlit-app .
+# docker run -p 8501:8501 -e OPENAI_API_KEY=your_key streamlit-app
+</blockquote>
+
+<h2>Configuration Management</h2>
+<blockquote>
+# .streamlit/config.toml
+
+[theme]
+primaryColor = "#FF4B4B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
+
+[server]
+port = 8501
+enableCORS = false
+enableXsrfProtection = true
+maxUploadSize = 200
+
+[browser]
+gatherUsageStats = false
+
+[runner]
+magicEnabled = true
+fastReruns = true
+</blockquote>
+
+<h2>Monitoring and Analytics</h2>
+<blockquote>
+import streamlit as st
+from datetime import datetime
+import json
+
+def log_interaction(event_type, data):
+    '''Log user interactions for analytics.'''
+    
+    if "analytics" not in st.session_state:
+        st.session_state.analytics = []
+    
+    event = {
+        "timestamp": datetime.now().isoformat(),
+        "event_type": event_type,
+        "data": data,
+        "session_id": st.session_state.get("session_id", "unknown")
+    }
+    
+    st.session_state.analytics.append(event)
+    
+    # Optionally save to file or send to analytics service
+    with open("analytics.jsonl", "a") as f:
+        f.write(json.dumps(event) + "\n")
+
+# Use in app
+if st.button("Generate"):
+    log_interaction("button_click", {"button": "generate"})
+    # Process generation
+
+if prompt := st.chat_input("Ask"):
+    log_interaction("chat_message", {"length": len(prompt)})
+    # Process message
+</blockquote>
+
+<h2>Production Checklist</h2>
+<ul>
+    <li><strong>Security:</strong> Use secrets management, never commit API keys</li>
+    <li><strong>Authentication:</strong> Implement access control for sensitive apps</li>
+    <li><strong>Error Handling:</strong> Catch and log all exceptions gracefully</li>
+    <li><strong>Caching:</strong> Use @st.cache_data and @st.cache_resource appropriately</li>
+    <li><strong>Rate Limiting:</strong> Prevent abuse and control costs</li>
+    <li><strong>Logging:</strong> Track errors and usage patterns</li>
+    <li><strong>Monitoring:</strong> Set up health checks and alerts</li>
+    <li><strong>Performance:</strong> Optimize slow operations and database queries</li>
+    <li><strong>Testing:</strong> Test with different user scenarios</li>
+    <li><strong>Documentation:</strong> Provide clear instructions for users</li>
+</ul>
+
+<h2>Streamlit vs Gradio Deployment Comparison</h2>
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Streamlit</th>
+        <th>Gradio</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Free Hosting</td>
+        <td>Streamlit Cloud</td>
+        <td>Hugging Face Spaces</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Setup Complexity</td>
+        <td>Moderate (GitHub integration)</td>
+        <td>Easy (git push)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Custom Domain</td>
+        <td>Paid plans only</td>
+        <td>Not available on free tier</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Authentication</td>
+        <td>Custom implementation</td>
+        <td>Built-in basic auth</td>
+    </tr>
+    <tr>
+        <td class="rowheader">API Access</td>
+        <td>Requires separate FastAPI</td>
+        <td>Automatic API generation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Resource Limits</td>
+        <td>1 GB RAM (free tier)</td>
+        <td>16 GB RAM (free tier)</td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

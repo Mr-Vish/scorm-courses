@@ -1,0 +1,347 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Performance Optimization for MCP Servers</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Performance Optimization for MCP Servers</h1>
+
+<h2>Performance Fundamentals</h2>
+
+<p>Performance optimization ensures your MCP server responds quickly and handles load efficiently. A well-optimized server provides better user experience and reduces infrastructure costs.</p>
+
+<h3>Performance Metrics</h3>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Description</th>
+        <th>Target</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Response Time</td>
+        <td>Time from request to response</td>
+        <td>Under 1 second for most tools</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Throughput</td>
+        <td>Requests handled per second</td>
+        <td>Depends on use case</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Resource Usage</td>
+        <td>CPU, memory, network consumption</td>
+        <td>Minimal for given workload</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>Percentage of failed requests</td>
+        <td>Under 0.1%</td>
+    </tr>
+</table>
+
+<h2>Async Operations</h2>
+
+<p>Use asynchronous programming to handle I/O efficiently:</p>
+
+<h3>TypeScript Async Patterns</h3>
+
+<blockquote>
+// Good: Parallel execution
+async function fetchMultipleResources(ids) {
+  const promises = ids.map(id => fetchResource(id));
+  return await Promise.all(promises);
+}
+
+// Bad: Sequential execution
+async function fetchMultipleResourcesSlow(ids) {
+  const results = [];
+  for (const id of ids) {
+    results.push(await fetchResource(id));
+  }
+  return results;
+}
+</blockquote>
+
+<h3>Python Async Patterns</h3>
+
+<blockquote>
+import asyncio
+
+# Good: Concurrent execution
+async def fetch_multiple_resources(ids):
+    tasks = [fetch_resource(id) for id in ids]
+    return await asyncio.gather(*tasks)
+
+# Bad: Sequential execution
+async def fetch_multiple_resources_slow(ids):
+    results = []
+    for id in ids:
+        result = await fetch_resource(id)
+        results.append(result)
+    return results
+</blockquote>
+
+<h2>Caching Strategies</h2>
+
+<p>Cache frequently accessed data to reduce latency:</p>
+
+<h3>In-Memory Caching</h3>
+
+<blockquote>
+const cache = new Map();
+const CACHE_TTL = 60000; // 1 minute
+
+async function getCachedData(key) {
+  const cached = cache.get(key);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  
+  const data = await fetchData(key);
+  cache.set(key, { data, timestamp: Date.now() });
+  
+  return data;
+}
+</blockquote>
+
+<h3>Cache Invalidation</h3>
+
+<p>Ensure cached data stays fresh:</p>
+
+<ul>
+    <li><strong>Time-based:</strong> Expire after fixed duration</li>
+    <li><strong>Event-based:</strong> Invalidate on data changes</li>
+    <li><strong>Manual:</strong> Provide cache clear mechanism</li>
+</ul>
+
+<h2>Database Optimization</h2>
+
+<p>Optimize database queries for better performance:</p>
+
+<h3>Connection Pooling</h3>
+
+<blockquote>
+const pool = new Pool({
+  host: 'localhost',
+  database: 'mydb',
+  max: 20, // Maximum connections
+  idleTimeoutMillis: 30000
+});
+
+async function queryDatabase(sql, params) {
+  const client = await pool.connect();
+  try {
+    return await client.query(sql, params);
+  } finally {
+    client.release();
+  }
+}
+</blockquote>
+
+<h3>Query Optimization</h3>
+
+<ul>
+    <li>Use indexes on frequently queried columns</li>
+    <li>Limit result sets with LIMIT clauses</li>
+    <li>Avoid SELECT * - specify needed columns</li>
+    <li>Use prepared statements for repeated queries</li>
+    <li>Batch multiple operations when possible</li>
+</ul>
+
+<h2>Resource Management</h2>
+
+<h3>Memory Management</h3>
+
+<p>Prevent memory leaks and excessive usage:</p>
+
+<blockquote>
+// Clear large objects after use
+async function processLargeFile(filePath) {
+  let data = await readFile(filePath);
+  const result = await processData(data);
+  
+  // Clear reference to allow garbage collection
+  data = null;
+  
+  return result;
+}
+
+// Monitor memory usage
+setInterval(() => {
+  const usage = process.memoryUsage();
+  if (usage.heapUsed > MEMORY_THRESHOLD) {
+    logger.warn('High memory usage', usage);
+  }
+}, 60000);
+</blockquote>
+
+<h3>Connection Management</h3>
+
+<p>Properly close connections and clean up resources:</p>
+
+<blockquote>
+async function callExternalAPI(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+</blockquote>
+
+<h2>Request Optimization</h2>
+
+<h3>Batching</h3>
+
+<p>Combine multiple operations into single requests:</p>
+
+<blockquote>
+// Instead of multiple individual queries
+const user1 = await getUser(1);
+const user2 = await getUser(2);
+const user3 = await getUser(3);
+
+// Batch into single query
+const users = await getUsers([1, 2, 3]);
+</blockquote>
+
+<h3>Streaming</h3>
+
+<p>Stream large responses instead of loading entirely into memory:</p>
+
+<blockquote>
+async function streamLargeDataset(query) {
+  const stream = database.query(query).stream();
+  
+  for await (const row of stream) {
+    yield processRow(row);
+  }
+}
+</blockquote>
+
+<h2>Timeout Configuration</h2>
+
+<p>Set appropriate timeouts to prevent resource exhaustion:</p>
+
+<blockquote>
+const TOOL_TIMEOUT = 30000; // 30 seconds
+
+async function executeToolWithTimeout(toolFn, args) {
+  return Promise.race([
+    toolFn(args),
+    new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Tool execution timeout')), TOOL_TIMEOUT)
+    )
+  ]);
+}
+</blockquote>
+
+<h2>Load Testing</h2>
+
+<p>Test server performance under realistic load:</p>
+
+<h3>Load Testing Tools</h3>
+
+<ul>
+    <li><strong>Apache JMeter:</strong> Comprehensive load testing</li>
+    <li><strong>k6:</strong> Modern load testing for APIs</li>
+    <li><strong>Artillery:</strong> Easy-to-use load testing</li>
+    <li><strong>Locust:</strong> Python-based load testing</li>
+</ul>
+
+<h3>Load Testing Scenarios</h3>
+
+<ol>
+    <li><strong>Baseline:</strong> Normal expected load</li>
+    <li><strong>Peak:</strong> Maximum expected load</li>
+    <li><strong>Stress:</strong> Beyond maximum to find breaking point</li>
+    <li><strong>Endurance:</strong> Sustained load over time</li>
+</ol>
+
+<h2>Performance Monitoring</h2>
+
+<p>Continuously monitor performance in production:</p>
+
+<blockquote>
+const metrics = {
+  toolExecutions: new Map(),
+  responseTimes: []
+};
+
+function recordToolExecution(toolName, duration) {
+  const count = metrics.toolExecutions.get(toolName) || 0;
+  metrics.toolExecutions.set(toolName, count + 1);
+  
+  metrics.responseTimes.push(duration);
+  
+  // Keep only recent data
+  if (metrics.responseTimes.length > 1000) {
+    metrics.responseTimes.shift();
+  }
+}
+
+function getPerformanceStats() {
+  const avg = metrics.responseTimes.reduce((a, b) => a + b, 0) / metrics.responseTimes.length;
+  const sorted = [...metrics.responseTimes].sort((a, b) => a - b);
+  const p95 = sorted[Math.floor(sorted.length * 0.95)];
+  
+  return { average: avg, p95: p95 };
+}
+</blockquote>
+
+<h2>Optimization Checklist</h2>
+
+<ol>
+    <li>Use async/await for all I/O operations</li>
+    <li>Implement caching for frequently accessed data</li>
+    <li>Use connection pooling for databases</li>
+    <li>Optimize database queries with indexes</li>
+    <li>Set appropriate timeouts on all operations</li>
+    <li>Monitor memory usage and prevent leaks</li>
+    <li>Batch operations when possible</li>
+    <li>Stream large datasets instead of loading into memory</li>
+    <li>Conduct load testing before production</li>
+    <li>Monitor performance metrics continuously</li>
+</ol>
+
+<h2>Common Performance Pitfalls</h2>
+
+<ul>
+    <li>Synchronous I/O blocking event loop</li>
+    <li>Missing database indexes on query columns</li>
+    <li>Loading entire datasets into memory</li>
+    <li>No connection pooling for databases</li>
+    <li>Excessive logging in hot code paths</li>
+    <li>Memory leaks from unclosed connections</li>
+    <li>No caching of expensive operations</li>
+    <li>Sequential execution of independent operations</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Performance optimization requires measuring and monitoring</li>
+    <li>Async operations enable efficient I/O handling</li>
+    <li>Caching reduces latency for frequently accessed data</li>
+    <li>Database optimization is critical for data-intensive servers</li>
+    <li>Proper resource management prevents leaks and exhaustion</li>
+    <li>Load testing validates performance under realistic conditions</li>
+</ul>
+
+<p><strong>Next:</strong> You will complete Assessment 3 to test your understanding of advanced MCP concepts.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

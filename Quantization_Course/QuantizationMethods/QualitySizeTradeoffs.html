@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Quality, Size Tradeoffs, and Selection Guide</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Quality, Size Tradeoffs, and Selection Guide</h1>
+
+
+<h2>Quality Benchmarks by Quantization</h2>
+<p>The impact of quantization varies by task type. Here is a general guide based on community benchmarks:</p>
+<table>
+    <tr><th>Quantization</th><th>Perplexity Impact</th><th>Reasoning</th><th>Creative Writing</th><th>Code</th></tr>
+    <tr><td>Q8 (8-bit)</td><td>&lt; 0.1% degradation</td><td>Excellent</td><td>Excellent</td><td>Excellent</td></tr>
+    <tr><td>Q6_K (6-bit)</td><td>~0.2% degradation</td><td>Excellent</td><td>Excellent</td><td>Very Good</td></tr>
+    <tr><td>Q5_K_M (5-bit)</td><td>~0.5% degradation</td><td>Very Good</td><td>Very Good</td><td>Very Good</td></tr>
+    <tr><td>Q4_K_M (4-bit)</td><td>~1% degradation</td><td>Good</td><td>Good</td><td>Good</td></tr>
+    <tr><td>Q3_K_M (3-bit)</td><td>~3% degradation</td><td>Moderate</td><td>Moderate</td><td>Fair</td></tr>
+    <tr><td>Q2_K (2-bit)</td><td>~8% degradation</td><td>Fair</td><td>Fair</td><td>Poor</td></tr>
+</table>
+
+<h2>Format Selection Guide</h2>
+<table>
+    <tr><th>Scenario</th><th>Recommended Format</th><th>Reason</th></tr>
+    <tr><td>MacBook / Apple Silicon</td><td>GGUF Q4_K_M</td><td>Metal acceleration, excellent balance</td></tr>
+    <tr><td>NVIDIA GPU server</td><td>AWQ 4-bit</td><td>Best quality at 4-bit with CUDA</td></tr>
+    <tr><td>CPU-only server</td><td>GGUF Q4_K_M or Q5_K_M</td><td>Optimized for CPU inference</td></tr>
+    <tr><td>Raspberry Pi / Edge</td><td>GGUF Q2_K or Q3_K_S</td><td>Minimum memory footprint</td></tr>
+    <tr><td>Quality-critical production</td><td>AWQ 4-bit or GPTQ 4-bit</td><td>Best GPU throughput with good quality</td></tr>
+    <tr><td>Experimentation</td><td>GGUF Q4_K_M</td><td>Easy to use, wide tool support</td></tr>
+</table>
+
+<h2>Quantizing Your Own Models</h2>
+<div class="code-block">
+<pre><code># Convert HuggingFace model to GGUF with llama.cpp
+# Step 1: Clone llama.cpp
+git clone https://github.com/ggerganov/llama.cpp
+cd llama.cpp
+
+# Step 2: Convert model to GGUF FP16
+python convert_hf_to_gguf.py /path/to/model --outtype f16 --outfile model-fp16.gguf
+
+# Step 3: Quantize to desired level
+./llama-quantize model-fp16.gguf model-q4_k_m.gguf Q4_K_M
+
+# For GPTQ quantization, use AutoGPTQ:
+from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
+
+quantize_config = BaseQuantizeConfig(
+    bits=4,
+    group_size=128,
+    damp_percent=0.1,
+)
+model = AutoGPTQForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b",
+    quantize_config=quantize_config,
+)
+model.quantize(calibration_dataset)
+model.save_quantized("llama3-8b-gptq-4bit")</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li><strong>Q4_K_M GGUF</strong> is the sweet spot for most local use cases - 4x smaller than FP16 with minimal quality loss</li>
+    <li><strong>AWQ</strong> is the best choice for GPU-based production serving</li>
+    <li><strong>Bigger model at lower precision</strong> often beats smaller model at higher precision (a 70B Q4 model usually outperforms a 7B FP16)</li>
+    <li><strong>Test on your specific tasks</strong> - quantization impacts vary by domain and task type</li>
+    <li><strong>Quantization is free performance</strong> - always quantize before deploying to production</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

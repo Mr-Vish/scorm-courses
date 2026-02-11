@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Messages API Structure and Parameters</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Messages API Structure and Parameters</h1>
+
+<h2>Learning Objectives</h2>
+<ul>
+    <li>Master the structure of Messages API requests and responses</li>
+    <li>Understand the role and configuration of key API parameters</li>
+    <li>Learn how to construct effective conversation contexts</li>
+    <li>Comprehend parameter interactions and their impact on model behavior</li>
+</ul>
+
+<h2>Messages API Request Structure</h2>
+<p>The Messages API uses a structured JSON format that defines the conversation context, model configuration, and generation parameters. Understanding this structure is fundamental to effective API integration.</p>
+
+<h3>Core Request Components</h3>
+<p>Every Messages API request consists of several essential elements:</p>
+
+<div class="code-block">
+<pre><code>{
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 1024,
+  "system": "You are a helpful assistant...",
+  "messages": [
+    {"role": "user", "content": "Hello, Claude!"}
+  ],
+  "temperature": 1.0,
+  "top_p": 1.0,
+  "top_k": 0
+}</code></pre>
+</div>
+
+<h2>Required Parameters</h2>
+
+<h3>1. Model Parameter</h3>
+<p><strong>Purpose:</strong> Specifies which Claude model to use for processing the request</p>
+<p><strong>Format:</strong> String identifier (e.g., "claude-sonnet-4-20250514")</p>
+<p><strong>Considerations:</strong></p>
+<ul>
+    <li>Must match exact model identifier including version date</li>
+    <li>Different models have different capabilities and pricing</li>
+    <li>Model selection impacts response quality, speed, and cost</li>
+    <li>Can be changed between requests without affecting conversation continuity</li>
+</ul>
+
+<h3>2. Max Tokens Parameter</h3>
+<p><strong>Purpose:</strong> Defines the maximum number of tokens the model can generate in the response</p>
+<p><strong>Format:</strong> Integer value (typically 1-4096)</p>
+<p><strong>Considerations:</strong></p>
+<ul>
+    <li><strong>Cost Control:</strong> Limits maximum response cost per request</li>
+    <li><strong>Response Length:</strong> Directly controls output verbosity</li>
+    <li><strong>Truncation Risk:</strong> Setting too low may result in incomplete responses</li>
+    <li><strong>Recommended Values:</strong>
+        <ul>
+            <li>Short answers: 256-512 tokens</li>
+            <li>Standard responses: 1024-2048 tokens</li>
+            <li>Long-form content: 2048-4096 tokens</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>3. Messages Array</h3>
+<p><strong>Purpose:</strong> Contains the conversation history and current user input</p>
+<p><strong>Format:</strong> Array of message objects with role and content properties</p>
+
+<h4>Message Structure</h4>
+<div class="code-block">
+<pre><code>"messages": [
+  {
+    "role": "user",
+    "content": "What is machine learning?"
+  },
+  {
+    "role": "assistant",
+    "content": "Machine learning is..."
+  },
+  {
+    "role": "user",
+    "content": "Can you give an example?"
+  }
+]</code></pre>
+</div>
+
+<h4>Role Types</h4>
+<ul>
+    <li><strong>user:</strong> Represents messages from the human user or application</li>
+    <li><strong>assistant:</strong> Represents previous responses from Claude</li>
+</ul>
+
+<h4>Conversation Rules</h4>
+<ul>
+    <li>Messages must alternate between user and assistant roles</li>
+    <li>Conversation must always start with a user message</li>
+    <li>Conversation must end with a user message (the current query)</li>
+    <li>Including conversation history enables context-aware responses</li>
+</ul>
+
+<h2>Optional Parameters</h2>
+
+<h3>System Parameter</h3>
+<p><strong>Purpose:</strong> Provides high-level instructions that guide model behavior throughout the conversation</p>
+<p><strong>Format:</strong> String containing system-level instructions</p>
+
+<h4>System Prompt Characteristics</h4>
+<ul>
+    <li><strong>Persistent Influence:</strong> Affects all responses in the conversation</li>
+    <li><strong>Behavioral Guidance:</strong> Defines personality, tone, and response style</li>
+    <li><strong>Constraint Setting:</strong> Establishes boundaries and operational rules</li>
+    <li><strong>Domain Expertise:</strong> Positions the model as a specialist in specific areas</li>
+</ul>
+
+<h4>Effective System Prompt Patterns</h4>
+<ul>
+    <li><strong>Role Definition:</strong> "You are an expert software architect specializing in cloud infrastructure..."</li>
+    <li><strong>Behavioral Instructions:</strong> "Always provide code examples with explanations. Be concise but thorough..."</li>
+    <li><strong>Output Formatting:</strong> "Structure responses with clear headings. Use bullet points for lists..."</li>
+    <li><strong>Constraints:</strong> "Do not provide medical advice. Redirect health questions to professionals..."</li>
+</ul>
+
+<h3>Temperature Parameter</h3>
+<p><strong>Purpose:</strong> Controls randomness and creativity in model outputs</p>
+<p><strong>Format:</strong> Float value between 0.0 and 1.0</p>
+<p><strong>Default:</strong> 1.0</p>
+
+<h4>Temperature Effects</h4>
+<table>
+    <tr>
+        <th>Temperature</th>
+        <th>Behavior</th>
+        <th>Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">0.0 - 0.3</td>
+        <td>Highly deterministic, focused, consistent</td>
+        <td>Data extraction, classification, factual Q&A</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.4 - 0.7</td>
+        <td>Balanced creativity and consistency</td>
+        <td>General conversation, content generation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.8 - 1.0</td>
+        <td>More creative, diverse, exploratory</td>
+        <td>Creative writing, brainstorming, varied outputs</td>
+    </tr>
+</table>
+
+<h4>Temperature Selection Guidelines</h4>
+<ul>
+    <li><strong>Deterministic Tasks:</strong> Use low temperature (0.0-0.3) for consistent, predictable outputs</li>
+    <li><strong>Creative Tasks:</strong> Use higher temperature (0.7-1.0) for diverse, imaginative responses</li>
+    <li><strong>Production Systems:</strong> Lower temperatures generally preferred for reliability</li>
+    <li><strong>Testing:</strong> Experiment with different values to find optimal balance</li>
+</ul>
+
+<h3>Top-P (Nucleus Sampling) Parameter</h3>
+<p><strong>Purpose:</strong> Alternative method for controlling output diversity through probability mass</p>
+<p><strong>Format:</strong> Float value between 0.0 and 1.0</p>
+<p><strong>Default:</strong> 1.0</p>
+
+<h4>How Top-P Works</h4>
+<p>Top-P sampling considers the smallest set of tokens whose cumulative probability exceeds the threshold:</p>
+<ul>
+    <li><strong>top_p = 0.9:</strong> Model considers tokens comprising top 90% of probability mass</li>
+    <li><strong>top_p = 0.5:</strong> Model considers only the most likely tokens (more focused)</li>
+    <li><strong>top_p = 1.0:</strong> All tokens considered (maximum diversity)</li>
+</ul>
+
+<h4>Top-P vs Temperature</h4>
+<ul>
+    <li><strong>Complementary Controls:</strong> Both influence output diversity through different mechanisms</li>
+    <li><strong>Recommendation:</strong> Adjust one parameter at a time; typically use default for one while tuning the other</li>
+    <li><strong>Production Practice:</strong> Most applications use default top_p (1.0) and adjust temperature only</li>
+</ul>
+
+<h3>Top-K Parameter</h3>
+<p><strong>Purpose:</strong> Limits token selection to the K most likely options</p>
+<p><strong>Format:</strong> Integer value</p>
+<p><strong>Default:</strong> 0 (disabled)</p>
+
+<h4>Top-K Behavior</h4>
+<ul>
+    <li><strong>top_k = 0:</strong> No restriction (default, recommended)</li>
+    <li><strong>top_k = 50:</strong> Consider only the 50 most likely tokens</li>
+    <li><strong>top_k = 10:</strong> Very restrictive, highly focused outputs</li>
+</ul>
+
+<h4>Usage Recommendations</h4>
+<ul>
+    <li>Generally left at default (0) for most applications</li>
+    <li>Can be useful for highly constrained generation tasks</li>
+    <li>Less commonly used than temperature and top-p</li>
+</ul>
+
+<h2>Response Structure</h2>
+<p>The API returns a structured JSON response containing the generated content and metadata:</p>
+
+<div class="code-block">
+<pre><code>{
+  "id": "msg_01XYZ...",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Hello! How can I assist you today?"
+    }
+  ],
+  "model": "claude-sonnet-4-20250514",
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 28
+  }
+}</code></pre>
+</div>
+
+<h3>Response Components</h3>
+
+<h4>1. Message ID</h4>
+<ul>
+    <li>Unique identifier for the response</li>
+    <li>Useful for logging, debugging, and support inquiries</li>
+    <li>Format: "msg_" followed by alphanumeric string</li>
+</ul>
+
+<h4>2. Content Array</h4>
+<ul>
+    <li>Contains the actual generated response</li>
+    <li>Structured as array to support future multi-modal content</li>
+    <li>Each content block has a type (currently "text")</li>
+</ul>
+
+<h4>3. Stop Reason</h4>
+<p>Indicates why the model stopped generating:</p>
+<ul>
+    <li><strong>end_turn:</strong> Model naturally completed its response</li>
+    <li><strong>max_tokens:</strong> Reached the max_tokens limit (response may be truncated)</li>
+    <li><strong>stop_sequence:</strong> Encountered a custom stop sequence</li>
+</ul>
+
+<h4>4. Usage Metadata</h4>
+<p>Critical for cost tracking and optimization:</p>
+<ul>
+    <li><strong>input_tokens:</strong> Number of tokens in the request (system + messages)</li>
+    <li><strong>output_tokens:</strong> Number of tokens generated in the response</li>
+    <li><strong>Cost Calculation:</strong> Billing based on both input and output token counts</li>
+</ul>
+
+<h2>Advanced Parameter Patterns</h2>
+
+<h3>Stop Sequences</h3>
+<p>Custom strings that halt generation when encountered:</p>
+<div class="code-block">
+<pre><code>"stop_sequences": ["END", "###", "\n\nUser:"]</code></pre>
+</div>
+<ul>
+    <li>Useful for structured output generation</li>
+    <li>Prevents model from continuing beyond desired endpoint</li>
+    <li>Can define multiple stop sequences</li>
+</ul>
+
+<h3>Metadata Parameter</h3>
+<p>Attach custom metadata to requests for tracking and analytics:</p>
+<div class="code-block">
+<pre><code>"metadata": {
+  "user_id": "user_12345",
+  "session_id": "session_abc",
+  "application": "customer_support"
+}</code></pre>
+</div>
+
+<h2>Parameter Optimization Strategies</h2>
+
+<h3>For Consistency</h3>
+<ul>
+    <li>Set temperature to 0.0-0.2</li>
+    <li>Use specific, detailed system prompts</li>
+    <li>Provide clear examples in messages</li>
+    <li>Set appropriate max_tokens to avoid truncation</li>
+</ul>
+
+<h3>For Creativity</h3>
+<ul>
+    <li>Increase temperature to 0.8-1.0</li>
+    <li>Use open-ended system prompts</li>
+    <li>Allow higher max_tokens for exploration</li>
+    <li>Consider adjusting top_p for controlled diversity</li>
+</ul>
+
+<h3>For Cost Optimization</h3>
+<ul>
+    <li>Set max_tokens to minimum necessary value</li>
+    <li>Use concise system prompts</li>
+    <li>Trim conversation history to essential context</li>
+    <li>Select appropriate model tier for task complexity</li>
+</ul>
+
+<h2>Common Parameter Mistakes</h2>
+<ul>
+    <li><strong>Max Tokens Too Low:</strong> Results in truncated, incomplete responses</li>
+    <li><strong>Overly Long System Prompts:</strong> Increases costs without proportional benefit</li>
+    <li><strong>Inconsistent Temperature:</strong> Causes unpredictable output quality variations</li>
+    <li><strong>Ignoring Usage Metadata:</strong> Misses opportunities for cost optimization</li>
+    <li><strong>Not Testing Parameters:</strong> Deploying without validating parameter effects</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Messages API requests require model, max_tokens, and messages parameters</li>
+    <li>System prompts provide persistent behavioral guidance throughout conversations</li>
+    <li>Temperature controls output randomness and creativity (0.0 = deterministic, 1.0 = creative)</li>
+    <li>Top-P and Top-K offer alternative diversity control mechanisms</li>
+    <li>Response metadata includes usage statistics essential for cost tracking</li>
+    <li>Stop reason indicates whether responses completed naturally or were truncated</li>
+    <li>Parameter optimization should balance quality, consistency, and cost requirements</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

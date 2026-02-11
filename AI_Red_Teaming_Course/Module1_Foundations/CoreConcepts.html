@@ -1,0 +1,257 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <title>Foundations of AI Red Teaming</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: Foundations of AI Red Teaming</h1>
+
+<h2>Module Objectives</h2>
+<p>By the end of this module, you will be able to:</p>
+<ul>
+<li>Define AI red teaming and distinguish it from traditional security testing approaches</li>
+<li>Identify the unique threat landscape and attack surface of generative AI systems</li>
+<li>Understand the core objectives and goals of AI red team engagements</li>
+<li>Recognize the organizational and ethical considerations in adversarial AI testing</li>
+</ul>
+
+<h2>What is AI Red Teaming?</h2>
+<p>AI red teaming is a systematic, adversarial approach to evaluating the security, safety, and robustness of artificial intelligence systems, particularly large language models (LLMs) and generative AI applications. Unlike traditional penetration testing, which focuses on exploiting technical vulnerabilities in software infrastructure, AI red teaming addresses emergent behaviors, alignment failures, and novel attack vectors unique to machine learning systems.</p>
+
+<p>The practice originated from military and cybersecurity contexts, where "red teams" simulate adversarial actors to test defensive capabilities. In the AI domain, red teaming has evolved to encompass not only security concerns but also safety, fairness, and ethical considerations. This multidimensional approach reflects the complex risk landscape of AI systems that can generate harmful content, leak sensitive information, exhibit bias, or behave unpredictably under adversarial conditions.</p>
+
+<h3>Key Characteristics of AI Red Teaming:</h3>
+<ul>
+<li><strong>Adversarial Mindset:</strong> Testers adopt the perspective of malicious actors, attempting to circumvent safety measures and exploit system weaknesses</li>
+<li><strong>Emergent Risk Focus:</strong> Unlike traditional testing that targets known vulnerability classes, AI red teaming discovers novel failure modes that emerge from model behavior</li>
+<li><strong>Iterative and Adaptive:</strong> Testing evolves as models are updated and new attack techniques are discovered</li>
+<li><strong>Multidisciplinary:</strong> Requires expertise spanning security, machine learning, domain knowledge, and human factors</li>
+<li><strong>Context-Dependent:</strong> Testing strategies must be tailored to specific use cases, deployment contexts, and risk tolerances</li>
+</ul>
+
+<h2>The AI Threat Landscape</h2>
+<p>Generative AI systems introduce a fundamentally different threat model compared to traditional software. Understanding this landscape is essential for effective red teaming.</p>
+
+<h3>Traditional Software vs. AI Systems</h3>
+<table>
+<tr>
+<th>Aspect</th>
+<th>Traditional Software</th>
+<th>AI Systems</th>
+</tr>
+<tr>
+<td><strong>Behavior</strong></td>
+<td>Deterministic, rule-based</td>
+<td>Probabilistic, learned from data</td>
+</tr>
+<tr>
+<td><strong>Vulnerabilities</strong></td>
+<td>Code bugs, configuration errors</td>
+<td>Training data issues, alignment failures, emergent behaviors</td>
+</tr>
+<tr>
+<td><strong>Attack Surface</strong></td>
+<td>APIs, network protocols, authentication</td>
+<td>Prompts, training data, model weights, inference pipeline</td>
+</tr>
+<tr>
+<td><strong>Testing Approach</strong></td>
+<td>Known vulnerability patterns, CVE databases</td>
+<td>Adversarial exploration, novel attack discovery</td>
+</tr>
+<tr>
+<td><strong>Failure Modes</strong></td>
+<td>Crashes, unauthorized access, data breaches</td>
+<td>Harmful outputs, bias, hallucinations, manipulation</td>
+</tr>
+</table>
+
+<h3>Primary Threat Categories</h3>
+
+<h4>1. Safety Threats</h4>
+<p>Safety threats involve the generation of harmful, dangerous, or unethical content that violates organizational policies or societal norms. Examples include:</p>
+<ul>
+<li>Instructions for illegal activities (weapon manufacturing, drug synthesis, hacking)</li>
+<li>Hate speech, harassment, or discriminatory content</li>
+<li>Self-harm or violence promotion</li>
+<li>Misinformation or disinformation that could cause harm</li>
+<li>Privacy violations through generation of realistic but false personal information</li>
+</ul>
+
+<h4>2. Security Threats</h4>
+<p>Security threats target the confidentiality, integrity, and availability of AI systems and the data they process:</p>
+<ul>
+<li><strong>Prompt Injection:</strong> Malicious instructions embedded in user inputs or external data that override system behavior</li>
+<li><strong>Data Exfiltration:</strong> Extraction of training data, system prompts, or sensitive information the model has memorized</li>
+<li><strong>Model Inversion:</strong> Reconstructing training data or inferring private information about training examples</li>
+<li><strong>Backdoor Attacks:</strong> Exploiting hidden triggers embedded during training that cause specific malicious behaviors</li>
+<li><strong>Denial of Service:</strong> Crafting inputs that cause excessive resource consumption or system failures</li>
+</ul>
+
+<h4>3. Fairness and Bias Threats</h4>
+<p>These threats exploit or amplify biases in model outputs, leading to discriminatory or unfair outcomes:</p>
+<ul>
+<li>Stereotypical or prejudiced responses based on protected characteristics (race, gender, religion)</li>
+<li>Differential performance across demographic groups</li>
+<li>Reinforcement of harmful social biases present in training data</li>
+<li>Unfair treatment in decision-making applications (hiring, lending, criminal justice)</li>
+</ul>
+
+<h4>4. Robustness Threats</h4>
+<p>Robustness threats target the reliability and consistency of model behavior:</p>
+<ul>
+<li><strong>Hallucinations:</strong> Confident generation of factually incorrect or nonsensical information</li>
+<li><strong>Adversarial Examples:</strong> Carefully crafted inputs that cause misclassification or unexpected outputs</li>
+<li><strong>Distribution Shift:</strong> Performance degradation when inputs differ from training data distribution</li>
+<li><strong>Inconsistency:</strong> Contradictory responses to semantically similar queries</li>
+</ul>
+
+<h2>Red Team Goals and Objectives</h2>
+<p>A well-structured red team engagement begins with clearly defined objectives aligned with organizational risk priorities. Common goals include:</p>
+
+<h3>Primary Objectives</h3>
+<table>
+<tr>
+<th>Objective</th>
+<th>Description</th>
+<th>Success Criteria</th>
+</tr>
+<tr>
+<td><strong>Safety Validation</strong></td>
+<td>Verify that content filters and safety mechanisms prevent harmful outputs</td>
+<td>Identify bypasses that allow generation of prohibited content categories</td>
+</tr>
+<tr>
+<td><strong>Security Assessment</strong></td>
+<td>Test resistance to prompt injection, data extraction, and system manipulation</td>
+<td>Demonstrate successful extraction of system prompts or sensitive data</td>
+</tr>
+<tr>
+<td><strong>Bias Detection</strong></td>
+<td>Identify discriminatory outputs or unfair treatment across demographic groups</td>
+<td>Document statistically significant performance disparities</td>
+</tr>
+<tr>
+<td><strong>Robustness Testing</strong></td>
+<td>Evaluate consistency, factual accuracy, and resistance to adversarial inputs</td>
+<td>Trigger hallucinations or inconsistent responses</td>
+</tr>
+<tr>
+<td><strong>Alignment Verification</strong></td>
+<td>Confirm model behavior aligns with intended values and instructions</td>
+<td>Demonstrate misalignment between stated objectives and actual behavior</td>
+</tr>
+</table>
+
+<h3>Scope Definition</h3>
+<p>Effective red teaming requires clear scope boundaries. Key scoping considerations include:</p>
+<ul>
+<li><strong>Risk Categories:</strong> Which threat types to prioritize (safety, security, bias, robustness)</li>
+<li><strong>Use Case Context:</strong> Testing scenarios relevant to actual deployment (customer service, content generation, decision support)</li>
+<li><strong>User Personas:</strong> Different attacker profiles (malicious users, curious experimenters, automated bots)</li>
+<li><strong>Attack Sophistication:</strong> Range from simple jailbreaks to sophisticated multi-turn attacks</li>
+<li><strong>Evaluation Metrics:</strong> How to measure success (bypass rate, severity scoring, time-to-exploit)</li>
+</ul>
+
+<h2>The Red Team Methodology Framework</h2>
+<p>A systematic methodology ensures comprehensive coverage and reproducible results. The standard framework consists of six phases:</p>
+
+<h3>Phase 1: Planning and Scoping</h3>
+<p>Establish engagement objectives, define success criteria, identify stakeholders, and determine resource requirements. This phase includes:</p>
+<ul>
+<li>Threat modeling to identify likely attack vectors</li>
+<li>Risk prioritization based on business impact</li>
+<li>Rules of engagement defining acceptable testing boundaries</li>
+<li>Communication protocols for reporting critical findings</li>
+</ul>
+
+<h3>Phase 2: Reconnaissance</h3>
+<p>Gather information about the target system including:</p>
+<ul>
+<li>Model architecture and capabilities (if available)</li>
+<li>Intended use cases and user interactions</li>
+<li>Existing safety measures and content policies</li>
+<li>Known limitations or documented failure modes</li>
+<li>Similar systems and published vulnerabilities</li>
+</ul>
+
+<h3>Phase 3: Test Case Design</h3>
+<p>Develop adversarial prompts and attack scenarios covering identified threat vectors. Test cases should include:</p>
+<ul>
+<li>Direct attacks (explicit requests for prohibited content)</li>
+<li>Indirect attacks (obfuscation, encoding, role-play)</li>
+<li>Multi-turn attacks (gradual manipulation across conversation)</li>
+<li>Context injection (malicious instructions in external data)</li>
+<li>Edge cases and boundary conditions</li>
+</ul>
+
+<h3>Phase 4: Execution</h3>
+<p>Systematically execute test cases while documenting all inputs, outputs, and observations. Best practices include:</p>
+<ul>
+<li>Maintain detailed logs of all interactions</li>
+<li>Capture screenshots or recordings of successful attacks</li>
+<li>Note partial successes and near-misses</li>
+<li>Iterate on promising attack vectors</li>
+<li>Test variations to understand attack boundaries</li>
+</ul>
+
+<h3>Phase 5: Analysis and Scoring</h3>
+<p>Evaluate findings based on severity, likelihood, and business impact. Common severity classifications:</p>
+<ul>
+<li><strong>Critical:</strong> Immediate risk of significant harm (e.g., reliable safety bypass for illegal content)</li>
+<li><strong>High:</strong> Serious vulnerabilities with moderate exploitation difficulty</li>
+<li><strong>Medium:</strong> Concerning issues requiring mitigation but with limited immediate impact</li>
+<li><strong>Low:</strong> Minor inconsistencies or edge cases with minimal risk</li>
+</ul>
+
+<h3>Phase 6: Reporting and Remediation</h3>
+<p>Communicate findings to stakeholders with actionable recommendations. Effective reports include:</p>
+<ul>
+<li>Executive summary for non-technical audiences</li>
+<li>Detailed technical findings with reproduction steps</li>
+<li>Risk assessment and business impact analysis</li>
+<li>Prioritized remediation recommendations</li>
+<li>Metrics and trends compared to previous assessments</li>
+</ul>
+
+<h2>Organizational Considerations</h2>
+
+<h3>Red Team Composition</h3>
+<p>Effective red teams require diverse expertise and perspectives:</p>
+<ul>
+<li><strong>Security Engineers:</strong> Traditional penetration testing and attack methodology expertise</li>
+<li><strong>ML Engineers:</strong> Understanding of model architectures, training processes, and technical vulnerabilities</li>
+<li><strong>Domain Experts:</strong> Knowledge of harmful content, regulations, and context-specific risks</li>
+<li><strong>Diverse Perspectives:</strong> Team members from varied cultural, demographic, and professional backgrounds to identify different bias patterns</li>
+<li><strong>Ethical Hackers:</strong> Creative adversarial thinking and social engineering skills</li>
+</ul>
+
+<h3>Ethical and Legal Considerations</h3>
+<p>AI red teaming involves generating and evaluating potentially harmful content, raising important ethical questions:</p>
+<ul>
+<li><strong>Psychological Safety:</strong> Protect team members from exposure to disturbing content through rotation, counseling resources, and clear boundaries</li>
+<li><strong>Data Handling:</strong> Secure storage and handling of adversarial examples and model outputs</li>
+<li><strong>Legal Compliance:</strong> Ensure testing activities comply with relevant laws and regulations</li>
+<li><strong>Responsible Disclosure:</strong> Establish protocols for reporting vulnerabilities without enabling malicious exploitation</li>
+<li><strong>Informed Consent:</strong> Ensure all participants understand the nature of the work and potential exposures</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>AI red teaming is a specialized discipline distinct from traditional security testing, addressing unique risks of generative AI systems</li>
+<li>The threat landscape encompasses safety, security, fairness, and robustness dimensions requiring multidisciplinary expertise</li>
+<li>Effective red teaming follows a structured methodology from planning through remediation</li>
+<li>Success requires clear objectives, systematic execution, and diverse team composition</li>
+<li>Ethical considerations and psychological safety are paramount when working with potentially harmful content</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

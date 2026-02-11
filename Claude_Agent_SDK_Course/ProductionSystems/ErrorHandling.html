@@ -1,0 +1,255 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Error Handling and Recovery</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Error Handling and Recovery</h1>
+
+<h2>Lesson Objectives</h2>
+<p>In this lesson, you will:</p>
+<ul>
+    <li>Understand common agent error scenarios</li>
+    <li>Learn error handling strategies and patterns</li>
+    <li>Implement robust retry logic</li>
+    <li>Design graceful failure modes</li>
+</ul>
+
+<h2>Common Agent Error Scenarios</h2>
+
+<table>
+    <tr>
+        <th>Error Type</th>
+        <th>Cause</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Tool Execution Failure</td>
+        <td>API down, invalid parameters, timeout</td>
+        <td>Agent cannot complete action</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Invalid Tool Selection</td>
+        <td>Agent chooses wrong tool for task</td>
+        <td>Incorrect results or failure</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Overflow</td>
+        <td>Conversation exceeds token limit</td>
+        <td>Agent loses context or crashes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Parsing Errors</td>
+        <td>Malformed tool results or responses</td>
+        <td>Agent cannot process information</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Rate Limit Exceeded</td>
+        <td>Too many requests too quickly</td>
+        <td>Requests rejected</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Authorization Failure</td>
+        <td>Insufficient permissions</td>
+        <td>Access denied to resources</td>
+    </tr>
+</table>
+
+<h2>Error Handling Strategies</h2>
+
+<h3>1. Retry with Exponential Backoff</h3>
+<blockquote>
+def execute_with_retry(tool, params, max_attempts=3):
+    for attempt in range(max_attempts):
+        try:
+            return tool.execute(params)
+        except TransientError as e:
+            if attempt < max_attempts - 1:
+                wait_time = 2 ** attempt  # 1s, 2s, 4s
+                sleep(wait_time)
+            else:
+                raise
+</blockquote>
+
+<p><strong>Use For:</strong> Network errors, timeouts, temporary service unavailability</p>
+
+<h3>2. Fallback to Alternative Tools</h3>
+<blockquote>
+try:
+    result = primary_search_tool(query)
+except ToolError:
+    result = backup_search_tool(query)
+except ToolError:
+    result = manual_search_prompt(query)
+</blockquote>
+
+<p><strong>Use For:</strong> Tool unavailability, performance issues</p>
+
+<h3>3. Graceful Degradation</h3>
+<blockquote>
+try:
+    detailed_result = get_full_data(id)
+except Error:
+    basic_result = get_cached_data(id)
+    add_warning("Using cached data, may be outdated")
+    return basic_result
+</blockquote>
+
+<p><strong>Use For:</strong> Non-critical failures where partial results are acceptable</p>
+
+<h3>4. Circuit Breaker Pattern</h3>
+<blockquote>
+if tool_failure_rate > threshold:
+    circuit_open = True
+    return "Service temporarily unavailable"
+
+# After cooldown period
+if circuit_half_open:
+    try_limited_requests()
+    if success:
+        circuit_closed = True
+</blockquote>
+
+<p><strong>Use For:</strong> Protecting against cascading failures</p>
+
+<h2>Error Recovery Patterns</h2>
+
+<h3>Self-Correction</h3>
+<p>Agent recognizes and fixes its own mistakes:</p>
+
+<blockquote>
+Agent: [calls tool with wrong parameters]
+Tool: Error - Invalid date format
+Agent: "I see the error. Let me correct the date format and try again"
+Agent: [calls tool with corrected parameters]
+Tool: Success
+</blockquote>
+
+<h3>Alternative Approach</h3>
+<p>Agent tries different method when first approach fails:</p>
+
+<blockquote>
+Approach 1: Direct database query → Failed
+Approach 2: Search API → Failed  
+Approach 3: Ask user for information → Success
+</blockquote>
+
+<h3>Partial Success Handling</h3>
+<p>Agent proceeds with available data when some operations fail:</p>
+
+<blockquote>
+Task: Get weather for 5 cities
+Results: 3 succeeded, 2 failed
+
+Agent: "I have weather for New York, London, and Tokyo. 
+I couldn't retrieve data for Paris and Sydney due to service issues. 
+Would you like me to try again for those cities?"
+</blockquote>
+
+<h2>Error Communication</h2>
+
+<h3>User-Friendly Error Messages</h3>
+
+<p><strong>Bad:</strong> "NullPointerException at line 42"</p>
+<p><strong>Good:</strong> "I couldn't find that information. Could you provide more details?"</p>
+
+<p><strong>Bad:</strong> "HTTP 503 Service Unavailable"</p>
+<p><strong>Good:</strong> "The service is temporarily unavailable. I'll try again in a moment."</p>
+
+<h3>Error Message Components</h3>
+<ul>
+    <li><strong>What happened:</strong> Clear description of the error</li>
+    <li><strong>Why it happened:</strong> Explanation if helpful</li>
+    <li><strong>What's next:</strong> What the agent will do</li>
+    <li><strong>User action:</strong> What user can do (if anything)</li>
+</ul>
+
+<h2>Logging and Debugging</h2>
+
+<h3>Structured Error Logging</h3>
+<blockquote>
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "level": "ERROR",
+  "agent_id": "agent_123",
+  "user_id": "user_456",
+  "error_type": "ToolExecutionError",
+  "tool_name": "search_database",
+  "error_message": "Connection timeout",
+  "parameters": {"query": "..."},
+  "stack_trace": "...",
+  "recovery_attempted": true,
+  "recovery_successful": false
+}
+</blockquote>
+
+<h3>Debug Mode</h3>
+<p>Enhanced logging for troubleshooting:</p>
+
+<ul>
+    <li>Log all tool calls and results</li>
+    <li>Include agent reasoning steps</li>
+    <li>Track token usage per turn</li>
+    <li>Record timing information</li>
+    <li>Capture full context state</li>
+</ul>
+
+<h2>Testing Error Scenarios</h2>
+
+<h3>Fault Injection Testing</h3>
+<blockquote>
+Test scenarios:
+- Tool returns error 50% of the time
+- Tool times out randomly
+- Tool returns malformed data
+- Rate limits triggered
+- Network failures simulated
+</blockquote>
+
+<h3>Edge Case Testing</h3>
+<ul>
+    <li>Empty results from tools</li>
+    <li>Extremely large datasets</li>
+    <li>Invalid user inputs</li>
+    <li>Concurrent request conflicts</li>
+    <li>Partial data availability</li>
+</ul>
+
+<h2>Error Prevention</h2>
+
+<h3>Input Validation</h3>
+<blockquote>
+Before calling tool:
+- Validate all required parameters present
+- Check parameter types and formats
+- Verify values within acceptable ranges
+- Sanitize inputs to prevent injection
+</blockquote>
+
+<h3>Defensive Programming</h3>
+<ul>
+    <li>Assume tools can fail</li>
+    <li>Validate all external data</li>
+    <li>Set reasonable timeouts</li>
+    <li>Handle null/undefined values</li>
+    <li>Use try-catch blocks appropriately</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Common errors include tool failures, invalid selections, context overflow, and rate limits</li>
+    <li>Retry with exponential backoff handles transient errors effectively</li>
+    <li>Fallback strategies and graceful degradation ensure agents remain functional</li>
+    <li>User-friendly error messages explain what happened and what's next</li>
+    <li>Comprehensive logging and testing enable rapid debugging and improvement</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

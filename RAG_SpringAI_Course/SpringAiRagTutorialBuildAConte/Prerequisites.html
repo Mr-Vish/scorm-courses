@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prerequisites</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prerequisites</h1>
+
+<p>To follow this tutorial, you will need:</p>
+
+<ol>
+    <li><strong>Java 21</strong> or later.</li>
+    <li><strong>Maven</strong> or <strong>Gradle</strong>.</li>
+    <li>An <strong>API Key</strong> for an LLM provider (e.g., OpenAI, Google Gemini, etc.). We will use <strong>OpenAI</strong> for this example.</li>
+    <li>The latest <strong>Spring AI Bill of Materials (BOM)</strong>. We will assume the latest stable version of Spring AI is used.</li>
+</ol>
+
+<h3><strong>Step 1: Project Setup (Using Maven)</strong></h3>
+
+<p>Create a new Spring Boot project (e.g., using <strong>start.spring.io</strong>) and add the following dependencies. We will use the <strong>OpenAI</strong> model and the <strong>PostgreSQL/PGVector</strong> vector store for a robust, production-ready setup.</p>
+
+<p>In your pom.xml, include the Spring AI BOM and the necessary starters:</p>
+
+<p>XML</p>
+
+<p>&lt;dependencyManagement&gt;</p>
+
+<p>    &lt;dependencies&gt;</p>
+
+<p>        &lt;dependency&gt;</p>
+
+<p>            &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;</p>
+
+<p>            &lt;artifactId&gt;spring-ai-bom&lt;/artifactId&gt;</p>
+
+<p>            &lt;version&gt;1.0.0&lt;/version&gt; &lt;type&gt;pom&lt;/type&gt;</p>
+
+<p>            &lt;scope&gt;import&lt;/scope&gt;</p>
+
+<p>        &lt;/dependency&gt;</p>
+
+<p>    &lt;/dependencies&gt;</p>
+
+<p>&lt;/dependencyManagement&gt;</p>
+
+<p>&lt;dependencies&gt;</p>
+
+<p>    &lt;dependency&gt;</p>
+
+<p>        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</p>
+
+<p>        &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;</p>
+
+<p>    &lt;/dependency&gt;</p>
+
+<p>    &lt;dependency&gt;</p>
+
+<p>        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;</p>
+
+<p>        &lt;artifactId&gt;spring-ai-openai-spring-boot-starter&lt;/artifactId&gt;</p>
+
+<p>    &lt;/dependency&gt;</p>
+
+<p>    &lt;dependency&gt;</p>
+
+<p>        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;</p>
+
+<p>        &lt;artifactId&gt;spring-ai-pgvector-store-spring-boot-starter&lt;/artifactId&gt;</p>
+
+<p>    &lt;/dependency&gt;</p>
+
+<p>    &lt;dependency&gt;</p>
+
+<p>        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;</p>
+
+<p>        &lt;artifactId&gt;spring-ai-pdf-document-reader&lt;/artifactId&gt;</p>
+
+<p>    &lt;/dependency&gt;</p>
+
+<p>    &lt;dependency&gt;</p>
+
+<p>        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</p>
+
+<p>        &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;</p>
+
+<p>    &lt;/dependency&gt;</p>
+
+<p>    &lt;dependency&gt;</p>
+
+<p>        &lt;groupId&gt;org.postgresql&lt;/groupId&gt;</p>
+
+<p>        &lt;artifactId&gt;postgresql&lt;/artifactId&gt;</p>
+
+<p>        &lt;scope&gt;runtime&lt;/scope&gt;</p>
+
+<p>    &lt;/dependency&gt;</p>
+
+<p>    &lt;/dependencies&gt;</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

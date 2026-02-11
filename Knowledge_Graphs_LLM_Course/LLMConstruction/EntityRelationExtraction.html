@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Entity and Relation Extraction with LLMs</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Entity and Relation Extraction with LLMs</h1>
+
+<h2>Why LLMs for Knowledge Graph Construction?</h2>
+<p>Large Language Models have transformed knowledge graph construction by automating the extraction of structured information from unstructured text. Unlike traditional rule-based or supervised learning approaches, LLMs can understand context, handle ambiguity, and extract complex relationships with minimal training data.</p>
+
+<h2>LLM Advantages for Extraction</h2>
+<table>
+    <tr><th>Capability</th><th>Traditional NLP</th><th>LLM-Based</th></tr>
+    <tr>
+        <td class="rowheader">Training Data</td>
+        <td>Requires large labeled datasets</td>
+        <td>Works with few-shot or zero-shot prompts</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Entity Types</td>
+        <td>Limited to predefined types</td>
+        <td>Flexible, can extract custom types</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Understanding</td>
+        <td>Limited context window</td>
+        <td>Deep semantic understanding</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Relationship Complexity</td>
+        <td>Simple binary relations</td>
+        <td>Complex, multi-hop relationships</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Adaptation</td>
+        <td>Requires retraining</td>
+        <td>Prompt engineering</td>
+    </tr>
+</table>
+
+<h2>Structured Extraction with JSON Mode</h2>
+<p>Modern LLMs support structured output formats, ensuring consistent extraction results:</p>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+import json
+
+client = OpenAI()
+
+def extract_entities_and_relations(text: str, entity_types: list, relation_types: list) -> dict:
+    """Extract knowledge graph triples from unstructured text."""
+    
+    system_prompt = f"""You are a knowledge graph extraction system.
+Extract entities and relationships from the given text.
+
+Entity Types: {', '.join(entity_types)}
+Relation Types: {', '.join(relation_types)}
+
+Return JSON with:
+- 'entities': list of {{"name": str, "type": str, "properties": dict}}
+- 'relations': list of {{"source": str, "relation": str, "target": str, "properties": dict}}
+"""
+    
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
+        ],
+        temperature=0.0
+    )
+    
+    return json.loads(response.choices[0].message.content)
+
+# Example usage
+entity_types = ["Person", "Organization", "Location", "Product", "Technology"]
+relation_types = ["FOUNDED", "WORKS_AT", "LOCATED_IN", "DEVELOPED", "ACQUIRED"]
+
+text = """
+Apple Inc., founded by Steve Jobs, Steve Wozniak, and Ronald Wayne in 1976,
+is headquartered in Cupertino, California. Tim Cook has served as CEO since 2011.
+The company released the iPhone in 2007, revolutionizing the smartphone industry.
+In 2014, Apple acquired Beats Electronics for $3 billion.
+"""
+
+result = extract_entities_and_relations(text, entity_types, relation_types)
+
+# Expected output structure:
+# {
+#   "entities": [
+#     {"name": "Apple Inc.", "type": "Organization", "properties": {"founded": 1976}},
+#     {"name": "Steve Jobs", "type": "Person", "properties": {}},
+#     {"name": "Steve Wozniak", "type": "Person", "properties": {}},
+#     {"name": "Ronald Wayne", "type": "Person", "properties": {}},
+#     {"name": "Tim Cook", "type": "Person", "properties": {"role": "CEO", "since": 2011}},
+#     {"name": "Cupertino, California", "type": "Location", "properties": {}},
+#     {"name": "iPhone", "type": "Product", "properties": {"released": 2007}},
+#     {"name": "Beats Electronics", "type": "Organization", "properties": {}}
+#   ],
+#   "relations": [
+#     {"source": "Steve Jobs", "relation": "FOUNDED", "target": "Apple Inc.", "properties": {"year": 1976}},
+#     {"source": "Steve Wozniak", "relation": "FOUNDED", "target": "Apple Inc.", "properties": {"year": 1976}},
+#     {"source": "Ronald Wayne", "relation": "FOUNDED", "target": "Apple Inc.", "properties": {"year": 1976}},
+#     {"source": "Tim Cook", "relation": "WORKS_AT", "target": "Apple Inc.", "properties": {"position": "CEO"}},
+#     {"source": "Apple Inc.", "relation": "LOCATED_IN", "target": "Cupertino, California", "properties": {}},
+#     {"source": "Apple Inc.", "relation": "DEVELOPED", "target": "iPhone", "properties": {"year": 2007}},
+#     {"source": "Apple Inc.", "relation": "ACQUIRED", "target": "Beats Electronics", "properties": {"year": 2014, "amount": "$3 billion"}}
+#   ]
+# }
+</code></pre>
+</div>
+
+<h2>Entity Resolution and Deduplication</h2>
+<p>Different text sources may refer to the same entity using various names. LLMs excel at identifying these duplicates:</p>
+<div class="code-block">
+<pre><code>def resolve_entity_duplicates(entities: list[dict]) -> dict:
+    """Use LLM to identify and merge duplicate entities."""
+    
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": f"""Identify entities that refer to the same real-world object.
+Group them and choose the most complete canonical name.
+
+Entities: {json.dumps(entities, indent=2)}
+
+Return JSON: {{"groups": [{{"canonical": str, "aliases": [str], "mergedProperties": dict}}]}}
+"""
+        }],
+        temperature=0.0
+    )
+    
+    return json.loads(response.choices[0].message.content)
+
+# Example
+entities = [
+    {"name": "Apple", "type": "Organization", "properties": {}},
+    {"name": "Apple Inc.", "type": "Organization", "properties": {"founded": 1976}},
+    {"name": "AAPL", "type": "Organization", "properties": {"ticker": "AAPL"}},
+    {"name": "Apple Computer", "type": "Organization", "properties": {}}
+]
+
+resolved = resolve_entity_duplicates(entities)
+# Output:
+# {
+#   "groups": [{
+#     "canonical": "Apple Inc.",
+#     "aliases": ["Apple", "AAPL", "Apple Computer"],
+#     "mergedProperties": {"founded": 1976, "ticker": "AAPL"}
+#   }]
+# }
+</code></pre>
+</div>
+
+<h2>Handling Long Documents</h2>
+<p>For documents exceeding context limits, use chunking with overlap to maintain relationship continuity:</p>
+<div class="code-block">
+<pre><code>def chunk_text(text: str, chunk_size: int = 2000, overlap: int = 200) -> list[str]:
+    """Split text into overlapping chunks."""
+    chunks = []
+    start = 0
+    
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end]
+        chunks.append(chunk)
+        start = end - overlap
+    
+    return chunks
+
+def extract_from_long_document(document: str) -> dict:
+    """Extract entities and relations from a long document."""
+    chunks = chunk_text(document)
+    
+    all_entities = []
+    all_relations = []
+    
+    for i, chunk in enumerate(chunks):
+        print(f"Processing chunk {i+1}/{len(chunks)}...")
+        result = extract_entities_and_relations(chunk, entity_types, relation_types)
+        all_entities.extend(result["entities"])
+        all_relations.extend(result["relations"])
+    
+    # Deduplicate entities across chunks
+    resolved = resolve_entity_duplicates(all_entities)
+    
+    # Deduplicate relations
+    unique_relations = []
+    seen = set()
+    for rel in all_relations:
+        key = (rel["source"], rel["relation"], rel["target"])
+        if key not in seen:
+            seen.add(key)
+            unique_relations.append(rel)
+    
+    return {
+        "entities": resolved["groups"],
+        "relations": unique_relations
+    }
+</code></pre>
+</div>
+
+<h2>Quality Improvement Techniques</h2>
+
+<h3>1. Schema-Guided Extraction</h3>
+<p>Provide explicit entity and relationship type definitions to improve consistency:</p>
+<div class="code-block">
+<pre><code>schema = {
+    "entity_types": {
+        "Person": "An individual human being with a name",
+        "Organization": "A company, institution, or formal group",
+        "Location": "A geographical place, city, or address"
+    },
+    "relation_types": {
+        "WORKS_AT": "Person is employed by Organization",
+        "FOUNDED": "Person established or created Organization",
+        "LOCATED_IN": "Entity is physically situated in Location"
+    }
+}
+</code></pre>
+</div>
+
+<h3>2. Few-Shot Examples</h3>
+<p>Include examples in your prompt to guide the model:</p>
+<div class="code-block">
+<pre><code>few_shot_examples = """
+Example 1:
+Text: "Marie Curie worked at the University of Paris."
+Output: {
+  "entities": [
+    {"name": "Marie Curie", "type": "Person"},
+    {"name": "University of Paris", "type": "Organization"}
+  ],
+  "relations": [
+    {"source": "Marie Curie", "relation": "WORKS_AT", "target": "University of Paris"}
+  ]
+}
+
+Example 2:
+Text: "Microsoft was founded by Bill Gates in 1975."
+Output: {
+  "entities": [
+    {"name": "Microsoft", "type": "Organization", "properties": {"founded": 1975}},
+    {"name": "Bill Gates", "type": "Person"}
+  ],
+  "relations": [
+    {"source": "Bill Gates", "relation": "FOUNDED", "target": "Microsoft"}
+  ]
+}
+"""
+</code></pre>
+</div>
+
+<h3>3. Validation and Confidence Scoring</h3>
+<div class="code-block">
+<pre><code>def extract_with_confidence(text: str) -> dict:
+    """Extract entities with confidence scores."""
+    
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": f"""Extract entities and relations with confidence scores (0.0-1.0).
+            
+Text: {text}
+
+Return JSON with confidence for each entity and relation."""
+        }],
+        temperature=0.0
+    )
+    
+    result = json.loads(response.choices[0].message.content)
+    
+    # Filter low-confidence extractions
+    filtered_entities = [e for e in result["entities"] if e.get("confidence", 1.0) >= 0.7]
+    filtered_relations = [r for r in result["relations"] if r.get("confidence", 1.0) >= 0.7]
+    
+    return {
+        "entities": filtered_entities,
+        "relations": filtered_relations
+    }
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

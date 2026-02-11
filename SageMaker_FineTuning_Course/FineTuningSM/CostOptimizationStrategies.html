@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cost Optimization for SageMaker Fine-Tuning</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cost Optimization: Maximizing ROI on SageMaker</h1>
+
+<div class="content-section">
+<h2>1. The High Cost of AI Innovation</h2>
+<p>Fine-tuning Large Language Models is expensive. A single training run can cost hundreds or even thousands of dollars depending on the model size and hardware used. Without a proactive strategy, your AI budget can be quickly exhausted. Amazon SageMaker provides several native features to help you optimize costs without sacrificing the quality of your aligned models.</p>
+
+<h2>2. Managed Spot Training</h2>
+<p>The most significant cost saver for SageMaker training is <strong>Managed Spot Training</strong>. AWS has spare capacity in its data centers that it offers at a deep discount (up to 90% off the on-demand price).
+    <ul>
+        <li><strong>How it Works:</strong> You tell SageMaker you want to use spot instances. If AWS needs that capacity back, your training job is "interrupted."</li>
+        <li><strong>Automatic Checkpointing:</strong> SageMaker manages the interruption for you. It will pause your job and automatically resume it from the last saved checkpoint as soon as capacity becomes available again.</li>
+        <li><strong>Best Practice:</strong> Ensure your training script saves checkpoints to S3 frequently (e.g., every 500 steps) so that you don't lose progress during an interruption.</li>
+    </ul>
+</p>
+
+<h2>3. SageMaker Training Warm Pools</h2>
+<p>Iterative fine-tuning involves running many training jobs in sequence. Normally, each job incurs a "start-up" penalty (several minutes) while SageMaker provisions the instance and pulls the Docker container.
+    <ul>
+        <li><strong>Warm Pools:</strong> By enabling warm pools, SageMaker keeps the instance "hot" for a specified period after a job finishes. If you start a new job within that window, it begins almost instantly.</li>
+        <li><strong>Impact:</strong> This reduces the total billing time, especially for short experiments, and speeds up the development cycle.</li>
+    </ul>
+</p>
+
+<h2>4. Right-Sizing your Instances</h2>
+<p>Don't use a P4d if a G5 will suffice.
+    <ul>
+        <li><strong>Profiling with SageMaker Profiler:</strong> This tool gives you a detailed look at your GPU and CPU utilization. If your GPU is only 50% utilized, you might be using an instance that is too large, or your training script might have a bottleneck (like slow data loading).</li>
+        <li><strong>QLoRA over Full Fine-Tuning:</strong> As discussed, QLoRA allows you to use much smaller instances. Moving from a <code>p4d.24xlarge</code> to a <code>g5.2xlarge</code> can reduce your hourly cost from ~$32.00 to ~$1.21.</li>
+    </ul>
+</p>
+
+<h2>5. Data Transfer and S3 Optimization</h2>
+<p>Moving large datasets across regions is expensive and slow.
+    <ul>
+        <li><strong>Regionality:</strong> Always keep your training data (S3), training job (SageMaker), and model artifacts in the same AWS region.</li>
+        <li><strong>Fast File Mode:</strong> SageMaker's "Fast File Mode" allows you to stream data from S3 directly into your training container as if it were a local filesystem. This eliminates the "wait time" while the dataset is downloaded at the start of the job.</li>
+    </ul>
+</p>
+
+<h2>6. Inference Optimization</h2>
+<p>Cost optimization doesn't stop once training is over. Deployment costs can quickly exceed training costs if the model is used heavily.
+    <ul>
+        <li><strong>SageMaker Inference Recommender:</strong> This tool runs load tests on different instance types to find the one that gives you the best price-performance for your specific model.</li>
+        <li><strong>Auto-Scaling:</strong> Configure your endpoints to scale down to zero (using Serverless Inference) or to a minimum number of instances during off-peak hours.</li>
+        <li><strong>Multi-Model Endpoints (MME):</strong> If you have dozens of fine-tuned adapters (LoRAs), you can host them all on a single GPU instance using MME, rather than having a dedicated endpoint for each one.</li>
+    </ul>
+</p>
+
+<h2>Conclusion</h2>
+<p>Optimizing SageMaker costs requires a combination of smart hardware selection, leveraging AWS pricing models (like Spot), and using SageMaker's built-in efficiency tools. By making cost-optimization a core part of your LLM lifecycle, you can run more experiments, train larger models, and build a more sustainable AI business. In our next module, we'll explore how to manage this entire process using LLMOps.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Tools and Function Calling</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Tools and Function Calling</h1>
+
+<h2>Understanding Tool Calling</h2>
+<p>Tool calling (also known as function calling) enables AI agents to interact with external systems, APIs, and services. Instead of being limited to text generation, agents can invoke functions to:</p>
+<ul>
+<li>Retrieve real-time data from APIs</li>
+<li>Perform calculations and data processing</li>
+<li>Execute database queries</li>
+<li>Interact with external services (email, calendar, CRM)</li>
+<li>Generate code and run computations</li>
+<li>Access and manipulate files</li>
+</ul>
+
+<h2>Function Calling Flow</h2>
+<blockquote>
+1. <strong>User Query:</strong> "What's the weather in Paris and convert 20°C to Fahrenheit?"
+
+2. <strong>Agent Analysis:</strong> Identifies need for two tools:
+   - get_weather(city="Paris")
+   - celsius_to_fahrenheit(celsius=20)
+
+3. <strong>Function Execution:</strong> Calls tools and receives results:
+   - Weather: {"temp": 20, "condition": "sunny"}
+   - Conversion: 68°F
+
+4. <strong>Response Synthesis:</strong> "The weather in Paris is sunny at 20°C (68°F)"
+</blockquote>
+
+<h2>Defining Tools in Vertex AI</h2>
+
+<h3>Simple Function Tool</h3>
+<blockquote>
+def get_current_weather(city: str, unit: str = "celsius") -> dict:
+    """Get the current weather for a specified city.
+    
+    Args:
+        city: The name of the city
+        unit: Temperature unit (celsius or fahrenheit)
+        
+    Returns:
+        Dictionary with temperature and weather condition
+    """
+    # Call weather API
+    response = weather_api.get(city)
+    return {
+        "city": city,
+        "temperature": response.temp,
+        "condition": response.condition,
+        "unit": unit
+    }
+
+# The docstring is crucial - it helps the LLM understand when and how to use the tool
+</blockquote>
+
+<h3>Tool with Complex Parameters</h3>
+<blockquote>
+from typing import List, Optional
+from datetime import datetime
+
+def search_flights(
+    origin: str,
+    destination: str,
+    departure_date: str,
+    return_date: Optional[str] = None,
+    passengers: int = 1,
+    cabin_class: str = "economy"
+) -> List[dict]:
+    """Search for available flights between two cities.
+    
+    Args:
+        origin: Departure airport code (e.g., 'JFK')
+        destination: Arrival airport code (e.g., 'LAX')
+        departure_date: Departure date in YYYY-MM-DD format
+        return_date: Optional return date in YYYY-MM-DD format
+        passengers: Number of passengers (default: 1)
+        cabin_class: Cabin class - economy, business, or first
+        
+    Returns:
+        List of flight options with pricing and availability
+    """
+    flights = flight_api.search(
+        from_airport=origin,
+        to_airport=destination,
+        date=departure_date,
+        return_date=return_date,
+        num_passengers=passengers,
+        class_type=cabin_class
+    )
+    
+    return [
+        {
+            "flight_number": f.number,
+            "airline": f.airline,
+            "departure_time": f.departure,
+            "arrival_time": f.arrival,
+            "price": f.price,
+            "available_seats": f.seats
+        }
+        for f in flights
+    ]
+</blockquote>
+
+<h2>Creating an Agent with Tools</h2>
+<blockquote>
+from vertexai.preview import reasoning_engines
+from google.cloud import aiplatform
+
+# Initialize Vertex AI
+aiplatform.init(project="my-project", location="us-central1")
+
+# Define multiple tools
+def get_weather(city: str) -> dict:
+    """Get current weather for a city."""
+    return {"city": city, "temp": 72, "condition": "sunny"}
+
+def calculate(expression: str) -> float:
+    """Evaluate a mathematical expression safely."""
+    # Use safe evaluation
+    return eval(expression, {"__builtins__": {}})
+
+def search_database(query: str) -> List[dict]:
+    """Search the product database."""
+    results = db.execute(query)
+    return [dict(row) for row in results]
+
+# Create agent with tools
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[get_weather, calculate, search_database],
+    agent_executor_kwargs={
+        "return_intermediate_steps": True,
+        "max_iterations": 10,
+        "early_stopping_method": "generate"
+    }
+)
+
+# Deploy to Vertex AI
+remote_agent = reasoning_engines.ReasoningEngine.create(
+    agent,
+    requirements=["langchain==0.1.0", "requests==2.31.0"],
+    display_name="Multi-Tool Assistant"
+)
+</blockquote>
+
+<h2>Tool Execution Patterns</h2>
+
+<h3>Sequential Tool Calls</h3>
+<blockquote>
+# Agent executes tools one after another
+Query: "Get weather in Tokyo, convert temperature to Fahrenheit, and check if it's good for outdoor activities"
+
+Step 1: get_weather("Tokyo") → 25°C, sunny
+Step 2: celsius_to_fahrenheit(25) → 77°F
+Step 3: evaluate_outdoor_conditions(temp=77, condition="sunny") → "Excellent"
+
+Response: "Tokyo has excellent weather for outdoor activities at 77°F (25°C) and sunny"
+</blockquote>
+
+<h3>Parallel Tool Calls</h3>
+<blockquote>
+# Agent can call multiple tools simultaneously (Gemini 1.5+)
+Query: "Compare weather in New York, London, and Tokyo"
+
+Parallel execution:
+- get_weather("New York") → 68°F, cloudy
+- get_weather("London") → 59°F, rainy
+- get_weather("Tokyo") → 77°F, sunny
+
+Response: "Tokyo has the warmest weather at 77°F and sunny, followed by New York at 68°F and cloudy, and London at 59°F and rainy"
+</blockquote>
+
+<h3>Conditional Tool Calls</h3>
+<blockquote>
+# Agent decides which tools to use based on context
+Query: "Book a flight to Paris if the price is under $500"
+
+Step 1: search_flights(destination="Paris") → Found flight for $450
+Step 2: Agent evaluates: $450 < $500 → True
+Step 3: book_flight(flight_id="AF123") → Booking confirmed
+
+Response: "I found a flight to Paris for $450 and booked it for you. Confirmation number: ABC123"
+</blockquote>
+
+<h2>Tool Error Handling</h2>
+<blockquote>
+def robust_api_call(endpoint: str, params: dict) -> dict:
+    """Make API call with error handling and retries.
+    
+    Args:
+        endpoint: API endpoint URL
+        params: Request parameters
+        
+    Returns:
+        API response data
+        
+    Raises:
+        ToolExecutionError: If API call fails after retries
+    """
+    max_retries = 3
+    retry_delay = 1
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(endpoint, params=params, timeout=10)
+            response.raise_for_status()
+            return response.json()
+            
+        except requests.Timeout:
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+                continue
+            return {"error": "API timeout after retries"}
+            
+        except requests.HTTPError as e:
+            if e.response.status_code == 429:  # Rate limit
+                time.sleep(retry_delay * 2)
+                continue
+            return {"error": f"HTTP error: {e.response.status_code}"}
+            
+        except Exception as e:
+            return {"error": f"Unexpected error: {str(e)}"}
+    
+    return {"error": "Max retries exceeded"}
+</blockquote>
+
+<h2>Tool Input Validation</h2>
+<blockquote>
+from pydantic import BaseModel, Field, validator
+from typing import Literal
+
+class FlightSearchInput(BaseModel):
+    """Validated input for flight search tool."""
+    
+    origin: str = Field(..., min_length=3, max_length=3, description="3-letter airport code")
+    destination: str = Field(..., min_length=3, max_length=3, description="3-letter airport code")
+    departure_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    cabin_class: Literal["economy", "business", "first"] = "economy"
+    passengers: int = Field(default=1, ge=1, le=9)
+    
+    @validator('origin', 'destination')
+    def validate_airport_code(cls, v):
+        if not v.isupper():
+            raise ValueError("Airport code must be uppercase")
+        if not airport_exists(v):
+            raise ValueError(f"Invalid airport code: {v}")
+        return v
+    
+    @validator('departure_date')
+    def validate_future_date(cls, v):
+        date = datetime.strptime(v, "%Y-%m-%d")
+        if date < datetime.now():
+            raise ValueError("Departure date must be in the future")
+        return v
+
+def search_flights_validated(input_data: dict) -> List[dict]:
+    """Flight search with validated inputs."""
+    # Validate inputs using Pydantic
+    validated = FlightSearchInput(**input_data)
+    
+    # Proceed with validated data
+    return search_flights(
+        origin=validated.origin,
+        destination=validated.destination,
+        departure_date=validated.departure_date,
+        cabin_class=validated.cabin_class,
+        passengers=validated.passengers
+    )
+</blockquote>
+
+<h2>Tool Response Formatting</h2>
+<blockquote>
+def format_tool_response(raw_data: dict, tool_name: str) -> dict:
+    """Format tool responses consistently for the agent.
+    
+    Args:
+        raw_data: Raw data from tool execution
+        tool_name: Name of the tool that was called
+        
+    Returns:
+        Formatted response with metadata
+    """
+    return {
+        "tool": tool_name,
+        "status": "success" if "error" not in raw_data else "error",
+        "data": raw_data,
+        "timestamp": datetime.now().isoformat(),
+        "execution_time_ms": raw_data.get("execution_time", 0)
+    }
+
+# Example usage
+weather_data = get_weather("London")
+formatted = format_tool_response(weather_data, "get_weather")
+
+# Agent receives:
+{
+    "tool": "get_weather",
+    "status": "success",
+    "data": {"city": "London", "temp": 15, "condition": "rainy"},
+    "timestamp": "2024-01-15T10:30:00",
+    "execution_time_ms": 245
+}
+</blockquote>
+
+<h2>Advanced Tool Patterns</h2>
+
+<h3>Tool Chaining</h3>
+<blockquote>
+# Tools that call other tools
+def analyze_and_visualize(data_query: str) -> dict:
+    """Query data and create visualization.
+    
+    This tool chains multiple operations:
+    1. Query database
+    2. Process results
+    3. Generate chart
+    """
+    # Step 1: Get data
+    data = search_database(data_query)
+    
+    # Step 2: Process
+    processed = process_data(data)
+    
+    # Step 3: Visualize
+    chart_url = create_chart(processed)
+    
+    return {
+        "data_points": len(data),
+        "chart": chart_url,
+        "summary": generate_summary(processed)
+    }
+</blockquote>
+
+<h3>Stateful Tools</h3>
+<blockquote>
+class ShoppingCartTool:
+    """Tool that maintains state across calls."""
+    
+    def __init__(self):
+        self.cart = {}
+    
+    def add_item(self, product_id: str, quantity: int) -> dict:
+        """Add item to shopping cart."""
+        if product_id in self.cart:
+            self.cart[product_id] += quantity
+        else:
+            self.cart[product_id] = quantity
+        return {"cart": self.cart, "total_items": sum(self.cart.values())}
+    
+    def remove_item(self, product_id: str) -> dict:
+        """Remove item from cart."""
+        if product_id in self.cart:
+            del self.cart[product_id]
+        return {"cart": self.cart}
+    
+    def get_total(self) -> dict:
+        """Calculate cart total."""
+        total = sum(
+            get_product_price(pid) * qty 
+            for pid, qty in self.cart.items()
+        )
+        return {"total": total, "items": len(self.cart)}
+
+# Use stateful tool with agent
+cart_tool = ShoppingCartTool()
+agent = create_agent(tools=[
+    cart_tool.add_item,
+    cart_tool.remove_item,
+    cart_tool.get_total
+])
+</blockquote>
+
+<h2>Tool Performance Optimization</h2>
+<table>
+<tr>
+<th>Technique</th>
+<th>Purpose</th>
+<th>Implementation</th>
+</tr>
+<tr>
+<td class="rowheader">Caching</td>
+<td>Reduce redundant API calls</td>
+<td>Cache results with TTL</td>
+</tr>
+<tr>
+<td class="rowheader">Batching</td>
+<td>Combine multiple requests</td>
+<td>Batch API calls when possible</td>
+</tr>
+<tr>
+<td class="rowheader">Async Execution</td>
+<td>Parallel tool execution</td>
+<td>Use asyncio for I/O operations</td>
+</tr>
+<tr>
+<td class="rowheader">Timeouts</td>
+<td>Prevent hanging operations</td>
+<td>Set reasonable timeout limits</td>
+</tr>
+<tr>
+<td class="rowheader">Rate Limiting</td>
+<td>Respect API limits</td>
+<td>Implement token bucket algorithm</td>
+</tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Clear Descriptions:</strong> Write detailed docstrings that explain when and how to use each tool</li>
+<li><strong>Type Hints:</strong> Use Python type hints to help the LLM understand parameter types</li>
+<li><strong>Error Messages:</strong> Return helpful error messages that guide the agent to retry correctly</li>
+<li><strong>Idempotency:</strong> Design tools to be safely retried without side effects</li>
+<li><strong>Validation:</strong> Validate all inputs before execution to prevent errors</li>
+<li><strong>Logging:</strong> Log all tool executions for debugging and monitoring</li>
+<li><strong>Security:</strong> Never expose sensitive operations without proper authorization checks</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

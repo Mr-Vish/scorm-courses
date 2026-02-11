@@ -1,0 +1,372 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Testing and Debugging Genkit Flows</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Testing and Debugging Genkit Flows</h1>
+
+<h2>Testing Strategies for AI Applications</h2>
+<p>Testing AI applications presents unique challenges due to the non-deterministic nature of LLMs. Genkit provides tools and patterns to make testing reliable and maintainable.</p>
+
+<h2>Unit Testing Flows</h2>
+
+<h3>Basic Flow Testing</h3>
+<div class="code-block">
+<pre><code>import { describe, it, expect } from 'vitest';
+
+describe('greetingFlow', () => {
+  it('should generate a greeting with valid input', async () => {
+    const result = await greetingFlow({
+      name: 'Alice',
+      language: 'en'
+    });
+    
+    expect(result).toHaveProperty('message');
+    expect(typeof result.message).toBe('string');
+    expect(result.message.length).toBeGreaterThan(0);
+  });
+  
+  it('should reject invalid language codes', async () => {
+    await expect(
+      greetingFlow({ name: 'Bob', language: 'invalid' })
+    ).rejects.toThrow();
+  });
+});
+</code></pre>
+</div>
+
+<h3>Testing with Mock Models</h3>
+<p>Use mock models to avoid API calls during testing:</p>
+
+<div class="code-block">
+<pre><code>import { defineMockModel } from '@genkit-ai/testing';
+
+// Define a mock model for testing
+const mockModel = defineMockModel({
+  name: 'mockGemini',
+  responses: {
+    'Generate a greeting': { message: 'Hello, World!' },
+    'Summarize this text': { summary: 'Test summary' }
+  }
+});
+
+// Configure Genkit to use mock model in tests
+const testAi = genkit({
+  plugins: [],
+  model: mockModel
+});
+
+describe('with mock model', () => {
+  it('should use mocked responses', async () => {
+    const flow = testAi.defineFlow({
+      name: 'test',
+      inputSchema: z.object({ prompt: z.string() }),
+      outputSchema: z.object({ message: z.string() })
+    }, async (input) => {
+      const { output } = await testAi.generate({
+        prompt: input.prompt,
+        output: { schema: z.object({ message: z.string() }) }
+      });
+      return output;
+    });
+    
+    const result = await flow({ prompt: 'Generate a greeting' });
+    expect(result.message).toBe('Hello, World!');
+  });
+});
+</code></pre>
+</div>
+
+<h2>Integration Testing</h2>
+
+<h3>Testing with Real Models</h3>
+<div class="code-block">
+<pre><code>describe('integration tests', () => {
+  // Use environment variable to control real API calls
+  const shouldRunIntegrationTests = process.env.RUN_INTEGRATION_TESTS === 'true';
+  
+  it.skipIf(!shouldRunIntegrationTests)(
+    'should work with real Gemini API',
+    async () => {
+      const result = await analyzeArticleFlow({
+        text: 'Sample article text...',
+        maxKeyPoints: 3
+      });
+      
+      expect(result.summary).toBeTruthy();
+      expect(result.keyPoints).toHaveLength(3);
+      expect(['positive', 'negative', 'neutral']).toContain(result.sentiment);
+    },
+    { timeout: 30000 } // Longer timeout for API calls
+  );
+});
+</code></pre>
+</div>
+
+<h2>Using the Developer UI for Testing</h2>
+<p>The Genkit Developer UI provides interactive testing capabilities:</p>
+
+<h3>Starting the Developer UI</h3>
+<div class="code-block">
+<pre><code># Start in development mode
+npx genkit start
+
+# Start with specific port
+npx genkit start --port 4001
+
+# Start with environment variables
+GOOGLE_GENAI_API_KEY=your_key npx genkit start
+</code></pre>
+</div>
+
+<h3>Developer UI Features</h3>
+<ul>
+    <li><strong>Flow Runner:</strong> Execute flows with custom JSON inputs</li>
+    <li><strong>Trace Viewer:</strong> Inspect detailed execution traces</li>
+    <li><strong>Prompt Playground:</strong> Test and refine prompts interactively</li>
+    <li><strong>Schema Validator:</strong> Verify input/output schemas</li>
+    <li><strong>Performance Metrics:</strong> View token usage and latency</li>
+</ul>
+
+<h2>Debugging with Traces</h2>
+
+<h3>Understanding Trace Structure</h3>
+<p>Every flow execution generates a trace with hierarchical spans:</p>
+
+<div class="code-block">
+<pre><code>Flow: analyzeArticle
+├── Span: Input Validation (2ms)
+├── Span: AI Generation (1,234ms)
+│   ├── Model: gemini-1.5-flash
+│   ├── Tokens: 450 input, 120 output
+│   └── Cost: $0.0023
+├── Span: Output Validation (1ms)
+└── Total: 1,237ms
+</code></pre>
+</div>
+
+<h3>Accessing Traces Programmatically</h3>
+<div class="code-block">
+<pre><code>import { runWithTracing } from '@genkit-ai/core';
+
+const result = await runWithTracing(
+  'custom-operation',
+  async (span) => {
+    span.setAttribute('user_id', 'user_123');
+    span.setAttribute('operation_type', 'analysis');
+    
+    const flowResult = await myFlow({ input: 'data' });
+    
+    span.setAttribute('result_size', JSON.stringify(flowResult).length);
+    return flowResult;
+  }
+);
+</code></pre>
+</div>
+
+<h2>Logging Best Practices</h2>
+
+<h3>Structured Logging</h3>
+<div class="code-block">
+<pre><code>import { logger } from '@genkit-ai/core';
+
+const myFlow = ai.defineFlow({
+  name: 'myFlow',
+  inputSchema: z.object({ query: z.string() }),
+  outputSchema: z.object({ result: z.string() })
+}, async (input) => {
+  logger.info('Flow started', { 
+    flowName: 'myFlow',
+    inputLength: input.query.length 
+  });
+  
+  try {
+    const { output } = await ai.generate({
+      prompt: input.query,
+      output: { schema: z.object({ result: z.string() }) }
+    });
+    
+    logger.info('Flow completed successfully', {
+      outputLength: output.result.length
+    });
+    
+    return output;
+  } catch (error) {
+    logger.error('Flow failed', {
+      error: error.message,
+      stack: error.stack,
+      input: input.query
+    });
+    throw error;
+  }
+});
+</code></pre>
+</div>
+
+<h2>Common Debugging Scenarios</h2>
+
+<h3>Schema Validation Failures</h3>
+<div class="code-block">
+<pre><code>// Problem: AI generates invalid output
+const { output } = await ai.generate({
+  prompt: 'Generate a user profile',
+  output: {
+    schema: z.object({
+      age: z.number().min(0).max(150)
+    })
+  }
+});
+
+// Debug: Add detailed descriptions
+const { output } = await ai.generate({
+  prompt: 'Generate a user profile',
+  output: {
+    schema: z.object({
+      age: z.number()
+        .min(0)
+        .max(150)
+        .describe('Age in years, must be between 0 and 150')
+    })
+  },
+  config: {
+    temperature: 0.1 // Lower temperature for more consistent output
+  }
+});
+</code></pre>
+</div>
+
+<h3>Rate Limiting and Retries</h3>
+<div class="code-block">
+<pre><code>import { retry } from '@genkit-ai/core';
+
+const robustFlow = ai.defineFlow({
+  name: 'robustFlow',
+  inputSchema: z.object({ query: z.string() }),
+  outputSchema: z.object({ result: z.string() })
+}, async (input) => {
+  return await retry(
+    async () => {
+      const { output } = await ai.generate({
+        prompt: input.query,
+        output: { schema: z.object({ result: z.string() }) }
+      });
+      return output;
+    },
+    {
+      maxRetries: 3,
+      backoff: 'exponential',
+      initialDelay: 1000,
+      maxDelay: 10000
+    }
+  );
+});
+</code></pre>
+</div>
+
+<h3>Token Usage Monitoring</h3>
+<div class="code-block">
+<pre><code>const monitoredFlow = ai.defineFlow({
+  name: 'monitoredFlow',
+  inputSchema: z.object({ text: z.string() }),
+  outputSchema: z.object({ summary: z.string() })
+}, async (input) => {
+  const { output, usage } = await ai.generate({
+    prompt: `Summarize: ${input.text}`,
+    output: { schema: z.object({ summary: z.string() }) },
+    returnUsage: true
+  });
+  
+  logger.info('Token usage', {
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    totalTokens: usage.totalTokens,
+    estimatedCost: usage.inputTokens * 0.00001 + usage.outputTokens * 0.00003
+  });
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Performance Testing</h2>
+
+<h3>Load Testing Flows</h3>
+<div class="code-block">
+<pre><code>import { performance } from 'perf_hooks';
+
+describe('performance tests', () => {
+  it('should handle concurrent requests', async () => {
+    const concurrentRequests = 10;
+    const startTime = performance.now();
+    
+    const promises = Array.from({ length: concurrentRequests }, (_, i) => 
+      myFlow({ query: `Test query ${i}` })
+    );
+    
+    const results = await Promise.all(promises);
+    const endTime = performance.now();
+    
+    const avgTime = (endTime - startTime) / concurrentRequests;
+    
+    expect(results).toHaveLength(concurrentRequests);
+    expect(avgTime).toBeLessThan(5000); // Average under 5 seconds
+  });
+});
+</code></pre>
+</div>
+
+<h2>Debugging Checklist</h2>
+<table>
+    <tr>
+        <th>Issue</th>
+        <th>Debugging Step</th>
+        <th>Tool</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Schema validation errors</td>
+        <td>Check schema descriptions and constraints</td>
+        <td>Developer UI Schema Validator</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Slow performance</td>
+        <td>Review trace timing and token usage</td>
+        <td>Trace Viewer</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Inconsistent outputs</td>
+        <td>Lower temperature, add examples</td>
+        <td>Prompt Playground</td>
+    </tr>
+    <tr>
+        <td class="rowheader">API errors</td>
+        <td>Check API keys and rate limits</td>
+        <td>Logs and error traces</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Unexpected behavior</td>
+        <td>Add detailed logging at each step</td>
+        <td>Structured logging</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Test Early and Often:</strong> Write tests as you develop flows</li>
+    <li><strong>Use Mock Models:</strong> Speed up tests and avoid API costs</li>
+    <li><strong>Monitor Token Usage:</strong> Track costs in production</li>
+    <li><strong>Implement Retries:</strong> Handle transient failures gracefully</li>
+    <li><strong>Log Contextually:</strong> Include relevant metadata in logs</li>
+    <li><strong>Use Developer UI:</strong> Interactive testing catches issues faster</li>
+    <li><strong>Version Control Traces:</strong> Save traces for regression testing</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

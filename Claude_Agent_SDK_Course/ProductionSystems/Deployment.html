@@ -1,0 +1,303 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Deployment and Operations</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Deployment and Operations</h1>
+
+<h2>Lesson Objectives</h2>
+<p>In this lesson, you will:</p>
+<ul>
+    <li>Understand deployment considerations for production agents</li>
+    <li>Learn operational best practices</li>
+    <li>Explore monitoring and observability strategies</li>
+    <li>Plan for scaling and performance optimization</li>
+</ul>
+
+<h2>Pre-Deployment Checklist</h2>
+
+<h3>Security Review</h3>
+<ul>
+    <li>All API keys and secrets stored securely</li>
+    <li>Authentication and authorization implemented</li>
+    <li>Input validation on all tool parameters</li>
+    <li>Output sanitization to prevent data leaks</li>
+    <li>Rate limiting configured</li>
+    <li>Audit logging enabled</li>
+</ul>
+
+<h3>Testing Verification</h3>
+<ul>
+    <li>Unit tests for all tools</li>
+    <li>Integration tests for workflows</li>
+    <li>Error scenario testing</li>
+    <li>Load testing completed</li>
+    <li>Security penetration testing</li>
+    <li>User acceptance testing</li>
+</ul>
+
+<h3>Documentation</h3>
+<ul>
+    <li>System architecture documented</li>
+    <li>Tool definitions and usage</li>
+    <li>Deployment procedures</li>
+    <li>Monitoring and alerting setup</li>
+    <li>Incident response procedures</li>
+    <li>User guides and FAQs</li>
+</ul>
+
+<h2>Deployment Strategies</h2>
+
+<h3>Phased Rollout</h3>
+<blockquote>
+Phase 1: Internal testing (1 week)
+- Deploy to internal users only
+- Monitor closely for issues
+- Gather feedback
+
+Phase 2: Beta release (2 weeks)
+- Deploy to 10% of users
+- Monitor metrics and errors
+- Iterate based on feedback
+
+Phase 3: General availability
+- Gradual rollout to all users
+- Continue monitoring
+- Be ready to rollback if needed
+</blockquote>
+
+<h3>Blue-Green Deployment</h3>
+<ul>
+    <li>Maintain two identical environments (blue and green)</li>
+    <li>Deploy new version to inactive environment</li>
+    <li>Test thoroughly in inactive environment</li>
+    <li>Switch traffic to new version</li>
+    <li>Keep old version ready for quick rollback</li>
+</ul>
+
+<h3>Canary Deployment</h3>
+<ul>
+    <li>Deploy new version to small subset of users</li>
+    <li>Monitor performance and errors</li>
+    <li>Gradually increase traffic to new version</li>
+    <li>Rollback if issues detected</li>
+</ul>
+
+<h2>Operational Monitoring</h2>
+
+<h3>Key Performance Indicators (KPIs)</h3>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Target</th>
+        <th>Alert Threshold</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Success Rate</td>
+        <td>> 95%</td>
+        <td>< 90%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Average Response Time</td>
+        <td>< 5 seconds</td>
+        <td>> 10 seconds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>< 5%</td>
+        <td>> 10%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost Per Session</td>
+        <td>< $0.10</td>
+        <td>> $0.50</td>
+    </tr>
+    <tr>
+        <td class="rowheader">User Satisfaction</td>
+        <td>> 4.0/5.0</td>
+        <td>< 3.5/5.0</td>
+    </tr>
+</table>
+
+<h3>Observability Stack</h3>
+<ul>
+    <li><strong>Metrics:</strong> Quantitative measurements (response time, error rate)</li>
+    <li><strong>Logs:</strong> Detailed event records for debugging</li>
+    <li><strong>Traces:</strong> Request flow through system components</li>
+    <li><strong>Dashboards:</strong> Real-time visualization of system health</li>
+</ul>
+
+<h3>Alerting Strategy</h3>
+<blockquote>
+Severity Levels:
+- Critical: Immediate response required (page on-call)
+- High: Response within 1 hour
+- Medium: Response within 4 hours
+- Low: Review during business hours
+
+Alert Channels:
+- Critical: PagerDuty + Slack + Email
+- High: Slack + Email
+- Medium/Low: Email only
+</blockquote>
+
+<h2>Performance Optimization</h2>
+
+<h3>Caching Strategies</h3>
+<ul>
+    <li><strong>Tool Result Caching:</strong> Cache expensive tool results</li>
+    <li><strong>Conversation Caching:</strong> Reuse context when possible</li>
+    <li><strong>User Profile Caching:</strong> Keep frequently accessed data in memory</li>
+    <li><strong>TTL Policies:</strong> Set appropriate expiration times</li>
+</ul>
+
+<h3>Latency Reduction</h3>
+<ul>
+    <li>Parallel tool execution where possible</li>
+    <li>Optimize tool implementations</li>
+    <li>Use streaming responses for long outputs</li>
+    <li>Implement request queuing for load management</li>
+    <li>Deploy closer to users (edge computing)</li>
+</ul>
+
+<h3>Cost Optimization</h3>
+<ul>
+    <li>Monitor token usage per session</li>
+    <li>Implement context window management</li>
+    <li>Use appropriate model sizes</li>
+    <li>Cache and reuse results</li>
+    <li>Set budget alerts</li>
+</ul>
+
+<h2>Scaling Considerations</h2>
+
+<h3>Horizontal Scaling</h3>
+<p>Add more agent instances to handle increased load:</p>
+
+<ul>
+    <li>Stateless agent design enables easy scaling</li>
+    <li>Load balancer distributes requests</li>
+    <li>Shared state stored in external database</li>
+    <li>Auto-scaling based on demand</li>
+</ul>
+
+<h3>Vertical Scaling</h3>
+<p>Increase resources for existing instances:</p>
+
+<ul>
+    <li>More CPU for faster processing</li>
+    <li>More memory for larger contexts</li>
+    <li>Better network for reduced latency</li>
+</ul>
+
+<h3>Database Scaling</h3>
+<ul>
+    <li>Read replicas for query distribution</li>
+    <li>Sharding for large datasets</li>
+    <li>Connection pooling</li>
+    <li>Query optimization</li>
+</ul>
+
+<h2>Incident Response</h2>
+
+<h3>Incident Severity Levels</h3>
+<blockquote>
+SEV1 - Critical:
+- Agent completely down
+- Data breach or security incident
+- Widespread user impact
+
+SEV2 - High:
+- Degraded performance affecting many users
+- Important features unavailable
+- Elevated error rates
+
+SEV3 - Medium:
+- Minor feature issues
+- Affecting small number of users
+- Workarounds available
+
+SEV4 - Low:
+- Cosmetic issues
+- No user impact
+- Enhancement requests
+</blockquote>
+
+<h3>Incident Response Process</h3>
+<blockquote>
+1. Detection: Alert triggered or user report
+2. Triage: Assess severity and impact
+3. Investigation: Identify root cause
+4. Mitigation: Implement fix or workaround
+5. Resolution: Verify issue resolved
+6. Post-Mortem: Document learnings
+7. Prevention: Implement safeguards
+</blockquote>
+
+<h2>Continuous Improvement</h2>
+
+<h3>A/B Testing</h3>
+<ul>
+    <li>Test different prompts</li>
+    <li>Compare tool implementations</li>
+    <li>Evaluate workflow variations</li>
+    <li>Measure impact on KPIs</li>
+</ul>
+
+<h3>User Feedback Loop</h3>
+<ul>
+    <li>Collect user ratings and comments</li>
+    <li>Analyze conversation logs</li>
+    <li>Identify common failure patterns</li>
+    <li>Prioritize improvements</li>
+</ul>
+
+<h3>Model Updates</h3>
+<ul>
+    <li>Test new Claude versions</li>
+    <li>Evaluate performance improvements</li>
+    <li>Update prompts for new capabilities</li>
+    <li>Maintain backward compatibility</li>
+</ul>
+
+<h2>Compliance and Governance</h2>
+
+<h3>Data Privacy</h3>
+<ul>
+    <li>GDPR compliance for EU users</li>
+    <li>CCPA compliance for California users</li>
+    <li>Data retention policies</li>
+    <li>Right to deletion</li>
+    <li>Data export capabilities</li>
+</ul>
+
+<h3>Audit Requirements</h3>
+<ul>
+    <li>Log all agent actions</li>
+    <li>Track data access</li>
+    <li>Maintain change history</li>
+    <li>Regular security audits</li>
+    <li>Compliance reporting</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Pre-deployment requires security review, testing verification, and comprehensive documentation</li>
+    <li>Phased rollouts, blue-green, and canary deployments reduce risk</li>
+    <li>Monitoring KPIs, logs, and traces enables rapid issue detection</li>
+    <li>Performance optimization through caching, parallelization, and cost management</li>
+    <li>Scaling strategies include horizontal scaling, vertical scaling, and database optimization</li>
+    <li>Incident response processes and continuous improvement ensure long-term success</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

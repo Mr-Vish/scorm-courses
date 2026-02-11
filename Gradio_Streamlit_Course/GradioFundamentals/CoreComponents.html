@@ -1,0 +1,345 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Gradio Core Components and Interfaces</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Gradio Core Components and Interfaces</h1>
+
+<h2>Introduction to Gradio</h2>
+<p>Gradio is a Python library that enables developers to create web-based interfaces for machine learning models with minimal code. Originally designed for model demos, it has become the go-to tool for GenAI prototyping due to its built-in chat interface, automatic API generation, and seamless integration with Hugging Face.</p>
+
+<h2>Installation and Setup</h2>
+<blockquote>
+# Install Gradio
+pip install gradio
+
+# For GenAI applications, also install:
+pip install openai anthropic langchain chromadb
+
+# Verify installation
+python -c "import gradio as gr; print(gr.__version__)"
+</blockquote>
+
+<h2>Basic Interface Structure</h2>
+<p>Gradio interfaces follow a simple pattern: define a function, specify inputs and outputs, and launch the interface.</p>
+
+<blockquote>
+import gradio as gr
+
+def greet(name, intensity):
+    '''Simple greeting function.'''
+    return "Hello, " + name + "!" * intensity
+
+# Create interface
+demo = gr.Interface(
+    fn=greet,
+    inputs=[
+        gr.Textbox(label="Name", placeholder="Enter your name"),
+        gr.Slider(minimum=1, maximum=5, value=1, label="Enthusiasm")
+    ],
+    outputs=gr.Textbox(label="Greeting"),
+    title="Simple Greeter",
+    description="Enter your name and enthusiasm level"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Core Input Components</h2>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Key Parameters</th>
+        <th>GenAI Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Textbox</td>
+        <td>Single or multi-line text input</td>
+        <td>lines, max_lines, placeholder</td>
+        <td>Prompt input, user queries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Image</td>
+        <td>Image upload or capture</td>
+        <td>type, source, tool</td>
+        <td>Vision models, image generation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Audio</td>
+        <td>Audio recording or upload</td>
+        <td>source, type</td>
+        <td>Speech-to-text, voice cloning</td>
+    </tr>
+    <tr>
+        <td class="rowheader">File</td>
+        <td>File upload (any type)</td>
+        <td>file_count, file_types</td>
+        <td>Document processing, RAG</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Slider</td>
+        <td>Numeric value selection</td>
+        <td>minimum, maximum, step</td>
+        <td>Temperature, max tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Dropdown</td>
+        <td>Select from options</td>
+        <td>choices, multiselect</td>
+        <td>Model selection, prompt templates</td>
+    </tr>
+</table>
+
+<h2>Core Output Components</h2>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Key Features</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Textbox</td>
+        <td>Display text output</td>
+        <td>Supports markdown, streaming</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Image</td>
+        <td>Display generated images</td>
+        <td>Supports PIL, numpy, filepath</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Audio</td>
+        <td>Play generated audio</td>
+        <td>Supports numpy array, filepath</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Video</td>
+        <td>Display video output</td>
+        <td>Supports various formats</td>
+    </tr>
+    <tr>
+        <td class="rowheader">DataFrame</td>
+        <td>Display tabular data</td>
+        <td>Interactive, sortable</td>
+    </tr>
+    <tr>
+        <td class="rowheader">JSON</td>
+        <td>Display structured data</td>
+        <td>Collapsible, formatted</td>
+    </tr>
+</table>
+
+<h2>Text Generation Interface</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI()
+
+def generate_text(prompt, temperature, max_tokens):
+    '''Generate text using OpenAI API.'''
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+        max_tokens=max_tokens
+    )
+    return response.choices[0].message.content
+
+demo = gr.Interface(
+    fn=generate_text,
+    inputs=[
+        gr.Textbox(
+            label="Prompt",
+            placeholder="Enter your prompt here...",
+            lines=5
+        ),
+        gr.Slider(
+            minimum=0,
+            maximum=2,
+            value=0.7,
+            step=0.1,
+            label="Temperature"
+        ),
+        gr.Slider(
+            minimum=50,
+            maximum=2000,
+            value=500,
+            step=50,
+            label="Max Tokens"
+        )
+    ],
+    outputs=gr.Textbox(label="Generated Text", lines=10),
+    title="Text Generator",
+    description="Generate text using GPT-4o-mini",
+    examples=[
+        ["Explain quantum computing in simple terms", 0.7, 500],
+        ["Write a haiku about AI", 1.0, 100]
+    ]
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Blocks API for Custom Layouts</h2>
+<p>For more control over layout and interactivity, use the Blocks API:</p>
+
+<blockquote>
+import gradio as gr
+
+with gr.Blocks(theme=gr.themes.Soft()) as demo:
+    gr.Markdown("# Advanced Text Generator")
+    
+    with gr.Row():
+        with gr.Column(scale=2):
+            prompt = gr.Textbox(
+                label="Prompt",
+                placeholder="Enter your prompt...",
+                lines=5
+            )
+            with gr.Row():
+                temperature = gr.Slider(0, 2, 0.7, label="Temperature")
+                max_tokens = gr.Slider(50, 2000, 500, label="Max Tokens")
+            
+            generate_btn = gr.Button("Generate", variant="primary")
+        
+        with gr.Column(scale=3):
+            output = gr.Textbox(label="Output", lines=15)
+            
+            with gr.Accordion("Advanced Options", open=False):
+                model = gr.Dropdown(
+                    ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+                    value="gpt-4o-mini",
+                    label="Model"
+                )
+                top_p = gr.Slider(0, 1, 0.9, label="Top P")
+    
+    generate_btn.click(
+        fn=generate_text,
+        inputs=[prompt, temperature, max_tokens],
+        outputs=output
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Event Handling and Interactivity</h2>
+<blockquote>
+import gradio as gr
+
+def update_character_count(text):
+    '''Count characters and words in real-time.'''
+    char_count = len(text)
+    word_count = len(text.split())
+    return f"Characters: {char_count} | Words: {word_count}"
+
+with gr.Blocks() as demo:
+    text_input = gr.Textbox(label="Enter text", lines=5)
+    stats = gr.Textbox(label="Statistics", interactive=False)
+    
+    # Update stats on every change
+    text_input.change(
+        fn=update_character_count,
+        inputs=text_input,
+        outputs=stats
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Multiple Outputs</h2>
+<blockquote>
+import gradio as gr
+
+def analyze_text(text):
+    '''Analyze text and return multiple outputs.'''
+    char_count = len(text)
+    word_count = len(text.split())
+    sentence_count = text.count('.') + text.count('!') + text.count('?')
+    
+    # Return multiple values
+    return char_count, word_count, sentence_count
+
+demo = gr.Interface(
+    fn=analyze_text,
+    inputs=gr.Textbox(label="Text to analyze", lines=5),
+    outputs=[
+        gr.Number(label="Characters"),
+        gr.Number(label="Words"),
+        gr.Number(label="Sentences")
+    ],
+    title="Text Analyzer"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Flagging and Feedback</h2>
+<p>Gradio includes built-in functionality for collecting user feedback:</p>
+
+<blockquote>
+demo = gr.Interface(
+    fn=generate_text,
+    inputs=gr.Textbox(label="Prompt"),
+    outputs=gr.Textbox(label="Output"),
+    flagging_mode="manual",  # Options: "manual", "auto", "never"
+    flagging_options=["Good", "Bad", "Offensive"],
+    flagging_dir="flagged_data"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Theming and Customization</h2>
+<blockquote>
+import gradio as gr
+
+# Use built-in themes
+demo = gr.Interface(
+    fn=my_function,
+    inputs=gr.Textbox(),
+    outputs=gr.Textbox(),
+    theme=gr.themes.Soft()  # Options: Soft, Base, Glass, Monochrome
+)
+
+# Or create custom theme
+custom_theme = gr.themes.Base(
+    primary_hue="blue",
+    secondary_hue="gray",
+    neutral_hue="slate",
+    font=["Helvetica", "sans-serif"]
+)
+
+demo = gr.Interface(
+    fn=my_function,
+    inputs=gr.Textbox(),
+    outputs=gr.Textbox(),
+    theme=custom_theme,
+    css=".gradio-container {max-width: 1200px;}"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Use Descriptive Labels:</strong> Clear labels improve user experience</li>
+    <li><strong>Provide Examples:</strong> Help users understand expected inputs</li>
+    <li><strong>Add Placeholders:</strong> Guide users with placeholder text</li>
+    <li><strong>Handle Errors Gracefully:</strong> Use try-except blocks and return error messages</li>
+    <li><strong>Optimize for Mobile:</strong> Test interfaces on different screen sizes</li>
+    <li><strong>Use Appropriate Components:</strong> Match component types to data types</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

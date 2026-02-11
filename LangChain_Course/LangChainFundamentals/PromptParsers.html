@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Templates and Output Parsers</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Templates and Output Parsers</h1>
+
+<h2>Why Use Prompt Templates?</h2>
+<p>Prompt templates provide a structured way to format inputs for language models. They offer several benefits:</p>
+
+<ul>
+<li><strong>Reusability:</strong> Define once, use multiple times with different inputs</li>
+<li><strong>Consistency:</strong> Ensure uniform prompt formatting across your application</li>
+<li><strong>Maintainability:</strong> Centralize prompt logic for easier updates</li>
+<li><strong>Type Safety:</strong> Validate input variables before execution</li>
+</ul>
+
+<h2>Basic Prompt Templates</h2>
+<blockquote>
+from langchain_core.prompts import PromptTemplate
+
+# Simple string template
+template = PromptTemplate.from_template(
+    "Write a {length} paragraph about {subject}."
+)
+
+# Format the prompt
+formatted = template.format(
+    length="short",
+    subject="artificial intelligence"
+)
+print(formatted)
+# Output: "Write a short paragraph about artificial intelligence."
+</blockquote>
+
+<h2>Chat Prompt Templates</h2>
+<p>For chat models, use ChatPromptTemplate to structure conversations:</p>
+
+<blockquote>
+from langchain_core.prompts import ChatPromptTemplate
+
+# Define a multi-message template
+chat_template = ChatPromptTemplate.from_messages([
+    ("system", "You are an expert {expertise} with {years} years of experience."),
+    ("human", "I need help with: {problem}"),
+    ("ai", "I understand you need help with {problem}. Let me assist you."),
+    ("human", "{followup}")
+])
+
+# Format the conversation
+messages = chat_template.format_messages(
+    expertise="software architect",
+    years="15",
+    problem="designing a microservices system",
+    followup="What are the key considerations?"
+)
+</blockquote>
+
+<h2>Few-Shot Prompting</h2>
+<p>Provide examples to guide the model's responses:</p>
+
+<blockquote>
+from langchain_core.prompts import FewShotPromptTemplate, PromptTemplate
+
+# Define examples
+examples = [
+    {
+        "input": "happy",
+        "output": "sad"
+    },
+    {
+        "input": "tall",
+        "output": "short"
+    },
+    {
+        "input": "hot",
+        "output": "cold"
+    }
+]
+
+# Create example template
+example_template = PromptTemplate(
+    input_variables=["input", "output"],
+    template="Input: {input}\nOutput: {output}"
+)
+
+# Create few-shot template
+few_shot_template = FewShotPromptTemplate(
+    examples=examples,
+    example_prompt=example_template,
+    prefix="Give the antonym of each word:",
+    suffix="Input: {word}\nOutput:",
+    input_variables=["word"]
+)
+
+print(few_shot_template.format(word="big"))
+</blockquote>
+
+<h2>Partial Prompts</h2>
+<p>Pre-fill some variables while leaving others for runtime:</p>
+
+<blockquote>
+from langchain_core.prompts import PromptTemplate
+from datetime import datetime
+
+# Create template with multiple variables
+template = PromptTemplate(
+    template="Today is {date}. {instruction}",
+    input_variables=["date", "instruction"]
+)
+
+# Partially fill the date
+partial_template = template.partial(
+    date=datetime.now().strftime("%Y-%m-%d")
+)
+
+# Only need to provide instruction at runtime
+result = partial_template.format(
+    instruction="Summarize the latest tech news."
+)
+</blockquote>
+
+<h2>Output Parsers</h2>
+<p>Output parsers transform raw model output into structured data:</p>
+
+<table>
+<tr>
+<th>Parser Type</th>
+<th>Use Case</th>
+<th>Output Format</th>
+</tr>
+<tr>
+<td class="rowheader">StrOutputParser</td>
+<td>Simple text extraction</td>
+<td>String</td>
+</tr>
+<tr>
+<td class="rowheader">JsonOutputParser</td>
+<td>Structured JSON data</td>
+<td>Dictionary</td>
+</tr>
+<tr>
+<td class="rowheader">PydanticOutputParser</td>
+<td>Type-validated objects</td>
+<td>Pydantic model</td>
+</tr>
+<tr>
+<td class="rowheader">CommaSeparatedListOutputParser</td>
+<td>Lists of items</td>
+<td>List of strings</td>
+</tr>
+<tr>
+<td class="rowheader">DatetimeOutputParser</td>
+<td>Date and time extraction</td>
+<td>Datetime object</td>
+</tr>
+</table>
+
+<h2>JSON Output Parser</h2>
+<blockquote>
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+
+# Define the parser
+parser = JsonOutputParser()
+
+# Create prompt with format instructions
+prompt = ChatPromptTemplate.from_template(
+    "Extract information about {topic}.\n{format_instructions}"
+)
+
+# Add format instructions to prompt
+chain = (
+    prompt.partial(format_instructions=parser.get_format_instructions())
+    | model
+    | parser
+)
+
+result = chain.invoke({"topic": "Python programming language"})
+# Returns: {"name": "Python", "type": "programming language", ...}
+</blockquote>
+
+<h2>Pydantic Output Parser</h2>
+<p>Use Pydantic models for type-safe, validated output:</p>
+
+<blockquote>
+from langchain_core.output_parsers import PydanticOutputParser
+from pydantic import BaseModel, Field
+
+# Define the data model
+class Person(BaseModel):
+    name: str = Field(description="The person's full name")
+    age: int = Field(description="The person's age in years")
+    occupation: str = Field(description="The person's job title")
+    skills: list[str] = Field(description="List of professional skills")
+
+# Create parser
+parser = PydanticOutputParser(pydantic_object=Person)
+
+# Build chain with format instructions
+prompt = ChatPromptTemplate.from_template(
+    "Extract person information from: {text}\n{format_instructions}"
+)
+
+chain = (
+    prompt.partial(format_instructions=parser.get_format_instructions())
+    | model
+    | parser
+)
+
+result = chain.invoke({
+    "text": "John Doe is a 35-year-old software engineer skilled in Python, Docker, and Kubernetes."
+})
+# Returns: Person(name="John Doe", age=35, occupation="software engineer", ...)
+</blockquote>
+
+<h2>List Output Parser</h2>
+<blockquote>
+from langchain_core.output_parsers import CommaSeparatedListOutputParser
+
+parser = CommaSeparatedListOutputParser()
+
+prompt = ChatPromptTemplate.from_template(
+    "List 5 {category}.\n{format_instructions}"
+)
+
+chain = (
+    prompt.partial(format_instructions=parser.get_format_instructions())
+    | model
+    | parser
+)
+
+result = chain.invoke({"category": "programming languages"})
+# Returns: ["Python", "JavaScript", "Java", "C++", "Go"]
+</blockquote>
+
+<h2>Custom Output Parsers</h2>
+<p>Create custom parsers for specialized needs:</p>
+
+<blockquote>
+from langchain_core.output_parsers import BaseOutputParser
+
+class CustomEmailParser(BaseOutputParser[dict]):
+    """Parse email addresses and domains."""
+    
+    def parse(self, text: str) -> dict:
+        # Extract email using regex or string manipulation
+        parts = text.strip().split("@")
+        if len(parts) == 2:
+            return {
+                "username": parts[0],
+                "domain": parts[1],
+                "full_email": text.strip()
+            }
+        return {"error": "Invalid email format"}
+    
+    def get_format_instructions(self) -> str:
+        return "Provide a valid email address."
+
+# Use the custom parser
+parser = CustomEmailParser()
+chain = prompt | model | parser
+</blockquote>
+
+<h2>Error Handling in Parsers</h2>
+<blockquote>
+from langchain_core.output_parsers import OutputFixingParser
+
+# Wrap parser with error fixing
+base_parser = JsonOutputParser()
+fixing_parser = OutputFixingParser.from_llm(
+    parser=base_parser,
+    llm=model
+)
+
+# If parsing fails, the fixing parser will ask the LLM to correct the output
+chain = prompt | model | fixing_parser
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Provide Clear Instructions:</strong> Include format instructions in prompts</li>
+<li><strong>Validate Output:</strong> Use Pydantic parsers for type safety</li>
+<li><strong>Handle Failures:</strong> Implement fallback parsing strategies</li>
+<li><strong>Test Edge Cases:</strong> Verify parser behavior with unexpected inputs</li>
+<li><strong>Document Schemas:</strong> Clearly define expected output structures</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Detection and Advanced Techniques</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Text Watermarking Techniques</h1>
+<h2>Part 2: Detection and Advanced Techniques</h2>
+
+<h2>Watermark Detection Mechanisms</h2>
+<p>Detection is the process of determining whether text contains a watermark. This involves statistical analysis and hypothesis testing.</p>
+
+<h3>The Detection Process</h3>
+<p>Detecting a green/red list watermark follows these steps:</p>
+
+<ol>
+    <li><strong>Tokenization:</strong> Convert the text into tokens using the same tokenizer as generation</li>
+    <li><strong>Partition Reconstruction:</strong> For each token position, use the hash function with the previous token and secret key to determine which tokens should be green</li>
+    <li><strong>Green Token Counting:</strong> Count how many actual tokens in the text are green</li>
+    <li><strong>Statistical Testing:</strong> Compare the observed green token proportion to the expected proportion (typically 50%)</li>
+    <li><strong>Confidence Scoring:</strong> Calculate a p-value or confidence score indicating watermark likelihood</li>
+</ol>
+
+<h3>Statistical Foundations of Detection</h3>
+<p>Detection relies on the binomial distribution and hypothesis testing:</p>
+
+<blockquote>
+<strong>Under the null hypothesis (no watermark):</strong><br/>
+The number of green tokens follows a binomial distribution with p = 0.5<br/>
+Expected green tokens = n × 0.5 (where n is total tokens)<br/>
+Standard deviation = √(n × 0.5 × 0.5)<br/><br/>
+<strong>Under the alternative hypothesis (watermarked):</strong><br/>
+The number of green tokens is significantly higher than expected<br/>
+The exact proportion depends on the watermark strength (delta parameter)
+</blockquote>
+
+<h3>Z-Score Calculation</h3>
+<p>The z-score measures how many standard deviations the observed green token count is from the expected value:</p>
+
+<blockquote>
+z = (observed_green - expected_green) / standard_deviation<br/><br/>
+<strong>Interpretation:</strong><br/>
+z &gt; 2: Likely watermarked (95% confidence)<br/>
+z &gt; 3: Very likely watermarked (99.7% confidence)<br/>
+z &gt; 4: Almost certainly watermarked (99.99% confidence)
+</blockquote>
+
+<h3>Detection Thresholds</h3>
+<p>Organizations must set thresholds based on their risk tolerance:</p>
+
+<table>
+    <tr>
+        <th>Threshold</th>
+        <th>False Positive Rate</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">z &gt; 2 (95% confidence)</td>
+        <td>~5%</td>
+        <td>Low-stakes screening, initial filtering</td>
+    </tr>
+    <tr>
+        <td class="rowheader">z &gt; 3 (99.7% confidence)</td>
+        <td>~0.3%</td>
+        <td>Standard detection, content moderation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">z &gt; 4 (99.99% confidence)</td>
+        <td>~0.01%</td>
+        <td>High-stakes decisions, legal evidence</td>
+    </tr>
+    <tr>
+        <td class="rowheader">z &gt; 5 (99.9999% confidence)</td>
+        <td>~0.0001%</td>
+        <td>Academic integrity, critical applications</td>
+    </tr>
+</table>
+
+<h2>Minimum Text Length Requirements</h2>
+<p>Reliable detection requires sufficient text length. The required length depends on watermark strength:</p>
+
+<h3>Length-Detection Relationship</h3>
+<ul>
+    <li><strong>Strong Watermark (high delta):</strong> Detectable in 25-50 tokens (~20-40 words)</li>
+    <li><strong>Medium Watermark:</strong> Requires 100-200 tokens (~75-150 words)</li>
+    <li><strong>Weak Watermark (low delta):</strong> May need 500+ tokens (~400+ words)</li>
+</ul>
+
+<h3>Short Text Challenge</h3>
+<p>Very short texts (tweets, headlines, captions) present detection challenges:</p>
+
+<ul>
+    <li>Statistical tests have low power with few samples</li>
+    <li>High variance in green token proportion</li>
+    <li>Increased false positive and false negative rates</li>
+    <li>May require stronger watermarks (affecting quality)</li>
+</ul>
+
+<h3>Strategies for Short Text</h3>
+<ul>
+    <li><strong>Aggregate Detection:</strong> Analyze multiple short texts from the same source together</li>
+    <li><strong>Stronger Watermarks:</strong> Accept quality trade-off for detectability</li>
+    <li><strong>Multi-Bit Watermarks:</strong> Embed more information per token</li>
+    <li><strong>Hybrid Approaches:</strong> Combine watermarking with other detection methods</li>
+</ul>
+
+<h2>Advanced Text Watermarking Techniques</h2>
+
+<h3>1. Exponential Watermarking</h3>
+<p>A more sophisticated approach that provides stronger theoretical guarantees:</p>
+
+<h4>Key Differences from Green/Red List</h4>
+<ul>
+    <li>Uses continuous probability adjustments rather than binary partitions</li>
+    <li>Applies exponential bias to token probabilities</li>
+    <li>Provides provable security properties</li>
+    <li>More resistant to certain attacks</li>
+</ul>
+
+<h4>Advantages</h4>
+<ul>
+    <li>Stronger mathematical foundations</li>
+    <li>Better quality-robustness trade-off</li>
+    <li>Configurable security parameters</li>
+    <li>Supports zero-knowledge detection protocols</li>
+</ul>
+
+<h4>Disadvantages</h4>
+<ul>
+    <li>More complex to implement</li>
+    <li>Higher computational overhead</li>
+    <li>Requires careful parameter tuning</li>
+    <li>Less intuitive than green/red list</li>
+</ul>
+
+<h3>2. Semantic Watermarking</h3>
+<p>Embeds watermarks in semantic choices rather than token-level statistics:</p>
+
+<h4>Approach</h4>
+<ul>
+    <li>Identify semantically equivalent alternatives (synonyms, paraphrases)</li>
+    <li>Use watermark key to select among alternatives</li>
+    <li>Preserve meaning while embedding signal</li>
+    <li>Detection analyzes semantic patterns</li>
+</ul>
+
+<h4>Robustness Benefits</h4>
+<ul>
+    <li>Survives paraphrasing attacks better than token-level methods</li>
+    <li>More resistant to synonym substitution</li>
+    <li>Can survive translation in some cases</li>
+    <li>Maintains semantic integrity</li>
+</ul>
+
+<h4>Implementation Challenges</h4>
+<ul>
+    <li>Requires semantic understanding (embeddings, knowledge graphs)</li>
+    <li>Computationally expensive</li>
+    <li>Difficult to ensure true semantic equivalence</li>
+    <li>Limited research and production implementations</li>
+</ul>
+
+<h3>3. Multi-Bit Watermarking</h3>
+<p>Embeds additional information beyond simple presence/absence:</p>
+
+<h4>Information Encoding</h4>
+<ul>
+    <li><strong>Model Identifier:</strong> Which specific model generated the content</li>
+    <li><strong>Timestamp:</strong> When the content was generated</li>
+    <li><strong>User ID:</strong> Who requested the generation (privacy concerns)</li>
+    <li><strong>Version Information:</strong> Model version, configuration details</li>
+    <li><strong>Purpose Tags:</strong> Intended use case or content category</li>
+</ul>
+
+<h4>Encoding Strategies</h4>
+<ul>
+    <li>Use multiple independent green/red partitions</li>
+    <li>Each partition encodes one bit of information</li>
+    <li>Combine partitions to encode multi-bit messages</li>
+    <li>Error correction codes for robustness</li>
+</ul>
+
+<h4>Trade-offs</h4>
+<ul>
+    <li><strong>Benefit:</strong> Rich metadata for provenance tracking</li>
+    <li><strong>Cost:</strong> Requires longer text for reliable detection</li>
+    <li><strong>Benefit:</strong> Enables fine-grained attribution</li>
+    <li><strong>Cost:</strong> Increased complexity and potential quality impact</li>
+</ul>
+
+<h3>4. Context-Aware Watermarking</h3>
+<p>Adapts watermarking strategy based on generation context:</p>
+
+<h4>Adaptive Strategies</h4>
+<ul>
+    <li><strong>Quality-Critical Sections:</strong> Reduce watermark strength for creative or nuanced content</li>
+    <li><strong>Factual Sections:</strong> Increase watermark strength for objective information</li>
+    <li><strong>High-Entropy Positions:</strong> Stronger watermarking where many good token choices exist</li>
+    <li><strong>Low-Entropy Positions:</strong> Minimal watermarking where token choice is constrained</li>
+</ul>
+
+<h4>Benefits</h4>
+<ul>
+    <li>Optimizes quality-detectability trade-off dynamically</li>
+    <li>Reduces perceptible quality impact</li>
+    <li>Maintains strong detection where possible</li>
+    <li>Adapts to content characteristics</li>
+</ul>
+
+<h2>Robustness Against Attacks</h2>
+
+<h3>Paraphrasing Attack Analysis</h3>
+<p>Paraphrasing is the most common attack against text watermarks:</p>
+
+<h4>Attack Effectiveness</h4>
+<table>
+    <tr>
+        <th>Paraphrasing Method</th>
+        <th>Watermark Survival Rate</th>
+        <th>Quality Degradation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Minor synonym substitution</td>
+        <td>60-80%</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AI-based paraphrasing</td>
+        <td>30-50%</td>
+        <td>Low to moderate</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Complete rewriting</td>
+        <td">0-20%</td>
+        <td>Moderate to high</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Translation round-trip</td>
+        <td>0-10%</td>
+        <td>High</td>
+    </tr>
+</table>
+
+<h4>Defense Strategies</h4>
+<ul>
+    <li><strong>Semantic Watermarking:</strong> Embed signals that survive meaning-preserving changes</li>
+    <li><strong>Redundant Encoding:</strong> Embed watermark multiple times throughout text</li>
+    <li><strong>Structural Watermarking:</strong> Use document structure, not just token choices</li>
+    <li><strong>Multi-Level Watermarking:</strong> Combine token, sentence, and paragraph-level signals</li>
+</ul>
+
+<h3>Insertion and Deletion Attacks</h3>
+<p>Adversaries may add or remove text to disrupt watermark detection:</p>
+
+<h4>Attack Scenarios</h4>
+<ul>
+    <li>Adding human-written introduction or conclusion</li>
+    <li>Inserting non-watermarked text between watermarked sections</li>
+    <li>Deleting portions of watermarked text</li>
+    <li>Mixing watermarked and non-watermarked content</li>
+</ul>
+
+<h4>Detection Adaptations</h4>
+<ul>
+    <li><strong>Sliding Window Detection:</strong> Analyze text in overlapping segments</li>
+    <li><strong>Partial Detection:</strong> Report which sections are watermarked</li>
+    <li><strong>Confidence Mapping:</strong> Provide per-segment confidence scores</li>
+    <li><strong>Boundary Detection:</strong> Identify transitions between watermarked and non-watermarked text</li>
+</ul>
+
+<h2>Performance Optimization</h2>
+
+<h3>Generation-Time Optimization</h3>
+<p>Minimizing watermarking overhead during generation:</p>
+
+<ul>
+    <li><strong>Hash Caching:</strong> Pre-compute and cache hash values for common tokens</li>
+    <li><strong>Batch Processing:</strong> Process multiple tokens simultaneously when possible</li>
+    <li><strong>Efficient Data Structures:</strong> Use optimized representations for green/red sets</li>
+    <li><strong>Lazy Evaluation:</strong> Only compute partitions for high-probability tokens</li>
+</ul>
+
+<h3>Detection-Time Optimization</h3>
+<p>Enabling fast detection for large-scale applications:</p>
+
+<ul>
+    <li><strong>Early Termination:</strong> Stop analysis once confidence threshold is reached</li>
+    <li><strong>Sampling:</strong> Analyze representative portions rather than entire text</li>
+    <li><strong>Parallel Processing:</strong> Detect watermarks in multiple texts simultaneously</li>
+    <li><strong>Approximate Detection:</strong> Use faster heuristics for initial screening</li>
+</ul>
+
+<h2>Real-World Deployment Considerations</h2>
+
+<h3>Key Management</h3>
+<p>Secure handling of watermarking keys is critical:</p>
+
+<ul>
+    <li><strong>Key Generation:</strong> Use cryptographically secure random number generators</li>
+    <li><strong>Key Storage:</strong> Hardware security modules (HSMs) or secure key vaults</li>
+    <li><strong>Key Rotation:</strong> Periodic key changes to limit exposure</li>
+    <li><strong>Access Control:</strong> Strict limits on who can access watermarking keys</li>
+    <li><strong>Audit Logging:</strong> Track all key usage for security monitoring</li>
+</ul>
+
+<h3>Monitoring and Evaluation</h3>
+<p>Continuous assessment of watermark effectiveness:</p>
+
+<ul>
+    <li>Track detection rates on known watermarked content</li>
+    <li>Monitor false positive rates on human-written text</li>
+    <li>Evaluate quality metrics (perplexity, human ratings)</li>
+    <li>Test robustness against emerging attack methods</li>
+    <li>Analyze performance across different content types and languages</li>
+</ul>
+
+<h2>Module Summary</h2>
+<p>In this module, we explored text watermarking in depth:</p>
+
+<ul>
+    <li><strong>Detection Mechanisms:</strong> Statistical testing using z-scores and hypothesis testing</li>
+    <li><strong>Text Length Requirements:</strong> Minimum length depends on watermark strength</li>
+    <li><strong>Advanced Techniques:</strong> Exponential, semantic, multi-bit, and context-aware watermarking</li>
+    <li><strong>Attack Resistance:</strong> Paraphrasing, insertion/deletion, and translation attacks</li>
+    <li><strong>Optimization:</strong> Strategies for efficient generation and detection</li>
+    <li><strong>Deployment:</strong> Key management and continuous monitoring</li>
+</ul>
+
+<p>In the next module, we will explore image watermarking and content provenance systems.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

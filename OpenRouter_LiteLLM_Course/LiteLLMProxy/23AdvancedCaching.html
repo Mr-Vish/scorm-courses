@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module: Advanced Caching for LLMs</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Caching Strategies for Large Language Models</h1>
+
+<p>Caching is one of the most effective ways to reduce the cost and latency of LLM applications. By storing and reusing the results of previous requests, you can avoid expensive API calls and provide near-instant responses to your users. This module dives deep into the different types of caching available in the LiteLLM ecosystem.</p>
+
+<h2>2.9 Exact-Match Caching</h2>
+<p>Exact-match caching is the simplest form of caching. If two users send the exact same prompt (byte-for-byte), the system returns the cached response.
+<ul>
+    <li><strong>Implementation:</strong> The prompt is hashed (e.g., using SHA-256), and the hash is used as a key in a key-value store like Redis.</li>
+    <li><strong>Best for:</strong> Frequently asked questions, fixed system prompts, and static templates.</li>
+</ul></p>
+
+<h2>2.10 Semantic Caching</h2>
+<p>Semantic caching is much more sophisticated. It uses vector embeddings to identify prompts that are semantically similar, even if they are not identical.
+<ul>
+    <li><strong>Workflow:</strong>
+        <ol>
+            <li>The incoming prompt is converted into a vector embedding.</li>
+            <li>A similarity search is performed against a vector database of previously cached prompts.</li>
+            <li>If a prompt is found with a similarity score above a certain threshold (e.g., 0.98), its cached response is returned.</li>
+        </ol>
+    </li>
+    <li><strong>Implementation:</strong> LiteLLM supports semantic caching using providers like Redis (with the RediSearch module) or specialized vector databases.</li>
+</ul></p>
+
+<h2>2.11 Prompt Caching (Provider-Side)</h2>
+<p>Modern AI providers like Anthropic and OpenAI now offer "Prompt Caching" at the API level. This allows you to cache large blocks of static text (like long system instructions or multi-shot examples) within the provider's infrastructure.
+<ul>
+    <li><strong>Benefits:</strong> Significant reduction in token costs (up to 90% for cached tokens) and faster time-to-first-token.</li>
+    <li><strong>LiteLLM Support:</strong> LiteLLM can automatically manage these provider-side caches by identifying static prefixes in your prompts.</li>
+</ul></p>
+
+<h2>2.12 Cache Invalidation and Lifecycle</h2>
+<p>Managing the lifecycle of your cache is crucial to avoid "stale" answers.
+<ul>
+    <li><strong>TTL (Time-to-Live):</strong> Setting an expiration time for cached entries (e.g., 24 hours).</li>
+    <li><strong>Manual Invalidation:</strong> Providing an API to clear the cache for specific models or prompt categories.</li>
+    <li><strong>Version-based Invalidation:</strong> Automatically clearing the cache when the underlying model or system prompt is updated.</li>
+</ul></p>
+
+<h2>2.13 Monitoring Cache Performance</h2>
+<p>To evaluate the effectiveness of your caching strategy, you should monitor the "Cache Hit Rate"—the percentage of requests that are served from the cache rather than the model provider. A high hit rate indicates significant savings in both time and money.</p>
+
+<p>By implementing a multi-layered caching strategy, you can build AI applications that are not only powerful but also incredibly efficient and cost-effective at scale.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building Intelligent Agents</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building Intelligent Agents</h1>
+
+<h2>What Are LangChain Agents?</h2>
+<p>Agents are autonomous systems that use language models to determine which actions to take and in what order. Unlike chains, which follow a predetermined sequence, agents dynamically decide their next steps based on observations and reasoning.</p>
+
+<h2>Agent vs Chain Comparison</h2>
+<table>
+<tr>
+<th>Aspect</th>
+<th>Chains</th>
+<th>Agents</th>
+</tr>
+<tr>
+<td class="rowheader">Execution Flow</td>
+<td>Fixed, predetermined sequence</td>
+<td>Dynamic, model-determined</td>
+</tr>
+<tr>
+<td class="rowheader">Decision Making</td>
+<td>Hardcoded logic</td>
+<td>LLM-based reasoning</td>
+</tr>
+<tr>
+<td class="rowheader">Tool Usage</td>
+<td>Explicit calls in code</td>
+<td>Agent chooses tools as needed</td>
+</tr>
+<tr>
+<td class="rowheader">Complexity</td>
+<td>Simple, predictable</td>
+<td>Complex, adaptive</td>
+</tr>
+<tr>
+<td class="rowheader">Best For</td>
+<td>Well-defined workflows</td>
+<td>Open-ended tasks</td>
+</tr>
+</table>
+
+<h2>Agent Architecture</h2>
+<p>A LangChain agent consists of three main components:</p>
+
+<ul>
+<li><strong>Agent:</strong> The decision-making core that uses an LLM to choose actions</li>
+<li><strong>Tools:</strong> Functions the agent can call to interact with external systems</li>
+<li><strong>AgentExecutor:</strong> Orchestrates the agent's execution loop</li>
+</ul>
+
+<h2>Creating a Basic Agent</h2>
+<blockquote>
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
+
+# Define a custom tool
+@tool
+def calculate_square(number: int) -> int:
+    """Calculate the square of a number."""
+    return number ** 2
+
+@tool
+def calculate_cube(number: int) -> int:
+    """Calculate the cube of a number."""
+    return number ** 3
+
+# Initialize model and tools
+model = ChatOpenAI(model="gpt-4o", temperature=0)
+tools = [calculate_square, calculate_cube]
+
+# Create agent prompt
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful math assistant. Use the available tools to help answer questions."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}"),
+])
+
+# Create agent
+agent = create_tool_calling_agent(model, tools, prompt)
+
+# Create executor
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    max_iterations=5
+)
+
+# Run the agent
+result = agent_executor.invoke({
+    "input": "What is the square of 7 plus the cube of 3?"
+})
+print(result["output"])
+</blockquote>
+
+<h2>Agent Types</h2>
+
+<h3>Tool Calling Agent</h3>
+<p>Uses the model's native function calling capability (recommended for modern models):</p>
+
+<blockquote>
+from langchain.agents import create_tool_calling_agent
+
+agent = create_tool_calling_agent(
+    llm=model,
+    tools=tools,
+    prompt=prompt
+)
+</blockquote>
+
+<h3>ReAct Agent</h3>
+<p>Uses the Reason + Act pattern with text-based tool descriptions:</p>
+
+<blockquote>
+from langchain.agents import create_react_agent
+
+# ReAct prompt template
+react_prompt = ChatPromptTemplate.from_template("""
+Answer the following questions as best you can. You have access to the following tools:
+
+{tools}
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Question: {input}
+{agent_scratchpad}
+""")
+
+agent = create_react_agent(model, tools, react_prompt)
+</blockquote>
+
+<h3>Structured Chat Agent</h3>
+<p>Handles multi-input tools with structured arguments:</p>
+
+<blockquote>
+from langchain.agents import create_structured_chat_agent
+
+agent = create_structured_chat_agent(
+    llm=model,
+    tools=tools,
+    prompt=prompt
+)
+</blockquote>
+
+<h2>Agent Execution Control</h2>
+
+<h3>Max Iterations</h3>
+<blockquote>
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    max_iterations=10,  # Prevent infinite loops
+    verbose=True
+)
+</blockquote>
+
+<h3>Early Stopping</h3>
+<blockquote>
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    early_stopping_method="generate",  # or "force"
+    max_iterations=5
+)
+</blockquote>
+
+<h3>Timeout Handling</h3>
+<blockquote>
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    max_execution_time=30,  # seconds
+    verbose=True
+)
+</blockquote>
+
+<h2>Agent with Multiple Tools</h2>
+<blockquote>
+from langchain_community.tools import DuckDuckGoSearchResults
+from langchain_community.tools import WikipediaQueryRun
+from langchain_community.utilities import WikipediaAPIWrapper
+
+# Search tool
+search = DuckDuckGoSearchResults()
+
+# Wikipedia tool
+wikipedia = WikipediaQueryRun(
+    api_wrapper=WikipediaAPIWrapper()
+)
+
+# Custom calculation tool
+@tool
+def calculate(expression: str) -> str:
+    """Evaluate a mathematical expression. Example: '2 + 2' or '10 * 5'."""
+    try:
+        result = eval(expression)
+        return str(result)
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+# Combine all tools
+tools = [search, wikipedia, calculate]
+
+agent = create_tool_calling_agent(model, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+# Agent can now search, look up Wikipedia, and calculate
+result = agent_executor.invoke({
+    "input": "What is the population of Tokyo multiplied by 2?"
+})
+</blockquote>
+
+<h2>Agent Callbacks</h2>
+<p>Monitor agent execution with callbacks:</p>
+
+<blockquote>
+from langchain.callbacks import StdOutCallbackHandler
+
+handler = StdOutCallbackHandler()
+
+result = agent_executor.invoke(
+    {"input": "What is the weather in Paris?"},
+    config={"callbacks": [handler]}
+)
+</blockquote>
+
+<h2>Streaming Agent Responses</h2>
+<blockquote>
+# Stream agent output
+for chunk in agent_executor.stream({"input": "Explain quantum computing"}):
+    if "output" in chunk:
+        print(chunk["output"], end="", flush=True)
+</blockquote>
+
+<h2>Error Handling in Agents</h2>
+<blockquote>
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    handle_parsing_errors=True,  # Gracefully handle parsing errors
+    verbose=True
+)
+
+# Custom error handling
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    handle_parsing_errors="Check your output and make sure it conforms to the format!",
+    verbose=True
+)
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Clear Tool Descriptions:</strong> Write detailed docstrings for tools</li>
+<li><strong>Limit Iterations:</strong> Set max_iterations to prevent runaway execution</li>
+<li><strong>Use Tool Calling:</strong> Prefer tool calling agents for modern models</li>
+<li><strong>Monitor Execution:</strong> Enable verbose mode during development</li>
+<li><strong>Handle Errors:</strong> Implement proper error handling and timeouts</li>
+<li><strong>Test Tools Independently:</strong> Verify each tool works before adding to agent</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

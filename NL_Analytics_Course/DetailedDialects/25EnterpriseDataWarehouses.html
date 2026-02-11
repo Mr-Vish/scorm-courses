@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module: Text-to-SQL for Snowflake and BigQuery</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Text-to-SQL for Enterprise Data Warehouses (Snowflake &amp; BigQuery)</h1>
+
+<p>Translating natural language into SQL for enterprise data warehouses like Snowflake and Google BigQuery presents unique challenges and opportunities. These platforms have specific syntaxes and features that the NLA system must be able to leverage for optimal performance and correctness.</p>
+
+<h2>2.5 Specifics of Snowflake SQL</h2>
+<p>Snowflake is known for its powerful data sharing and scaling capabilities. Key features for NLA to support include:
+<ul>
+    <li><strong>Identifier Quoting:</strong> Snowflake identifiers are often case-sensitive if quoted. The system must know when to use <code>"Table_Name"</code> vs <code>TABLE_NAME</code>.</li>
+    <li><strong>Semi-structured Data Support:</strong> Using the <code>FLATTEN</code> function and the colon syntax (<code>data:key::string</code>) to query JSON, Parquet, or Avro data stored in Snowflake tables.</li>
+    <li><strong>Time Travel:</strong> Generating queries that use the <code>AT</code> or <code>BEFORE</code> clauses to query historical data (e.g., "What was the state of this table as of 2 hours ago?").</li>
+</ul></p>
+
+<h2>2.6 Specifics of Google BigQuery SQL</h2>
+<p>BigQuery uses a specific dialect of Standard SQL (GoogleSQL) with its own set of functions and types.
+<ul>
+    <li><strong>Project and Dataset Scoping:</strong> Every table reference must include the project and dataset ID (e.g., <code>`project-id.dataset_id.table_name`</code>).</li>
+    <li><strong>Array and Struct Handling:</strong> Using <code>UNNEST</code> and <code>STRUCT</code> for querying complex, nested data structures common in BigQuery schemas.</li>
+    <li><strong>Partitioning and Clustering:</strong> Generating queries that take advantage of partitioned tables to reduce costs (e.g., always including a filter on the <code>_PARTITIONTIME</code> column if appropriate).</li>
+</ul></p>
+
+<h2>2.7 Cross-Dialect Translation</h2>
+<p>In many large organizations, data is spread across multiple platforms. A robust NLA interface can act as a "SQL Translation Layer," taking a single natural language query and generating the appropriate dialect depending on which database the data resides in. This abstraction allows users to analyze data across the entire enterprise without needing to know where it's stored or what SQL dialect it uses.</p>
+
+<p>By tailoring your Text-to-SQL pipeline to the specific strengths and syntaxes of enterprise data warehouses, you can provide a high-performance, accurate analytics experience for even the largest and most complex datasets.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 1: Fundamentals of Log Levels - Part 1</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: Fundamentals of Log Levels</h1>
+
+<h2>Module Overview</h2>
+<p>This module establishes the foundational understanding of log levels, their hierarchical relationships, and the semantic meaning behind each level. You will learn how log levels function as a classification system that enables developers and operators to control the verbosity of application output based on environmental needs and operational contexts.</p>
+
+<h2>What Are Log Levels?</h2>
+<p>Log levels represent a standardized categorization system for application messages based on their severity, importance, and intended audience. They serve as a filtering mechanism that allows teams to adjust the volume and detail of logged information without modifying application code. This capability is essential for maintaining different logging behaviors across development, testing, and production environments.</p>
+
+<p>The concept of log levels emerged from the recognition that not all application events warrant the same level of attention. A successful user login and a database connection failure represent fundamentally different types of events requiring different responses. Log levels provide the vocabulary and structure to express these differences consistently across an application ecosystem.</p>
+
+<h2>The Log Level Hierarchy</h2>
+<p>Most modern logging frameworks implement a hierarchical log level system where each level implicitly includes all levels of higher severity. This hierarchical nature means that when you configure logging at a particular level, you receive messages at that level and all more severe levels. Understanding this hierarchy is crucial for effective log configuration.</p>
+
+<p>The standard log level hierarchy, from least to most severe, typically includes:</p>
+
+<table>
+    <tr>
+        <th>Level</th>
+        <th>Severity</th>
+        <th>Primary Purpose</th>
+        <th>Typical Environment</th>
+    </tr>
+    <tr>
+        <td class="rowheader">TRACE</td>
+        <td>Lowest</td>
+        <td>Extremely detailed diagnostic information</td>
+        <td>Development (short-term)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">DEBUG</td>
+        <td>Low</td>
+        <td>Detailed information for debugging</td>
+        <td>Development, Testing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">INFO</td>
+        <td>Medium</td>
+        <td>General informational messages</td>
+        <td>All environments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">WARN</td>
+        <td>Medium-High</td>
+        <td>Potentially harmful situations</td>
+        <td>All environments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ERROR</td>
+        <td>High</td>
+        <td>Error events that allow continued execution</td>
+        <td>All environments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">FATAL</td>
+        <td>Highest</td>
+        <td>Severe errors causing application termination</td>
+        <td>All environments</td>
+    </tr>
+</table>
+
+<h2>Understanding Hierarchical Filtering</h2>
+<p>The hierarchical nature of log levels creates an important filtering behavior. When you set your logging configuration to a specific level, you receive all messages at that level and above. For example:</p>
+
+<ul>
+    <li>Setting log level to <strong>INFO</strong> captures INFO, WARN, ERROR, and FATAL messages, but excludes DEBUG and TRACE</li>
+    <li>Setting log level to <strong>WARN</strong> captures only WARN, ERROR, and FATAL messages</li>
+    <li>Setting log level to <strong>ERROR</strong> captures only ERROR and FATAL messages</li>
+</ul>
+
+<p>This filtering mechanism allows you to dramatically reduce log volume in production while maintaining comprehensive logging in development environments. A typical production application might generate thousands of DEBUG messages per second, but only dozens of INFO messages, making INFO the practical minimum for production logging.</p>
+
+<h2>TRACE Level: Microscopic Visibility</h2>
+<p>TRACE represents the most granular level of logging, providing microscopic visibility into application execution flow. This level captures information so detailed that it's typically only enabled temporarily during intensive debugging sessions.</p>
+
+<p><strong>Appropriate Uses for TRACE:</strong></p>
+<ul>
+    <li>Tracing the complete execution path through complex algorithms or business logic</li>
+    <li>Logging every iteration of loops when diagnosing calculation errors</li>
+    <li>Capturing detailed state transitions in state machines</li>
+    <li>Recording every step of multi-phase operations for timing analysis</li>
+    <li>Documenting the evaluation of complex conditional logic</li>
+</ul>
+
+<p><strong>Characteristics of TRACE Logging:</strong></p>
+<ul>
+    <li>Generates extremely high message volume, often hundreds or thousands of messages per request</li>
+    <li>Includes information that would be excessive even in development environments if left enabled continuously</li>
+    <li>Typically disabled by default even in development configurations</li>
+    <li>Should never be enabled in production except for brief, targeted diagnostic sessions</li>
+    <li>May include performance-sensitive operations like detailed object serialization</li>
+</ul>
+
+<p><strong>Performance Considerations:</strong> TRACE logging can significantly impact application performance due to the sheer volume of messages and the computational cost of generating detailed diagnostic information. Even with TRACE disabled, the cost of evaluating whether to log can accumulate if TRACE statements are too numerous. Modern logging frameworks use guard clauses or lambda expressions to defer expensive message construction until after determining the message will actually be logged.</p>
+
+<h2>DEBUG Level: Development Diagnostics</h2>
+<p>DEBUG level provides detailed diagnostic information useful during development and troubleshooting. Unlike TRACE, DEBUG logging is intended to remain in the codebase permanently and be enabled routinely in development environments.</p>
+
+<p><strong>Appropriate Uses for DEBUG:</strong></p>
+<ul>
+    <li>Logging method entry and exit points with parameter values</li>
+    <li>Recording intermediate calculation results and variable states</li>
+    <li>Documenting decision points in business logic with the factors influencing decisions</li>
+    <li>Capturing the results of external service calls before processing</li>
+    <li>Logging configuration values loaded at application startup</li>
+    <li>Recording cache hits and misses for performance analysis</li>
+</ul>
+
+<p><strong>Characteristics of DEBUG Logging:</strong></p>
+<ul>
+    <li>Provides sufficient detail to understand application behavior without overwhelming volume</li>
+    <li>Enabled by default in development environments, disabled in production</li>
+    <li>Helps developers understand code execution without using interactive debuggers</li>
+    <li>Serves as living documentation of how code actually behaves</li>
+    <li>Balances detail with performance impact</li>
+</ul>
+
+<p><strong>DEBUG vs. TRACE:</strong> The distinction between DEBUG and TRACE is often subjective, but a useful guideline is that DEBUG should provide enough information to understand what the application is doing, while TRACE provides enough information to understand exactly how it's doing it. DEBUG answers "what happened," while TRACE answers "how did it happen step by step."</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

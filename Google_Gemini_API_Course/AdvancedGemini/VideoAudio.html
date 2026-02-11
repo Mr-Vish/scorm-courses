@@ -1,0 +1,326 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Video and Audio Processing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Video and Audio Processing</h1>
+
+<h2>Understanding Multi-Modal Video Processing</h2>
+<p>Gemini's video processing capability goes beyond simple transcription. The model can understand visual elements, audio content, on-screen text, scene transitions, and the relationships between these modalities simultaneously. This enables comprehensive video analysis that was previously impossible with single-modality models.</p>
+
+<h2>Video File Upload and Processing</h2>
+<p>Large media files must be uploaded to Google's servers before processing. The File API handles this efficiently.</p>
+
+<blockquote>
+import google.generativeai as genai
+import time
+
+# Configure API
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+# Upload video file
+print("Uploading video...")
+video_file = genai.upload_file("lecture.mp4")
+print(f"Upload complete: {video_file.name}")
+
+# Wait for processing to complete
+print("Processing video...")
+while video_file.state.name == "PROCESSING":
+    time.sleep(10)
+    video_file = genai.get_file(video_file.name)
+    print(f"Status: {video_file.state.name}")
+
+if video_file.state.name == "FAILED":
+    raise ValueError(f"Video processing failed: {video_file.state}")
+
+print("Video ready for analysis")
+
+# Generate content with video
+model = genai.GenerativeModel("gemini-1.5-pro")
+response = model.generate_content([
+    video_file,
+    "Summarize the key points of this lecture. "
+    "Include timestamps for each major topic."
+])
+
+print(response.text)
+</blockquote>
+
+<h2>Advanced Video Analysis</h2>
+<p>Leverage Gemini's understanding of visual and audio elements for comprehensive analysis.</p>
+
+<blockquote>
+# Detailed video analysis with specific questions
+prompt = """
+Analyze this video and provide:
+1. A summary of the main topics discussed
+2. Key visual elements shown (diagrams, charts, demonstrations)
+3. Timestamps for each major section
+4. Any code or technical concepts demonstrated
+5. Questions that could be used to test understanding of this content
+"""
+
+response = model.generate_content([video_file, prompt])
+print(response.text)
+</blockquote>
+
+<h2>Video Content Extraction</h2>
+<blockquote>
+# Extract structured data from video
+response = model.generate_content(
+    [
+        video_file,
+        "Extract all product features mentioned in this demo video. "
+        "Return as JSON with feature name, timestamp, and description."
+    ],
+    generation_config=genai.GenerationConfig(
+        response_mime_type="application/json",
+        response_schema={
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "feature": {"type": "string"},
+                    "timestamp": {"type": "string"},
+                    "description": {"type": "string"}
+                }
+            }
+        }
+    )
+)
+
+import json
+features = json.loads(response.text)
+for feature in features:
+    print(f"{feature['timestamp']}: {feature['feature']} - {feature['description']}")
+</blockquote>
+
+<h2>Audio File Processing</h2>
+<p>Audio files are processed similarly to video, with support for transcription, analysis, and content extraction.</p>
+
+<blockquote>
+# Upload and process audio file
+audio_file = genai.upload_file("meeting.mp3")
+
+# Wait for processing
+while audio_file.state.name == "PROCESSING":
+    time.sleep(5)
+    audio_file = genai.get_file(audio_file.name)
+
+# Transcribe and analyze
+response = model.generate_content([
+    audio_file,
+    "Transcribe this meeting and extract action items with assigned owners."
+])
+
+print(response.text)
+</blockquote>
+
+<h2>Meeting Analysis with Structured Output</h2>
+<blockquote>
+# Extract structured meeting data
+meeting_schema = {
+    "type": "object",
+    "properties": {
+        "meeting_title": {"type": "string"},
+        "date": {"type": "string"},
+        "participants": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "key_decisions": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "action_items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "task": {"type": "string"},
+                    "owner": {"type": "string"},
+                    "deadline": {"type": "string"}
+                }
+            }
+        }
+    }
+}
+
+response = model.generate_content(
+    [audio_file, "Extract meeting information in structured format"],
+    generation_config=genai.GenerationConfig(
+        response_mime_type="application/json",
+        response_schema=meeting_schema
+    )
+)
+
+meeting_data = json.loads(response.text)
+print(f"Meeting: {meeting_data['meeting_title']}")
+print(f"Action Items: {len(meeting_data['action_items'])}")
+</blockquote>
+
+<h2>File Management</h2>
+<p>Manage uploaded files efficiently to control storage and costs.</p>
+
+<blockquote>
+# List all uploaded files
+files = genai.list_files()
+for file in files:
+    print(f"{file.name}: {file.display_name} ({file.state.name})")
+
+# Get specific file details
+file_info = genai.get_file(video_file.name)
+print(f"Size: {file_info.size_bytes} bytes")
+print(f"MIME type: {file_info.mime_type}")
+print(f"Created: {file_info.create_time}")
+
+# Delete file when no longer needed
+genai.delete_file(video_file.name)
+print("File deleted")
+</blockquote>
+
+<h2>Long Context Applications</h2>
+<p>Gemini's extended context windows enable analysis of extremely long content that would be impossible with traditional models.</p>
+
+<h3>Codebase Analysis</h3>
+<blockquote>
+# Upload multiple code files for comprehensive analysis
+code_files = []
+for filename in ["main.py", "utils.py", "models.py", "tests.py"]:
+    file = genai.upload_file(filename)
+    code_files.append(file)
+
+# Wait for all files to process
+for file in code_files:
+    while file.state.name == "PROCESSING":
+        time.sleep(2)
+        file = genai.get_file(file.name)
+
+# Analyze entire codebase
+response = model.generate_content([
+    *code_files,
+    "Analyze this codebase and provide: "
+    "1. Architecture overview "
+    "2. Potential bugs or security issues "
+    "3. Code quality assessment "
+    "4. Suggestions for improvement"
+])
+
+print(response.text)
+</blockquote>
+
+<h3>Document Comparison</h3>
+<blockquote>
+# Compare multiple lengthy documents
+doc1 = genai.upload_file("contract_v1.pdf")
+doc2 = genai.upload_file("contract_v2.pdf")
+
+# Wait for processing
+for doc in [doc1, doc2]:
+    while doc.state.name == "PROCESSING":
+        time.sleep(5)
+        doc = genai.get_file(doc.name)
+
+# Compare documents
+response = model.generate_content([
+    doc1,
+    doc2,
+    "Compare these two contract versions and identify all changes, "
+    "categorizing them as additions, deletions, or modifications."
+])
+
+print(response.text)
+</blockquote>
+
+<h3>Research Synthesis</h3>
+<blockquote>
+# Analyze multiple research papers simultaneously
+papers = []
+for paper_file in ["paper1.pdf", "paper2.pdf", "paper3.pdf"]:
+    file = genai.upload_file(paper_file)
+    papers.append(file)
+
+# Wait for processing
+for paper in papers:
+    while paper.state.name == "PROCESSING":
+        time.sleep(10)
+        paper = genai.get_file(paper.name)
+
+# Synthesize research findings
+response = model.generate_content([
+    *papers,
+    "Synthesize the findings from these research papers. "
+    "Identify common themes, contradictions, and gaps in the research."
+])
+
+print(response.text)
+</blockquote>
+
+<h2>Supported File Formats</h2>
+<table>
+    <tr>
+        <th>Media Type</th>
+        <th>Supported Formats</th>
+        <th>Max Size</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Video</td>
+        <td>MP4, MOV, AVI, FLV, MPG, WEBM, WMV, 3GPP</td>
+        <td>2GB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Audio</td>
+        <td>MP3, WAV, AIFF, AAC, OGG, FLAC</td>
+        <td>2GB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Images</td>
+        <td>PNG, JPEG, WEBP, HEIC, HEIF</td>
+        <td>20MB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Documents</td>
+        <td>PDF, TXT</td>
+        <td>2GB</td>
+    </tr>
+</table>
+
+<h2>Performance Optimization</h2>
+<ul>
+    <li><strong>Compress Media Files:</strong> Reduce file size without significant quality loss</li>
+    <li><strong>Use Appropriate Models:</strong> Gemini 1.5 Pro for long videos, Flash for shorter content</li>
+    <li><strong>Batch Processing:</strong> Upload multiple files concurrently when analyzing related content</li>
+    <li><strong>Clean Up Files:</strong> Delete uploaded files after processing to manage storage</li>
+    <li><strong>Monitor Processing Time:</strong> Longer videos require more processing time</li>
+</ul>
+
+<h2>Real-World Use Cases</h2>
+<ul>
+    <li><strong>Education:</strong> Analyze lecture videos, generate study guides, create quiz questions</li>
+    <li><strong>Content Moderation:</strong> Review video content for policy violations</li>
+    <li><strong>Media Production:</strong> Extract metadata, generate descriptions, identify key moments</li>
+    <li><strong>Legal:</strong> Analyze deposition videos, extract testimony, identify key statements</li>
+    <li><strong>Healthcare:</strong> Analyze medical imaging videos (with proper compliance)</li>
+    <li><strong>Security:</strong> Analyze surveillance footage, identify events, generate reports</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Validate File State:</strong> Always check processing status before generating content</li>
+    <li><strong>Handle Errors Gracefully:</strong> Implement retry logic for failed uploads</li>
+    <li><strong>Optimize Prompts:</strong> Be specific about what information you need from the media</li>
+    <li><strong>Use Structured Output:</strong> Request JSON format for reliable data extraction</li>
+    <li><strong>Consider Privacy:</strong> Ensure compliance with data protection regulations</li>
+    <li><strong>Monitor Costs:</strong> Long videos consume more tokens and processing resources</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cost Management and Optimization Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cost Management and Optimization Strategies</h1>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand Bedrock pricing models and cost drivers</li>
+    <li>Learn strategies for cost optimization without sacrificing quality</li>
+    <li>Master cost monitoring and forecasting techniques</li>
+    <li>Apply budgeting and cost allocation best practices</li>
+</ul>
+
+<h3>Understanding Bedrock Pricing</h3>
+
+<p>Amazon Bedrock follows a pay-per-use pricing model based on token consumption, with costs varying significantly across models and usage patterns. Effective cost management requires understanding pricing structures, identifying cost drivers, implementing optimization strategies, and establishing governance processes. Unlike traditional infrastructure costs that are relatively predictable, AI costs can scale rapidly with usage, making proactive cost management essential for sustainable deployments.</p>
+
+<h3>Pricing Models</h3>
+
+<h4>On-Demand Pricing</h4>
+<p>Pay for tokens processed with no upfront commitments:</p>
+
+<ul>
+    <li><strong>Input Tokens:</strong> Charged per 1,000 tokens in prompts</li>
+    <li><strong>Output Tokens:</strong> Charged per 1,000 tokens in responses (typically higher rate)</li>
+    <li><strong>No Minimum:</strong> Pay only for what you use</li>
+    <li><strong>Variable Costs:</strong> Scales with usage automatically</li>
+</ul>
+
+<p><strong>Example Pricing (Illustrative):</strong></p>
+<table>
+    <tr>
+        <th>Model</th>
+        <th>Input (per 1K tokens)</th>
+        <th>Output (per 1K tokens)</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude 3 Haiku</td>
+        <td>$0.00025</td>
+        <td>$0.00125</td>
+        <td>High-volume, simple tasks</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude 3 Sonnet</td>
+        <td>$0.003</td>
+        <td>$0.015</td>
+        <td>Balanced performance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude 3 Opus</td>
+        <td>$0.015</td>
+        <td>$0.075</td>
+        <td>Complex reasoning</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Titan Text</td>
+        <td>$0.0002</td>
+        <td>$0.0006</td>
+        <td>Cost-sensitive applications</td>
+    </tr>
+</table>
+
+<h4>Provisioned Throughput</h4>
+<p>Reserve model capacity for predictable, high-volume workloads:</p>
+
+<ul>
+    <li><strong>Fixed Hourly Rate:</strong> Pay for reserved capacity regardless of usage</li>
+    <li><strong>Guaranteed Performance:</strong> Consistent low latency</li>
+    <li><strong>Cost Savings:</strong> 30-50% discount for sustained usage</li>
+    <li><strong>Commitment:</strong> Typically 1-month or 6-month terms</li>
+</ul>
+
+<p><strong>When to Use Provisioned Throughput:</strong></p>
+<ul>
+    <li>Predictable, sustained workloads (e.g., 24/7 chatbot)</li>
+    <li>Latency-sensitive applications requiring consistent performance</li>
+    <li>High-volume usage where savings justify commitment</li>
+    <li>Production applications with established usage patterns</li>
+</ul>
+
+<h3>Cost Drivers and Analysis</h3>
+
+<h4>Primary Cost Factors</h4>
+
+<p><strong>1. Token Consumption:</strong></p>
+<ul>
+    <li>Prompt length (input tokens)</li>
+    <li>Response length (output tokens)</li>
+    <li>Conversation history in multi-turn interactions</li>
+    <li>Retrieved context in RAG applications</li>
+</ul>
+
+<p><strong>2. Model Selection:</strong></p>
+<ul>
+    <li>Advanced models cost 10-60x more than efficient models</li>
+    <li>Output tokens typically cost 3-5x more than input tokens</li>
+    <li>Model capability often exceeds requirements</li>
+</ul>
+
+<p><strong>3. Usage Patterns:</strong></p>
+<ul>
+    <li>Request volume and frequency</li>
+    <li>Peak vs. average usage</li>
+    <li>Interactive vs. batch processing</li>
+    <li>Retry and error rates</li>
+</ul>
+
+<h4>Cost Calculation Example</h4>
+
+<blockquote>
+Scenario: Customer service chatbot
+- Model: Claude 3 Sonnet
+- Average prompt: 500 tokens (context + query)
+- Average response: 200 tokens
+- Requests per day: 10,000
+
+Daily Cost Calculation:
+Input cost: 10,000 requests × 500 tokens × $0.003/1K = $15.00
+Output cost: 10,000 requests × 200 tokens × $0.015/1K = $30.00
+Total daily cost: $45.00
+Monthly cost: $45 × 30 = $1,350
+
+Optimization with Claude 3 Haiku (70% of simple queries):
+Simple queries (7,000): 7,000 × (500 × $0.00025 + 200 × $0.00125) = $2.63
+Complex queries (3,000): 3,000 × (500 × $0.003 + 200 × $0.015) = $13.50
+Total daily cost: $16.13
+Monthly savings: ($45 - $16.13) × 30 = $866 (64% reduction)
+</blockquote>
+
+<h3>Cost Optimization Strategies</h3>
+
+<h4>1. Prompt Engineering for Cost Efficiency</h4>
+
+<p><strong>Minimize Context:</strong></p>
+<ul>
+    <li>Include only essential information in prompts</li>
+    <li>Remove redundant instructions and examples</li>
+    <li>Use concise language without sacrificing clarity</li>
+    <li>Compress conversation history in multi-turn interactions</li>
+</ul>
+
+<p><strong>Control Output Length:</strong></p>
+<ul>
+    <li>Set appropriate max_tokens limits</li>
+    <li>Use stop_sequences to halt generation at logical points</li>
+    <li>Request specific formats (bullet points vs. paragraphs)</li>
+    <li>Avoid open-ended generation</li>
+</ul>
+
+<p><strong>Example Optimization:</strong></p>
+<blockquote>
+Inefficient Prompt (850 tokens):
+"I would like you to analyze the following customer feedback in detail. Please provide a comprehensive analysis including all themes, sentiments, and recommendations. Here is the feedback: [500 token feedback]. Please be thorough and detailed in your analysis."
+
+Optimized Prompt (520 tokens):
+"Analyze feedback. Provide: themes, sentiment, recommendations.
+[500 token feedback]"
+
+Savings: 330 tokens per request = 39% input cost reduction
+</blockquote>
+
+<h4>2. Intelligent Model Routing</h4>
+
+<p><strong>Tiered Model Strategy:</strong></p>
+<blockquote>
+def route_to_model(query):
+    # Classify query complexity
+    complexity = classify_complexity(query)
+    
+    if complexity == 'simple':
+        return 'claude-3-haiku'  # $0.00025 input
+    elif complexity == 'moderate':
+        return 'claude-3-sonnet'  # $0.003 input
+    else:
+        return 'claude-3-opus'  # $0.015 input
+
+def classify_complexity(query):
+    # Simple heuristics
+    if len(query.split()) &lt; 20:
+        return 'simple'
+    elif any(keyword in query.lower() for keyword in ['analyze', 'compare', 'evaluate']):
+        return 'complex'
+    else:
+        return 'moderate'
+</blockquote>
+
+<p><strong>Expected Savings:</strong></p>
+<ul>
+    <li>If 60% of queries are simple: 60% cost reduction on those queries</li>
+    <li>If 30% are moderate and 10% complex: Optimize majority while maintaining quality</li>
+    <li>Overall savings: 40-60% depending on distribution</li>
+</ul>
+
+<h4>3. Caching Implementation</h4>
+
+<p><strong>Response Caching:</strong></p>
+<ul>
+    <li>Cache identical queries with deterministic responses</li>
+    <li>Set appropriate TTL based on content freshness requirements</li>
+    <li>Use Redis or DynamoDB for fast lookups</li>
+    <li>Monitor cache hit rates and adjust strategy</li>
+</ul>
+
+<p><strong>Semantic Caching:</strong></p>
+<ul>
+    <li>Embed queries into vectors</li>
+    <li>Find similar past queries using cosine similarity</li>
+    <li>Reuse responses if similarity &gt; threshold (e.g., 0.95)</li>
+    <li>Reduces costs for paraphrased or similar queries</li>
+</ul>
+
+<p><strong>Cost Impact:</strong></p>
+<blockquote>
+Scenario: 30% cache hit rate
+Original cost: $1,000/month
+With caching: $700/month (30% savings)
+Cache infrastructure cost: ~$50/month
+Net savings: $250/month (25%)
+</blockquote>
+
+<h4>4. Batch Processing</h4>
+
+<p>For non-interactive workloads, batch requests to optimize throughput:</p>
+<ul>
+    <li>Accumulate requests over time window</li>
+    <li>Process in parallel or sequential batches</li>
+    <li>Reduce overhead from multiple API calls</li>
+    <li>Optimize token usage with shared context</li>
+</ul>
+
+<h4>5. RAG Optimization</h4>
+
+<p><strong>Retrieval Configuration:</strong></p>
+<ul>
+    <li>Limit number of retrieved chunks (3-5 vs. 10+)</li>
+    <li>Optimize chunk size (300-500 tokens)</li>
+    <li>Use reranking selectively (adds latency and cost)</li>
+    <li>Filter irrelevant results before including in prompt</li>
+</ul>
+
+<p><strong>Cost Impact:</strong></p>
+<blockquote>
+Scenario: RAG application
+Original: 10 chunks × 500 tokens = 5,000 token context
+Optimized: 5 chunks × 400 tokens = 2,000 token context
+Savings: 60% reduction in RAG-related input costs
+</blockquote>
+
+<h3>Cost Monitoring and Alerting</h3>
+
+<h4>Cost Tracking Metrics</h4>
+
+<ul>
+    <li><strong>Daily Spend:</strong> Track total costs per day</li>
+    <li><strong>Cost Per Request:</strong> Average cost per API invocation</li>
+    <li><strong>Cost by Model:</strong> Breakdown by model usage</li>
+    <li><strong>Cost by Application:</strong> Attribution to business units</li>
+    <li><strong>Token Consumption Trends:</strong> Input/output token usage over time</li>
+</ul>
+
+<h4>Budget Alerts</h4>
+
+<p><strong>AWS Budgets Configuration:</strong></p>
+<blockquote>
+1. Set monthly budget threshold (e.g., $5,000)
+2. Configure alerts at:
+   - 50% of budget ($2,500)
+   - 80% of budget ($4,000)
+   - 100% of budget ($5,000)
+   - 120% of budget ($6,000) - critical alert
+3. Send notifications to:
+   - Engineering team (50%, 80%)
+   - Management (100%, 120%)
+4. Automated actions:
+   - Throttle non-critical applications at 100%
+   - Disable development environments at 120%
+</blockquote>
+
+<h4>Anomaly Detection</h4>
+<ul>
+    <li>Use AWS Cost Anomaly Detection for automatic alerts</li>
+    <li>Monitor for unexpected spikes in usage</li>
+    <li>Investigate sudden changes in cost patterns</li>
+    <li>Set up custom CloudWatch alarms for cost metrics</li>
+</ul>
+
+<h3>Cost Allocation and Chargeback</h3>
+
+<h4>Tagging Strategy</h4>
+
+<p>Implement comprehensive tagging for cost attribution:</p>
+<ul>
+    <li><strong>Application:</strong> Which application/service</li>
+    <li><strong>Environment:</strong> Production, staging, development</li>
+    <li><strong>Team:</strong> Owning team or business unit</li>
+    <li><strong>Cost Center:</strong> Financial allocation</li>
+    <li><strong>Project:</strong> Specific project or initiative</li>
+</ul>
+
+<h4>Chargeback Models</h4>
+
+<p><strong>Direct Chargeback:</strong></p>
+<ul>
+    <li>Charge teams based on actual usage</li>
+    <li>Encourages cost-conscious behavior</li>
+    <li>Requires accurate tracking and attribution</li>
+</ul>
+
+<p><strong>Showback:</strong></p>
+<ul>
+    <li>Report costs without charging</li>
+    <li>Raises awareness without financial impact</li>
+    <li>Good starting point before implementing chargeback</li>
+</ul>
+
+<h3>Cost Forecasting</h3>
+
+<h4>Forecasting Methodology</h4>
+
+<ol>
+    <li><strong>Baseline Establishment:</strong> Analyze historical usage patterns</li>
+    <li><strong>Growth Projections:</strong> Estimate user growth and feature adoption</li>
+    <li><strong>Scenario Planning:</strong> Model best/worst/expected cases</li>
+    <li><strong>Optimization Assumptions:</strong> Factor in planned optimizations</li>
+    <li><strong>Regular Updates:</strong> Revise forecasts monthly based on actuals</li>
+</ol>
+
+<h4>Forecast Example</h4>
+
+<blockquote>
+Current State (Month 1):
+- Users: 1,000
+- Requests/user/day: 5
+- Cost per request: $0.01
+- Monthly cost: 1,000 × 5 × 30 × $0.01 = $1,500
+
+Growth Projection (Month 12):
+- Users: 5,000 (5x growth)
+- Requests/user/day: 7 (40% increase in engagement)
+- Cost per request: $0.006 (40% reduction from optimizations)
+- Projected monthly cost: 5,000 × 7 × 30 × $0.006 = $6,300
+
+Without optimization: 5,000 × 7 × 30 × $0.01 = $10,500
+Savings from optimization: $4,200/month (40%)
+</blockquote>
+
+<h3>Governance and Controls</h3>
+
+<h4>Usage Policies</h4>
+
+<ul>
+    <li><strong>Model Approval:</strong> Require justification for expensive models</li>
+    <li><strong>Environment Restrictions:</strong> Limit development to efficient models</li>
+    <li><strong>Quota Management:</strong> Set per-application or per-user limits</li>
+    <li><strong>Review Processes:</strong> Regular cost reviews with stakeholders</li>
+</ul>
+
+<h4>Cost Optimization Checklist</h4>
+
+<table>
+    <tr>
+        <th>Area</th>
+        <th>Action</th>
+        <th>Potential Savings</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompts</td>
+        <td>Minimize token count, optimize structure</td>
+        <td>20-40%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Models</td>
+        <td>Implement tiered routing strategy</td>
+        <td>40-60%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Caching</td>
+        <td>Cache responses for repeated queries</td>
+        <td>20-30%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">RAG</td>
+        <td>Optimize retrieval configuration</td>
+        <td>30-50%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batching</td>
+        <td>Batch non-interactive workloads</td>
+        <td>10-20%</td>
+    </tr>
+</table>
+
+<h3>Best Practices Summary</h3>
+
+<h4>Cost Awareness</h4>
+<ul>
+    <li>Understand pricing models and cost drivers</li>
+    <li>Track costs at granular level (application, team, model)</li>
+    <li>Establish baselines and monitor trends</li>
+    <li>Educate teams on cost implications of design decisions</li>
+</ul>
+
+<h4>Optimization</h4>
+<ul>
+    <li>Optimize prompts to minimize token consumption</li>
+    <li>Implement intelligent model routing based on complexity</li>
+    <li>Use caching to reduce redundant invocations</li>
+    <li>Batch non-interactive workloads for efficiency</li>
+    <li>Optimize RAG retrieval configuration</li>
+</ul>
+
+<h4>Governance</h4>
+<ul>
+    <li>Set budgets and configure alerts</li>
+    <li>Implement tagging for cost attribution</li>
+    <li>Establish approval processes for expensive operations</li>
+    <li>Regular cost reviews with stakeholders</li>
+    <li>Forecast costs and plan for growth</li>
+</ul>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Bedrock costs are driven by token consumption, model selection, and usage patterns</li>
+    <li>Prompt optimization can reduce costs by 20-40% without sacrificing quality</li>
+    <li>Intelligent model routing saves 40-60% by using efficient models for simple tasks</li>
+    <li>Caching strategies reduce redundant invocations and lower costs by 20-30%</li>
+    <li>Provisioned throughput offers 30-50% savings for predictable, high-volume workloads</li>
+    <li>Comprehensive monitoring, budgets, and alerts prevent cost overruns</li>
+    <li>Cost allocation through tagging enables chargeback and accountability</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

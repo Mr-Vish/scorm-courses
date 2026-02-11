@@ -1,0 +1,347 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Rate Limiting and Token Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Rate Limiting and Token Management</h1>
+
+<h2>Learning Objectives</h2>
+<ul>
+    <li>Understand rate limiting mechanisms and their purpose</li>
+    <li>Learn to interpret and respond to rate limit headers</li>
+    <li>Master token management and optimization strategies</li>
+    <li>Implement request queuing and throttling patterns</li>
+</ul>
+
+<h2>Understanding Rate Limits</h2>
+<p>Rate limiting protects API infrastructure by controlling request frequency and resource consumption. The Anthropic API implements multiple rate limit types to ensure fair resource allocation and system stability.</p>
+
+<h3>Rate Limit Types</h3>
+
+<h4>1. Requests Per Minute (RPM)</h4>
+<ul>
+    <li><strong>Purpose:</strong> Limits number of API calls in 60-second window</li>
+    <li><strong>Typical Limits:</strong> 50-5,000 RPM depending on tier</li>
+    <li><strong>Use Case:</strong> Prevents excessive API call frequency</li>
+</ul>
+
+<h4>2. Tokens Per Minute (TPM)</h4>
+<ul>
+    <li><strong>Purpose:</strong> Limits total tokens processed per minute</li>
+    <li><strong>Typical Limits:</strong> 100K-10M TPM depending on tier</li>
+    <li><strong>Calculation:</strong> Input tokens + output tokens</li>
+</ul>
+
+<h4>3. Tokens Per Day (TPD)</h4>
+<ul>
+    <li><strong>Purpose:</strong> Daily token consumption cap</li>
+    <li><strong>Typical Limits:</strong> Varies by subscription plan</li>
+    <li><strong>Reset:</strong> Daily at midnight UTC</li>
+</ul>
+
+<h4>4. Concurrent Requests</h4>
+<ul>
+    <li><strong>Purpose:</strong> Maximum simultaneous active requests</li>
+    <li><strong>Typical Limits:</strong> 5-50 concurrent requests</li>
+    <li><strong>Impact:</strong> Affects parallel processing capability</li>
+</ul>
+
+<h2>Rate Limit Headers</h2>
+<p>API responses include headers providing rate limit information:</p>
+
+<div class="code-block">
+<pre><code>anthropic-ratelimit-requests-limit: 1000
+anthropic-ratelimit-requests-remaining: 847
+anthropic-ratelimit-requests-reset: 2024-01-15T10:30:00Z
+anthropic-ratelimit-tokens-limit: 100000
+anthropic-ratelimit-tokens-remaining: 75230
+anthropic-ratelimit-tokens-reset: 2024-01-15T10:30:00Z</code></pre>
+</div>
+
+<h3>Header Interpretation</h3>
+<table>
+    <tr>
+        <th>Header</th>
+        <th>Meaning</th>
+        <th>Action</th>
+    </tr>
+    <tr>
+        <td class="rowheader">requests-limit</td>
+        <td>Maximum requests per period</td>
+        <td>Know your capacity</td>
+    </tr>
+    <tr>
+        <td class="rowheader">requests-remaining</td>
+        <td>Requests left in current period</td>
+        <td>Monitor consumption</td>
+    </tr>
+    <tr>
+        <td class="rowheader">requests-reset</td>
+        <td>When limit resets</td>
+        <td>Plan request timing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">tokens-remaining</td>
+        <td>Tokens available</td>
+        <td>Adjust request sizes</td>
+    </tr>
+</table>
+
+<h2>Handling 429 Rate Limit Errors</h2>
+<p>When rate limits are exceeded, the API returns HTTP 429 with retry guidance.</p>
+
+<h3>429 Response Structure</h3>
+<div class="code-block">
+<pre><code>{
+  "type": "error",
+  "error": {
+    "type": "rate_limit_error",
+    "message": "Rate limit exceeded"
+  }
+}
+
+Headers:
+retry-after: 60</code></pre>
+</div>
+
+<h3>Response Strategy</h3>
+<ul>
+    <li><strong>Respect retry-after:</strong> Wait specified seconds before retry</li>
+    <li><strong>Implement backoff:</strong> Use exponential backoff if retry-after not provided</li>
+    <li><strong>Queue requests:</strong> Hold pending requests until limit resets</li>
+    <li><strong>Alert monitoring:</strong> Track rate limit errors for capacity planning</li>
+</ul>
+
+<h2>Token Management Strategies</h2>
+<p>Effective token management optimizes costs and ensures efficient resource utilization.</p>
+
+<h3>Token Counting</h3>
+<p>Tokens include:</p>
+<ul>
+    <li><strong>Input Tokens:</strong> System prompt + conversation history + current message</li>
+    <li><strong>Output Tokens:</strong> Generated response content</li>
+    <li><strong>Estimation:</strong> ~4 characters per token (English), varies by language</li>
+</ul>
+
+<h3>Token Optimization Techniques</h3>
+
+<h4>1. Prompt Optimization</h4>
+<ul>
+    <li>Remove unnecessary verbosity from system prompts</li>
+    <li>Use concise, clear instructions</li>
+    <li>Avoid redundant context</li>
+    <li>Compress examples when possible</li>
+</ul>
+
+<h4>2. Context Management</h4>
+<ul>
+    <li><strong>Sliding Window:</strong> Keep only recent conversation turns</li>
+    <li><strong>Summarization:</strong> Compress old context into summaries</li>
+    <li><strong>Selective Inclusion:</strong> Include only relevant history</li>
+    <li><strong>Context Pruning:</strong> Remove low-value messages</li>
+</ul>
+
+<h4>3. Output Control</h4>
+<ul>
+    <li>Set appropriate max_tokens limits</li>
+    <li>Use stop sequences to prevent over-generation</li>
+    <li>Request concise responses when appropriate</li>
+    <li>Implement output length guidelines in prompts</li>
+</ul>
+
+<h4>4. Model Selection</h4>
+<ul>
+    <li>Use Haiku for simple tasks (lower token costs)</li>
+    <li>Reserve Opus for complex reasoning only</li>
+    <li>Match model capability to task requirements</li>
+</ul>
+
+<h2>Request Queuing Patterns</h2>
+<p>Queuing manages request flow to stay within rate limits.</p>
+
+<h3>Token Bucket Algorithm</h3>
+<p>Classic rate limiting algorithm:</p>
+<ul>
+    <li><strong>Bucket Capacity:</strong> Maximum burst size</li>
+    <li><strong>Refill Rate:</strong> Tokens added per second</li>
+    <li><strong>Request Cost:</strong> Tokens consumed per request</li>
+    <li><strong>Behavior:</strong> Request proceeds if sufficient tokens available</li>
+</ul>
+
+<h3>Queue Implementation Strategies</h3>
+
+<h4>Priority Queue</h4>
+<ul>
+    <li>Assign priority levels to requests</li>
+    <li>Process high-priority requests first</li>
+    <li>Implement fairness mechanisms</li>
+    <li>Prevent starvation of low-priority requests</li>
+</ul>
+
+<h4>FIFO Queue</h4>
+<ul>
+    <li>First-in, first-out processing</li>
+    <li>Simple and fair</li>
+    <li>Predictable wait times</li>
+    <li>No priority differentiation</li>
+</ul>
+
+<h4>Adaptive Queue</h4>
+<ul>
+    <li>Adjust processing rate based on rate limit headers</li>
+    <li>Slow down when approaching limits</li>
+    <li>Speed up when capacity available</li>
+    <li>Optimize throughput dynamically</li>
+</ul>
+
+<h2>Throttling Strategies</h2>
+<p>Throttling proactively limits request rate to prevent hitting limits.</p>
+
+<h3>Fixed Rate Throttling</h3>
+<ul>
+    <li>Maintain constant request rate below limit</li>
+    <li>Simple to implement</li>
+    <li>Predictable behavior</li>
+    <li>May underutilize capacity</li>
+</ul>
+
+<h3>Adaptive Throttling</h3>
+<ul>
+    <li>Adjust rate based on remaining capacity</li>
+    <li>Maximize throughput</li>
+    <li>Respond to rate limit headers</li>
+    <li>More complex implementation</li>
+</ul>
+
+<h3>Burst Handling</h3>
+<ul>
+    <li>Allow short bursts above average rate</li>
+    <li>Smooth out traffic spikes</li>
+    <li>Maintain average rate compliance</li>
+    <li>Improve user experience for bursty workloads</li>
+</ul>
+
+<h2>Monitoring and Capacity Planning</h2>
+
+<h3>Key Metrics to Track</h3>
+<ul>
+    <li><strong>Request Rate:</strong> Actual requests per minute</li>
+    <li><strong>Token Consumption:</strong> Tokens used per minute/day</li>
+    <li><strong>Rate Limit Errors:</strong> Frequency of 429 responses</li>
+    <li><strong>Queue Depth:</strong> Pending requests in queue</li>
+    <li><strong>Wait Time:</strong> Time requests spend in queue</li>
+    <li><strong>Utilization:</strong> Percentage of rate limit capacity used</li>
+</ul>
+
+<h3>Capacity Planning Guidelines</h3>
+<ul>
+    <li><strong>Target Utilization:</strong> Aim for 70-80% of rate limits</li>
+    <li><strong>Peak Handling:</strong> Plan for 2-3x average load</li>
+    <li><strong>Growth Buffer:</strong> Maintain headroom for traffic growth</li>
+    <li><strong>Upgrade Triggers:</strong> Define thresholds for tier upgrades</li>
+</ul>
+
+<h2>Multi-Tenant Rate Limiting</h2>
+<p>Applications serving multiple users need fair resource allocation.</p>
+
+<h3>Per-User Limits</h3>
+<ul>
+    <li>Allocate rate limit budget per user</li>
+    <li>Prevent single user from consuming all capacity</li>
+    <li>Implement user-level queues</li>
+    <li>Track per-user consumption</li>
+</ul>
+
+<h3>Tiered Access</h3>
+<ul>
+    <li>Different limits for different user tiers</li>
+    <li>Premium users get higher limits</li>
+    <li>Free tier with restrictive limits</li>
+    <li>Clear communication of tier benefits</li>
+</ul>
+
+<h3>Fair Sharing</h3>
+<ul>
+    <li>Distribute capacity fairly among active users</li>
+    <li>Implement weighted fair queuing</li>
+    <li>Prevent monopolization by heavy users</li>
+    <li>Balance fairness with efficiency</li>
+</ul>
+
+<h2>Cost-Aware Rate Management</h2>
+<p>Balance performance with cost constraints.</p>
+
+<h3>Budget-Based Throttling</h3>
+<ul>
+    <li>Set daily/monthly spending limits</li>
+    <li>Throttle requests approaching budget</li>
+    <li>Alert when thresholds reached</li>
+    <li>Implement budget reset schedules</li>
+</ul>
+
+<h3>Cost Optimization</h3>
+<ul>
+    <li>Cache responses to reduce API calls</li>
+    <li>Batch similar requests</li>
+    <li>Use cheaper models when appropriate</li>
+    <li>Implement request deduplication</li>
+</ul>
+
+<h2>Best Practices</h2>
+
+<h3>Proactive Management</h3>
+<ul>
+    <li>Monitor rate limit headers on every response</li>
+    <li>Implement throttling before hitting limits</li>
+    <li>Use queuing to smooth traffic</li>
+    <li>Plan capacity for peak loads</li>
+</ul>
+
+<h3>Reactive Handling</h3>
+<ul>
+    <li>Respect retry-after headers</li>
+    <li>Implement exponential backoff</li>
+    <li>Queue requests during rate limit periods</li>
+    <li>Provide user feedback on delays</li>
+</ul>
+
+<h3>Operational Excellence</h3>
+<ul>
+    <li>Log all rate limit events</li>
+    <li>Alert on repeated rate limit errors</li>
+    <li>Review capacity regularly</li>
+    <li>Test rate limit handling</li>
+    <li>Document rate limit policies</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+<ul>
+    <li><strong>Ignoring Headers:</strong> Not monitoring rate limit headers</li>
+    <li><strong>Aggressive Retries:</strong> Retrying too quickly after 429</li>
+    <li><strong>No Queuing:</strong> Dropping requests instead of queuing</li>
+    <li><strong>Poor Token Management:</strong> Inefficient prompt design</li>
+    <li><strong>Lack of Monitoring:</strong> Not tracking consumption patterns</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Rate limits include requests per minute, tokens per minute, and concurrent requests</li>
+    <li>Rate limit headers provide real-time capacity information</li>
+    <li>Token management through prompt optimization and context management reduces costs</li>
+    <li>Request queuing and throttling prevent rate limit errors</li>
+    <li>Monitoring and capacity planning ensure reliable service</li>
+    <li>Multi-tenant applications require fair resource allocation strategies</li>
+    <li>Proactive management is more effective than reactive handling</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Evaluation and Monitoring</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Evaluation and Monitoring</h1>
+
+
+<h2>Evaluating RAG Quality</h2>
+<p>RAG evaluation requires measuring both retrieval and generation quality:</p>
+
+<h3>Retrieval Metrics</h3>
+<table>
+    <tr><th>Metric</th><th>What It Measures</th></tr>
+    <tr><td>Recall@k</td><td>Percentage of relevant docs found in top k results</td></tr>
+    <tr><td>Precision@k</td><td>Percentage of top k results that are relevant</td></tr>
+    <tr><td>MRR</td><td>Mean Reciprocal Rank - how high the first relevant result appears</td></tr>
+    <tr><td>NDCG</td><td>Normalized Discounted Cumulative Gain - ranking quality</td></tr>
+</table>
+
+<h3>Generation Metrics</h3>
+<table>
+    <tr><th>Metric</th><th>What It Measures</th></tr>
+    <tr><td>Faithfulness</td><td>Are answers grounded in retrieved context?</td></tr>
+    <tr><td>Relevance</td><td>Does the answer address the question?</td></tr>
+    <tr><td>Completeness</td><td>Does the answer cover all aspects of the question?</td></tr>
+    <tr><td>Hallucination rate</td><td>How often does the model fabricate information?</td></tr>
+</table>
+
+<h2>Building an Evaluation Dataset</h2>
+<div class="code-block">
+<pre><code># Generate evaluation questions from your documents
+eval_dataset = []
+for doc in documents:
+    response = claude.messages.create(
+        model="claude-sonnet-4-20250514",
+        messages=[{
+            "role": "user",
+            "content": f"Generate 3 question-answer pairs from this text. Format as JSON.
+
+{doc.text}"
+        }]
+    )
+    eval_dataset.extend(parse_qa_pairs(response))</code></pre>
+</div>
+
+<h2>Production Monitoring</h2>
+<ul>
+    <li><strong>Latency tracking:</strong> Measure retrieval time, generation time, total response time</li>
+    <li><strong>Cost monitoring:</strong> Track tokens used per query (input context + output)</li>
+    <li><strong>Quality sampling:</strong> Randomly sample responses for human evaluation</li>
+    <li><strong>User feedback:</strong> Thumbs up/down, flag incorrect answers</li>
+    <li><strong>Drift detection:</strong> Monitor retrieval quality as documents change</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

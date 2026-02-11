@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Web Accessibility and ARIA</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Web Accessibility and ARIA</h1>
+
+<h2>Web Accessibility Fundamentals</h2>
+<p>Web accessibility ensures that websites, tools, and technologies are designed and developed so that people with disabilities can use them. This includes the ability to perceive, understand, navigate, and interact with the web.</p>
+
+<h2>Common Web Accessibility Barriers</h2>
+<table>
+    <tr><th>Barrier</th><th>Impact</th><th>Affected Users</th></tr>
+    <tr><td>Missing alt text on images</td><td>Images are invisible to screen readers</td><td>Blind and low-vision users</td></tr>
+    <tr><td>Poor color contrast</td><td>Text is difficult or impossible to read</td><td>Low-vision users, color blind users</td></tr>
+    <tr><td>Keyboard-inaccessible controls</td><td>Cannot navigate or interact with site</td><td>Motor disability users, keyboard-only users</td></tr>
+    <tr><td>Missing form labels</td><td>Cannot understand what input is required</td><td>Screen reader users, cognitive disability users</td></tr>
+    <tr><td>Auto-playing media</td><td>Interferes with screen reader audio</td><td>Blind users, cognitive disability users</td></tr>
+    <tr><td>Time-limited content</td><td>Insufficient time to read or interact</td><td>Cognitive disability users, motor disability users</td></tr>
+</table>
+
+<h2>AI-Powered Accessibility Auditing</h2>
+<p>AI can automatically scan websites and identify accessibility issues:</p>
+
+<div class="code-block">
+<pre><code>from openai import OpenAI
+from bs4 import BeautifulSoup
+import requests
+
+client = OpenAI()
+
+def audit_webpage_accessibility(url: str) -&gt; dict:
+    '''Audit a webpage for accessibility issues.'''
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    issues = []
+    
+    # Check for images without alt text
+    images = soup.find_all('img')
+    for img in images:
+        if not img.get('alt'):
+            issues.append({
+                "severity": "Critical",
+                "issue": "Missing alt text",
+                "element": str(img)[:100],
+                "wcag": "1.1.1 Non-text Content"
+            })
+    
+    # Check for form inputs without labels
+    inputs = soup.find_all('input')
+    for input_elem in inputs:
+        input_id = input_elem.get('id')
+        if input_id:
+            label = soup.find('label', {'for': input_id})
+            if not label and not input_elem.get('aria-label'):
+                issues.append({
+                    "severity": "Critical",
+                    "issue": "Form input without label",
+                    "element": str(input_elem)[:100],
+                    "wcag": "3.3.2 Labels or Instructions"
+                })
+    
+    return {
+        "url": url,
+        "total_issues": len(issues),
+        "critical": len([i for i in issues if i['severity'] == 'Critical']),
+        "issues": issues
+    }</code></pre>
+</div>
+
+<h2>ARIA (Accessible Rich Internet Applications)</h2>
+<p>ARIA is a set of attributes that define ways to make web content and applications more accessible to people with disabilities. It helps bridge gaps in HTML semantics, especially for dynamic content and complex user interface controls.</p>
+
+<h2>Common ARIA Attributes</h2>
+<table>
+    <tr><th>Attribute</th><th>Purpose</th><th>Example</th></tr>
+    <tr><td>aria-label</td><td>Provides accessible name for element</td><td>&lt;button aria-label="Close dialog"&gt;X&lt;/button&gt;</td></tr>
+    <tr><td>aria-labelledby</td><td>References element that labels current element</td><td>&lt;div aria-labelledby="dialog-title"&gt;</td></tr>
+    <tr><td>aria-describedby</td><td>References element that describes current element</td><td>&lt;input aria-describedby="password-requirements"&gt;</td></tr>
+    <tr><td>aria-hidden</td><td>Hides element from assistive technologies</td><td>&lt;span aria-hidden="true"&gt;★&lt;/span&gt;</td></tr>
+    <tr><td>aria-live</td><td>Announces dynamic content changes</td><td>&lt;div aria-live="polite"&gt;Loading...&lt;/div&gt;</td></tr>
+    <tr><td>aria-expanded</td><td>Indicates if element is expanded or collapsed</td><td>&lt;button aria-expanded="false"&gt;Menu&lt;/button&gt;</td></tr>
+</table>
+
+<h2>AI-Generated ARIA Labels</h2>
+<p>AI can analyze UI components and generate appropriate ARIA labels:</p>
+
+<div class="code-block">
+<pre><code>def generate_aria_labels(html_snippet: str, page_context: str) -&gt; str:
+    '''Generate appropriate ARIA labels for HTML elements.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": (
+                "Analyze this HTML snippet and add appropriate ARIA attributes "
+                "for accessibility. Include aria-label, aria-labelledby, "
+                "aria-describedby, and role attributes where needed.\n\n"
+                f"Page context: {page_context}\n\n"
+                f"HTML:\n{html_snippet}\n\n"
+                "Return the improved HTML with ARIA attributes."
+            )
+        }]
+    )
+    return response.choices[0].message.content</code></pre>
+</div>
+
+<h2>Keyboard Navigation Testing</h2>
+<p>All interactive elements must be keyboard accessible. Key requirements:</p>
+<ul>
+    <li><strong>Tab navigation:</strong> All interactive elements reachable via Tab key</li>
+    <li><strong>Focus indicators:</strong> Visible outline showing which element has focus</li>
+    <li><strong>Enter/Space activation:</strong> Buttons and links activate with keyboard</li>
+    <li><strong>Escape key:</strong> Closes modals and dismisses popups</li>
+    <li><strong>Arrow keys:</strong> Navigate within menus, tabs, and lists</li>
+</ul>
+
+<h2>Real-World Implementation</h2>
+<ul>
+    <li><strong>E-commerce:</strong> Ensure product pages, checkout flows are fully accessible</li>
+    <li><strong>Government:</strong> Section 508 compliance for federal websites</li>
+    <li><strong>Education:</strong> Learning management systems accessible to all students</li>
+    <li><strong>Healthcare:</strong> Patient portals accessible to elderly and disabled users</li>
+    <li><strong>Banking:</strong> Financial services accessible to all customers</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Web accessibility removes barriers for people with disabilities</li>
+    <li>ARIA attributes enhance HTML semantics for assistive technologies</li>
+    <li>AI can automatically audit websites and identify accessibility issues</li>
+    <li>Color contrast, keyboard navigation, and semantic HTML are critical</li>
+    <li>Automated testing should be combined with manual testing by users with disabilities</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

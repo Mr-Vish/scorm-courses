@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Engineering Fundamentals</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Engineering Fundamentals</h1>
+
+<h2>Learning Objectives</h2>
+<ul>
+    <li>Understand the principles and importance of effective prompt engineering</li>
+    <li>Master techniques for crafting clear, specific, and effective prompts</li>
+    <li>Learn strategies for optimizing model performance through prompt design</li>
+    <li>Comprehend the relationship between prompt quality and output reliability</li>
+</ul>
+
+<h2>What is Prompt Engineering?</h2>
+<p>Prompt engineering is the practice of designing and refining input instructions to elicit desired behaviors and outputs from language models. It represents a critical skill in AI application development, as the quality of prompts directly influences model performance, output accuracy, and user satisfaction.</p>
+
+<h3>Why Prompt Engineering Matters</h3>
+<ul>
+    <li><strong>Output Quality:</strong> Well-crafted prompts produce more accurate, relevant, and useful responses</li>
+    <li><strong>Consistency:</strong> Structured prompts lead to more predictable and reliable outputs</li>
+    <li><strong>Efficiency:</strong> Effective prompts reduce the need for multiple iterations and refinements</li>
+    <li><strong>Cost Optimization:</strong> Clear prompts minimize unnecessary token usage and API calls</li>
+    <li><strong>User Experience:</strong> Better prompts translate to more satisfying application interactions</li>
+</ul>
+
+<h2>Core Principles of Effective Prompts</h2>
+
+<h3>1. Clarity and Specificity</h3>
+<p>Ambiguous prompts lead to unpredictable outputs. Clarity is paramount.</p>
+
+<h4>Poor Example:</h4>
+<div class="code-block">
+<pre><code>"Tell me about databases."</code></pre>
+</div>
+
+<h4>Improved Example:</h4>
+<div class="code-block">
+<pre><code>"Explain the differences between relational and NoSQL databases, 
+focusing on use cases, scalability characteristics, and data 
+consistency models. Provide specific examples of when to choose 
+each type."</code></pre>
+</div>
+
+<h4>Key Improvements:</h4>
+<ul>
+    <li>Specific topic scope (relational vs NoSQL)</li>
+    <li>Clear focus areas (use cases, scalability, consistency)</li>
+    <li>Explicit request for examples</li>
+    <li>Defined output structure</li>
+</ul>
+
+<h3>2. Context Provision</h3>
+<p>Providing relevant context enables the model to generate more appropriate and tailored responses.</p>
+
+<h4>Context Elements:</h4>
+<ul>
+    <li><strong>User Background:</strong> Technical level, domain expertise, role</li>
+    <li><strong>Use Case:</strong> Why the information is needed, how it will be used</li>
+    <li><strong>Constraints:</strong> Length requirements, format preferences, tone expectations</li>
+    <li><strong>Prior Knowledge:</strong> What the user already knows or has discussed</li>
+</ul>
+
+<h4>Example with Context:</h4>
+<div class="code-block">
+<pre><code>"I'm a junior developer learning backend development. I need to 
+choose a database for a social media application that will handle 
+user profiles, posts, and relationships. Explain the trade-offs 
+between PostgreSQL and MongoDB for this use case, assuming the 
+application may scale to millions of users."</code></pre>
+</div>
+
+<h3>3. Task Decomposition</h3>
+<p>Complex tasks benefit from being broken into clear, sequential steps.</p>
+
+<h4>Single Complex Request:</h4>
+<div class="code-block">
+<pre><code>"Analyze this code and fix all issues."</code></pre>
+</div>
+
+<h4>Decomposed Approach:</h4>
+<div class="code-block">
+<pre><code>"Please analyze the following Python code and:
+1. Identify any syntax errors
+2. Point out potential runtime exceptions
+3. Suggest performance optimizations
+4. Recommend improvements for code readability
+5. Provide the corrected version with explanations"</code></pre>
+</div>
+
+<h3>4. Output Format Specification</h3>
+<p>Explicitly defining desired output structure improves consistency and usability.</p>
+
+<h4>Format Specification Examples:</h4>
+<ul>
+    <li><strong>Structured Lists:</strong> "Provide your answer as a numbered list with exactly 5 items"</li>
+    <li><strong>JSON Output:</strong> "Return the results as a JSON object with keys: name, description, category"</li>
+    <li><strong>Table Format:</strong> "Present the comparison in a table with columns: Feature, Option A, Option B"</li>
+    <li><strong>Code Blocks:</strong> "Include all code examples in properly formatted code blocks with language tags"</li>
+</ul>
+
+<h2>System Prompt Design Patterns</h2>
+<p>System prompts establish the foundational behavior and personality of the AI assistant.</p>
+
+<h3>Role-Based System Prompts</h3>
+<p>Define the model's expertise and perspective:</p>
+
+<div class="code-block">
+<pre><code>"You are an experienced DevOps engineer specializing in Kubernetes 
+and cloud infrastructure. You provide practical, production-ready 
+advice with a focus on reliability, security, and cost optimization. 
+Always consider scalability and maintainability in your recommendations."</code></pre>
+</div>
+
+<h3>Behavioral Guidance System Prompts</h3>
+<p>Establish communication style and response patterns:</p>
+
+<div class="code-block">
+<pre><code>"You are a helpful technical assistant. Follow these guidelines:
+- Provide concise, accurate answers
+- Use bullet points for lists
+- Include code examples when relevant
+- Explain technical concepts in simple terms
+- Ask clarifying questions if the request is ambiguous
+- Admit when you're uncertain rather than guessing"</code></pre>
+</div>
+
+<h3>Constraint-Based System Prompts</h3>
+<p>Define boundaries and limitations:</p>
+
+<div class="code-block">
+<pre><code>"You are a customer support assistant for a SaaS platform. 
+Important constraints:
+- Never share internal system details or architecture
+- Do not provide pricing information (direct to sales team)
+- Always maintain a professional, friendly tone
+- Escalate complex technical issues to human support
+- Protect user privacy - never request sensitive personal information"</code></pre>
+</div>
+
+<h2>Advanced Prompting Techniques</h2>
+
+<h3>1. Few-Shot Learning</h3>
+<p>Provide examples of desired input-output patterns to guide model behavior.</p>
+
+<div class="code-block">
+<pre><code>"Extract key information from customer feedback. Examples:
+
+Input: 'The app crashes every time I try to upload photos. Very frustrating!'
+Output: {category: 'bug', severity: 'high', feature: 'photo_upload', sentiment: 'negative'}
+
+Input: 'Love the new dark mode! Makes using the app at night much better.'
+Output: {category: 'feedback', severity: 'low', feature: 'dark_mode', sentiment: 'positive'}
+
+Now process this feedback:
+'The search function is slow and often returns irrelevant results.'"</code></pre>
+</div>
+
+<h3>2. Chain-of-Thought Prompting</h3>
+<p>Encourage the model to show its reasoning process for complex problems.</p>
+
+<div class="code-block">
+<pre><code>"Solve this problem step by step, showing your reasoning at each stage:
+
+A database query takes 5 seconds with 1000 records. If the number 
+of records doubles, and the query complexity is O(n log n), 
+approximately how long will the query take?
+
+Please:
+1. Identify the relevant algorithm complexity
+2. Calculate the ratio of operations
+3. Apply the ratio to the original time
+4. Provide the final answer with explanation"</code></pre>
+</div>
+
+<h3>3. Perspective Taking</h3>
+<p>Ask the model to consider multiple viewpoints or approaches.</p>
+
+<div class="code-block">
+<pre><code>"Analyze the decision to migrate from a monolithic architecture 
+to microservices from three perspectives:
+
+1. Development Team Perspective: Consider development complexity, 
+   testing, and deployment
+2. Operations Perspective: Consider monitoring, debugging, and 
+   infrastructure management
+3. Business Perspective: Consider cost, time-to-market, and risk
+
+Provide balanced analysis for each perspective."</code></pre>
+</div>
+
+<h3>4. Iterative Refinement</h3>
+<p>Use conversation history to progressively refine outputs.</p>
+
+<div class="code-block">
+<pre><code>User: "Write a function to validate email addresses."
+Assistant: [Provides basic regex validation]
+
+User: "Now add support for international domain names and 
+provide detailed error messages for different validation failures."
+Assistant: [Provides enhanced version]
+
+User: "Add unit tests covering edge cases."
+Assistant: [Provides tests]</code></pre>
+</div>
+
+<h2>Common Prompting Pitfalls</h2>
+
+<h3>1. Vague Instructions</h3>
+<p><strong>Problem:</strong> "Make this code better"</p>
+<p><strong>Solution:</strong> "Refactor this code to improve readability by: adding descriptive variable names, extracting complex logic into separate functions, and adding inline comments for non-obvious operations"</p>
+
+<h3>2. Assuming Context</h3>
+<p><strong>Problem:</strong> "Fix the bug" (without providing code or error details)</p>
+<p><strong>Solution:</strong> Include the code, error messages, expected behavior, and actual behavior</p>
+
+<h3>3. Overloading Single Prompts</h3>
+<p><strong>Problem:</strong> Requesting too many unrelated tasks in one prompt</p>
+<p><strong>Solution:</strong> Break into separate, focused requests or use clear task enumeration</p>
+
+<h3>4. Inconsistent Terminology</h3>
+<p><strong>Problem:</strong> Using different terms for the same concept within a conversation</p>
+<p><strong>Solution:</strong> Establish and maintain consistent terminology throughout interactions</p>
+
+<h2>Prompt Optimization Workflow</h2>
+
+<h3>Step 1: Define Success Criteria</h3>
+<ul>
+    <li>What constitutes a successful response?</li>
+    <li>What format is required?</li>
+    <li>What level of detail is appropriate?</li>
+</ul>
+
+<h3>Step 2: Create Initial Prompt</h3>
+<ul>
+    <li>Start with clear, specific instructions</li>
+    <li>Include necessary context</li>
+    <li>Specify output format</li>
+</ul>
+
+<h3>Step 3: Test and Evaluate</h3>
+<ul>
+    <li>Run the prompt with representative inputs</li>
+    <li>Assess output quality against success criteria</li>
+    <li>Identify gaps or inconsistencies</li>
+</ul>
+
+<h3>Step 4: Refine and Iterate</h3>
+<ul>
+    <li>Add clarifications where outputs were unclear</li>
+    <li>Provide examples for desired patterns</li>
+    <li>Adjust constraints or guidance as needed</li>
+</ul>
+
+<h3>Step 5: Validate at Scale</h3>
+<ul>
+    <li>Test with diverse inputs</li>
+    <li>Verify consistency across multiple runs</li>
+    <li>Measure performance metrics (accuracy, relevance, format compliance)</li>
+</ul>
+
+<h2>Prompt Engineering for Different Use Cases</h2>
+
+<h3>Data Extraction</h3>
+<ul>
+    <li>Use structured output formats (JSON, tables)</li>
+    <li>Provide clear field definitions</li>
+    <li>Include examples of expected extractions</li>
+    <li>Specify handling of missing or ambiguous data</li>
+</ul>
+
+<h3>Content Generation</h3>
+<ul>
+    <li>Define tone, style, and audience</li>
+    <li>Specify length constraints</li>
+    <li>Provide topic boundaries and focus areas</li>
+    <li>Include formatting requirements</li>
+</ul>
+
+<h3>Code Assistance</h3>
+<ul>
+    <li>Specify programming language and version</li>
+    <li>Define coding standards and conventions</li>
+    <li>Request explanations alongside code</li>
+    <li>Include error handling requirements</li>
+</ul>
+
+<h3>Analysis and Reasoning</h3>
+<ul>
+    <li>Request step-by-step reasoning</li>
+    <li>Ask for evidence or justification</li>
+    <li>Specify analysis framework or criteria</li>
+    <li>Request consideration of alternatives</li>
+</ul>
+
+<h2>Measuring Prompt Effectiveness</h2>
+
+<h3>Quantitative Metrics</h3>
+<ul>
+    <li><strong>Accuracy:</strong> Percentage of correct or acceptable responses</li>
+    <li><strong>Consistency:</strong> Variation in outputs for similar inputs</li>
+    <li><strong>Format Compliance:</strong> Adherence to specified output structure</li>
+    <li><strong>Token Efficiency:</strong> Output quality relative to token usage</li>
+</ul>
+
+<h3>Qualitative Assessment</h3>
+<ul>
+    <li><strong>Relevance:</strong> How well responses address the actual question</li>
+    <li><strong>Completeness:</strong> Whether all requested elements are included</li>
+    <li><strong>Clarity:</strong> Readability and understandability of outputs</li>
+    <li><strong>Usefulness:</strong> Practical value of the generated content</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Prompt engineering is essential for maximizing language model performance and reliability</li>
+    <li>Effective prompts are clear, specific, and provide appropriate context</li>
+    <li>System prompts establish foundational behavior and constraints</li>
+    <li>Advanced techniques include few-shot learning, chain-of-thought, and perspective taking</li>
+    <li>Iterative refinement through testing and evaluation improves prompt quality</li>
+    <li>Different use cases require tailored prompting strategies</li>
+    <li>Measuring prompt effectiveness enables data-driven optimization</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced LiteLLM Proxy Configuration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced LiteLLM Proxy Configuration and Orchestration</h1>
+
+<p>For large-scale production deployments, the LiteLLM Proxy needs to be more than just a simple pass-through. It needs to handle persistent data, provide robust authentication, and integrate with your existing observability stack. This module covers advanced configuration options for the LiteLLM Proxy.</p>
+
+<h2>2.5 Database Integration for Persistent State</h2>
+<p>By default, the LiteLLM Proxy stores virtual keys and usage data in memory, which is lost when the server restarts. To enable persistence, you should connect it to a PostgreSQL database:
+<pre><code># In your config.yaml or as environment variables
+database_url: postgresql://user:password@localhost:5432/litellm_db</code></pre>
+<p>With a database connected, you can:
+<ul>
+    <li><strong>Manage thousands of virtual keys:</strong> Creating and revoking keys via the Proxy's Admin API.</li>
+    <li><strong>Track long-term usage and costs:</strong> Performing complex queries on historical usage data for billing and analysis.</li>
+    <li><strong>Enforce persistent budgets:</strong> Ensuring that daily or monthly spending limits are maintained across proxy restarts.</li>
+</ul></p>
+
+<h2>2.6 High Performance with Redis Caching</h2>
+<p>To reduce latency and cost for repetitive queries, you can enable semantic or exact-match caching using Redis.
+<pre><code>litellm_settings:
+  cache: True
+  cache_type: redis
+  redis_host: 127.0.0.1
+  redis_port: 6379</code></pre>
+<p>When caching is enabled, the proxy will check Redis before sending a request to the model provider. If an identical (or semantically similar) prompt has been answered recently, the cached response is returned instantly.</p>
+
+<h2>2.7 Custom Authentication and Authorization</h2>
+<p>The LiteLLM Proxy supports multiple ways to secure your AI backbone:
+<ul>
+    <li><strong>Internal Keys:</strong> The proxy generates its own keys which you distribute to your developers.</li>
+    <li><strong>OAuth2 Integration:</strong> Authenticating users against your organization's existing identity provider (like Google or Azure AD).</li>
+    <li><strong>Custom Auth Webhooks:</strong> You can define a custom URL that the proxy will call for every request to perform proprietary authentication and authorization logic.</li>
+</ul></p>
+
+<h2>2.8 Observability: Logging to Datadog and Splunk</h2>
+<p>LiteLLM integrates with nearly every popular observability tool.
+<pre><code>litellm_settings:
+  success_callback: ["datadog", "splunk", "s3"]</code></pre>
+<p>Every successful AI interaction will automatically be logged to your chosen platforms, allowing your security and ops teams to monitor AI usage alongside the rest of your infrastructure.</p>
+
+<p>By leveraging these advanced configuration options, you can transform the LiteLLM Proxy into a powerful, enterprise-ready gateway that meets the highest standards of performance, security, and manageability.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

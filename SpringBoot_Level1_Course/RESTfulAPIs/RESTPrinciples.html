@@ -1,0 +1,246 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>RESTful APIs - REST Principles</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Introduction to REST Principles</h1>
+
+<h2>What is REST?</h2>
+<p><strong>Definition:</strong> Representational State Transfer (REST) is an architectural style for designing networked applications, particularly web services. It was introduced by Roy Fielding in his doctoral dissertation in 2000 and has become the standard approach for building web APIs.</p>
+
+<p>REST treats everything as a <strong>Resource</strong> - any information that can be named and addressed. Resources are identified by URLs and can be manipulated using standard HTTP methods. Examples of resources include users, products, orders, or any data entity in your application.</p>
+
+<h2>Core REST Principles</h2>
+
+<h3>1. Resource-Based Architecture</h3>
+<p><strong>Definition:</strong> Everything in REST is considered a resource that can be uniquely identified by a URL (Uniform Resource Locator). Resources represent the nouns in your application domain.</p>
+
+<p><strong>Examples:</strong></p>
+<ul>
+    <li><code>/api/users</code> - Collection of user resources</li>
+    <li><code>/api/users/123</code> - Specific user with ID 123</li>
+    <li><code>/api/users/123/orders</code> - Orders belonging to user 123</li>
+    <li><code>/api/products/456</code> - Specific product with ID 456</li>
+</ul>
+
+<h3>2. HTTP Methods for Actions</h3>
+<p><strong>Definition:</strong> REST uses standard HTTP methods (verbs) to perform different operations on resources. This creates a uniform interface for interacting with any resource.</p>
+
+<table>
+    <tr>
+        <th>HTTP Method</th>
+        <th>CRUD Action</th>
+        <th>Purpose</th>
+        <th>Example URL</th>
+        <th>Request Body</th>
+        <th>Response</th>
+    </tr>
+    <tr>
+        <td class="rowheader">GET</td>
+        <td>Read</td>
+        <td>Retrieve resource(s)</td>
+        <td>GET /api/users/123</td>
+        <td>None</td>
+        <td>User data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">POST</td>
+        <td>Create</td>
+        <td>Create new resource</td>
+        <td>POST /api/users</td>
+        <td>User data</td>
+        <td>Created user with ID</td>
+    </tr>
+    <tr>
+        <td class="rowheader">PUT</td>
+        <td>Update</td>
+        <td>Replace entire resource</td>
+        <td>PUT /api/users/123</td>
+        <td>Complete user data</td>
+        <td>Updated user</td>
+    </tr>
+    <tr>
+        <td class="rowheader">PATCH</td>
+        <td>Update</td>
+        <td>Partial resource update</td>
+        <td>PATCH /api/users/123</td>
+        <td>Changed fields only</td>
+        <td>Updated user</td>
+    </tr>
+    <tr>
+        <td class="rowheader">DELETE</td>
+        <td>Delete</td>
+        <td>Remove resource</td>
+        <td>DELETE /api/users/123</td>
+        <td>None</td>
+        <td>Success confirmation</td>
+    </tr>
+</table>
+
+<h2>REST Architectural Constraints</h2>
+<p><strong>Definition:</strong> REST defines six architectural constraints that must be satisfied for a system to be considered RESTful. These constraints ensure scalability, reliability, and performance.</p>
+
+<h3>1. Stateless</h3>
+<p><strong>Definition:</strong> Each HTTP request must contain all the information necessary to understand and process the request. The server does not store any client context between requests.</p>
+
+<p><strong>Benefits:</strong></p>
+<ul>
+    <li>Improved scalability - servers don't need to maintain session state</li>
+    <li>Better reliability - no risk of losing session data</li>
+    <li>Easier to debug and test</li>
+</ul>
+
+<blockquote>
+// Stateless request - includes authentication token<br/>
+GET /api/users/profile<br/>
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...<br/>
+Content-Type: application/json
+</blockquote>
+
+<h3>2. Client-Server Architecture</h3>
+<p><strong>Definition:</strong> Clear separation of concerns between client (user interface) and server (data storage and processing). They can evolve independently as long as the interface remains consistent.</p>
+
+<h3>3. Cacheable</h3>
+<p><strong>Definition:</strong> Responses must be explicitly marked as cacheable or non-cacheable to improve performance and scalability.</p>
+
+<blockquote>
+// Cacheable response<br/>
+HTTP/1.1 200 OK<br/>
+Cache-Control: max-age=3600<br/>
+ETag: "abc123"<br/>
+Content-Type: application/json
+</blockquote>
+
+<h3>4. Uniform Interface</h3>
+<p><strong>Definition:</strong> Consistent way to interact with resources using standard HTTP methods, status codes, and media types.</p>
+
+<h3>5. Layered System</h3>
+<p><strong>Definition:</strong> Architecture can be composed of hierarchical layers (load balancers, proxies, gateways) that are invisible to the client.</p>
+
+<h3>6. Code on Demand (Optional)</h3>
+<p><strong>Definition:</strong> Server can extend client functionality by sending executable code (like JavaScript).</p>
+
+<h2>Resource Naming Best Practices</h2>
+<p><strong>Definition:</strong> Consistent and intuitive URL patterns that make APIs easy to understand and use.</p>
+
+<h3>Naming Conventions:</h3>
+<ul>
+    <li><strong>Use nouns, not verbs:</strong> <code>/api/users</code> (not <code>/api/getUsers</code>)</li>
+    <li><strong>Use plural nouns for collections:</strong> <code>/api/products</code> (not <code>/api/product</code>)</li>
+    <li><strong>Use hierarchical structure:</strong> <code>/api/users/123/orders/456</code></li>
+    <li><strong>Use lowercase with hyphens:</strong> <code>/api/user-profiles</code> (not <code>/api/UserProfiles</code>)</li>
+    <li><strong>Avoid deep nesting:</strong> Limit to 2-3 levels maximum</li>
+    <li><strong>Use query parameters for filtering:</strong> <code>/api/users?status=active&role=admin</code></li>
+</ul>
+
+<h3>URL Structure Examples:</h3>
+<blockquote>
+// Good REST URL patterns<br/>
+GET /api/users                    // Get all users<br/>
+GET /api/users/123               // Get user with ID 123<br/>
+GET /api/users/123/orders        // Get orders for user 123<br/>
+GET /api/users?role=admin        // Get users with admin role<br/>
+POST /api/users                  // Create new user<br/>
+PUT /api/users/123               // Update user 123<br/>
+DELETE /api/users/123            // Delete user 123<br/><br/>
+// Avoid these patterns<br/>
+GET /api/getUsers                // Uses verb instead of noun<br/>
+POST /api/users/create           // Redundant verb in URL<br/>
+GET /api/user/123                // Singular noun for resource
+</blockquote>
+
+<h2>HTTP Status Codes</h2>
+<p><strong>Definition:</strong> Standardized codes that indicate the result of an HTTP request. Proper use of status codes helps clients understand what happened with their request.</p>
+
+<h3>Success Codes (2xx):</h3>
+<ul>
+    <li><strong>200 OK:</strong> Successful GET, PUT, PATCH requests</li>
+    <li><strong>201 Created:</strong> Successful POST request that created a resource</li>
+    <li><strong>204 No Content:</strong> Successful DELETE or PUT with no response body</li>
+</ul>
+
+<h3>Client Error Codes (4xx):</h3>
+<ul>
+    <li><strong>400 Bad Request:</strong> Invalid request syntax or data</li>
+    <li><strong>401 Unauthorized:</strong> Authentication required</li>
+    <li><strong>403 Forbidden:</strong> Access denied (authenticated but not authorized)</li>
+    <li><strong>404 Not Found:</strong> Resource doesn't exist</li>
+    <li><strong>409 Conflict:</strong> Request conflicts with current state</li>
+    <li><strong>422 Unprocessable Entity:</strong> Valid syntax but semantic errors</li>
+</ul>
+
+<h3>Server Error Codes (5xx):</h3>
+<ul>
+    <li><strong>500 Internal Server Error:</strong> Generic server error</li>
+    <li><strong>502 Bad Gateway:</strong> Invalid response from upstream server</li>
+    <li><strong>503 Service Unavailable:</strong> Server temporarily unavailable</li>
+</ul>
+
+<h2>JSON as Data Format</h2>
+<p><strong>Definition:</strong> JavaScript Object Notation (JSON) is the standard data format for REST APIs. It's lightweight, human-readable, and supported by virtually all programming languages.</p>
+
+<h3>JSON Structure Examples:</h3>
+<blockquote>
+// Single user resource<br/>
+{<br/>
+&nbsp;&nbsp;"id": 123,<br/>
+&nbsp;&nbsp;"name": "John Doe",<br/>
+&nbsp;&nbsp;"email": "john.doe@example.com",<br/>
+&nbsp;&nbsp;"role": "admin",<br/>
+&nbsp;&nbsp;"createdAt": "2024-01-15T10:30:00Z",<br/>
+&nbsp;&nbsp;"isActive": true<br/>
+}<br/><br/>
+// Collection of users<br/>
+{<br/>
+&nbsp;&nbsp;"users": [<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": 123,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name": "John Doe",<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"email": "john.doe@example.com"<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;},<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": 124,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name": "Jane Smith",<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"email": "jane.smith@example.com"<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;],<br/>
+&nbsp;&nbsp;"totalCount": 2,<br/>
+&nbsp;&nbsp;"page": 1,<br/>
+&nbsp;&nbsp;"pageSize": 10<br/>
+}<br/><br/>
+// Error response<br/>
+{<br/>
+&nbsp;&nbsp;"error": {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"code": "VALIDATION_ERROR",<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"message": "Invalid input data",<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;"details": [<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"field": "email",<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"message": "Email format is invalid"<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;]<br/>
+&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Benefits of RESTful Design</h2>
+<ul>
+    <li><strong>Simplicity:</strong> Uses familiar HTTP methods and status codes</li>
+    <li><strong>Scalability:</strong> Stateless nature allows easy horizontal scaling</li>
+    <li><strong>Flexibility:</strong> Can support multiple data formats (JSON, XML, etc.)</li>
+    <li><strong>Cacheability:</strong> Built-in support for HTTP caching mechanisms</li>
+    <li><strong>Platform Independence:</strong> Works with any programming language or platform</li>
+    <li><strong>Tooling Support:</strong> Extensive ecosystem of tools and libraries</li>
+</ul>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

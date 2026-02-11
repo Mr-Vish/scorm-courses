@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Agent Architecture Components</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Agent Architecture Components</h1>
+
+<h2>Module Objectives</h2>
+<p>In this section, you will:</p>
+<ul>
+    <li>Understand the core architectural components of Bedrock Agents</li>
+    <li>Learn how components interact during agent orchestration</li>
+    <li>Explore configuration options for each component</li>
+    <li>Understand the agent lifecycle and state management</li>
+</ul>
+
+<h2>Core Agent Components Overview</h2>
+<p>A Bedrock Agent is composed of several interconnected components that work together to enable autonomous behavior. Understanding each component and how they interact is essential for designing effective agents.</p>
+
+<h3>1. Foundation Model (The Reasoning Engine)</h3>
+<p>The foundation model serves as the agent's "brain," providing the reasoning capabilities that enable autonomous decision-making. When you create an agent, you specify which foundation model to use through its model identifier.</p>
+
+<p><strong>Model Selection Considerations:</strong></p>
+<ul>
+    <li><strong>Reasoning Capability:</strong> More capable models (Claude Opus) handle complex multi-step reasoning better than smaller models</li>
+    <li><strong>Context Window:</strong> Larger context windows allow agents to maintain longer conversation histories and process more knowledge base content</li>
+    <li><strong>Latency:</strong> Smaller, faster models (Claude Haiku) provide quicker responses for simple tasks</li>
+    <li><strong>Cost:</strong> Model pricing varies significantly; balance capability needs with budget constraints</li>
+</ul>
+
+<p><strong>Model Identifier Format:</strong></p>
+<div class="code-block">
+<pre><code>anthropic.claude-3-sonnet-20240229-v1:0
+amazon.titan-text-express-v1
+meta.llama3-70b-instruct-v1:0</code></pre>
+</div>
+
+<p>The model identifier specifies the provider, model family, version, and variant. Always use the latest stable version for production agents.</p>
+
+<h3>2. Agent Instructions (The Operational Framework)</h3>
+<p>Instructions define the agent's role, capabilities, constraints, and behavioral guidelines. As covered in Module 1, instructions are the most critical component for shaping agent behavior.</p>
+
+<p><strong>Instruction Storage:</strong> Instructions are stored as part of the agent configuration and are automatically prepended to every model invocation. They consume tokens from the context window, so keep them focused and concise.</p>
+
+<p><strong>Instruction Updates:</strong> Modifying instructions requires creating a new agent version and preparing it before use. This versioning system allows safe testing of instruction changes without affecting production traffic.</p>
+
+<h3>3. Action Groups (The Agent's Tools)</h3>
+<p>Action groups define the APIs and functions an agent can invoke to perform real-world actions. Each action group consists of:</p>
+
+<ul>
+    <li><strong>OpenAPI Schema:</strong> Defines available operations, parameters, and response formats</li>
+    <li><strong>Lambda Function:</strong> Executes the actual business logic when the agent invokes an action</li>
+    <li><strong>Description:</strong> Helps the agent understand when to use this action group</li>
+</ul>
+
+<p><strong>Action Group Architecture:</strong></p>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">OpenAPI Schema</td>
+        <td>Contract defining available operations</td>
+        <td>GET /orders/{orderId}, POST /refunds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Lambda Function</td>
+        <td>Implementation of business logic</td>
+        <td>Query database, call external API, process data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">IAM Role</td>
+        <td>Permissions for agent to invoke Lambda</td>
+        <td>bedrock:InvokeAgent, lambda:InvokeFunction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Action Group Description</td>
+        <td>Guidance for when to use actions</td>
+        <td>"Use for customer order operations"</td>
+    </tr>
+</table>
+
+<p>Agents can have multiple action groups, each focused on a specific domain or capability. The agent's reasoning process determines which action group and operation to invoke based on the user's request.</p>
+
+<h3>4. Knowledge Bases (The Agent's Memory)</h3>
+<p>Knowledge bases provide agents with access to domain-specific information through Retrieval-Augmented Generation (RAG). When an agent needs information, it queries the knowledge base, which returns relevant document chunks that are incorporated into the model's context.</p>
+
+<p><strong>Knowledge Base Components:</strong></p>
+<ul>
+    <li><strong>Data Source:</strong> S3 bucket containing documents (PDF, TXT, MD, HTML, DOC, etc.)</li>
+    <li><strong>Embeddings Model:</strong> Converts text into vector representations (typically Titan Embeddings)</li>
+    <li><strong>Vector Database:</strong> Stores embeddings for fast similarity search (OpenSearch Serverless or other supported vector stores)</li>
+    <li><strong>Chunking Strategy:</strong> How documents are split into retrievable segments</li>
+</ul>
+
+<p><strong>Knowledge Base Workflow:</strong></p>
+<ol>
+    <li>Documents uploaded to S3 are processed and split into chunks</li>
+    <li>Each chunk is converted to a vector embedding</li>
+    <li>Embeddings are stored in the vector database with metadata</li>
+    <li>When agent queries knowledge base, user's question is embedded</li>
+    <li>Vector similarity search finds most relevant chunks</li>
+    <li>Retrieved chunks are added to agent's context for response generation</li>
+</ol>
+
+<h3>5. Guardrails (The Safety Layer)</h3>
+<p>Guardrails provide content filtering and safety controls to ensure agents behave responsibly. They can be applied to both user inputs and agent outputs.</p>
+
+<p><strong>Guardrail Capabilities:</strong></p>
+<ul>
+    <li><strong>Content Filters:</strong> Block harmful, offensive, or inappropriate content</li>
+    <li><strong>Denied Topics:</strong> Prevent discussion of specific subjects</li>
+    <li><strong>Word Filters:</strong> Block or redact specific terms or phrases</li>
+    <li><strong>PII Redaction:</strong> Automatically detect and mask personally identifiable information</li>
+    <li><strong>Contextual Grounding:</strong> Ensure responses are grounded in provided knowledge</li>
+</ul>
+
+<p>Guardrails are configured separately and then associated with agents. Multiple agents can share the same guardrail configuration.</p>
+
+<h3>6. Session Management (The Conversation State)</h3>
+<p>Sessions maintain conversation context across multiple interactions with an agent. Each session has:</p>
+
+<ul>
+    <li><strong>Session ID:</strong> Unique identifier for the conversation</li>
+    <li><strong>Session Attributes:</strong> Key-value pairs providing context (user ID, preferences, etc.)</li>
+    <li><strong>Prompt Session Attributes:</strong> Dynamic context injected per turn</li>
+    <li><strong>Session TTL:</strong> Time before idle sessions expire (configurable, default 1 hour)</li>
+</ul>
+
+<p><strong>Session Lifecycle:</strong></p>
+<ol>
+    <li><strong>Session Creation:</strong> First invocation creates new session with generated ID</li>
+    <li><strong>Context Accumulation:</strong> Each turn adds to conversation history</li>
+    <li><strong>Session Continuation:</strong> Subsequent invocations with same session ID maintain context</li>
+    <li><strong>Session Expiration:</strong> After TTL period of inactivity, session is cleared</li>
+</ol>
+
+<h2>Agent Orchestration Flow</h2>
+<p>Understanding how components interact during agent execution is crucial for debugging and optimization.</p>
+
+<h3>Phase 1: Pre-Processing</h3>
+<p>When a user invokes an agent:</p>
+<ol>
+    <li><strong>Input Validation:</strong> Guardrails check user input for policy violations</li>
+    <li><strong>Session Retrieval:</strong> If session ID provided, previous context is loaded</li>
+    <li><strong>Attribute Injection:</strong> Session attributes and prompt session attributes are incorporated</li>
+    <li><strong>Instruction Loading:</strong> Agent instructions are prepended to the context</li>
+</ol>
+
+<h3>Phase 2: Orchestration (The ReAct Loop)</h3>
+<p>The agent enters its reasoning loop:</p>
+<ol>
+    <li><strong>Reasoning:</strong> Model analyzes request and available tools/knowledge</li>
+    <li><strong>Decision:</strong> Agent decides whether to:
+        <ul>
+            <li>Invoke an action group</li>
+            <li>Query a knowledge base</li>
+            <li>Ask for clarification</li>
+            <li>Provide a final answer</li>
+        </ul>
+    </li>
+    <li><strong>Action Execution:</strong> If action chosen, Lambda function is invoked or knowledge base queried</li>
+    <li><strong>Result Integration:</strong> Action results are added to context</li>
+    <li><strong>Iteration:</strong> Loop continues until agent has sufficient information to respond</li>
+</ol>
+
+<p>The orchestration phase may involve multiple iterations. Bedrock limits the number of iterations to prevent infinite loops (typically 5-10 iterations maximum).</p>
+
+<h3>Phase 3: Post-Processing</h3>
+<p>Before returning the response:</p>
+<ol>
+    <li><strong>Response Generation:</strong> Model formulates final answer based on accumulated information</li>
+    <li><strong>Output Guardrails:</strong> Response is checked against content policies</li>
+    <li><strong>Session Update:</strong> Conversation history is updated with user input and agent response</li>
+    <li><strong>Trace Logging:</strong> If enabled, detailed execution trace is recorded</li>
+</ol>
+
+<h2>Agent Versioning and Aliases</h2>
+<p>Bedrock Agents support versioning to enable safe updates and rollbacks.</p>
+
+<h3>Agent Versions</h3>
+<ul>
+    <li><strong>DRAFT:</strong> Mutable version for development and testing</li>
+    <li><strong>Numbered Versions:</strong> Immutable snapshots created from DRAFT (v1, v2, v3, etc.)</li>
+</ul>
+
+<p>When you modify an agent (change instructions, add action groups, etc.), changes are made to the DRAFT version. You must explicitly create a numbered version to make changes immutable.</p>
+
+<h3>Agent Aliases</h3>
+<p>Aliases provide stable endpoints that can point to different versions:</p>
+<ul>
+    <li><strong>Production Alias:</strong> Points to stable, tested version</li>
+    <li><strong>Staging Alias:</strong> Points to version undergoing testing</li>
+    <li><strong>Development Alias:</strong> Points to DRAFT for active development</li>
+</ul>
+
+<p>Applications invoke agents through aliases, allowing version updates without code changes. This enables blue-green deployments and gradual rollouts.</p>
+
+<h2>Agent Preparation</h2>
+<p>After creating or modifying an agent, you must "prepare" it before use. Preparation involves:</p>
+<ul>
+    <li>Validating configuration (instructions, action groups, knowledge bases)</li>
+    <li>Compiling OpenAPI schemas</li>
+    <li>Establishing IAM permissions</li>
+    <li>Optimizing orchestration logic</li>
+</ul>
+
+<p>Preparation typically takes 30-60 seconds. Agents cannot be invoked until preparation completes successfully.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Agents consist of foundation model, instructions, action groups, knowledge bases, guardrails, and session management</li>
+    <li>Orchestration follows pre-processing, ReAct loop, and post-processing phases</li>
+    <li>Action groups connect agents to external systems through OpenAPI schemas and Lambda functions</li>
+    <li>Knowledge bases enable RAG through vector embeddings and similarity search</li>
+    <li>Versioning and aliases enable safe updates and rollbacks</li>
+    <li>Agents must be prepared after configuration changes before they can be invoked</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

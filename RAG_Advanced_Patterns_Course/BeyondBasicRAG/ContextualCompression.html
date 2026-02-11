@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Contextual Compression</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Contextual Compression</h1>
+<div class="container">
+<h2>Contextual Compression: Fitting More into Less</h2>
+<p>One of the biggest challenges in RAG is the "Lost in the Middle" phenomenon and the cost of sending large amounts of context to an LLM. <strong>Contextual Compression</strong> is a pattern that reduces the volume of retrieved information by extracting only the most relevant parts of each document before passing them to the final model.</p>
+
+<h3>The Problem: 'Noise' in Retrieved Documents</h3>
+<p>When you retrieve a 500-word paragraph because it contains a single relevant sentence, you are sending 490 words of "noise" to the LLM. This noise increases latency, increases cost, and can distract the model from the actual answer. Contextual Compression "squeezes" the documents to remove this noise.</p>
+
+<h3>How Contextual Compression Works</h3>
+<ol>
+    <li><strong>Retrieve:</strong> The system retrieves the top N documents using standard methods.</li>
+    <li><strong>Compress:</strong> For each document, a specialized "Compressor" (often a smaller LLM or a specialized model) identifies and extracts only the sentences or phrases that are relevant to the user's query.</li>
+    <li><strong>Augment:</strong> The compressed snippets are combined and sent to the primary LLM.</li>
+</ol>
+
+<h3>Types of Compressors</h3>
+<ul>
+    <li><strong>LLM-Based Extractor:</strong> You ask a fast model like Claude 3 Haiku: "Given this query [Query], extract only the relevant parts of this document [Document]. If nothing is relevant, return an empty string."</li>
+    <li><strong>Embeddings-Based Filter:</strong> Each document is split into sentences. Only sentences whose embeddings are highly similar to the query are kept.</li>
+    <li><strong>Summarizer:</strong> The compressor generates a custom summary of the document that is focused specifically on the user's question.</li>
+</ul>
+
+<h3>Benefits of Compression</h3>
+<ul>
+    <li><strong>Higher Precision:</strong> By removing irrelevant text, you help the LLM focus on the signal, leading to more accurate and concise answers.</li>
+    <li><strong>Reduced Token Usage:</strong> You can often reduce the context size by 50-80%, leading to significant cost savings in high-traffic applications.</li>
+    <li><strong>Better Context Utilization:</strong> Because each document is smaller, you can fit *more* unique documents into the same context window, providing a broader range of information to the model.</li>
+</ul>
+
+<h3>Advanced Technique: Document Re-ranking + Compression</h3>
+<p>A very effective pipeline is to first <strong>Rerank</strong> the documents to find the best ones, and then <strong>Compress</strong> those top documents to extract the specific answers. This combination provides both high recall and high precision.</p>
+
+<h3>Use Case: Summarizing Financial Reports</h3>
+<p>A user asks: "What were the R&D expenses for Apple in Q3 2023?"
+Standard RAG might retrieve three different pages from the quarterly report.
+Contextual Compression will extract only the specific lines or tables mentioning "Research and Development" and "Q3 2023," providing the LLM with a tiny, highly-focused set of data to answer the question.</p>
+
+<h3>Limitations and Tradeoffs</h3>
+<ul>
+    <li><strong>Over-Compression:</strong> If the compressor is too aggressive, it might remove vital context or nuance needed for a correct answer.</li>
+    <li><strong>Latency:</strong> Like Reranking, Compression adds another step to the pipeline. However, the time saved in the final generation step often makes up for it.</li>
+    <li><strong>Cost of Compression:</strong> You have to pay for the LLM calls or compute used by the compressor.</li>
+</ul>
+
+<h3>Summary</h3>
+<p>Contextual Compression is about efficiency and focus. In a world where LLM context windows are getting larger, the temptation is to "send everything." Contextual Compression reminds us that "less is often more"—by providing the model with only the most relevant information, we can build RAG systems that are faster, cheaper, and smarter.</p>
+
+</div>
+</body>
+</html>

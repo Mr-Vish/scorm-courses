@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Method: Quantization-Aware Training</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Method: Quantization-Aware Training</h1>
+<div class="container">
+<h2>Quantization-Aware Training (QAT)</h2>
+<p>While Post-Training Quantization (PTQ) is fast and easy, it can sometimes lead to significant drops in model accuracy, especially at very low bit-widths (like 3-bit or 4-bit). Quantization-Aware Training (QAT) is a more advanced technique where the model is trained or fine-tuned with quantization in mind from the very beginning.</p>
+
+<h3>How QAT Works</h3>
+<p>During QAT, the model is trained using high-precision weights (FP32), but "fake quantization" blocks are inserted into the network. These blocks simulate the effects of quantization (rounding and clipping) during the forward pass. This allows the model to "learn" how to be robust to the noise introduced by quantization.</p>
+
+<h3>The Key Difference: Error Propagation</h3>
+<p>In PTQ, the errors introduced by quantization are simply accepted. In QAT, because the model is still being trained, the gradient descent process can "compensate" for these errors. The model weights are adjusted so that the final quantized version performs as close as possible to the full-precision version.</p>
+
+<h3>Benefits of QAT</h3>
+<ul>
+    <li><strong>Higher Accuracy:</strong> QAT almost always results in better accuracy than PTQ, especially at lower bit-widths (4-bit and below).</li>
+    <li><strong>Lower Bit-Widths:</strong> QAT makes it possible to use 2-bit or 3-bit quantization while still maintaining a usable level of model intelligence.</li>
+    <li><strong>Optimized for Specific Tasks:</strong> You can perform QAT during domain-specific fine-tuning, ensuring the quantized model is perfect for your specific use case (e.g., medical or legal AI).</li>
+</ul>
+
+<h3>The Challenges of QAT</h3>
+<ol>
+    <li><strong>Compute Intensive:</strong> QAT requires re-training the model, which means you need significant GPU resources and time.</li>
+    <li><strong>Requires Training Data:</strong> You need access to a high-quality dataset that is representative of the tasks the model will perform.</li>
+    <li><strong>Complexity:</strong> Implementing QAT is much more technically challenging than simply running a PTQ script. It requires modifying the training pipeline.</li>
+</ol>
+
+<h3>QAT vs. PTQ: Which one to choose?</h3>
+<table>
+    <tr><th>Feature</th><th>PTQ</th><th>QAT</th></tr>
+    <tr><td>Difficulty</td><td>Low</td><td>High</td></tr>
+    <tr><td>Compute Cost</td><td>Low</td><td>High</td></tr>
+    <tr><td>Accuracy (8-bit)</td><td>Excellent</td><td>Slightly Better</td></tr>
+    <tr><td>Accuracy (4-bit)</td><td>Good</td><td>Excellent</td></tr>
+    <tr><td>Best for...</td><td>General use, fast deployment</td><td>Max performance at low bit-widths</td></tr>
+</table>
+
+<h3>Practical Implementation: LoRA-based QAT (QLoRA)</h3>
+<p>A recent and highly popular breakthrough is <strong>QLoRA</strong>. It combines 4-bit quantization with Low-Rank Adaptation (LoRA). In QLoRA, the base model is loaded in 4-bit (PTQ), and then small, high-precision "adapter" layers are trained on top of it. This provides most of the benefits of QAT (high accuracy, domain specialization) with the low memory footprint of 4-bit quantization.</p>
+
+<h3>The Future of QAT</h3>
+<p>As we push towards even smaller models that can run on tiny edge devices (like watches or sensors), QAT will become even more critical. Researchers are exploring ways to make QAT faster and more automated, reducing the barrier to entry for developers.</p>
+
+<h3>Practical Exercise: Researching QLoRA</h3>
+<p>Look up the QLoRA paper or a tutorial. How does it handle the "gradients" if the base weights are quantized to 4-bit? (Hint: It uses a special data type called NormalFloat and performs dequantization during the forward pass).</p>
+
+<h3>Summary</h3>
+<p>Quantization-Aware Training is the "pro" version of quantization. It requires more effort and resources, but for high-stakes applications where every bit of accuracy matters, it is the best way to shrink a model without losing its soul.</p>
+
+</div>
+</body>
+</html>

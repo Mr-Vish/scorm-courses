@@ -1,0 +1,325 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Mocking and Test Doubles</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Mocking and Test Doubles</h1>
+
+<h2>Why Mock LLM APIs</h2>
+<p>Calling real LLM APIs in tests is problematic:</p>
+<ul>
+    <li><strong>Cost:</strong> Thousands of test runs = thousands of dollars</li>
+    <li><strong>Speed:</strong> API calls add 1-5 seconds per test</li>
+    <li><strong>Reliability:</strong> Tests fail when APIs are down</li>
+    <li><strong>Determinism:</strong> Non-deterministic responses cause flaky tests</li>
+    <li><strong>Rate limits:</strong> CI/CD pipelines hit API quotas</li>
+</ul>
+
+<h2>Mocking Strategies</h2>
+
+<h3>1. Simple Mock Responses</h3>
+<div class="code-block">
+<pre><code>from unittest.mock import Mock, patch
+
+def test_with_mock_llm():
+    mock_llm = Mock()
+    mock_llm.generate.return_value = "Paris is the capital of France."
+    
+    qa_system = QASystem(llm=mock_llm)
+    answer = qa_system.answer("What is the capital of France?")
+    
+    assert "Paris" in answer
+    mock_llm.generate.assert_called_once()
+</code></pre>
+</div>
+
+<h3>2. Recorded Responses (VCR Pattern)</h3>
+<p>Record real API responses once, replay them in tests:</p>
+
+<div class="code-block">
+<pre><code>import vcr
+
+@vcr.use_cassette('tests/fixtures/vcr_cassettes/qa_france.yaml')
+def test_with_recorded_response():
+    # First run: makes real API call and records
+    # Subsequent runs: replays recorded response
+    qa_system = QASystem(llm=RealLLM())
+    answer = qa_system.answer("What is the capital of France?")
+    
+    assert "Paris" in answer
+</code></pre>
+</div>
+
+<h3>3. Deterministic Test Mode</h3>
+<div class="code-block">
+<pre><code>class TestLLM:
+    """LLM wrapper that returns deterministic responses for testing"""
+    
+    def __init__(self, response_map=None):
+        self.response_map = response_map or {}
+        self.default_response = "Test response"
+    
+    def generate(self, prompt):
+        # Return mapped response if prompt matches
+        for key, response in self.response_map.items():
+            if key in prompt:
+                return response
+        return self.default_response
+
+# Usage
+test_llm = TestLLM(response_map={
+    "capital of France": "Paris is the capital of France.",
+    "capital of UK": "London is the capital of the UK."
+})
+
+def test_with_deterministic_llm():
+    qa_system = QASystem(llm=test_llm)
+    answer = qa_system.answer("What is the capital of France?")
+    assert "Paris" in answer
+</code></pre>
+</div>
+
+<h2>Mocking Vector Databases</h2>
+
+<div class="code-block">
+<pre><code>class MockVectorDB:
+    def __init__(self, documents):
+        self.documents = documents
+    
+    def search(self, query, top_k=5):
+        # Simple keyword matching for testing
+        results = []
+        for doc in self.documents:
+            if any(word in doc["text"].lower() 
+                   for word in query.lower().split()):
+                results.append({
+                    "id": doc["id"],
+                    "text": doc["text"],
+                    "score": 0.9  # Mock score
+                })
+        return results[:top_k]
+
+def test_rag_with_mock_db():
+    mock_db = MockVectorDB([
+        {"id": "1", "text": "Paris is the capital of France."},
+        {"id": "2", "text": "London is the capital of the UK."}
+    ])
+    
+    rag_system = RAGSystem(vector_db=mock_db, llm=mock_llm)
+    answer = rag_system.query("What is the capital of France?")
+    
+    assert "Paris" in answer
+</code></pre>
+</div>
+
+<h2>Mocking External Tools</h2>
+
+<div class="code-block">
+<pre><code>class MockWeatherAPI:
+    def get_weather(self, city):
+        # Return predictable test data
+        weather_data = {
+            "Paris": {"temp": 20, "condition": "Sunny"},
+            "London": {"temp": 15, "condition": "Cloudy"},
+            "InvalidCity": None
+        }
+        return weather_data.get(city)
+
+def test_agent_with_mock_tools():
+    mock_tools = {
+        "get_weather": MockWeatherAPI().get_weather,
+        "convert_temp": lambda c: c * 9/5 + 32
+    }
+    
+    agent = Agent(llm=mock_llm, tools=mock_tools)
+    result = agent.execute("What's the weather in Paris in Fahrenheit?")
+    
+    assert "68" in result  # 20°C = 68°F
+</code></pre>
+</div>
+
+<h2>Partial Mocking</h2>
+<p>Mock only expensive components, use real implementations for others:</p>
+
+<div class="code-block">
+<pre><code>def test_with_partial_mocking():
+    # Use real prompt rendering and parsing
+    # Mock only the LLM API call
+    with patch('llm_client.generate') as mock_generate:
+        mock_generate.return_value = '{"answer": "Paris", "confidence": 0.95}'
+        
+        qa_system = QASystem()  # Real implementation
+        answer = qa_system.answer("What is the capital of France?")
+        
+        # Real parsing logic is tested
+        assert answer["answer"] == "Paris"
+        assert answer["confidence"] == 0.95
+</code></pre>
+</div>
+
+<h2>Spy Pattern</h2>
+<p>Use real implementation but track calls for verification:</p>
+
+<div class="code-block">
+<pre><code>class LLMSpy:
+    def __init__(self, real_llm):
+        self.real_llm = real_llm
+        self.calls = []
+    
+    def generate(self, prompt, **kwargs):
+        self.calls.append({"prompt": prompt, "kwargs": kwargs})
+        return self.real_llm.generate(prompt, **kwargs)
+    
+    def get_call_count(self):
+        return len(self.calls)
+    
+    def get_last_prompt(self):
+        return self.calls[-1]["prompt"] if self.calls else None
+
+def test_with_spy():
+    spy = LLMSpy(real_llm=TestLLM())
+    agent = Agent(llm=spy)
+    
+    agent.execute("Complex task requiring multiple LLM calls")
+    
+    # Verify behavior
+    assert spy.get_call_count() <= 5  # Reasonable number of calls
+    assert "task" in spy.get_last_prompt().lower()
+</code></pre>
+</div>
+
+<h2>Fixture Management</h2>
+
+<h3>Response Fixtures</h3>
+<div class="code-block">
+<pre><code># tests/fixtures/llm_responses.json
+{
+  "qa_france_capital": {
+    "prompt": "What is the capital of France?",
+    "response": "Paris is the capital of France.",
+    "model": "gpt-4",
+    "tokens": {"input": 8, "output": 7}
+  },
+  "summarize_short": {
+    "prompt": "Summarize: The quick brown fox...",
+    "response": "A story about a fox and a dog.",
+    "model": "gpt-3.5-turbo",
+    "tokens": {"input": 50, "output": 10}
+  }
+}
+
+# Load and use fixtures
+import json
+
+def load_fixture(name):
+    with open("tests/fixtures/llm_responses.json") as f:
+        fixtures = json.load(f)
+    return fixtures[name]
+
+def test_with_fixture():
+    fixture = load_fixture("qa_france_capital")
+    
+    mock_llm = Mock()
+    mock_llm.generate.return_value = fixture["response"]
+    
+    qa_system = QASystem(llm=mock_llm)
+    answer = qa_system.answer(fixture["prompt"])
+    
+    assert "Paris" in answer
+</code></pre>
+</div>
+
+<h2>Test Data Builders</h2>
+
+<div class="code-block">
+<pre><code>class LLMResponseBuilder:
+    def __init__(self):
+        self.response = {
+            "text": "Default response",
+            "model": "gpt-3.5-turbo",
+            "usage": {"input_tokens": 10, "output_tokens": 10},
+            "finish_reason": "stop"
+        }
+    
+    def with_text(self, text):
+        self.response["text"] = text
+        return self
+    
+    def with_model(self, model):
+        self.response["model"] = model
+        return self
+    
+    def with_tokens(self, input_tokens, output_tokens):
+        self.response["usage"] = {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
+        }
+        return self
+    
+    def build(self):
+        return self.response
+
+# Usage
+def test_with_builder():
+    response = (LLMResponseBuilder()
+                .with_text("Paris is the capital.")
+                .with_model("gpt-4")
+                .with_tokens(8, 5)
+                .build())
+    
+    mock_llm = Mock()
+    mock_llm.generate.return_value = response
+    
+    # Test with custom response
+    qa_system = QASystem(llm=mock_llm)
+    answer = qa_system.answer("What is the capital of France?")
+    assert "Paris" in answer["text"]
+</code></pre>
+</div>
+
+<h2>Environment-Based Configuration</h2>
+
+<div class="code-block">
+<pre><code># config.py
+import os
+
+class TestConfig:
+    USE_REAL_LLM = os.getenv("USE_REAL_LLM", "false").lower() == "true"
+    LLM_API_KEY = os.getenv("LLM_API_KEY")
+    MOCK_RESPONSES_PATH = "tests/fixtures/mock_responses.json"
+
+def get_llm():
+    if TestConfig.USE_REAL_LLM:
+        return RealLLM(api_key=TestConfig.LLM_API_KEY)
+    else:
+        return MockLLM(responses_path=TestConfig.MOCK_RESPONSES_PATH)
+
+# In tests
+def test_qa_system():
+    llm = get_llm()  # Automatically uses mock in CI, real in manual testing
+    qa_system = QASystem(llm=llm)
+    answer = qa_system.answer("What is the capital of France?")
+    assert "Paris" in answer
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Default to mocks:</strong> Use mocks for fast, cheap CI/CD tests</li>
+    <li><strong>Periodic real tests:</strong> Run tests with real APIs weekly to catch integration issues</li>
+    <li><strong>Record real responses:</strong> Update fixtures when prompts change</li>
+    <li><strong>Version fixtures:</strong> Track fixture changes in version control</li>
+    <li><strong>Validate mocks:</strong> Ensure mock behavior matches real API</li>
+    <li><strong>Document assumptions:</strong> Clearly state what mocks assume about real behavior</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

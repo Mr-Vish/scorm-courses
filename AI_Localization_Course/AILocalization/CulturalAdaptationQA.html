@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cultural Adaptation and Quality Assurance</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cultural Adaptation and Quality Assurance</h1>
+
+
+<h2>Beyond Translation: Cultural Adaptation</h2>
+<p>Localization is more than translation. It includes adapting content for cultural norms, legal requirements, humor, imagery, and user expectations. LLMs can assist with cultural adaptation by understanding context that traditional MT systems miss.</p>
+
+<h2>Cultural Adaptation Areas</h2>
+<table>
+    <tr><th>Area</th><th>Example</th><th>LLM Assistance</th></tr>
+    <tr><td>Date/number formats</td><td>MM/DD/YYYY vs DD.MM.YYYY</td><td>Detect and convert format automatically</td></tr>
+    <tr><td>Color symbolism</td><td>Red means luck (China) vs danger (West)</td><td>Flag culturally sensitive color choices</td></tr>
+    <tr><td>Humor and idioms</td><td>"Break a leg" has no equivalent in many languages</td><td>Suggest culturally appropriate alternatives</td></tr>
+    <tr><td>Formality levels</td><td>Japanese has multiple formality levels (keigo)</td><td>Adjust tone based on audience context</td></tr>
+    <tr><td>Legal compliance</td><td>Cookie consent varies by jurisdiction</td><td>Flag content that may need legal review</td></tr>
+    <tr><td>Currency/units</td><td>USD vs EUR, miles vs kilometers</td><td>Convert and localize measurements</td></tr>
+</table>
+
+<h2>Automated Cultural Review</h2>
+<div class="code-block">
+<pre><code>def cultural_review(translated_text: str, target_culture: str) -&gt; dict:
+    '''Use an LLM to review translated content for cultural appropriateness.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": (
+                "You are a cultural consultant specializing in localization. "
+                "Review the translated content for cultural issues."
+            )},
+            {"role": "user", "content": (
+                f"Target culture: {target_culture}
+"
+                f"Translated content:
+{translated_text}
+
+"
+                "Return JSON with: "
+                "{"issues": [{"text": str, "concern": str, "suggestion": str, "severity": str}], "
+                ""overall_score": float}"
+            )},
+        ],
+    )
+    return json.loads(response.choices[0].message.content)
+
+# Example output:
+# {
+#   "issues": [
+#     {
+#       "text": "deadline is Friday",
+#       "concern": "Friday is part of the weekend in many Middle Eastern countries",
+#       "suggestion": "Consider using 'end of business week' or specifying the date",
+#       "severity": "medium"
+#     }
+#   ],
+#   "overall_score": 0.85
+# }</code></pre>
+</div>
+
+<h2>Translation Quality Assurance</h2>
+<table>
+    <tr><th>QA Check</th><th>Method</th><th>Automation Level</th></tr>
+    <tr><td>Glossary compliance</td><td>Check all glossary terms are translated correctly</td><td>Fully automated</td></tr>
+    <tr><td>Placeholder integrity</td><td>Verify all {variables} and HTML tags are preserved</td><td>Fully automated</td></tr>
+    <tr><td>Length validation</td><td>Flag translations exceeding UI character limits</td><td>Fully automated</td></tr>
+    <tr><td>Back-translation</td><td>Translate back to source language and compare</td><td>LLM-assisted</td></tr>
+    <tr><td>Fluency scoring</td><td>LLM rates naturalness on a 1-5 scale</td><td>LLM-assisted</td></tr>
+    <tr><td>Cultural review</td><td>Expert review of cultural appropriateness</td><td>Human + LLM-assisted</td></tr>
+</table>
+
+<h2>Back-Translation Quality Check</h2>
+<div class="code-block">
+<pre><code>def back_translation_check(
+    original: str,
+    translated: str,
+    source_lang: str,
+    target_lang: str,
+) -&gt; dict:
+    '''Translate back and compare with original to detect meaning drift.'''
+    # Translate the translation back to the source language
+    back_translated = translate_with_context(
+        text=translated,
+        source_lang=target_lang,
+        target_lang=source_lang,
+    )
+
+    # Use LLM to compare meaning
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Compare these two texts for meaning preservation:
+"
+                f"Original: {original}
+"
+                f"Back-translated: {back_translated}
+"
+                "Return JSON: {"meaning_preserved": bool, "
+                ""similarity_score": float, "differences": [str]}"
+            ),
+        }],
+    )
+    return json.loads(response.choices[0].message.content)</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Use glossaries:</strong> Maintain per-language glossaries for consistent terminology</li>
+    <li><strong>Batch by context:</strong> Translate related strings together so the LLM maintains consistency</li>
+    <li><strong>Human review for critical content:</strong> Legal, medical, and marketing content should always have human review</li>
+    <li><strong>A/B test translations:</strong> Test different translation styles with real users in each market</li>
+    <li><strong>Continuous feedback:</strong> Collect user feedback on translations and feed corrections back into glossaries</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

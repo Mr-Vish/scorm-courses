@@ -1,0 +1,322 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Error Handling and Resilience Patterns</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Error Handling and Resilience Patterns</h1>
+
+<h2>Module Learning Objectives</h2>
+<ul>
+    <li>Understand error types and classification in API interactions</li>
+    <li>Master retry strategies and exponential backoff patterns</li>
+    <li>Learn circuit breaker and graceful degradation techniques</li>
+    <li>Implement comprehensive logging and monitoring for production systems</li>
+</ul>
+
+<h2>Understanding API Errors</h2>
+<p>Robust error handling is essential for production applications. The Anthropic API returns structured error responses that enable appropriate handling strategies based on error type and severity.</p>
+
+<h3>HTTP Status Code Categories</h3>
+<table>
+    <tr>
+        <th>Status Code</th>
+        <th>Category</th>
+        <th>Meaning</th>
+        <th>Action Required</th>
+    </tr>
+    <tr>
+        <td class="rowheader">400</td>
+        <td>Client Error</td>
+        <td>Invalid request format or parameters</td>
+        <td>Fix request and retry</td>
+    </tr>
+    <tr>
+        <td class="rowheader">401</td>
+        <td>Authentication</td>
+        <td>Invalid or missing API key</td>
+        <td>Verify credentials</td>
+    </tr>
+    <tr>
+        <td class="rowheader">403</td>
+        <td>Authorization</td>
+        <td>Insufficient permissions</td>
+        <td>Check account access</td>
+    </tr>
+    <tr>
+        <td class="rowheader">429</td>
+        <td>Rate Limit</td>
+        <td>Too many requests</td>
+        <td>Implement backoff and retry</td>
+    </tr>
+    <tr>
+        <td class="rowheader">500</td>
+        <td>Server Error</td>
+        <td>Internal server issue</td>
+        <td>Retry with backoff</td>
+    </tr>
+    <tr>
+        <td class="rowheader">529</td>
+        <td>Overload</td>
+        <td>Service temporarily overloaded</td>
+        <td>Retry with exponential backoff</td>
+    </tr>
+</table>
+
+<h2>Error Response Structure</h2>
+<p>API errors return structured JSON with detailed information:</p>
+
+<div class="code-block">
+<pre><code>{
+  "type": "error",
+  "error": {
+    "type": "rate_limit_error",
+    "message": "Rate limit exceeded. Please retry after 60 seconds."
+  }
+}</code></pre>
+</div>
+
+<h3>Error Types</h3>
+<ul>
+    <li><strong>invalid_request_error:</strong> Malformed request or invalid parameters</li>
+    <li><strong>authentication_error:</strong> API key issues</li>
+    <li><strong>permission_error:</strong> Insufficient access rights</li>
+    <li><strong>not_found_error:</strong> Resource doesn't exist</li>
+    <li><strong>rate_limit_error:</strong> Request rate exceeded</li>
+    <li><strong>api_error:</strong> Internal server error</li>
+    <li><strong>overloaded_error:</strong> Service temporarily unavailable</li>
+</ul>
+
+<h2>Retry Strategies</h2>
+<p>Implementing intelligent retry logic is crucial for handling transient failures.</p>
+
+<h3>Exponential Backoff</h3>
+<p>Exponential backoff progressively increases wait time between retries:</p>
+
+<h4>Backoff Formula</h4>
+<div class="code-block">
+<pre><code>wait_time = base_delay * (2 ^ retry_count) + random_jitter
+
+Example:
+Retry 1: 1 second + jitter
+Retry 2: 2 seconds + jitter
+Retry 3: 4 seconds + jitter
+Retry 4: 8 seconds + jitter
+Retry 5: 16 seconds + jitter</code></pre>
+</div>
+
+<h4>Jitter Benefits</h4>
+<ul>
+    <li><strong>Prevents Thundering Herd:</strong> Randomization avoids synchronized retries</li>
+    <li><strong>Distributes Load:</strong> Spreads retry attempts over time</li>
+    <li><strong>Improves Success Rate:</strong> Reduces collision probability</li>
+</ul>
+
+<h3>Retry Decision Matrix</h3>
+<table>
+    <tr>
+        <th>Error Type</th>
+        <th>Retry?</th>
+        <th>Strategy</th>
+    </tr>
+    <tr>
+        <td class="rowheader">400 (Invalid Request)</td>
+        <td>No</td>
+        <td>Fix request parameters</td>
+    </tr>
+    <tr>
+        <td class="rowheader">401 (Authentication)</td>
+        <td>No</td>
+        <td>Update credentials</td>
+    </tr>
+    <tr>
+        <td class="rowheader">429 (Rate Limit)</td>
+        <td>Yes</td>
+        <td>Exponential backoff with jitter</td>
+    </tr>
+    <tr>
+        <td class="rowheader">500 (Server Error)</td>
+        <td>Yes</td>
+        <td>Limited retries with backoff</td>
+    </tr>
+    <tr>
+        <td class="rowheader">529 (Overloaded)</td>
+        <td>Yes</td>
+        <td>Aggressive backoff, longer delays</td>
+    </tr>
+</table>
+
+<h3>Maximum Retry Limits</h3>
+<ul>
+    <li><strong>Retry Count:</strong> Limit to 3-5 attempts to prevent infinite loops</li>
+    <li><strong>Total Time:</strong> Set maximum total retry duration (e.g., 60 seconds)</li>
+    <li><strong>Backoff Cap:</strong> Maximum wait time between retries (e.g., 32 seconds)</li>
+</ul>
+
+<h2>Circuit Breaker Pattern</h2>
+<p>Circuit breakers prevent cascading failures by temporarily blocking requests to failing services.</p>
+
+<h3>Circuit Breaker States</h3>
+<ul>
+    <li><strong>Closed (Normal):</strong> Requests flow normally, failures tracked</li>
+    <li><strong>Open (Tripped):</strong> Requests immediately fail without attempting API call</li>
+    <li><strong>Half-Open (Testing):</strong> Limited requests allowed to test recovery</li>
+</ul>
+
+<h3>State Transitions</h3>
+<ul>
+    <li><strong>Closed → Open:</strong> Failure threshold exceeded (e.g., 5 failures in 60 seconds)</li>
+    <li><strong>Open → Half-Open:</strong> Timeout period elapsed (e.g., 30 seconds)</li>
+    <li><strong>Half-Open → Closed:</strong> Test requests succeed</li>
+    <li><strong>Half-Open → Open:</strong> Test requests fail</li>
+</ul>
+
+<h3>Circuit Breaker Benefits</h3>
+<ul>
+    <li>Prevents resource exhaustion from repeated failed requests</li>
+    <li>Allows failing services time to recover</li>
+    <li>Provides fast failure response to users</li>
+    <li>Enables graceful degradation strategies</li>
+</ul>
+
+<h2>Graceful Degradation</h2>
+<p>Graceful degradation maintains partial functionality when full service is unavailable.</p>
+
+<h3>Degradation Strategies</h3>
+
+<h4>1. Cached Responses</h4>
+<ul>
+    <li>Return previously cached results when API unavailable</li>
+    <li>Display cache age to users</li>
+    <li>Implement cache invalidation policies</li>
+</ul>
+
+<h4>2. Fallback Content</h4>
+<ul>
+    <li>Provide default or template responses</li>
+    <li>Use simpler, faster models as fallback</li>
+    <li>Display pre-generated content</li>
+</ul>
+
+<h4>3. Feature Disabling</h4>
+<ul>
+    <li>Temporarily disable AI-powered features</li>
+    <li>Maintain core functionality without AI</li>
+    <li>Display informative messages to users</li>
+</ul>
+
+<h4>4. Queue for Later Processing</h4>
+<ul>
+    <li>Queue requests for processing when service recovers</li>
+    <li>Notify users of delayed processing</li>
+    <li>Process queue in background</li>
+</ul>
+
+<h2>Timeout Management</h2>
+<p>Proper timeout configuration prevents indefinite waiting and resource exhaustion.</p>
+
+<h3>Timeout Types</h3>
+<ul>
+    <li><strong>Connection Timeout:</strong> Maximum time to establish connection (5-10 seconds)</li>
+    <li><strong>Read Timeout:</strong> Maximum time waiting for response (30-60 seconds)</li>
+    <li><strong>Total Timeout:</strong> Overall request duration limit (60-120 seconds)</li>
+</ul>
+
+<h3>Timeout Best Practices</h3>
+<ul>
+    <li>Set timeouts appropriate to expected response times</li>
+    <li>Consider model and request complexity</li>
+    <li>Implement timeout handling with user feedback</li>
+    <li>Log timeout occurrences for analysis</li>
+</ul>
+
+<h2>Logging and Monitoring</h2>
+<p>Comprehensive logging enables troubleshooting and performance optimization.</p>
+
+<h3>Essential Log Data</h3>
+<ul>
+    <li><strong>Request Details:</strong> Timestamp, model, parameters, token counts</li>
+    <li><strong>Response Metadata:</strong> Status code, response time, message ID</li>
+    <li><strong>Error Information:</strong> Error type, message, stack trace</li>
+    <li><strong>Retry Attempts:</strong> Number of retries, backoff delays</li>
+    <li><strong>User Context:</strong> User ID, session ID, request source</li>
+</ul>
+
+<h3>Monitoring Metrics</h3>
+<ul>
+    <li><strong>Success Rate:</strong> Percentage of successful requests</li>
+    <li><strong>Error Rate:</strong> Frequency and types of errors</li>
+    <li><strong>Response Time:</strong> Latency percentiles (p50, p95, p99)</li>
+    <li><strong>Retry Rate:</strong> Percentage of requests requiring retries</li>
+    <li><strong>Circuit Breaker State:</strong> Time spent in each state</li>
+</ul>
+
+<h3>Alerting Thresholds</h3>
+<ul>
+    <li>Error rate exceeds 5% over 5-minute window</li>
+    <li>Response time p95 exceeds 10 seconds</li>
+    <li>Circuit breaker opens</li>
+    <li>Rate limit errors increase significantly</li>
+</ul>
+
+<h2>Error Recovery Patterns</h2>
+
+<h3>Idempotency</h3>
+<p>Design operations to be safely retryable:</p>
+<ul>
+    <li>Use unique request IDs to prevent duplicate processing</li>
+    <li>Implement idempotency keys for critical operations</li>
+    <li>Design stateless request handling</li>
+</ul>
+
+<h3>Compensation Actions</h3>
+<p>Implement rollback mechanisms for failed operations:</p>
+<ul>
+    <li>Undo partial changes on failure</li>
+    <li>Maintain transaction logs</li>
+    <li>Implement compensating transactions</li>
+</ul>
+
+<h3>Dead Letter Queues</h3>
+<p>Handle permanently failed requests:</p>
+<ul>
+    <li>Move failed requests to dead letter queue after max retries</li>
+    <li>Implement manual review process</li>
+    <li>Analyze patterns in failed requests</li>
+</ul>
+
+<h2>Production Resilience Checklist</h2>
+<ul>
+    <li>✓ Implement exponential backoff with jitter for retries</li>
+    <li>✓ Configure appropriate timeout values</li>
+    <li>✓ Deploy circuit breaker for failure isolation</li>
+    <li>✓ Implement graceful degradation strategies</li>
+    <li>✓ Log all errors with context</li>
+    <li>✓ Monitor key performance metrics</li>
+    <li>✓ Set up alerting for anomalies</li>
+    <li>✓ Test failure scenarios regularly</li>
+    <li>✓ Document error handling procedures</li>
+    <li>✓ Implement health check endpoints</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Different error types require different handling strategies</li>
+    <li>Exponential backoff with jitter prevents thundering herd problems</li>
+    <li>Circuit breakers protect systems from cascading failures</li>
+    <li>Graceful degradation maintains partial functionality during outages</li>
+    <li>Comprehensive logging and monitoring enable rapid troubleshooting</li>
+    <li>Proper timeout configuration prevents resource exhaustion</li>
+    <li>Production systems require multiple layers of resilience</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

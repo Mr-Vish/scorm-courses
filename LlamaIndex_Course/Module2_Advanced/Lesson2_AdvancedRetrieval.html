@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Retrieval Techniques</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Advanced Indexing and Retrieval Strategies</h1>
+<h2>Lesson 2: Advanced Retrieval Techniques</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand hybrid search combining vector and keyword retrieval</li>
+    <li>Analyze re-ranking strategies for improving retrieval precision</li>
+    <li>Evaluate query transformation techniques for better retrieval</li>
+    <li>Recognize the role of metadata filtering in targeted retrieval</li>
+</ul>
+
+<h3>Beyond Basic Vector Search: The Need for Advanced Retrieval</h3>
+<p>While vector similarity search forms the foundation of modern RAG systems, it has limitations. Pure semantic search may miss exact keyword matches, struggle with rare terminology, or retrieve overly broad results. Advanced retrieval techniques address these limitations by combining multiple strategies, refining results, and transforming queries for optimal matching.</p>
+
+<h3>Hybrid Search: Best of Both Worlds</h3>
+<p>Hybrid search combines vector-based semantic search with traditional keyword-based search (typically BM25 algorithm), leveraging the strengths of each approach.</p>
+
+<h4>Why Hybrid Search Matters</h4>
+<p><strong>Semantic Search Strengths:</strong></p>
+<ul>
+    <li>Finds conceptually similar content regardless of exact wording</li>
+    <li>Handles synonyms and paraphrasing naturally</li>
+    <li>Understands context and intent</li>
+    <li>Works well for exploratory or conceptual queries</li>
+</ul>
+
+<p><strong>Semantic Search Weaknesses:</strong></p>
+<ul>
+    <li>May miss exact keyword matches (e.g., product codes, technical terms)</li>
+    <li>Can retrieve overly general results for specific queries</li>
+    <li>Struggles with rare or domain-specific terminology not well-represented in embedding training</li>
+</ul>
+
+<p><strong>Keyword Search Strengths:</strong></p>
+<ul>
+    <li>Excellent for exact matches and specific terminology</li>
+    <li>Reliable for queries with unique identifiers</li>
+    <li>Fast and computationally efficient</li>
+    <li>Transparent and explainable results</li>
+</ul>
+
+<p><strong>Keyword Search Weaknesses:</strong></p>
+<ul>
+    <li>Misses semantically similar content with different wording</li>
+    <li>Requires exact or near-exact keyword matches</li>
+    <li>Doesn't understand context or intent</li>
+    <li>Struggles with synonyms and paraphrasing</li>
+</ul>
+
+<h4>Hybrid Search Implementation Strategies</h4>
+<p><strong>Reciprocal Rank Fusion (RRF):</strong> The most common fusion method. Each retrieval method produces a ranked list of results. RRF combines these lists by assigning scores based on rank position rather than raw similarity scores. This approach is robust to score scale differences between methods.</p>
+
+<p>Formula: <code>RRF_score = Σ(1 / (k + rank_i))</code> where k is a constant (typically 60) and rank_i is the position in each result list.</p>
+
+<p><strong>Weighted Score Fusion:</strong> Combines normalized scores from each method using configurable weights. For example, 70% weight to semantic search, 30% to keyword search. Weights can be tuned based on your corpus and query characteristics.</p>
+
+<p><strong>Cascade Retrieval:</strong> Uses one method as primary and another as fallback. For example, try semantic search first; if confidence is low or no results found, fall back to keyword search.</p>
+
+<h4>When to Use Hybrid Search</h4>
+<ul>
+    <li>Technical documentation with specific terminology and product codes</li>
+    <li>Legal or compliance documents where exact phrase matching is critical</li>
+    <li>Mixed query types (some users search conceptually, others use specific terms)</li>
+    <li>Domains with specialized vocabulary not well-covered by general embedding models</li>
+</ul>
+
+<h3>Re-Ranking: Refining Retrieval Results</h3>
+<p>Initial retrieval casts a wide net, prioritizing recall (finding all relevant results). Re-ranking applies more sophisticated models to refine these results, improving precision (ensuring top results are truly relevant).</p>
+
+<h4>Why Re-Ranking Works</h4>
+<p>Initial retrieval typically uses bi-encoder models that embed queries and documents independently, then compare embeddings. This is fast but limited in expressiveness. Re-ranking uses cross-encoder models that process query and document together, capturing fine-grained interactions between them. This produces more accurate relevance scores but is too slow for initial retrieval over large corpora.</p>
+
+<p>The two-stage approach combines the best of both: fast bi-encoder retrieval narrows to top-k candidates (e.g., 50-100), then slow but accurate cross-encoder re-ranking refines to final top-n (e.g., 5-10).</p>
+
+<h4>Re-Ranking Models</h4>
+<p><strong>Cross-Encoder Models:</strong> Models like ms-marco-MiniLM or bge-reranker process query-document pairs and output relevance scores. These models are specifically trained for ranking tasks and significantly outperform similarity-based ranking.</p>
+
+<p><strong>LLM-Based Re-Ranking:</strong> Use an LLM to assess relevance by prompting: "On a scale of 1-10, how relevant is this passage to the query?" More expensive but can incorporate complex relevance criteria.</p>
+
+<p><strong>Metadata-Based Boosting:</strong> Adjust scores based on metadata signals like recency, authority, or user preferences. For example, boost recent documents or documents from trusted sources.</p>
+
+<h4>Re-Ranking Trade-offs</h4>
+<p><strong>Benefits:</strong></p>
+<ul>
+    <li>Significantly improves precision of top results</li>
+    <li>Reduces noise in context provided to LLM</li>
+    <li>Can incorporate signals beyond semantic similarity</li>
+</ul>
+
+<p><strong>Costs:</strong></p>
+<ul>
+    <li>Adds latency (typically 50-200ms per re-ranking operation)</li>
+    <li>Increases computational requirements</li>
+    <li>Adds complexity to the retrieval pipeline</li>
+</ul>
+
+<h3>Query Transformation: Optimizing for Retrieval</h3>
+<p>User queries are often suboptimal for retrieval—they may be ambiguous, too broad, too narrow, or poorly worded. Query transformation techniques reformulate queries to improve retrieval effectiveness.</p>
+
+<h4>Query Expansion</h4>
+<p>Expand the original query with related terms, synonyms, or context. For example:</p>
+<ul>
+    <li>Original: "ML deployment"</li>
+    <li>Expanded: "ML deployment machine learning model deployment production serving inference"</li>
+</ul>
+
+<p>Expansion increases recall by matching more variations of relevant content. Can be done using:</p>
+<ul>
+    <li>Synonym dictionaries</li>
+    <li>LLM-generated expansions</li>
+    <li>Pseudo-relevance feedback (expand based on initial retrieval results)</li>
+</ul>
+
+<h4>Query Decomposition</h4>
+<p>Break complex queries into simpler sub-queries that can be answered independently. Particularly effective for multi-part questions:</p>
+
+<p>Original: "Compare the performance and cost of AWS Lambda versus EC2 for microservices"</p>
+
+<p>Decomposed:</p>
+<ul>
+    <li>"What is the performance of AWS Lambda for microservices?"</li>
+    <li>"What is the cost of AWS Lambda for microservices?"</li>
+    <li>"What is the performance of EC2 for microservices?"</li>
+    <li>"What is the cost of EC2 for microservices?"</li>
+</ul>
+
+<h4>Hypothetical Document Embeddings (HyDE)</h4>
+<p>An innovative technique where an LLM generates a hypothetical answer to the query, then that answer is embedded and used for retrieval. The intuition: a hypothetical answer is more similar to actual relevant documents than the query itself.</p>
+
+<p>Example:</p>
+<ul>
+    <li>Query: "How do I reset my password?"</li>
+    <li>HyDE generates: "To reset your password, navigate to the login page, click 'Forgot Password', enter your email, and follow the link sent to your inbox."</li>
+    <li>This generated text is embedded and used for retrieval</li>
+</ul>
+
+<p>HyDE is particularly effective when queries and documents have different linguistic styles (questions vs. declarative text).</p>
+
+<h4>Query Rewriting</h4>
+<p>Use an LLM to rewrite queries for clarity and specificity:</p>
+<ul>
+    <li>Original: "it doesn't work"</li>
+    <li>Rewritten: "troubleshooting application errors and failures"</li>
+</ul>
+
+<p>Especially valuable in conversational systems where queries may be informal or context-dependent.</p>
+
+<h3>Metadata Filtering: Targeted Retrieval</h3>
+<p>Metadata filtering constrains retrieval to specific subsets of your corpus, dramatically improving precision and reducing noise.</p>
+
+<h4>Pre-Filtering vs. Post-Filtering</h4>
+<p><strong>Pre-Filtering:</strong> Apply metadata filters before vector search. Only documents matching filter criteria are considered. More efficient but requires vector database support for filtered search.</p>
+
+<p><strong>Post-Filtering:</strong> Perform vector search first, then filter results by metadata. Simpler to implement but may retrieve too few results if many are filtered out.</p>
+
+<h4>Common Filtering Patterns</h4>
+<p><strong>Temporal Filtering:</strong> "Only search documents from the last 6 months" or "Find policies effective in 2024"</p>
+
+<p><strong>Categorical Filtering:</strong> "Search only HR policies" or "Exclude draft documents"</p>
+
+<p><strong>Access Control:</strong> Filter based on user permissions, ensuring users only retrieve documents they're authorized to access</p>
+
+<p><strong>Source Filtering:</strong> "Search only official documentation" or "Exclude external sources"</p>
+
+<h4>Dynamic Filtering</h4>
+<p>Advanced systems use LLMs to extract filter criteria from natural language queries:</p>
+<ul>
+    <li>Query: "What were our Q3 2024 sales in the Northeast region?"</li>
+    <li>Extracted filters: date=Q3 2024, region=Northeast, topic=sales</li>
+</ul>
+
+<h3>Multi-Stage Retrieval Pipelines</h3>
+<p>Production RAG systems often combine multiple techniques in sophisticated pipelines:</p>
+
+<ol>
+    <li><strong>Stage 1 - Broad Retrieval:</strong> Hybrid search retrieves top-100 candidates</li>
+    <li><strong>Stage 2 - Metadata Filtering:</strong> Apply access control and temporal filters</li>
+    <li><strong>Stage 3 - Re-Ranking:</strong> Cross-encoder re-ranks to top-20</li>
+    <li><strong>Stage 4 - Diversity Filtering:</strong> Ensure results cover different aspects of the query</li>
+    <li><strong>Stage 5 - Final Selection:</strong> Select top-5 for LLM context</li>
+</ol>
+
+<p>Each stage refines results, balancing recall, precision, diversity, and computational cost.</p>
+
+<h3>Evaluation and Optimization</h3>
+<p>Advanced retrieval techniques require careful evaluation:</p>
+
+<p><strong>Offline Metrics:</strong></p>
+<ul>
+    <li>Recall@k: Are relevant documents in top-k results?</li>
+    <li>Precision@k: What percentage of top-k are relevant?</li>
+    <li>MRR (Mean Reciprocal Rank): How highly is the first relevant result ranked?</li>
+    <li>NDCG: Accounts for graded relevance and position</li>
+</ul>
+
+<p><strong>Online Metrics:</strong></p>
+<ul>
+    <li>User satisfaction ratings</li>
+    <li>Click-through rates on retrieved documents</li>
+    <li>Task completion rates</li>
+    <li>Time to find information</li>
+</ul>
+
+<p><strong>A/B Testing:</strong> Compare retrieval strategies in production with real users to identify the most effective approach for your specific use case.</p>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Hybrid search combines semantic and keyword retrieval for improved recall and precision</li>
+    <li>Re-ranking refines initial retrieval results using more sophisticated relevance models</li>
+    <li>Query transformation techniques like expansion, decomposition, and HyDE optimize queries for better retrieval</li>
+    <li>Metadata filtering enables targeted retrieval and access control</li>
+    <li>Production systems often use multi-stage pipelines combining multiple techniques</li>
+    <li>Continuous evaluation and optimization are essential for maintaining retrieval quality</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

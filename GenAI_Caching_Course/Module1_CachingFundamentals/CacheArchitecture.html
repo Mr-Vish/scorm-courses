@@ -1,0 +1,255 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cache Architecture Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cache Architecture Patterns</h1>
+
+<h2>Architectural Approaches to GenAI Caching</h2>
+<p>Implementing caching for GenAI applications requires careful architectural decisions that impact performance, scalability, and maintainability. Different patterns suit different organizational needs, infrastructure constraints, and application characteristics.</p>
+
+<p>This section explores four primary architectural patterns, their trade-offs, and appropriate use cases.</p>
+
+<h2>Pattern 1: Application-Level Caching</h2>
+
+<h3>Architecture Overview</h3>
+<p>In application-level caching, the cache logic resides within the application code itself. The application directly manages cache operations before and after GenAI API calls.</p>
+
+<h3>Architecture Flow:</h3>
+<blockquote>
+User Request → Application → Cache Check → [Hit: Return] or [Miss: GenAI API → Cache Store → Return]
+</blockquote>
+
+<h3>Advantages:</h3>
+<ul>
+<li><strong>Simplicity:</strong> Straightforward implementation with minimal infrastructure</li>
+<li><strong>Full Control:</strong> Complete visibility and control over caching logic</li>
+<li><strong>Tight Integration:</strong> Cache logic can access application context and business rules</li>
+<li><strong>Rapid Development:</strong> Quick to prototype and iterate</li>
+<li><strong>Cost-Effective:</strong> No additional service layers required</li>
+</ul>
+
+<h3>Disadvantages:</h3>
+<ul>
+<li><strong>Code Coupling:</strong> Cache logic mixed with business logic</li>
+<li><strong>Limited Reusability:</strong> Each application implements its own caching</li>
+<li><strong>Scaling Challenges:</strong> Cache not shared across multiple application instances</li>
+<li><strong>Maintenance Burden:</strong> Updates require application redeployment</li>
+</ul>
+
+<h3>Best For:</h3>
+<ul>
+<li>Single-instance applications or monoliths</li>
+<li>Proof-of-concept and MVP development</li>
+<li>Applications with unique caching requirements</li>
+<li>Small teams with limited infrastructure resources</li>
+</ul>
+
+<h2>Pattern 2: Proxy/Gateway Caching</h2>
+
+<h3>Architecture Overview</h3>
+<p>A dedicated proxy service sits between applications and GenAI APIs, transparently handling all caching operations. Applications make requests to the proxy, which manages cache lookups and API calls.</p>
+
+<h3>Architecture Flow:</h3>
+<blockquote>
+User Request → Application → Caching Proxy → Cache Check → [Hit: Return] or [Miss: GenAI API → Cache Store → Return] → Application → User
+</blockquote>
+
+<h3>Advantages:</h3>
+<ul>
+<li><strong>Separation of Concerns:</strong> Caching logic completely decoupled from applications</li>
+<li><strong>Centralized Management:</strong> Single point for cache configuration and monitoring</li>
+<li><strong>Multi-Application Support:</strong> Multiple applications share the same cache</li>
+<li><strong>Transparent Integration:</strong> Applications require minimal code changes</li>
+<li><strong>Independent Scaling:</strong> Cache layer scales independently of applications</li>
+<li><strong>Unified Monitoring:</strong> Centralized metrics and observability</li>
+</ul>
+
+<h3>Disadvantages:</h3>
+<ul>
+<li><strong>Additional Latency:</strong> Extra network hop through proxy</li>
+<li><strong>Single Point of Failure:</strong> Proxy outage affects all applications</li>
+<li><strong>Infrastructure Complexity:</strong> Requires deployment and management of proxy service</li>
+<li><strong>Limited Context:</strong> Proxy lacks application-specific business logic</li>
+</ul>
+
+<h3>Best For:</h3>
+<ul>
+<li>Microservices architectures with multiple GenAI consumers</li>
+<li>Organizations standardizing on shared infrastructure</li>
+<li>Enterprise environments requiring centralized governance</li>
+<li>Applications requiring consistent caching behavior</li>
+</ul>
+
+<h2>Pattern 3: Sidecar Caching</h2>
+
+<h3>Architecture Overview</h3>
+<p>Each application instance runs alongside a dedicated cache sidecar container. The sidecar handles caching operations locally while the application focuses on business logic.</p>
+
+<h3>Architecture Flow:</h3>
+<blockquote>
+User Request → Application → Local Sidecar Cache → Cache Check → [Hit: Return] or [Miss: GenAI API → Cache Store → Return] → Application → User
+</blockquote>
+
+<h3>Advantages:</h3>
+<ul>
+<li><strong>Low Latency:</strong> Cache operations occur locally (localhost communication)</li>
+<li><strong>Isolation:</strong> Each application has dedicated cache resources</li>
+<li><strong>Kubernetes-Native:</strong> Natural fit for container orchestration platforms</li>
+<li><strong>Independent Failure:</strong> Sidecar issues don't cascade to other applications</li>
+<li><strong>Resource Optimization:</strong> Cache size scales with application instances</li>
+</ul>
+
+<h3>Disadvantages:</h3>
+<ul>
+<li><strong>Cache Duplication:</strong> Same entries may exist across multiple sidecars</li>
+<li><strong>Resource Overhead:</strong> Each instance requires dedicated cache memory</li>
+<li><strong>Lower Hit Rates:</strong> Caches not shared across instances</li>
+<li><strong>Complexity:</strong> Requires container orchestration expertise</li>
+</ul>
+
+<h3>Best For:</h3>
+<ul>
+<li>Kubernetes-based microservices deployments</li>
+<li>Applications requiring strict isolation</li>
+<li>Scenarios where network latency is critical</li>
+<li>Organizations with strong container orchestration capabilities</li>
+</ul>
+
+<h2>Pattern 4: Distributed Cache Cluster</h2>
+
+<h3>Architecture Overview</h3>
+<p>A dedicated, distributed cache cluster (e.g., Redis Cluster, Memcached cluster) serves multiple application instances. All applications share a unified, horizontally scalable cache.</p>
+
+<h3>Architecture Flow:</h3>
+<blockquote>
+User Request → Application → Distributed Cache Cluster → Cache Check → [Hit: Return] or [Miss: GenAI API → Cache Store → Return] → Application → User
+</blockquote>
+
+<h3>Advantages:</h3>
+<ul>
+<li><strong>Maximum Hit Rates:</strong> All applications share the same cache entries</li>
+<li><strong>Horizontal Scalability:</strong> Add nodes to increase capacity</li>
+<li><strong>High Availability:</strong> Replication and failover capabilities</li>
+<li><strong>Efficient Resource Use:</strong> Single copy of each cached response</li>
+<li><strong>Enterprise-Grade:</strong> Mature, battle-tested solutions available</li>
+</ul>
+
+<h3>Disadvantages:</h3>
+<ul>
+<li><strong>Network Latency:</strong> Remote cache access adds milliseconds</li>
+<li><strong>Infrastructure Cost:</strong> Requires dedicated cache cluster management</li>
+<li><strong>Operational Complexity:</strong> Monitoring, backup, and maintenance overhead</li>
+<li><strong>Shared Failure Domain:</strong> Cluster issues affect all applications</li>
+</ul>
+
+<h3>Best For:</h3>
+<ul>
+<li>High-traffic production applications</li>
+<li>Multi-instance deployments requiring shared state</li>
+<li>Organizations with dedicated infrastructure teams</li>
+<li>Applications prioritizing hit rate over latency</li>
+</ul>
+
+<h2>Hybrid Patterns</h2>
+
+<h3>Multi-Tier Caching</h3>
+<p>Combines multiple patterns for optimal performance:</p>
+
+<blockquote>
+<strong>Tier 1:</strong> Application-level in-memory cache (L1) - Ultra-fast, small capacity<br/>
+<strong>Tier 2:</strong> Distributed cache cluster (L2) - Shared, larger capacity<br/><br/>
+<strong>Flow:</strong> Check L1 → [Miss] → Check L2 → [Miss] → GenAI API → Store in L2 and L1
+</blockquote>
+
+<h3>Advantages of Multi-Tier:</h3>
+<ul>
+<li>Combines speed of local caching with efficiency of shared caching</li>
+<li>Reduces load on distributed cache</li>
+<li>Optimizes for both latency and hit rate</li>
+</ul>
+
+<h3>Complexity Trade-off:</h3>
+<ul>
+<li>Requires cache coherency strategies</li>
+<li>More complex invalidation logic</li>
+<li>Increased monitoring requirements</li>
+</ul>
+
+<h2>Architectural Decision Framework</h2>
+
+<h3>Choose Application-Level Caching When:</h3>
+<ul>
+<li>Building MVP or proof-of-concept</li>
+<li>Single-instance deployment</li>
+<li>Minimal infrastructure resources</li>
+<li>Rapid iteration required</li>
+</ul>
+
+<h3>Choose Proxy/Gateway Caching When:</h3>
+<ul>
+<li>Multiple applications consume GenAI APIs</li>
+<li>Centralized governance required</li>
+<li>Standardization across teams</li>
+<li>Existing API gateway infrastructure</li>
+</ul>
+
+<h3>Choose Sidecar Caching When:</h3>
+<ul>
+<li>Kubernetes-native architecture</li>
+<li>Latency is critical concern</li>
+<li>Application isolation required</li>
+<li>Container orchestration expertise available</li>
+</ul>
+
+<h3>Choose Distributed Cache Cluster When:</h3>
+<ul>
+<li>High-traffic production environment</li>
+<li>Multiple application instances</li>
+<li>Maximizing hit rate is priority</li>
+<li>Infrastructure team can manage clusters</li>
+</ul>
+
+<h2>Cache Sizing and Capacity Planning</h2>
+
+<h3>Estimating Cache Size Requirements:</h3>
+<p>Calculate required cache capacity based on:</p>
+
+<blockquote>
+<strong>Formula:</strong><br/>
+Cache Size = (Average Response Size) × (Expected Unique Queries) × (Overhead Factor)<br/><br/>
+<strong>Example:</strong><br/>
+Average Response: 2 KB<br/>
+Unique Queries: 50,000<br/>
+Overhead Factor: 1.5 (metadata, Redis overhead)<br/>
+Required Cache Size: 2 KB × 50,000 × 1.5 = 150 MB
+</blockquote>
+
+<h3>Capacity Planning Considerations:</h3>
+<ul>
+<li><strong>Growth Buffer:</strong> Plan for 2-3x current requirements</li>
+<li><strong>Peak Traffic:</strong> Size for peak, not average load</li>
+<li><strong>Eviction Policy:</strong> LRU (Least Recently Used) handles overflow gracefully</li>
+<li><strong>Memory Limits:</strong> Set maxmemory policies to prevent OOM errors</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Four primary patterns exist: Application-Level, Proxy/Gateway, Sidecar, and Distributed Cluster</li>
+<li>Pattern selection depends on scale, infrastructure, latency requirements, and organizational capabilities</li>
+<li>Application-level caching suits MVPs and single-instance deployments</li>
+<li>Distributed cache clusters maximize hit rates for multi-instance production applications</li>
+<li>Hybrid multi-tier approaches optimize for both latency and efficiency</li>
+<li>Capacity planning requires estimating unique query volume and average response sizes</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

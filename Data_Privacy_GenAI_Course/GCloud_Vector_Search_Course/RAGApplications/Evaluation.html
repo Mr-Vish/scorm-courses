@@ -1,0 +1,367 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>RAG Evaluation and Best Practices</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>RAG Evaluation and Best Practices</h1>
+
+<h2>Evaluating RAG Systems</h2>
+<p>Measuring RAG performance requires evaluating both retrieval quality and generation quality. A comprehensive evaluation strategy ensures your system meets user needs.</p>
+
+<h2>Retrieval Evaluation Metrics</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Definition</th>
+        <th>Target</th>
+        <th>How to Measure</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Precision@K</td>
+        <td>Percentage of retrieved docs that are relevant</td>
+        <td>&gt;80%</td>
+        <td>Manual labeling or user feedback</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Recall@K</td>
+        <td>Percentage of relevant docs that were retrieved</td>
+        <td>&gt;90%</td>
+        <td>Requires complete relevance judgments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">MRR (Mean Reciprocal Rank)</td>
+        <td>Average of 1/rank of first relevant result</td>
+        <td>&gt;0.7</td>
+        <td>Position of first relevant document</td>
+    </tr>
+    <tr>
+        <td class="rowheader">NDCG (Normalized Discounted Cumulative Gain)</td>
+        <td>Ranking quality with graded relevance</td>
+        <td>&gt;0.8</td>
+        <td>Requires relevance scores (0-3)</td>
+    </tr>
+</table>
+
+<h2>Generation Evaluation Metrics</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Definition</th>
+        <th>Target</th>
+        <th>Measurement Method</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Faithfulness</td>
+        <td>Answer is supported by retrieved context</td>
+        <td>&gt;95%</td>
+        <td>LLM-as-judge or human evaluation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Answer Relevance</td>
+        <td>Answer addresses the question</td>
+        <td>&gt;90%</td>
+        <td>Semantic similarity or human rating</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Correctness</td>
+        <td>Answer is factually accurate</td>
+        <td>&gt;85%</td>
+        <td>Human expert evaluation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Completeness</td>
+        <td>Answer covers all aspects of question</td>
+        <td>&gt;80%</td>
+        <td>Human evaluation</td>
+    </tr>
+</table>
+
+<h2>Automated Evaluation with LLM-as-Judge</h2>
+<div class="code-block">
+<pre><code>def evaluate_faithfulness(question, context, answer):
+    """Use LLM to evaluate if answer is grounded in context"""
+    
+    eval_prompt = f"""Evaluate if the answer is fully supported by the context.
+    
+Context: {context}
+
+Question: {question}
+
+Answer: {answer}
+
+Is the answer fully supported by the context? Answer YES or NO and explain.
+
+Evaluation:"""
+    
+    evaluation = llm.generate_content(eval_prompt)
+    
+    # Parse response
+    is_faithful = "YES" in evaluation.text.upper()
+    return {
+        "faithful": is_faithful,
+        "explanation": evaluation.text
+    }
+
+def evaluate_answer_relevance(question, answer):
+    """Evaluate if answer addresses the question"""
+    
+    eval_prompt = f"""Rate how well the answer addresses the question (1-5 scale).
+
+Question: {question}
+
+Answer: {answer}
+
+Rating (1-5) and explanation:"""
+    
+    evaluation = llm.generate_content(eval_prompt)
+    
+    # Extract rating
+    rating = extract_rating(evaluation.text)
+    return {
+        "relevance_score": rating,
+        "explanation": evaluation.text
+    }
+</code></pre>
+</div>
+
+<h2>Building an Evaluation Dataset</h2>
+<div class="code-block">
+<pre><code># Create evaluation dataset with ground truth
+evaluation_dataset = [
+    {
+        "question": "How do I deploy a model to Vertex AI?",
+        "expected_answer": "Use the Model.deploy() method...",
+        "relevant_doc_ids": ["doc_123", "doc_456"],
+        "category": "deployment"
+    },
+    {
+        "question": "What is the maximum batch size for predictions?",
+        "expected_answer": "The maximum batch size is 1000 instances...",
+        "relevant_doc_ids": ["doc_789"],
+        "category": "limits"
+    }
+    # Add 100-500 examples for comprehensive evaluation
+]
+
+def run_evaluation(rag_system, eval_dataset):
+    """Evaluate RAG system on test dataset"""
+    results = []
+    
+    for item in eval_dataset:
+        # Get RAG response
+        response = rag_system.query(item["question"])
+        
+        # Evaluate retrieval
+        retrieved_ids = [s["id"] for s in response["sources"]]
+        precision = len(set(retrieved_ids) & set(item["relevant_doc_ids"])) / len(retrieved_ids)
+        recall = len(set(retrieved_ids) & set(item["relevant_doc_ids"])) / len(item["relevant_doc_ids"])
+        
+        # Evaluate generation
+        faithfulness = evaluate_faithfulness(
+            item["question"],
+            response["context"],
+            response["answer"]
+        )
+        
+        results.append({
+            "question": item["question"],
+            "precision": precision,
+            "recall": recall,
+            "faithfulness": faithfulness["faithful"],
+            "answer": response["answer"]
+        })
+    
+    # Aggregate metrics
+    avg_precision = sum(r["precision"] for r in results) / len(results)
+    avg_recall = sum(r["recall"] for r in results) / len(results)
+    faithfulness_rate = sum(r["faithfulness"] for r in results) / len(results)
+    
+    return {
+        "precision": avg_precision,
+        "recall": avg_recall,
+        "faithfulness": faithfulness_rate,
+        "details": results
+    }
+</code></pre>
+</div>
+
+<h2>A/B Testing RAG Configurations</h2>
+<div class="code-block">
+<pre><code>import random
+
+def ab_test_rag(question, user_id):
+    """A/B test different RAG configurations"""
+    
+    # Assign user to variant
+    variant = "A" if hash(user_id) % 2 == 0 else "B"
+    
+    if variant == "A":
+        # Configuration A: More chunks, lower temperature
+        response = rag_system.query(
+            question,
+            num_chunks=7,
+            temperature=0.1
+        )
+    else:
+        # Configuration B: Fewer chunks, higher temperature
+        response = rag_system.query(
+            question,
+            num_chunks=5,
+            temperature=0.3
+        )
+    
+    # Log for analysis
+    log_experiment(user_id, variant, question, response)
+    
+    return response
+
+# Analyze results after 1000+ queries
+# Compare: user satisfaction, latency, cost
+</code></pre>
+</div>
+
+<h2>Common RAG Failure Modes</h2>
+<table>
+    <tr>
+        <th>Failure Mode</th>
+        <th>Symptom</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Poor Retrieval</td>
+        <td>Irrelevant chunks retrieved</td>
+        <td>Improve chunking, tune index parameters, use hybrid search</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Overflow</td>
+        <td>Too much context, LLM confused</td>
+        <td>Reduce num_chunks, implement re-ranking</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hallucination</td>
+        <td>Answer not grounded in context</td>
+        <td>Strengthen prompt instructions, use faithfulness checks</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Incomplete Answers</td>
+        <td>Missing key information</td>
+        <td>Increase num_chunks, improve chunking strategy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Slow Response</td>
+        <td>High latency</td>
+        <td>Optimize retrieval, cache, use streaming</td>
+    </tr>
+</table>
+
+<h2>Best Practices Checklist</h2>
+
+<h3>Data Preparation</h3>
+<ul>
+<li>✓ Clean and normalize documents before chunking</li>
+<li>✓ Use semantic chunking (512-768 tokens) for balanced context</li>
+<li>✓ Add rich metadata for filtering and attribution</li>
+<li>✓ Remove duplicate or near-duplicate chunks</li>
+<li>✓ Version your document corpus for reproducibility</li>
+</ul>
+
+<h3>Retrieval Optimization</h3>
+<ul>
+<li>✓ Start with 5-7 chunks, tune based on evaluation</li>
+<li>✓ Implement hybrid search for better coverage</li>
+<li>✓ Use metadata filtering to narrow search scope</li>
+<li>✓ Consider re-ranking top candidates</li>
+<li>✓ Monitor retrieval latency and accuracy</li>
+</ul>
+
+<h3>Generation Quality</h3>
+<ul>
+<li>✓ Use clear, structured prompts with explicit instructions</li>
+<li>✓ Set temperature=0.1-0.3 for factual responses</li>
+<li>✓ Limit max_output_tokens to control verbosity</li>
+<li>✓ Implement faithfulness checks</li>
+<li>✓ Provide source citations in responses</li>
+</ul>
+
+<h3>Production Readiness</h3>
+<ul>
+<li>✓ Implement comprehensive error handling</li>
+<li>✓ Add caching for frequent queries</li>
+<li>✓ Monitor latency, cost, and quality metrics</li>
+<li>✓ Set up alerting for degraded performance</li>
+<li>✓ Build evaluation dataset for regression testing</li>
+<li>✓ Collect user feedback for continuous improvement</li>
+</ul>
+
+<h2>Real-World RAG Use Cases</h2>
+<ul>
+<li><strong>Customer Support:</strong> Answer questions using product documentation and FAQs</li>
+<li><strong>Enterprise Search:</strong> Semantic search across internal documents and wikis</li>
+<li><strong>Code Assistant:</strong> Retrieve relevant code examples and documentation</li>
+<li><strong>Research Assistant:</strong> Synthesize information from scientific papers</li>
+<li><strong>Legal Analysis:</strong> Find relevant case law and regulations</li>
+<li><strong>Medical Q&A:</strong> Answer questions using medical literature (with appropriate disclaimers)</li>
+</ul>
+
+<h2>Scaling Considerations</h2>
+<table>
+    <tr>
+        <th>Scale</th>
+        <th>Documents</th>
+        <th>QPS</th>
+        <th>Architecture</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Small</td>
+        <td>&lt;10K</td>
+        <td>&lt;10</td>
+        <td>Single index, 1-2 replicas</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Medium</td>
+        <td>10K-1M</td>
+        <td>10-100</td>
+        <td>Optimized index, 2-5 replicas, caching</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Large</td>
+        <td>1M-10M</td>
+        <td>100-1000</td>
+        <td>Multi-region, 5-10 replicas, CDN caching</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Very Large</td>
+        <td>&gt;10M</td>
+        <td>&gt;1000</td>
+        <td>Sharded indexes, global load balancing</td>
+    </tr>
+</table>
+
+<h2>Future Directions</h2>
+<ul>
+<li><strong>Multi-modal RAG:</strong> Retrieve images, videos, and text together</li>
+<li><strong>Agentic RAG:</strong> LLM decides when and what to retrieve</li>
+<li><strong>Self-RAG:</strong> System evaluates and refines its own responses</li>
+<li><strong>Adaptive Retrieval:</strong> Dynamically adjust num_chunks based on query complexity</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Evaluate both retrieval quality (precision, recall) and generation quality (faithfulness, relevance)</li>
+<li>Build evaluation datasets with 100-500 examples for comprehensive testing</li>
+<li>Use LLM-as-judge for automated evaluation at scale</li>
+<li>Common failure modes include poor retrieval, context overflow, and hallucinations</li>
+<li>Production RAG requires monitoring, caching, error handling, and continuous evaluation</li>
+<li>A/B testing helps optimize configuration parameters for your specific use case</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

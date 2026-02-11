@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Image Alt Text and Video Captioning</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Image Alt Text and Video Captioning</h1>
+
+
+<h2>AI for Digital Accessibility</h2>
+<p>Over one billion people worldwide live with some form of disability. GenAI can dramatically improve digital accessibility by automatically generating alt text for images, captions for video, document remediation, and assistive tools - making content accessible to everyone.</p>
+
+<h2>Automated Alt Text Generation</h2>
+<p>Vision-language models can describe images for screen reader users:</p>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+import base64
+
+client = OpenAI()
+
+def generate_alt_text(image_path: str, context: str = "") -&gt; str:
+    '''Generate descriptive alt text for an image.'''
+    with open(image_path, "rb") as f:
+        image_data = base64.b64encode(f.read()).decode("utf-8")
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": (
+                    "Generate concise, descriptive alt text for this image. "
+                    "Follow WCAG 2.1 guidelines:
+"
+                    "- Describe the content and function, not just appearance
+"
+                    "- Keep it under 125 characters when possible
+"
+                    "- Do not start with 'Image of' or 'Picture of'
+"
+                    f"Page context: {context}"
+                )},
+                {"type": "image_url", "image_url": {
+                    "url": f"data:image/png;base64,{image_data}",
+                }},
+            ],
+        }],
+    )
+    return response.choices[0].message.content
+
+alt = generate_alt_text("chart.png", context="Quarterly revenue report page")
+# Output: "Bar chart showing Q1-Q4 revenue: Q1 $2.1M, Q2 $2.8M, Q3 $3.5M, Q4 $4.2M"</code></pre>
+</div>
+
+<h2>Alt Text Quality Guidelines</h2>
+<table>
+    <tr><th>Image Type</th><th>What to Describe</th><th>Example</th></tr>
+    <tr><td>Informational photo</td><td>Subject, action, context</td><td>"Engineer testing circuit board with a multimeter"</td></tr>
+    <tr><td>Chart / Graph</td><td>Type, data, trend, key values</td><td>"Line chart showing 15% growth in monthly active users from Jan to Dec"</td></tr>
+    <tr><td>Decorative image</td><td>Mark as decorative (empty alt)</td><td>alt="" (screen readers skip it)</td></tr>
+    <tr><td>Functional (button/link)</td><td>The function, not the appearance</td><td>"Search" not "Magnifying glass icon"</td></tr>
+    <tr><td>Complex diagram</td><td>Summary + long description</td><td>Brief alt + link to detailed text description</td></tr>
+</table>
+
+<h2>Video Captioning</h2>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+def transcribe_and_caption(audio_path: str) -&gt; dict:
+    '''Transcribe audio and generate timed captions.'''
+    # Step 1: Transcribe with Whisper
+    with open(audio_path, "rb") as f:
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=f,
+            response_format="verbose_json",
+            timestamp_granularities=["segment"],
+        )
+
+    # Step 2: Format as WebVTT captions
+    vtt_lines = ["WEBVTT
+"]
+    for segment in transcript.segments:
+        start = format_timestamp(segment["start"])
+        end = format_timestamp(segment["end"])
+        vtt_lines.append(f"{start} --&gt; {end}")
+        vtt_lines.append(segment["text"].strip())
+        vtt_lines.append("")
+
+    return {
+        "full_text": transcript.text,
+        "vtt": "
+".join(vtt_lines),
+        "segments": transcript.segments,
+    }
+
+def format_timestamp(seconds: float) -&gt; str:
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    s = int(seconds % 60)
+    ms = int((seconds % 1) * 1000)
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"</code></pre>
+</div>
+
+<h2>Accessibility Benefits</h2>
+<ul>
+    <li><strong>Screen reader users:</strong> Alt text makes images accessible to blind and low-vision users</li>
+    <li><strong>Deaf and hard of hearing:</strong> Captions and transcripts make audio/video content accessible</li>
+    <li><strong>Cognitive disabilities:</strong> AI-generated summaries and simplified text help comprehension</li>
+    <li><strong>Motor disabilities:</strong> Voice-controlled AI interfaces reduce need for keyboard/mouse input</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

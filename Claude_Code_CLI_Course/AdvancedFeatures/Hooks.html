@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hooks System</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hooks System</h1>
+
+
+<h2>What Are Hooks?</h2>
+<p>Hooks are shell commands that execute automatically in response to specific Claude Code events. They allow you to customize and extend Claude Code's behavior without modifying the tool itself.</p>
+
+<h2>Hook Types</h2>
+<table>
+    <tr><th>Hook</th><th>Trigger</th><th>Use Case</th></tr>
+    <tr><td><code>PreToolUse</code></td><td>Before a tool executes</td><td>Validate, block, or modify tool calls</td></tr>
+    <tr><td><code>PostToolUse</code></td><td>After a tool executes</td><td>Post-processing, logging, notifications</td></tr>
+    <tr><td><code>Notification</code></td><td>When Claude wants to notify the user</td><td>Custom notifications (Slack, email, etc.)</td></tr>
+    <tr><td><code>Stop</code></td><td>When Claude finishes a turn</td><td>Auto-validation, test running</td></tr>
+</table>
+
+<h2>Configuration Example</h2>
+<p>Add hooks to your <code>.claude/settings.json</code>:</p>
+<div class="code-block">
+<pre><code>{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit",
+        "command": "node validate-edit.js"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "command": "npx prettier --write $CLAUDE_FILE_PATH"
+      }
+    ]
+  }
+}</code></pre>
+</div>
+
+<h2>Practical Hook Examples</h2>
+<ul>
+    <li><strong>Auto-format:</strong> Run Prettier/ESLint after every file write</li>
+    <li><strong>Security scan:</strong> Check for secrets before committing</li>
+    <li><strong>Test runner:</strong> Automatically run related tests after code changes</li>
+    <li><strong>Notification:</strong> Send Slack messages when long tasks complete</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>AI Privacy and Data Protection</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Privacy and Data Protection in the AI Era</h1>
+
+<div class="content-section">
+<h2>1. The Privacy Challenge: Training on Personal Data</h2>
+<p>AI models require massive amounts of data, and often, that data contains Personal Identifiable Information (PII) like names, addresses, health records, and private conversations. This creates two major privacy risks:</p>
+<ol>
+    <li><strong>Data Breach during Training:</strong> Unauthorized access to the raw training dataset.</li>
+    <li><strong>Model Inversion/Memorization:</strong> A sophisticated attacker can sometimes "extract" training data from the model itself by providing specific prompts. For example, if a model was trained on private emails, it might inadvertently "complete" a prompt with a real person's phone number or home address.</li>
+</ol>
+
+<h2>2. Core Privacy Techniques</h2>
+<p>To build truly responsible AI, we must implement privacy-preserving techniques throughout the data lifecycle.</p>
+
+<h3>PII Redaction and Sanitization</h3>
+<p>Before any data is used for training, it should be passed through a redaction layer. This involves using Named Entity Recognition (NER) to find and mask sensitive information.</p>
+<div class="code-block">
+<pre><code># Conceptual PII Redaction
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
+
+def redact_pii(text):
+    doc = nlp(text)
+    redacted_text = text
+    for ent in doc.ents:
+        if ent.label_ in ["PERSON", "GPE", "PHONE", "EMAIL"]:
+            redacted_text = redacted_text.replace(ent.text, f"[{ent.label_}]")
+    return redacted_text
+
+raw_data = "My name is John Doe and I live in New York."
+print(redact_pii(raw_data))
+# Output: "My name is [PERSON] and I live in [GPE]."</code></pre>
+</div>
+
+<h3>Differential Privacy (DP)</h3>
+<p>Differential Privacy is a mathematical framework that adds "noise" to the data or the model's gradients during training. This noise ensures that the output of the model does not depend on any single individual's data, making it mathematically impossible to "extract" a specific person's information from the model. DP provides a quantifiable "privacy budget" (epsilon), allowing developers to balance privacy and model accuracy.</p>
+
+<h3>Federated Learning</h3>
+<p>In Federated Learning, the data never leaves the user's device. Instead, the model is sent to the device, trained locally on the user's data, and then only the <em>updates</em> (the gradients) are sent back to a central server to be aggregated. This is used extensively in mobile keyboards and health apps where the data is too sensitive to be centralized.</p>
+
+<h2>3. Privacy in LLM Applications</h2>
+<p>For applications built on top of third-party LLMs (like GPT-4), privacy is about <strong>Data Residency</strong> and <strong>Inference Privacy</strong>.</p>
+<ul>
+    <li><strong>Enterprise Privacy:</strong> Ensuring that the data sent to an API provider is not used to train their future models. Most providers now offer "Zero Data Retention" (ZDR) options for enterprise customers.</li>
+    <li><strong>Client-Side Processing:</strong> Whenever possible, perform sensitive tasks (like redaction) on the client side before the data is ever sent to the cloud.</li>
+</ul>
+
+<h2>4. The "Right to be Forgotten" (GDPR)</h2>
+<p>The General Data Protection Regulation (GDPR) includes the "Right to Erasure." This is extremely difficult to implement in AI. If a person asks for their data to be deleted, it's easy to remove it from a database, but how do you "remove" it from the weights of a trained neural network? Techniques like <strong>Machine Unlearning</strong> are an active area of research, focusing on how to "fine-tune out" specific information without retuning the entire model from scratch.</p>
+
+<h2>5. Best Practices for Data Protection</h2>
+<ul>
+    <li><strong>Data Minimization:</strong> Only collect and store the data that is absolutely necessary for the task.</li>
+    <li><strong>Purpose Limitation:</strong> Use data only for the specific reason it was collected.</li>
+    <li><strong>Transparency:</strong> Clearly inform users about what data is being used and how it impacts the AI's behavior.</li>
+    <li><strong>Security-in-Depth:</strong> Use encryption at rest, encryption in transit, and strict access controls for all training and inference infrastructure.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>Privacy is a fundamental human right, and protecting it is a core pillar of Responsible AI. By combining technical solutions like Differential Privacy with strong organizational policies, we can build AI systems that respect user boundaries while still delivering incredible value. In our next module, we'll look at the broader Regulatory Landscape, including the EU AI Act.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

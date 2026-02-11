@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: ReAct (Reason + Act)</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: ReAct (Reason + Act)</h1>
+<div class="container">
+<h2>The ReAct Pattern: Combining Reasoning and Action</h2>
+<p>The "ReAct" pattern (Reason + Act) is a sophisticated strategy for building AI agents that can both reason about a problem and take actions in the real world (via tools or APIs). By interleaving "thoughts" and "actions," the model can adapt its plan based on the results of its actions, leading to much more capable and reliable agents.</p>
+
+<h3>The Limitation of 'Think-Only' or 'Act-Only' Models</h3>
+<p>Models that only reason might come up with a great plan but have no way to execute it. Models that only act (without reasoning) often make "shallow" decisions and struggle with complex, multi-step tasks. ReAct combines the best of both worlds.</p>
+
+<h3>The ReAct Loop</h3>
+<p>The ReAct pattern typically follows a repeating loop of four stages:</p>
+<ol>
+    <li><strong>Question:</strong> The user provides a goal or a question.</li>
+    <li><strong>Thought:</strong> The model writes down its reasoning about what it needs to do next. "I need to find the current stock price of Tesla to calculate the valuation."</li>
+    <li><strong>Action:</strong> The model calls a tool or API. "Action: <code>get_stock_price('TSLA')</code>"</li>
+    <li><strong>Observation:</strong> The result of the action is provided back to the model. "Observation: Tesla is currently trading at $240.50."</li>
+</ol>
+<p>This loop repeats until the model has enough information to provide the final answer.</p>
+
+<h3>Why ReAct is So Powerful</h3>
+<ul>
+    <li><strong>Dynamic Planning:</strong> The model can change its strategy based on what it discovers. If <code>get_stock_price</code> fails, the model can "think" of an alternative way to get the data.</li>
+    <li><strong>Transparency:</strong> By reading the model's "Thoughts," developers and users can understand *why* the agent is taking a specific action. This is crucial for debugging and trust.</li>
+    <li><strong>Error Recovery:</strong> ReAct allows the model to observe its own mistakes and attempt to fix them. "My last action resulted in an error. I will try a different parameter."</li>
+    <li><strong>Reduced Hallucination:</strong> Because the model is grounded in real-world "Observations" from tools, it is much less likely to make up facts.</li>
+</ul>
+
+<h3>Implementing ReAct in Prompts</h3>
+<p>To implement ReAct, you need a system prompt that explicitly instructs the model to use the <code>Thought/Action/Observation</code> format. Few-shot examples are almost always necessary to help the model learn the rhythm of the loop.</p>
+<blockquote>
+"You are an assistant that can use tools. For every step, first write a 'Thought' about what you need to do, then provide an 'Action' to call a tool. After you get an 'Observation' from the tool, continue with another Thought and Action until you have the final answer."
+</blockquote>
+
+<h3>Use Cases for ReAct</h3>
+<ul>
+    <li><strong>Complex Search and Research:</strong> Searching across multiple websites, synthesizing the data, and digging deeper into specific findings.</li>
+    <li><strong>Software Troubleshooting:</strong> Checking logs, running diagnostic commands, and interpreting the results to find a root cause.</li>
+    <li><strong>Personal Assistants:</strong> Managing a calendar, booking flights, and sending emails—all while checking for conflicts and user preferences.</li>
+    <li><strong>Data Analysis:</strong> Querying a database, visualizing the data, and then performing statistical tests based on what the visualization reveals.</li>
+</ul>
+
+<h3>Practical Exercise: Building a Travel Agent with ReAct</h3>
+<p>Imagine a travel agent bot with tools for <code>search_flights</code>, <code>get_hotel_reviews</code>, and <code>calculate_budget</code>.
+1. <strong>Question:</strong> "Plan a 3-day trip to Paris for under $2000."
+2. <strong>Thought:</strong> "I need to first find the cheapest flights to Paris for the given dates."
+3. <strong>Action:</strong> <code>search_flights('Paris', dates)</code>
+4. <strong>Observation:</strong> "Flights are $800."
+5. <strong>Thought:</strong> "I have $1200 left for the hotel and activities. Now I'll look for highly-rated hotels under $200/night."
+...and so on.</p>
+
+<h3>Limitations of ReAct</h3>
+<ul>
+    <li><strong>Latency:</strong> Each loop requires a round-trip to the model and a tool execution, which can be slow.</li>
+    <li><strong>Complexity:</strong> Managing the state of the conversation and the history of thoughts/actions can be challenging for developers.</li>
+    <li><strong>Reliability:</strong> If the model gets stuck in a loop or fails to interpret an observation correctly, the agent can fail.</li>
+</ul>
+
+<p>In conclusion, the ReAct pattern is the "brain" behind most sophisticated AI agents. By combining deep reasoning with the ability to act and observe, it enables LLMs to solve real-world problems with a level of autonomy and reliability that was previously impossible.</p>
+
+</div>
+</body>
+</html>

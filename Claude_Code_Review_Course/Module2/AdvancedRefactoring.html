@@ -1,0 +1,283 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>`n    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Module 2: Advanced Refactoring Techniques</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Advanced Code Review Techniques and Refactoring</h1>
+
+<h2>Module Objectives</h2>
+<p>In this module, you will:</p>
+<ul>
+    <li>Master complex refactoring patterns for large-scale code transformations</li>
+    <li>Understand semantic code analysis and architectural review capabilities</li>
+    <li>Learn to develop custom review rules for organization-specific standards</li>
+    <li>Apply multi-file refactoring techniques with dependency management</li>
+</ul>
+
+<h2>Advanced Refactoring Patterns</h2>
+
+<p>While basic refactoring addresses localized code improvements, advanced refactoring patterns enable systematic transformation of code architecture, design patterns, and cross-cutting concerns. These techniques require deeper understanding of code semantics and broader impact analysis.</p>
+
+<h3>Architectural Refactoring</h3>
+
+<p>Architectural refactoring involves restructuring code to improve system-level qualities such as modularity, scalability, and maintainability. Unlike simple refactoring that preserves existing architecture, architectural refactoring deliberately changes structural organization.</p>
+
+<h4>Decomposition Patterns</h4>
+
+<p>Decomposition refactoring breaks down monolithic components into smaller, more focused units:</p>
+
+<ul>
+    <li><strong>Extract Class:</strong> When a class has grown to handle multiple responsibilities, extract related methods and data into a new class. This improves cohesion and makes each class easier to understand and test.</li>
+    <li><strong>Extract Module:</strong> Group related functions and classes into separate modules to improve code organization and reduce coupling between different system areas.</li>
+    <li><strong>Split Subsystem:</strong> Divide large subsystems into smaller, independently deployable components to improve scalability and team autonomy.</li>
+</ul>
+
+<p><strong>Example Scenario:</strong> A UserController class handling authentication, profile management, preferences, and notifications should be decomposed into AuthenticationController, ProfileController, PreferencesController, and NotificationController, each focused on a single responsibility.</p>
+
+<h4>Consolidation Patterns</h4>
+
+<p>Consolidation refactoring combines scattered functionality into cohesive units:</p>
+
+<ul>
+    <li><strong>Inline Class:</strong> When a class provides minimal functionality and doesn't justify its existence, merge it into the class that uses it most frequently.</li>
+    <li><strong>Consolidate Duplicate Code:</strong> Identify similar code fragments across the codebase and extract them into shared utilities or base classes.</li>
+    <li><strong>Merge Modules:</strong> Combine overly granular modules that are always used together into a single, more cohesive module.</li>
+</ul>
+
+<h3>Design Pattern Application and Refactoring</h3>
+
+<p>AI-assisted refactoring can identify opportunities to apply design patterns that improve code flexibility, maintainability, and testability.</p>
+
+<table>
+    <tr>
+        <th>Design Pattern</th>
+        <th>Refactoring Opportunity</th>
+        <th>Benefits</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Strategy Pattern</td>
+        <td>Multiple conditional branches implementing different algorithms</td>
+        <td>Eliminates complex conditionals, enables runtime algorithm selection, improves testability</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Factory Pattern</td>
+        <td>Direct object instantiation scattered throughout code</td>
+        <td>Centralizes object creation logic, simplifies testing with mock objects</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Observer Pattern</td>
+        <td>Tight coupling between components requiring notification of state changes</td>
+        <td>Decouples components, enables flexible event handling, supports multiple observers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Decorator Pattern</td>
+        <td>Subclass explosion for adding combinations of features</td>
+        <td>Enables flexible feature composition, reduces class proliferation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Repository Pattern</td>
+        <td>Data access logic mixed with business logic</td>
+        <td>Separates concerns, improves testability, enables data source flexibility</td>
+    </tr>
+</table>
+
+<h3>Codebase-Wide Transformations</h3>
+
+<p>Large-scale refactoring affects multiple files and requires careful coordination to maintain system integrity throughout the transformation process.</p>
+
+<h4>API Migration</h4>
+
+<p>Migrating from deprecated APIs or upgrading to new framework versions requires systematic transformation across the entire codebase. AI-assisted refactoring excels at these scenarios by:</p>
+
+<ul>
+    <li><strong>Identifying All Usage:</strong> Locating every instance of the deprecated API across the codebase</li>
+    <li><strong>Context-Aware Replacement:</strong> Applying appropriate replacement patterns based on usage context</li>
+    <li><strong>Dependency Analysis:</strong> Understanding how changes propagate through the codebase</li>
+    <li><strong>Incremental Migration:</strong> Planning migration in stages to maintain system functionality</li>
+</ul>
+
+<p><strong>Example:</strong> Migrating from callback-based asynchronous code to Promise-based or async/await patterns requires understanding control flow, error handling, and state management across potentially hundreds of functions.</p>
+
+<h4>Architectural Style Migration</h4>
+
+<p>Transforming code from one architectural style to another represents one of the most complex refactoring challenges:</p>
+
+<ul>
+    <li><strong>Monolith to Microservices:</strong> Identifying service boundaries, extracting bounded contexts, and establishing inter-service communication</li>
+    <li><strong>Synchronous to Asynchronous:</strong> Converting blocking operations to non-blocking patterns while maintaining correctness</li>
+    <li><strong>Imperative to Functional:</strong> Transforming mutable state and side effects into pure functions and immutable data structures</li>
+    <li><strong>REST to GraphQL:</strong> Restructuring API endpoints into GraphQL schemas and resolvers</li>
+</ul>
+
+<h2>Semantic Code Analysis</h2>
+
+<p>Semantic analysis goes beyond syntax to understand code meaning, behavior, and relationships. This deeper understanding enables more sophisticated review and refactoring capabilities.</p>
+
+<h3>Data Flow Analysis</h3>
+
+<p>Data flow analysis tracks how information moves through a program, enabling detection of:</p>
+
+<ul>
+    <li><strong>Uninitialized Variables:</strong> Variables used before being assigned a value</li>
+    <li><strong>Dead Assignments:</strong> Variables assigned values that are never subsequently used</li>
+    <li><strong>Information Leakage:</strong> Sensitive data flowing to insecure outputs or logs</li>
+    <li><strong>Type Inconsistencies:</strong> Data transformations that may lose information or cause errors</li>
+</ul>
+
+<p><strong>Practical Application:</strong> When reviewing a payment processing function, data flow analysis can verify that credit card numbers are properly sanitized before logging, ensuring compliance with PCI DSS requirements.</p>
+
+<h3>Control Flow Analysis</h3>
+
+<p>Control flow analysis examines the possible execution paths through code, identifying:</p>
+
+<ul>
+    <li><strong>Unreachable Code:</strong> Code that can never execute due to preceding logic</li>
+    <li><strong>Missing Error Paths:</strong> Scenarios where errors could occur but aren't handled</li>
+    <li><strong>Infinite Loops:</strong> Loops lacking proper termination conditions</li>
+    <li><strong>Complex Branching:</strong> Excessive conditional complexity indicating need for refactoring</li>
+</ul>
+
+<h3>Dependency Analysis</h3>
+
+<p>Understanding dependencies between code components enables:</p>
+
+<ul>
+    <li><strong>Impact Assessment:</strong> Determining what code might be affected by a change</li>
+    <li><strong>Circular Dependency Detection:</strong> Identifying problematic mutual dependencies between modules</li>
+    <li><strong>Coupling Measurement:</strong> Quantifying how tightly components are interconnected</li>
+    <li><strong>Refactoring Safety:</strong> Ensuring refactoring doesn't break dependent code</li>
+</ul>
+
+<h2>Custom Review Rules Development</h2>
+
+<p>While Claude provides comprehensive general-purpose code review, organizations often have specific standards, conventions, and requirements that warrant custom review rules.</p>
+
+<h3>Rule Categories</h3>
+
+<p>Custom rules typically fall into several categories:</p>
+
+<table>
+    <tr>
+        <th>Rule Category</th>
+        <th>Purpose</th>
+        <th>Example Rules</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Naming Conventions</td>
+        <td>Enforce consistent identifier naming across the codebase</td>
+        <td>API endpoints must use kebab-case; database tables must use snake_case; React components must use PascalCase</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Security Requirements</td>
+        <td>Ensure security best practices are followed</td>
+        <td>All database queries must use parameterized statements; authentication tokens must not be logged; user input must be validated before processing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Performance Standards</td>
+        <td>Prevent common performance anti-patterns</td>
+        <td>No N+1 query patterns; database queries in loops must be batched; large lists must be paginated</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Documentation Requirements</td>
+        <td>Ensure adequate code documentation</td>
+        <td>Public APIs must have JSDoc comments; complex algorithms must include explanatory comments; configuration options must be documented</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Architecture Constraints</td>
+        <td>Enforce architectural boundaries and patterns</td>
+        <td>Controllers must not contain business logic; services must not directly access the database; UI components must not make API calls directly</td>
+    </tr>
+</table>
+
+<h3>Rule Specification Approaches</h3>
+
+<p>Custom rules can be specified through multiple mechanisms:</p>
+
+<h4>Natural Language Specifications</h4>
+
+<p>Describe rules in plain language that Claude can interpret and apply. This approach is accessible to non-technical stakeholders and easy to maintain.</p>
+
+<p><strong>Example:</strong> "All public API endpoints must validate request bodies using Zod schemas. Endpoints accepting user input must sanitize data to prevent XSS attacks. Rate limiting must be applied to all authentication endpoints."</p>
+
+<h4>Example-Based Rules</h4>
+
+<p>Provide examples of correct and incorrect code patterns. Claude learns from these examples to identify similar patterns in reviewed code.</p>
+
+<p><strong>Correct Example:</strong> Proper error handling with specific error types and user-friendly messages</p>
+<p><strong>Incorrect Example:</strong> Generic error handling that swallows exceptions without logging or user notification</p>
+
+<h4>Pattern-Based Rules</h4>
+
+<p>Define structural patterns that should be present or avoided in code. These rules focus on code structure rather than specific implementation details.</p>
+
+<p><strong>Example:</strong> "Repository classes must implement a standard interface with methods: findById, findAll, save, update, delete. All repository methods must handle database connection errors gracefully."</p>
+
+<h3>Rule Prioritization and Enforcement</h3>
+
+<p>Not all custom rules carry equal importance. Establish clear prioritization:</p>
+
+<ul>
+    <li><strong>Blocking Rules:</strong> Violations prevent code from being merged (security vulnerabilities, data corruption risks)</li>
+    <li><strong>Warning Rules:</strong> Violations should be addressed but don't block merging (performance concerns, missing documentation)</li>
+    <li><strong>Suggestion Rules:</strong> Recommendations for improvement without enforcement (style preferences, optimization opportunities)</li>
+</ul>
+
+<h2>Multi-File Refactoring</h2>
+
+<p>Complex refactoring often spans multiple files, requiring coordinated changes to maintain system consistency and correctness.</p>
+
+<h3>Refactoring Scope Management</h3>
+
+<p>Successful multi-file refactoring requires careful scope definition:</p>
+
+<ul>
+    <li><strong>Impact Analysis:</strong> Identify all files affected by the proposed refactoring</li>
+    <li><strong>Dependency Ordering:</strong> Determine the sequence of changes to maintain compilability and functionality</li>
+    <li><strong>Atomic Changes:</strong> Group related changes that must be applied together</li>
+    <li><strong>Rollback Planning:</strong> Ensure changes can be reverted if issues arise</li>
+</ul>
+
+<h3>Cross-Cutting Concerns</h3>
+
+<p>Some refactoring affects code scattered throughout the codebase:</p>
+
+<ul>
+    <li><strong>Logging Standardization:</strong> Converting inconsistent logging approaches to a unified framework</li>
+    <li><strong>Error Handling Unification:</strong> Implementing consistent error handling patterns across all modules</li>
+    <li><strong>Configuration Management:</strong> Centralizing scattered configuration values into a unified configuration system</li>
+    <li><strong>Dependency Injection:</strong> Refactoring direct dependencies to use dependency injection for improved testability</li>
+</ul>
+
+<h3>Refactoring Verification</h3>
+
+<p>Multi-file refactoring requires comprehensive verification to ensure correctness:</p>
+
+<ul>
+    <li><strong>Automated Testing:</strong> Run full test suite to detect behavioral changes</li>
+    <li><strong>Type Checking:</strong> Verify type consistency across refactored code</li>
+    <li><strong>Integration Testing:</strong> Test interactions between refactored components</li>
+    <li><strong>Performance Testing:</strong> Ensure refactoring doesn't degrade performance</li>
+    <li><strong>Manual Review:</strong> Human verification of complex or critical changes</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Advanced refactoring patterns enable architectural transformation beyond simple code cleanup</li>
+    <li>Design pattern application through refactoring improves code flexibility and maintainability</li>
+    <li>Semantic analysis provides deeper understanding of code behavior, enabling sophisticated review capabilities</li>
+    <li>Custom review rules allow organizations to enforce specific standards and requirements</li>
+    <li>Multi-file refactoring requires careful planning, impact analysis, and comprehensive verification</li>
+    <li>Successful advanced refactoring balances ambition with pragmatism, applying transformations incrementally</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

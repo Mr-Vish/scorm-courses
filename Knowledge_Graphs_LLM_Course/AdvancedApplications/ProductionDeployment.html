@@ -1,0 +1,348 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Deployment and Scaling</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production Deployment and Scaling</h1>
+
+<h2>Production Architecture</h2>
+<p>Deploying knowledge graph systems in production requires careful consideration of scalability, reliability, and performance. A typical production architecture includes multiple components working together.</p>
+
+<h2>System Components</h2>
+<table>
+    <tr><th>Component</th><th>Purpose</th><th>Technology Options</th></tr>
+    <tr>
+        <td class="rowheader">Ingestion Pipeline</td>
+        <td>Process and extract from documents</td>
+        <td>Apache Kafka, AWS SQS, RabbitMQ</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Extraction Service</td>
+        <td>LLM-based entity and relation extraction</td>
+        <td>FastAPI, Flask, AWS Lambda</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Graph Database</td>
+        <td>Store and query knowledge graph</td>
+        <td>Neo4j, Amazon Neptune, ArangoDB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vector Store</td>
+        <td>Store embeddings for hybrid search</td>
+        <td>Pinecone, Weaviate, Qdrant</td>
+    </tr>
+    <tr>
+        <td class="rowheader">API Layer</td>
+        <td>Serve queries to applications</td>
+        <td>FastAPI, GraphQL, REST</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Monitoring</td>
+        <td>Track performance and errors</td>
+        <td>Prometheus, Grafana, DataDog</td>
+    </tr>
+</table>
+
+<h2>Scalable Extraction Service</h2>
+<div class="code-block">
+<pre><code>from fastapi import FastAPI, BackgroundTasks
+from pydantic import BaseModel
+import asyncio
+
+app = FastAPI()
+
+class DocumentRequest(BaseModel):
+    document_id: str
+    content: str
+    priority: int = 1
+
+class ExtractionService:
+    def __init__(self):
+        self.queue = asyncio.Queue()
+        self.workers = []
+    
+    async def start_workers(self, num_workers: int = 5):
+        """Start background worker processes."""
+        for i in range(num_workers):
+            worker = asyncio.create_task(self.worker(i))
+            self.workers.append(worker)
+    
+    async def worker(self, worker_id: int):
+        """Process documents from queue."""
+        while True:
+            doc = await self.queue.get()
+            try:
+                print(f"Worker {worker_id} processing {doc.document_id}")
+                result = await self.extract_and_store(doc)
+                print(f"Worker {worker_id} completed {doc.document_id}")
+            except Exception as e:
+                print(f"Worker {worker_id} error: {e}")
+            finally:
+                self.queue.task_done()
+    
+    async def extract_and_store(self, doc: DocumentRequest):
+        """Extract entities and store in graph."""
+        # Extract
+        extracted = await asyncio.to_thread(
+            extract_entities_and_relations, 
+            doc.content
+        )
+        
+        # Store
+        await asyncio.to_thread(
+            store_in_graph,
+            extracted,
+            doc.document_id
+        )
+        
+        return {"status": "success", "document_id": doc.document_id}
+
+extraction_service = ExtractionService()
+
+@app.on_event("startup")
+async def startup_event():
+    await extraction_service.start_workers(num_workers=5)
+
+@app.post("/extract")
+async def extract_document(doc: DocumentRequest, background_tasks: BackgroundTasks):
+    """Queue document for extraction."""
+    await extraction_service.queue.put(doc)
+    return {"status": "queued", "document_id": doc.document_id}
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "queue_size": extraction_service.queue.qsize(),
+        "workers": len(extraction_service.workers)
+    }
+</code></pre>
+</div>
+
+<h2>Distributed Processing with Celery</h2>
+<div class="code-block">
+<pre><code>from celery import Celery
+import redis
+
+# Configure Celery
+celery_app = Celery(
+    'knowledge_graph',
+    broker='redis://localhost:6379/0',
+    backend='redis://localhost:6379/1'
+)
+
+@celery_app.task(bind=True, max_retries=3)
+def process_document_task(self, document_id: str, content: str):
+    """Celery task for document processing."""
+    try:
+        # Extract
+        extracted = extract_entities_and_relations(content)
+        
+        # Validate
+        validated = validate_extraction(extracted)
+        
+        # Store
+        store_in_graph(validated, document_id)
+        
+        return {"status": "success", "document_id": document_id}
+        
+    except Exception as e:
+        # Retry with exponential backoff
+        raise self.retry(exc=e, countdown=2 ** self.request.retries)
+
+# Submit tasks
+def process_documents_batch(documents: list[dict]):
+    """Process multiple documents in parallel."""
+    tasks = []
+    for doc in documents:
+        task = process_document_task.delay(doc["id"], doc["content"])
+        tasks.append(task)
+    
+    # Wait for all tasks
+    results = [task.get(timeout=300) for task in tasks]
+    return results
+</code></pre>
+</div>
+
+<h2>Graph Database Scaling Strategies</h2>
+
+<h3>Read Replicas</h3>
+<div class="code-block">
+<pre><code>class ScalableGraphDB:
+    def __init__(self, write_uri, read_uris):
+        self.write_driver = GraphDatabase.driver(write_uri, auth=("neo4j", "password"))
+        self.read_drivers = [
+            GraphDatabase.driver(uri, auth=("neo4j", "password"))
+            for uri in read_uris
+        ]
+        self.current_read_index = 0
+    
+    def get_read_driver(self):
+        """Round-robin load balancing across read replicas."""
+        driver = self.read_drivers[self.current_read_index]
+        self.current_read_index = (self.current_read_index + 1) % len(self.read_drivers)
+        return driver
+    
+    def write_query(self, query: str, params: dict):
+        """Execute write query on primary."""
+        with self.write_driver.session() as session:
+            return session.run(query, params)
+    
+    def read_query(self, query: str, params: dict):
+        """Execute read query on replica."""
+        driver = self.get_read_driver()
+        with driver.session() as session:
+            return session.run(query, params)
+</code></pre>
+</div>
+
+<h3>Caching Layer</h3>
+<div class="code-block">
+<pre><code>import redis
+import json
+
+class CachedGraphQueries:
+    def __init__(self, graph_db, redis_client):
+        self.graph_db = graph_db
+        self.cache = redis_client
+        self.cache_ttl = 3600  # 1 hour
+    
+    def query_with_cache(self, query: str, params: dict) -> list:
+        """Execute query with Redis caching."""
+        # Create cache key
+        cache_key = f"query:{hashlib.md5(f'{query}{params}'.encode()).hexdigest()}"
+        
+        # Check cache
+        cached = self.cache.get(cache_key)
+        if cached:
+            return json.loads(cached)
+        
+        # Execute query
+        with self.graph_db.session() as session:
+            result = session.run(query, params)
+            data = [dict(record) for record in result]
+        
+        # Cache result
+        self.cache.setex(cache_key, self.cache_ttl, json.dumps(data))
+        
+        return data
+</code></pre>
+</div>
+
+<h2>Monitoring and Observability</h2>
+<div class="code-block">
+<pre><code>from prometheus_client import Counter, Histogram, Gauge
+import time
+
+# Define metrics
+extraction_requests = Counter('kg_extraction_requests_total', 'Total extraction requests')
+extraction_duration = Histogram('kg_extraction_duration_seconds', 'Extraction duration')
+extraction_errors = Counter('kg_extraction_errors_total', 'Total extraction errors')
+graph_size = Gauge('kg_graph_size_nodes', 'Number of nodes in graph')
+queue_size = Gauge('kg_queue_size', 'Number of documents in queue')
+
+class MonitoredKGSystem:
+    def __init__(self, graph_db, llm_client):
+        self.graph_db = graph_db
+        self.llm_client = llm_client
+    
+    @extraction_duration.time()
+    def extract_document(self, content: str):
+        """Extract with monitoring."""
+        extraction_requests.inc()
+        
+        try:
+            result = extract_entities_and_relations(content)
+            return result
+        except Exception as e:
+            extraction_errors.inc()
+            raise
+    
+    def update_graph_metrics(self):
+        """Update graph size metrics."""
+        with self.graph_db.session() as session:
+            result = session.run("MATCH (n) RETURN count(n) as nodeCount")
+            count = result.single()["nodeCount"]
+            graph_size.set(count)
+</code></pre>
+</div>
+
+<h2>Cost Optimization</h2>
+<ul>
+    <li><strong>Model Selection:</strong> Use gpt-4o-mini for extraction, gpt-4o only for complex queries</li>
+    <li><strong>Batch Processing:</strong> Process multiple documents in single API calls when possible</li>
+    <li><strong>Caching:</strong> Cache extraction results and frequently accessed subgraphs</li>
+    <li><strong>Incremental Updates:</strong> Only process new or changed documents</li>
+    <li><strong>Rate Limiting:</strong> Implement request throttling to control costs</li>
+</ul>
+
+<h2>Security Best Practices</h2>
+<ul>
+    <li><strong>API Key Management:</strong> Use environment variables and secret managers</li>
+    <li><strong>Database Access Control:</strong> Implement role-based access control (RBAC)</li>
+    <li><strong>Data Encryption:</strong> Encrypt data at rest and in transit</li>
+    <li><strong>Input Validation:</strong> Sanitize all user inputs to prevent injection attacks</li>
+    <li><strong>Audit Logging:</strong> Track all data access and modifications</li>
+</ul>
+
+<h2>Disaster Recovery</h2>
+<div class="code-block">
+<pre><code>def backup_knowledge_graph(graph_db, backup_path: str):
+    """Create full backup of knowledge graph."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_file = f"{backup_path}/kg_backup_{timestamp}.json"
+    
+    with graph_db.session() as session:
+        # Export all nodes
+        nodes = session.run("MATCH (n) RETURN n")
+        nodes_data = [dict(record["n"]) for record in nodes]
+        
+        # Export all relationships
+        rels = session.run("MATCH ()-[r]->() RETURN r")
+        rels_data = [dict(record["r"]) for record in rels]
+        
+        # Save to file
+        with open(backup_file, 'w') as f:
+            json.dump({
+                "timestamp": timestamp,
+                "nodes": nodes_data,
+                "relationships": rels_data
+            }, f, indent=2)
+    
+    return backup_file
+
+def restore_knowledge_graph(graph_db, backup_file: str):
+    """Restore knowledge graph from backup."""
+    with open(backup_file, 'r') as f:
+        data = json.load(f)
+    
+    with graph_db.session() as session:
+        # Clear existing data
+        session.run("MATCH (n) DETACH DELETE n")
+        
+        # Restore nodes
+        for node in data["nodes"]:
+            session.run("CREATE (n) SET n = $props", props=node)
+        
+        # Restore relationships
+        for rel in data["relationships"]:
+            session.run("""
+                MATCH (a), (b)
+                WHERE id(a) = $start_id AND id(b) = $end_id
+                CREATE (a)-[r:REL]->(b)
+                SET r = $props
+            """, start_id=rel["start"], end_id=rel["end"], props=rel["properties"])
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

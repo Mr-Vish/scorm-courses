@@ -1,0 +1,432 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Security, Performance, and Framework Selection</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Security, Performance, and Framework Selection</h1>
+
+<h2>Security Best Practices</h2>
+<p>Securing GenAI applications is critical to protect user data, API keys, and prevent misuse.</p>
+
+<h2>API Key Management</h2>
+<blockquote>
+# NEVER do this:
+api_key = "sk-1234567890abcdef"  # ✗ Hardcoded key
+
+# DO this instead:
+import os
+api_key = os.getenv("OPENAI_API_KEY")  # ✓ Environment variable
+
+# Gradio with secrets
+import gradio as gr
+api_key = os.getenv("OPENAI_API_KEY")
+
+# Streamlit with secrets
+import streamlit as st
+api_key = st.secrets["OPENAI_API_KEY"]
+
+# Validate key exists
+if not api_key:
+    raise ValueError("API key not found. Please set OPENAI_API_KEY environment variable.")
+</blockquote>
+
+<h2>Input Sanitization and Validation</h2>
+<blockquote>
+import gradio as gr
+import re
+
+def sanitize_input(text):
+    '''Sanitize user input to prevent injection attacks.'''
+    # Remove potentially dangerous characters
+    text = re.sub(r'[<>{}]', '', text)
+    
+    # Limit length
+    max_length = 5000
+    if len(text) > max_length:
+        text = text[:max_length]
+    
+    # Remove excessive whitespace
+    text = ' '.join(text.split())
+    
+    return text
+
+def validate_and_process(message, history):
+    '''Validate input before processing.'''
+    # Sanitize
+    clean_message = sanitize_input(message)
+    
+    # Check for empty input
+    if not clean_message.strip():
+        return "Please enter a valid message."
+    
+    # Check for minimum length
+    if len(clean_message) < 3:
+        return "Message too short. Please provide more detail."
+    
+    # Process the clean message
+    # ... your LLM call here
+    
+    return f"Processed: {clean_message}"
+
+demo = gr.ChatInterface(fn=validate_and_process)
+demo.launch()
+</blockquote>
+
+<h2>Rate Limiting Implementation</h2>
+<blockquote>
+import streamlit as st
+from datetime import datetime, timedelta
+from collections import defaultdict
+
+class RateLimiter:
+    '''Simple rate limiter for Streamlit apps.'''
+    
+    def __init__(self, max_requests=10, time_window=60):
+        self.max_requests = max_requests
+        self.time_window = time_window
+        self.requests = defaultdict(list)
+    
+    def is_allowed(self, user_id):
+        '''Check if user is within rate limit.'''
+        now = datetime.now()
+        cutoff = now - timedelta(seconds=self.time_window)
+        
+        # Remove old requests
+        self.requests[user_id] = [
+            req_time for req_time in self.requests[user_id]
+            if req_time > cutoff
+        ]
+        
+        # Check limit
+        if len(self.requests[user_id]) >= self.max_requests:
+            return False
+        
+        # Add current request
+        self.requests[user_id].append(now)
+        return True
+    
+    def get_remaining(self, user_id):
+        '''Get remaining requests for user.'''
+        return self.max_requests - len(self.requests[user_id])
+
+# Initialize rate limiter
+if "rate_limiter" not in st.session_state:
+    st.session_state.rate_limiter = RateLimiter(max_requests=5, time_window=60)
+
+# Use in app
+user_id = st.session_state.get("user_id", "default_user")
+
+if prompt := st.chat_input("Ask anything"):
+    if st.session_state.rate_limiter.is_allowed(user_id):
+        # Process request
+        st.write("Processing your request...")
+        remaining = st.session_state.rate_limiter.get_remaining(user_id)
+        st.info(f"Remaining requests: {remaining}")
+    else:
+        st.error("Rate limit exceeded. Please wait before making more requests.")
+</blockquote>
+
+<h2>Content Filtering and Moderation</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI()
+
+def moderate_content(text):
+    '''Check content for policy violations.'''
+    try:
+        response = client.moderations.create(input=text)
+        result = response.results[0]
+        
+        if result.flagged:
+            categories = [cat for cat, flagged in result.categories.dict().items() if flagged]
+            return False, f"Content flagged for: {', '.join(categories)}"
+        
+        return True, "Content is safe"
+        
+    except Exception as e:
+        return True, f"Moderation check failed: {str(e)}"
+
+def safe_chat(message, history):
+    '''Chat with content moderation.'''
+    # Check user input
+    is_safe, reason = moderate_content(message)
+    if not is_safe:
+        yield f"⚠️ Your message was flagged: {reason}"
+        return
+    
+    # Process message
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    messages.append({"role": "user", "content": message})
+    
+    stream = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        stream=True
+    )
+    
+    partial_response = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            partial_response += chunk.choices[0].delta.content
+            yield partial_response
+    
+    # Check assistant response
+    is_safe, reason = moderate_content(partial_response)
+    if not is_safe:
+        yield f"⚠️ Response was flagged and blocked: {reason}"
+
+demo = gr.ChatInterface(fn=safe_chat, title="Moderated Chat")
+demo.launch()
+</blockquote>
+
+<h2>Performance Optimization Techniques</h2>
+<table>
+    <tr>
+        <th>Technique</th>
+        <th>Gradio</th>
+        <th>Streamlit</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Caching</td>
+        <td>functools.lru_cache</td>
+        <td>@st.cache_data, @st.cache_resource</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Streaming</td>
+        <td>yield in function</td>
+        <td>st.write_stream()</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Lazy Loading</td>
+        <td>Load on demand</td>
+        <td>Load in callbacks</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Queuing</td>
+        <td>demo.queue()</td>
+        <td>Built-in</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Compression</td>
+        <td>Compress large outputs</td>
+        <td>Compress large outputs</td>
+        <td>Medium</td>
+    </tr>
+</table>
+
+<h2>Caching Strategies</h2>
+<blockquote>
+import streamlit as st
+from openai import OpenAI
+import hashlib
+
+@st.cache_resource
+def get_openai_client():
+    '''Cache the OpenAI client.'''
+    return OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+@st.cache_data(ttl=3600)
+def get_embeddings(text):
+    '''Cache embeddings for 1 hour.'''
+    client = get_openai_client()
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=text
+    )
+    return response.data[0].embedding
+
+@st.cache_data
+def expensive_computation(param1, param2):
+    '''Cache expensive computations.'''
+    # Simulate expensive operation
+    import time
+    time.sleep(2)
+    return param1 * param2
+
+# Use cached functions
+client = get_openai_client()
+embeddings = get_embeddings("sample text")
+result = expensive_computation(10, 20)
+</blockquote>
+
+<h2>Async Operations for Better Performance</h2>
+<blockquote>
+import gradio as gr
+import asyncio
+from openai import AsyncOpenAI
+
+client = AsyncOpenAI()
+
+async def async_chat(message, history):
+    '''Async chat for better concurrency.'''
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    stream = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        stream=True
+    )
+    
+    partial_response = ""
+    async for chunk in stream:
+        if chunk.choices[0].delta.content:
+            partial_response += chunk.choices[0].delta.content
+            yield partial_response
+
+demo = gr.ChatInterface(fn=async_chat)
+demo.launch()
+</blockquote>
+
+<h2>When to Use Gradio vs Streamlit</h2>
+<table>
+    <tr>
+        <th>Use Case</th>
+        <th>Recommended Framework</th>
+        <th>Reason</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Quick ML Demo</td>
+        <td>Gradio</td>
+        <td>Faster setup, automatic API</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Chat Interface</td>
+        <td>Gradio</td>
+        <td>Built-in ChatInterface component</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Dashboard</td>
+        <td>Streamlit</td>
+        <td>Better visualization and layout options</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Complex Multi-Page App</td>
+        <td>Streamlit</td>
+        <td>Native multi-page support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">HuggingFace Deployment</td>
+        <td>Gradio</td>
+        <td>Native integration with HF Spaces</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Internal Tool</td>
+        <td>Either</td>
+        <td>Both work well for internal use</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Public API Needed</td>
+        <td>Gradio</td>
+        <td>Automatic API generation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Heavy Data Processing</td>
+        <td>Streamlit</td>
+        <td>Better caching and state management</td>
+    </tr>
+</table>
+
+<h2>Decision Framework</h2>
+<div style="margin: 2rem 0; padding: 1.5rem; background: #f8f9fa; border-radius: 8px;">
+    <h3 style="margin-top: 0;">Choose Gradio if you need:</h3>
+    <ul>
+        <li>Fastest time to demo (under 10 lines of code)</li>
+        <li>Automatic REST API for programmatic access</li>
+        <li>Simple chat interface without custom layouts</li>
+        <li>Easy deployment to Hugging Face Spaces</li>
+        <li>Multi-modal inputs (image, audio, video)</li>
+        <li>Minimal state management requirements</li>
+    </ul>
+    
+    <h3>Choose Streamlit if you need:</h3>
+    <ul>
+        <li>Complex custom layouts with columns, tabs, and sidebars</li>
+        <li>Rich data visualization and interactive charts</li>
+        <li>Advanced state management across sessions</li>
+        <li>Multi-page applications</li>
+        <li>Integration with data science workflows</li>
+        <li>More control over UI/UX design</li>
+    </ul>
+</div>
+
+<h2>Hybrid Approach: Using Both</h2>
+<blockquote>
+# Use Gradio for quick prototyping and API
+# gradio_app.py
+import gradio as gr
+
+def process(text):
+    return text.upper()
+
+demo = gr.Interface(fn=process, inputs="text", outputs="text")
+demo.launch(share=True)
+
+# Use Streamlit for production dashboard
+# streamlit_app.py
+import streamlit as st
+from gradio_client import Client
+
+st.title("Production Dashboard")
+
+# Connect to Gradio API
+client = Client("http://localhost:7860")
+
+user_input = st.text_input("Enter text")
+if st.button("Process"):
+    result = client.predict(user_input, api_name="/predict")
+    st.write(result)
+</blockquote>
+
+<h2>Production Deployment Checklist</h2>
+<ul>
+    <li><strong>Security:</strong> API keys in environment variables, input validation, rate limiting</li>
+    <li><strong>Performance:</strong> Caching, streaming, async operations, queuing</li>
+    <li><strong>Monitoring:</strong> Logging, error tracking, usage analytics</li>
+    <li><strong>Reliability:</strong> Error handling, retry logic, fallback mechanisms</li>
+    <li><strong>Scalability:</strong> Load balancing, horizontal scaling, resource limits</li>
+    <li><strong>Compliance:</strong> Data privacy, content moderation, audit logs</li>
+    <li><strong>Documentation:</strong> User guides, API docs, troubleshooting</li>
+    <li><strong>Testing:</strong> Unit tests, integration tests, load tests</li>
+    <li><strong>Backup:</strong> Data backups, disaster recovery plan</li>
+    <li><strong>Updates:</strong> Version control, rollback strategy, changelog</li>
+</ul>
+
+<h2>Cost Optimization Strategies</h2>
+<ul>
+    <li><strong>Cache Responses:</strong> Avoid duplicate API calls for identical inputs</li>
+    <li><strong>Use Smaller Models:</strong> Start with gpt-4o-mini, upgrade only if needed</li>
+    <li><strong>Limit Context:</strong> Trim conversation history to reduce token usage</li>
+    <li><strong>Implement Timeouts:</strong> Prevent runaway requests</li>
+    <li><strong>Monitor Usage:</strong> Track and alert on unusual spending patterns</li>
+    <li><strong>Set Quotas:</strong> Implement per-user or per-session limits</li>
+    <li><strong>Batch Requests:</strong> Combine multiple requests when possible</li>
+    <li><strong>Optimize Prompts:</strong> Use concise system prompts</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

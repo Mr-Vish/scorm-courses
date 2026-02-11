@@ -1,0 +1,326 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>JSON Mode and Schema Enforcement</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>JSON Mode and Schema Enforcement</h1>
+
+<h2>Why Structured Output?</h2>
+<p>
+Large Language Models are optimized to generate natural language. While this is ideal for
+human interaction, it creates challenges for software systems that require deterministic,
+machine-readable outputs.
+</p>
+
+<p>
+Raw text output is inherently ambiguous. Variations in phrasing, formatting, or ordering can
+break downstream parsers, introduce subtle bugs, and create operational risk. Structured
+output solves this problem by constraining responses to a predictable format.
+</p>
+
+<p>
+Structured output is essential when LLMs are used as components in automated systems rather
+than as conversational tools.
+</p>
+
+<h2>Problems Caused by Unstructured Output</h2>
+<ul>
+    <li>Fragile string parsing logic</li>
+    <li>Silent failures due to format drift</li>
+    <li>Difficulty validating correctness</li>
+    <li>Inconsistent downstream behavior</li>
+    <li>Increased operational complexity</li>
+</ul>
+
+<p>
+JSON-based outputs allow LLMs to integrate cleanly into data pipelines, APIs, and event-driven
+systems.
+</p>
+
+<h2>Structured Output Spectrum</h2>
+<p>
+Not all structured output approaches offer the same guarantees. They exist on a spectrum
+from soft constraints to strict enforcement.
+</p>
+
+<table>
+    <tr><th>Approach</th><th>Provider</th><th>Guarantee</th><th>Flexibility</th></tr>
+    <tr>
+        <td>JSON Mode</td>
+        <td>OpenAI, Google</td>
+        <td>Valid JSON syntax</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td>Structured Outputs</td>
+        <td>OpenAI</td>
+        <td>Schema-conformant JSON</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td>Tool Use</td>
+        <td>All major providers</td>
+        <td>Schema-conformant</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td>Prompt-based JSON</td>
+        <td>All providers</td>
+        <td>Best-effort only</td>
+        <td>High</td>
+    </tr>
+</table>
+
+<p>
+Choosing the right approach depends on reliability requirements, complexity, and provider
+capabilities.
+</p>
+
+<h2>JSON Mode</h2>
+<p>
+JSON mode instructs the model to produce syntactically valid JSON. It does not enforce any
+specific schema beyond JSON validity.
+</p>
+
+<p>
+This approach is useful when:
+</p>
+
+<ul>
+    <li>The schema is simple or loosely defined</li>
+    <li>Post-processing validation is acceptable</li>
+    <li>Maximum flexibility is required</li>
+</ul>
+
+<p>
+However, JSON mode does not prevent semantic errors such as missing fields or invalid values.
+</p>
+
+<h2>Limitations of JSON Mode</h2>
+<ul>
+    <li>No guarantee that required fields exist</li>
+    <li>No enforcement of value ranges</li>
+    <li>Enum violations are common</li>
+    <li>Nested structures may drift</li>
+</ul>
+
+<p>
+JSON mode should always be combined with application-side validation.
+</p>
+
+<h2>Structured Outputs (Schema Enforcement)</h2>
+<p>
+Structured outputs go beyond JSON validity by enforcing conformance to a defined schema.
+OpenAI supports a subset of JSON Schema via typed response parsing.
+</p>
+
+<p>
+This provides significantly stronger guarantees than JSON mode alone.
+</p>
+
+<h2>OpenAI Structured Outputs Example</h2>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+from pydantic import BaseModel
+
+client = OpenAI()
+
+class ProductReview(BaseModel):
+    sentiment: str
+    rating: int
+    key_points: list[str]
+    recommended: bool
+
+response = client.beta.chat.completions.parse(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": f"Analyze this review: {review_text}"}
+    ],
+    response_format=ProductReview
+)
+
+review = response.choices[0].message.parsed
+print(f"Sentiment: {review.sentiment}, Rating: {review.rating}")
+</code></pre>
+</div>
+
+<p>
+If the model fails to produce schema-conformant output, the request fails instead of silently
+returning malformed data.
+</p>
+
+<h2>Advantages of Structured Outputs</h2>
+<ul>
+    <li>Strong typing guarantees</li>
+    <li>Automatic parsing into objects</li>
+    <li>Early failure detection</li>
+    <li>Simpler downstream logic</li>
+</ul>
+
+<p>
+Structured outputs significantly reduce the need for defensive parsing code.
+</p>
+
+<h2>Tool Use for Structured Output</h2>
+<p>
+Tool use (also called function calling) treats structured output as a function invocation.
+The model selects and populates a tool’s input schema.
+</p>
+
+<p>
+This approach is provider-agnostic and widely supported.
+</p>
+
+<h2>Claude Tool Use Example</h2>
+<div class="code-block">
+<pre><code>import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    tools=[{
+        "name": "extract_product_review",
+        "description": "Extract structured data from a product review",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sentiment": {
+                    "type": "string",
+                    "enum": ["positive", "negative", "neutral"]
+                },
+                "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                },
+                "key_points": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "recommended": {"type": "boolean"}
+            },
+            "required": [
+                "sentiment",
+                "rating",
+                "key_points",
+                "recommended"
+            ]
+        }
+    }],
+    tool_choice={"type": "tool", "name": "extract_product_review"},
+    messages=[
+        {"role": "user", "content": f"Analyze this review: {review_text}"}
+    ]
+)
+
+tool_input = response.content[0].input
+</code></pre>
+</div>
+
+<h2>Comparing Structured Outputs vs Tool Use</h2>
+<ul>
+    <li>Structured outputs feel more natural for data extraction</li>
+    <li>Tool use is better for agentic workflows</li>
+    <li>Tool use enables multi-step reasoning pipelines</li>
+</ul>
+
+<p>
+Both approaches benefit from additional application-side validation.
+</p>
+
+<h2>Schema Design Best Practices</h2>
+<p>
+The reliability of structured output depends heavily on schema quality.
+</p>
+
+<ul>
+    <li>Keep schemas shallow</li>
+    <li>Avoid deeply nested objects</li>
+    <li>Prefer enums over free text</li>
+    <li>Use numeric bounds</li>
+    <li>Minimize optional fields</li>
+</ul>
+
+<p>
+Overly complex schemas increase failure rates and retries.
+</p>
+
+<h2>Validation Still Matters</h2>
+<p>
+Even with schema enforcement, validation should not be skipped. Models may produce
+technically valid but semantically incorrect outputs.
+</p>
+
+<ul>
+    <li>Check logical consistency</li>
+    <li>Apply business rules</li>
+    <li>Verify cross-field dependencies</li>
+</ul>
+
+<h2>Error Handling and Retries</h2>
+<p>
+Schema enforcement shifts failures from silent corruption to explicit errors. Systems must
+handle these failures gracefully.
+</p>
+
+<ul>
+    <li>Retry with clarified instructions</li>
+    <li>Fallback to simpler schemas</li>
+    <li>Switch to alternative models</li>
+    <li>Escalate to human review</li>
+</ul>
+
+<h2>When to Use Each Approach</h2>
+<ul>
+    <li><strong>JSON mode:</strong> Fast prototyping, flexible schemas</li>
+    <li><strong>Structured outputs:</strong> High-reliability extraction</li>
+    <li><strong>Tool use:</strong> Agent workflows and orchestration</li>
+    <li><strong>Prompt-only JSON:</strong> Low-stakes use cases only</li>
+</ul>
+
+<h2>Production Considerations</h2>
+<ul>
+    <li>Version schemas explicitly</li>
+    <li>Monitor schema violation rates</li>
+    <li>Track retries and latency</li>
+    <li>Test schema changes in staging</li>
+</ul>
+
+<h2>Further Reading</h2>
+<ul>
+    <li>
+        <a href="https://platform.openai.com/docs/guides/structured-outputs" target="_blank">
+        OpenAI – Structured Outputs Guide
+        </a>
+    </li>
+    <li>
+        <a href="https://docs.anthropic.com/en/docs/tool-use" target="_blank">
+        Anthropic – Tool Use and Function Calling
+        </a>
+    </li>
+    <li>
+        <a href="https://json-schema.org/learn/getting-started-step-by-step" target="_blank">
+        JSON Schema – Official Guide
+        </a>
+    </li>
+    <li>
+        <a href="https://cloud.google.com/vertex-ai/docs/generative-ai/learn/structured-output" target="_blank">
+        Google Vertex AI – Structured Output
+        </a>
+    </li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

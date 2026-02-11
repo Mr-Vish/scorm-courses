@@ -1,0 +1,1 @@
+test.AddQuestion( new Question ("com.scorm.multistep.rag.q7_1", "What does HyDE stand for?", QUESTION_TYPE_CHOICE, new Array("Hypothetical Document Embeddings", "Hyper-Dimensional Encoding", "Hybrid Document Extraction", "High-Yield Data Entry"), "Hypothetical Document Embeddings", "obj_module_7"));

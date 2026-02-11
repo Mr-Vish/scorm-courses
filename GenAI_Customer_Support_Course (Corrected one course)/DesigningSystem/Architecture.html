@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Architecture for AI Customer Support</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Architecture for AI Customer Support</h1>
+
+
+<h2>System Components</h2>
+<ul>
+    <li><strong>Intent Classifier:</strong> Categorize incoming requests (billing, technical, general)</li>
+    <li><strong>Knowledge Base:</strong> RAG over support docs, FAQs, product manuals</li>
+    <li><strong>Conversation Manager:</strong> Maintain context across multi-turn conversations</li>
+    <li><strong>Action Engine:</strong> Execute actions (create ticket, process refund, look up order)</li>
+    <li><strong>Escalation System:</strong> Route to human agents when AI cannot resolve</li>
+</ul>
+
+<h2>Escalation Triggers</h2>
+<table>
+    <tr><th>Trigger</th><th>Condition</th><th>Action</th></tr>
+    <tr><td>Low confidence</td><td>AI unsure about answer (&lt;70% confidence)</td><td>Offer to connect to human</td></tr>
+    <tr><td>Customer frustration</td><td>Sentiment analysis detects anger</td><td>Prioritize human handoff</td></tr>
+    <tr><td>Complex issue</td><td>Multiple failed resolution attempts</td><td>Auto-escalate with context</td></tr>
+    <tr><td>Sensitive topic</td><td>Legal, safety, or financial decisions</td><td>Mandatory human review</td></tr>
+</table>
+
+<h2>Conversation Flow</h2>
+<ul>
+    <li><strong>1. Greeting:</strong> Identify the customer (optional login)</li>
+    <li><strong>2. Intent detection:</strong> Classify the request category</li>
+    <li><strong>3. Information gathering:</strong> Ask clarifying questions if needed</li>
+    <li><strong>4. Resolution:</strong> Answer from knowledge base or execute action</li>
+    <li><strong>5. Confirmation:</strong> Verify the issue is resolved</li>
+    <li><strong>6. Feedback:</strong> Collect satisfaction rating</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

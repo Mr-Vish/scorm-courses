@@ -1,0 +1,297 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Security and Cost Management</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Security and Cost Management</h1>
+
+<h2>Security Best Practices</h2>
+<table>
+<tr>
+<th>Area</th>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+<tr>
+<td class="rowheader">API Keys</td>
+<td>Exposure in code/logs</td>
+<td>Use environment variables, secrets management</td>
+</tr>
+<tr>
+<td class="rowheader">User Input</td>
+<td>Prompt injection attacks</td>
+<td>Input validation, sanitization</td>
+</tr>
+<tr>
+<td class="rowheader">Data Privacy</td>
+<td>Sensitive data leakage</td>
+<td>PII detection, data masking</td>
+</tr>
+<tr>
+<td class="rowheader">Output Validation</td>
+<td>Harmful content generation</td>
+<td>Content filtering, moderation</td>
+</tr>
+</table>
+
+<h2>Secure API Key Management</h2>
+<blockquote>
+import os
+from dotenv import load_dotenv
+
+# Load from .env file
+load_dotenv()
+
+# Never hardcode keys
+api_key = os.getenv("OPENAI_API_KEY")
+
+# Use with LangChain
+from langchain_openai import ChatOpenAI
+model = ChatOpenAI(api_key=api_key)
+</blockquote>
+
+<h2>Input Validation</h2>
+<blockquote>
+import re
+
+def validate_input(user_input: str) -> bool:
+    """Validate user input for security."""
+    # Check length
+    if len(user_input) > 5000:
+        raise ValueError("Input too long")
+    
+    # Check for suspicious patterns
+    suspicious_patterns = [
+        r"ignore previous instructions",
+        r"system:",
+        r"<script>",
+        r"DROP TABLE"
+    ]
+    
+    for pattern in suspicious_patterns:
+        if re.search(pattern, user_input, re.IGNORECASE):
+            raise ValueError("Suspicious input detected")
+    
+    return True
+
+def safe_invoke(chain, user_input):
+    validate_input(user_input)
+    return chain.invoke({"input": user_input})
+</blockquote>
+
+<h2>PII Detection and Masking</h2>
+<blockquote>
+import re
+
+def mask_pii(text: str) -> str:
+    """Mask personally identifiable information."""
+    # Mask email addresses
+    text = re.sub(
+        r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+        '[EMAIL]',
+        text
+    )
+    
+    # Mask phone numbers
+    text = re.sub(
+        r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
+        '[PHONE]',
+        text
+    )
+    
+    # Mask credit card numbers
+    text = re.sub(
+        r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b',
+        '[CREDIT_CARD]',
+        text
+    )
+    
+    return text
+
+# Use before sending to LLM
+safe_input = mask_pii(user_input)
+result = chain.invoke({"input": safe_input})
+</blockquote>
+
+<h2>Content Moderation</h2>
+<blockquote>
+from langchain_openai import OpenAI
+
+def moderate_content(text: str) -> dict:
+    """Check content for policy violations."""
+    import openai
+    
+    response = openai.moderations.create(input=text)
+    return response.results[0]
+
+def safe_generate(chain, input_data):
+    # Check input
+    input_moderation = moderate_content(input_data["input"])
+    if input_moderation.flagged:
+        return "Input violates content policy"
+    
+    # Generate response
+    result = chain.invoke(input_data)
+    
+    # Check output
+    output_moderation = moderate_content(result.content)
+    if output_moderation.flagged:
+        return "Generated content violates policy"
+    
+    return result.content
+</blockquote>
+
+<h2>Rate Limiting by User</h2>
+<blockquote>
+from collections import defaultdict
+from datetime import datetime, timedelta
+
+class UserRateLimiter:
+    def __init__(self, max_requests=100, window_minutes=60):
+        self.max_requests = max_requests
+        self.window = timedelta(minutes=window_minutes)
+        self.requests = defaultdict(list)
+    
+    def check_limit(self, user_id: str) -> bool:
+        now = datetime.now()
+        cutoff = now - self.window
+        
+        # Remove old requests
+        self.requests[user_id] = [
+            req_time for req_time in self.requests[user_id]
+            if req_time > cutoff
+        ]
+        
+        # Check limit
+        if len(self.requests[user_id]) >= self.max_requests:
+            return False
+        
+        # Record request
+        self.requests[user_id].append(now)
+        return True
+
+limiter = UserRateLimiter(max_requests=50, window_minutes=60)
+
+def rate_limited_invoke(chain, user_id, input_data):
+    if not limiter.check_limit(user_id):
+        raise Exception("Rate limit exceeded")
+    return chain.invoke(input_data)
+</blockquote>
+
+<h2>Cost Tracking</h2>
+<blockquote>
+from langchain.callbacks import get_openai_callback
+
+class CostTracker:
+    def __init__(self, budget_limit=100.0):
+        self.total_cost = 0.0
+        self.budget_limit = budget_limit
+    
+    def track_invocation(self, chain, input_data):
+        with get_openai_callback() as cb:
+            result = chain.invoke(input_data)
+            self.total_cost += cb.total_cost
+            
+            if self.total_cost > self.budget_limit:
+                raise Exception(f"Budget exceeded: ${self.total_cost:.2f}")
+            
+            return result, cb.total_cost
+
+tracker = CostTracker(budget_limit=50.0)
+result, cost = tracker.track_invocation(chain, {"topic": "AI"})
+print(f"Cost: ${cost:.4f}, Total: ${tracker.total_cost:.4f}")
+</blockquote>
+
+<h2>Token Budget Management</h2>
+<blockquote>
+def enforce_token_budget(text: str, max_tokens=4000):
+    """Truncate text to fit token budget."""
+    # Rough estimate: 1 token ≈ 4 characters
+    max_chars = max_tokens * 4
+    
+    if len(text) > max_chars:
+        return text[:max_chars] + "..."
+    return text
+
+safe_input = enforce_token_budget(user_input, max_tokens=2000)
+result = chain.invoke({"input": safe_input})
+</blockquote>
+
+<h2>Audit Logging</h2>
+<blockquote>
+import json
+from datetime import datetime
+
+class AuditLogger:
+    def __init__(self, log_file="audit.log"):
+        self.log_file = log_file
+    
+    def log_invocation(self, user_id, input_data, output, cost):
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "user_id": user_id,
+            "input": str(input_data),
+            "output": str(output),
+            "cost": cost
+        }
+        
+        with open(self.log_file, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+
+logger = AuditLogger()
+
+def audited_invoke(chain, user_id, input_data):
+    with get_openai_callback() as cb:
+        result = chain.invoke(input_data)
+        logger.log_invocation(user_id, input_data, result, cb.total_cost)
+        return result
+</blockquote>
+
+<h2>Secrets Management with AWS</h2>
+<blockquote>
+import boto3
+import json
+
+def get_secret(secret_name):
+    """Retrieve secret from AWS Secrets Manager."""
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=secret_name)
+    return json.loads(response['SecretString'])
+
+# Use in production
+secrets = get_secret("langchain-api-keys")
+model = ChatOpenAI(api_key=secrets["openai_api_key"])
+</blockquote>
+
+<h2>Cost Optimization Strategies</h2>
+<ul>
+<li><strong>Use Smaller Models:</strong> GPT-3.5 for simple tasks</li>
+<li><strong>Implement Caching:</strong> Avoid redundant API calls</li>
+<li><strong>Optimize Prompts:</strong> Reduce token usage</li>
+<li><strong>Set Token Limits:</strong> Control max_tokens parameter</li>
+<li><strong>Monitor Usage:</strong> Track costs per user/feature</li>
+<li><strong>Use Batch Processing:</strong> More efficient than individual calls</li>
+</ul>
+
+<h2>Security Checklist</h2>
+<ul>
+<li><strong>Never commit API keys to version control</strong></li>
+<li><strong>Validate and sanitize all user inputs</strong></li>
+<li><strong>Implement rate limiting per user</strong></li>
+<li><strong>Mask PII before sending to LLMs</strong></li>
+<li><strong>Use content moderation for outputs</strong></li>
+<li><strong>Implement audit logging</strong></li>
+<li><strong>Set budget limits and alerts</strong></li>
+<li><strong>Use secrets management services</strong></li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

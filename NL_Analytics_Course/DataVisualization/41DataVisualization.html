@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 4: Data Visualization with LLMs</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 4: Visualizing Data from Natural Language</h1>
+
+<p>A table of numbers is rarely the best way to present an insight. The goal of NL Analytics is to not just *find* the data, but to *present* it in the most effective way. This module explores how to use LLMs to automatically generate data visualizations.</p>
+
+<h2>4.1 Automatic Chart Selection</h2>
+<p>The first step in visualization is choosing the right type of chart based on the data and the user's intent:
+<ul>
+    <li><strong>Bar Charts:</strong> For comparisons across categories.</li>
+    <li><strong>Line Graphs:</strong> For showing trends over time.</li>
+    <li><strong>Pie Charts:</strong> For showing parts of a whole (use sparingly!).</li>
+    <li><strong>Scatter Plots:</strong> For showing correlations between two variables.</li>
+    <li><strong>Heatmaps:</strong> For identifying patterns in large, multi-dimensional datasets.</li>
+</ul>
+<p>Modern NLA systems can analyze the result set of a SQL query and suggest the 2-3 most relevant visualizations.</p>
+
+<h2>4.2 Generating Visualization Code</h2>
+<p>Instead of just describing a chart, an LLM can generate the actual code to render it using popular libraries:
+<ul>
+    <li><strong>Python (Matplotlib, Seaborn, Plotly):</strong> Great for static or interactive charts in a notebook-like environment.</li>
+    <li><strong>JavaScript (D3.js, Chart.js, Recharts):</strong> Ideal for embedding interactive charts directly into a web application.</li>
+    <li><strong>Vega-Lite:</strong> A high-level grammar for visualizations that is very LLM-friendly due to its declarative, JSON-based format.</li>
+</ul></p>
+
+<h2>4.3 The "NL-to-Viz" Workflow</h2>
+<ol>
+    <li><strong>User Query:</strong> "Show me a line chart of monthly sales for the last year."</li>
+    <li><strong>SQL Execution:</strong> Fetch the monthly sales data from the database.</li>
+    <li><strong>Viz Generation:</strong> The LLM takes the raw data and generates the visualization code (e.g., a Plotly configuration object).</li>
+    <li><strong>Rendering:</strong> The frontend takes the code and renders the interactive chart for the user.</li>
+</ol>
+
+<h2>4.4 Refining Visualizations with Language</h2>
+<p>One of the most powerful features of NLA is the ability to iteratively refine a chart:
+<ul>
+    <li>"Change the color of the bars to blue."</li>
+    <li>"Add a trend line to the sales graph."</li>
+    <li>"Label the highest point on the chart."</li>
+    <li>"Group the data by quarter instead of month."</li>
+</ul></p>
+
+<h2>4.5 Best Practices in Automated Visualization</h2>
+<ul>
+    <li><strong>Clarity Over Flashiness:</strong> Avoid overly complex charts that are hard to interpret.</li>
+    <li><strong>Accessibility:</strong> Ensure that the generated charts use color-blind friendly palettes and include descriptive alt-text.</li>
+    <li><strong>Data Integrity:</strong> Always include a link to the raw data and the SQL query that generated it to ensure transparency.</li>
+</ul>
+
+<p>By integrating automated visualization into your analytics pipeline, you transform your NLA system from a simple query tool into a powerful platform for data storytelling.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

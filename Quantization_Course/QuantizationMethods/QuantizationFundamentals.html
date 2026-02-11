@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Quantization Fundamentals and Formats</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Quantization Fundamentals and Formats</h1>
+
+
+<h2>What is Quantization?</h2>
+<p>Quantization reduces the precision of model weights from 32-bit or 16-bit floating point to lower bit formats (8-bit, 4-bit, or even 2-bit). This dramatically reduces memory usage and speeds up inference, with only a small impact on output quality.</p>
+
+<h2>Why Quantize?</h2>
+<table>
+    <tr><th>Precision</th><th>Bits per Weight</th><th>70B Model Size</th><th>Quality Impact</th></tr>
+    <tr><td>FP32 (full)</td><td>32</td><td>~280 GB</td><td>Baseline (best)</td></tr>
+    <tr><td>FP16 / BF16</td><td>16</td><td>~140 GB</td><td>Negligible loss</td></tr>
+    <tr><td>INT8</td><td>8</td><td>~70 GB</td><td>Minimal loss</td></tr>
+    <tr><td>INT4 (Q4)</td><td>4</td><td>~35-40 GB</td><td>Small loss on hard tasks</td></tr>
+    <tr><td>INT2 (Q2)</td><td>2</td><td>~17-20 GB</td><td>Noticeable degradation</td></tr>
+</table>
+
+<h2>Quantization Formats</h2>
+
+<h3>GGUF (llama.cpp format)</h3>
+<p>The most popular format for CPU and Apple Silicon inference:</p>
+<ul>
+    <li>Used by Ollama, LM Studio, llama.cpp</li>
+    <li>Supports mixed-precision quantization (different bits for different layers)</li>
+    <li>Naming convention: Q4_K_M means 4-bit with K-quant, medium quality</li>
+    <li>Best for: Local/CPU inference, Apple Silicon, consumer hardware</li>
+</ul>
+
+<h3>GPTQ (GPU-optimized)</h3>
+<ul>
+    <li>Post-training quantization method using calibration data</li>
+    <li>Optimized for NVIDIA GPU inference with CUDA kernels</li>
+    <li>Requires a calibration dataset for quantization (typically 128 samples)</li>
+    <li>Best for: GPU inference with frameworks like vLLM, TGI</li>
+</ul>
+
+<h3>AWQ (Activation-Aware Weight Quantization)</h3>
+<ul>
+    <li>Preserves salient weights that matter most for accuracy</li>
+    <li>Generally better quality than GPTQ at the same bit level</li>
+    <li>Optimized for GPU with fast CUDA kernels</li>
+    <li>Best for: High-quality 4-bit GPU inference in production</li>
+</ul>
+
+<h2>GGUF Quantization Variants</h2>
+<div class="code-block">
+<pre><code># Common GGUF quantization levels (llama.cpp naming)
+# Q2_K   - 2-bit, smallest, lowest quality
+# Q3_K_S - 3-bit small
+# Q3_K_M - 3-bit medium
+# Q4_0   - 4-bit legacy format
+# Q4_K_S - 4-bit K-quant small (good balance)
+# Q4_K_M - 4-bit K-quant medium (recommended default)
+# Q5_K_S - 5-bit K-quant small
+# Q5_K_M - 5-bit K-quant medium (high quality)
+# Q6_K   - 6-bit (near FP16 quality)
+# Q8_0   - 8-bit (highest quality quantized)
+
+# Download a specific quantization from Hugging Face
+# Example: TheBloke/Llama-3-8B-GGUF
+# Choose Q4_K_M for best size/quality tradeoff</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

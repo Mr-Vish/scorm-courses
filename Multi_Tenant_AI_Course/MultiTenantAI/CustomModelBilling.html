@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Custom Models and Billing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>1.2 Custom Models, Adapters, and Billing Strategies</h1>
+
+<p>As you move beyond basic chat applications, your tenants will increasingly demand customized AI models that are tailored to their specific industry, data, and workflows. This module explores how to provide these customizations efficiently and how to bill for them.</p>
+
+<h2>Customization Options</h2>
+<ol>
+    <li><strong>RAG (Retrieval-Augmented Generation):</strong> Connecting the LLM to the tenant's private knowledge base. This is the most common and cost-effective way to "customize" a model's knowledge without changing its underlying weights.</li>
+    <li><strong>LoRA Adapters (Fine-tuning):</strong> Creating small, tenant-specific model weights that are applied to a shared base model. This allows for deep customization of tone, style, and specialized knowledge while keeping compute costs low.</li>
+    <li><strong>Dedicated Model Instances:</strong> Deploying a completely separate instance of a model for a single tenant. This provides the best isolation and performance but is the most expensive option.</li>
+</ol>
+
+<h2>The Billing Challenge in AI</h2>
+<p>In traditional SaaS, billing is often based on the number of "seats" (users). In AI, your underlying costs are driven by **tokens** and **GPU time**. If you bill by seat but one user sends thousands of complex requests, you could quickly lose money on that customer. Effective billing strategies for multi-tenant AI include:</p>
+
+<h3>1. Usage-Based Billing (Metered)</h3>
+<p>Charging the tenant for exactly what they use. This is the most fair and sustainable model for the provider.
+<ul>
+    <li><strong>Pros:</strong> Directly aligns your revenue with your costs; no limit on how much a tenant can scale.</li>
+    <li><strong>Cons:</strong> Unpredictable costs for the tenant; can discourage usage.</li>
+</ul></p>
+
+<h3>2. Tiered Usage (The "Cell Phone" Model)</h3>
+<p>Tenants pay a fixed monthly fee for a set number of tokens (e.g., $100 for 1M tokens) and pay an overage fee for anything beyond that.
+<ul>
+    <li><strong>Pros:</strong> Predictable revenue for you and predictable base costs for the tenant.</li>
+    <li><strong>Cons:</strong> Requires careful management of overages and notifications.</li>
+</ul></p>
+
+<h3>3. "Bringing Your Own" (BYO) Model</h3>
+<p>Allowing the tenant to provide their own API key (e.g., from OpenAI or Anthropic). You charge a platform fee for your software, but the tenant pays the AI provider directly for their usage.
+<ul>
+    <li><strong>Pros:</strong> Eliminates your direct AI costs and risk; simplifies your billing logic.</li>
+    <li><strong>Cons:</strong> You lose a potential revenue stream from usage markups; less control over the user experience.</li>
+</ul></p>
+
+<h2>Implementing Billing Infrastructure</h2>
+<p>To support these models, your infrastructure must:
+<ul>
+    <li><strong>Attribute every token:</strong> Recording the <code>tenant_id</code> for every input and output token.</li>
+    <li><strong>Handle different prices:</strong> Different models (e.g., GPT-4 vs. Claude Haiku) have different costs. Your system must be able to calculate costs based on the specific model used.</li>
+    <li><strong>Near real-time aggregation:</strong> Aggregating usage data quickly so you can enforce limits and show tenants their current usage in a dashboard.</li>
+</ul></p>
+
+<h2>The "Platform Markup"</h2>
+<p>Most multi-tenant AI providers apply a markup to the raw API costs to cover their own infrastructure and software development expenses. Finding the right markup—one that is competitive yet profitable—is a key business decision.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

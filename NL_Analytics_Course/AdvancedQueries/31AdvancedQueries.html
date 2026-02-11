@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 3: Advanced Queries and Complex SQL</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Handling Joins, Aggregations, and Multi-step Reasoning</h1>
+
+<p>While simple "SELECT * FROM table WHERE..." queries are easy for most LLMs, real-world analytics often involves much more complex SQL patterns. This module covers techniques for ensuring your NLA system can handle the "heavy lifting" of data analysis.</p>
+
+<h2>3.1 Master of Joins</h2>
+<p>Most business questions require data from multiple tables. The system must understand the relationships between tables (defined by foreign keys) and generate the correct <code>JOIN</code> statements.
+<ul>
+    <li><strong>Inner Joins vs. Outer Joins:</strong> Ensuring the model knows when to exclude or include missing data.</li>
+    <li><strong>Many-to-Many Relationships:</strong> Correcting handling join tables in complex schemas.</li>
+    <li><strong>Self-Joins:</strong> For hierarchical data like organizational charts or bill of materials.</li>
+</ul></p>
+
+<h2>3.2 Complex Aggregations and Window Functions</h2>
+<p>Beyond simple <code>SUM</code> and <code>AVG</code>, analytics often requires:
+<ul>
+    <li><strong>Nested Aggregations:</strong> "What is the average of the total sales per region?"</li>
+    <li><strong>HAVING vs. WHERE:</strong> Correctly filtering grouped data.</li>
+    <li><strong>Window Functions:</strong> Using <code>RANK()</code>, <code>OVER()</code>, and <code>PARTITION BY</code> for tasks like finding the top 3 products per category or calculating running totals.</li>
+</ul></p>
+
+<h2>3.3 Multi-step Reasoning (Chain of SQL)</h2>
+<p>Some questions are too complex for a single SQL query. The system may need to perform multiple steps:
+<ol>
+    <li><strong>Decomposition:</strong> Breaking a large question into smaller, executable queries.</li>
+    <li><strong>Intermediate Results:</strong> Fetching data from the first query and using it as a parameter for the second.</li>
+    <li><strong>Final Synthesis:</strong> Combining the results from multiple queries into a final answer.</li>
+</ol></p>
+
+<h2>3.4 Dialect-Specific SQL</h2>
+<p>Not all SQL is the same. Your system must be aware of the specific dialect used by your database (PostgreSQL, MySQL, T-SQL, Snowflake, BigQuery) and generate the correct syntax for features like date handling, string manipulation, and pagination.</p>
+
+<h2>3.5 Performance-Aware SQL Generation</h2>
+<p>An LLM might generate a query that is technically correct but incredibly slow on a large dataset (e.g., a cross-join without filters). Advanced systems can:
+<ul>
+    <li><strong>Analyze Query Plans:</strong> Using <code>EXPLAIN</code> to identify potential performance bottlenecks.</li>
+    <li><strong>Suggest Indexes:</strong> Recommending database optimizations based on common natural language queries.</li>
+    <li><strong>Apply Automatic Limits:</strong> Ensuring that no query can return a million rows to the user interface.</li>
+</ul></p>
+
+<p>By building a system that truly understands the "art" of SQL, you enable your users to get answers to even the most challenging business questions through simple natural language.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

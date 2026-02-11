@@ -1,0 +1,437 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Custom Entity Recognition for Domain-Specific Data</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Custom Entity Recognition for Domain-Specific Data</h1>
+
+<h2>Why Custom Recognizers?</h2>
+<p>While Presidio provides excellent out-of-the-box detection for common PII types, many organizations have domain-specific sensitive data that requires custom recognition:</p>
+<ul>
+    <li><strong>Healthcare:</strong> Medical Record Numbers (MRN), patient IDs, prescription codes</li>
+    <li><strong>Finance:</strong> Internal account formats, transaction IDs, proprietary codes</li>
+    <li><strong>Enterprise:</strong> Employee IDs, project codes, internal system identifiers</li>
+    <li><strong>Legal:</strong> Case numbers, docket IDs, attorney-client references</li>
+    <li><strong>Education:</strong> Student IDs, course codes, grade identifiers</li>
+</ul>
+
+<h2>Creating Custom Pattern Recognizers</h2>
+
+<h3>Example 1: Employee ID Recognition</h3>
+<div class="code-block">
+<pre><code>from presidio_analyzer import Pattern, PatternRecognizer
+
+# Define custom recognizer for employee IDs (format: EMP-12345)
+employee_id_pattern = Pattern(
+    name="employee_id_pattern",
+    regex=r"\bEMP-\d{5}\b",
+    score=0.9
+)
+
+employee_recognizer = PatternRecognizer(
+    supported_entity="EMPLOYEE_ID",
+    patterns=[employee_id_pattern],
+    context=["employee", "staff", "worker", "personnel"]
+)
+
+# Add to analyzer
+from presidio_analyzer import AnalyzerEngine
+
+analyzer = AnalyzerEngine()
+analyzer.registry.add_recognizer(employee_recognizer)
+
+# Test detection
+text = "Employee EMP-12345 submitted a request. Contact employee EMP-67890."
+results = analyzer.analyze(text=text, language="en")
+
+for result in results:
+    print(f"{result.entity_type}: {text[result.start:result.end]}")
+
+# Output:
+# EMPLOYEE_ID: EMP-12345
+# EMPLOYEE_ID: EMP-67890
+</code></pre>
+</div>
+
+<h3>Example 2: Medical Record Number (MRN)</h3>
+<div class="code-block">
+<pre><code># Healthcare: MRN format varies by institution
+# Example formats: MRN-123456, MR123456, 12-34-5678
+
+mrn_patterns = [
+    Pattern(name="mrn_dash", regex=r"\bMRN-\d{6}\b", score=0.95),
+    Pattern(name="mrn_no_dash", regex=r"\bMR\d{6}\b", score=0.90),
+    Pattern(name="mrn_segmented", regex=r"\b\d{2}-\d{2}-\d{4}\b", score=0.70)
+]
+
+mrn_recognizer = PatternRecognizer(
+    supported_entity="MEDICAL_RECORD_NUMBER",
+    patterns=mrn_patterns,
+    context=["patient", "medical", "record", "chart", "MRN", "hospital"]
+)
+
+analyzer.registry.add_recognizer(mrn_recognizer)
+
+# Test with medical text
+medical_text = """
+Patient MRN-456789 was admitted on 03/15/2024.
+Medical record MR123456 shows previous visits.
+Chart number 12-34-5678 contains lab results.
+"""
+
+results = analyzer.analyze(text=medical_text, language="en")
+mrn_results = [r for r in results if r.entity_type == "MEDICAL_RECORD_NUMBER"]
+
+print(f"Found {len(mrn_results)} MRN references")
+</code></pre>
+</div>
+
+<h3>Example 3: Internal Account Numbers</h3>
+<div class="code-block">
+<pre><code># Financial institution with custom account format
+# Format: 2-letter branch code + 8 digits (e.g., NY12345678)
+
+account_pattern = Pattern(
+    name="internal_account",
+    regex=r"\b[A-Z]{2}\d{8}\b",
+    score=0.85
+)
+
+account_recognizer = PatternRecognizer(
+    supported_entity="INTERNAL_ACCOUNT",
+    patterns=[account_pattern],
+    context=["account", "customer", "balance", "transaction"]
+)
+
+analyzer.registry.add_recognizer(account_recognizer)
+
+# Test
+text = "Transfer from account NY12345678 to CA98765432"
+results = analyzer.analyze(text=text, language="en")
+</code></pre>
+</div>
+
+<h2>Context-Aware Recognition</h2>
+<p>Context words increase detection confidence when found near potential PII:</p>
+
+<div class="code-block">
+<pre><code># Example: Project codes that look like dates
+project_code_pattern = Pattern(
+    name="project_code",
+    regex=r"\b[A-Z]{3}-\d{4}\b",  # e.g., PRJ-2024
+    score=0.6  # Lower base score
+)
+
+project_recognizer = PatternRecognizer(
+    supported_entity="PROJECT_CODE",
+    patterns=[project_code_pattern],
+    context=["project", "initiative", "program", "code"],
+    context_similarity_threshold=0.7,
+    context_similarity_factor=0.3  # Boost score by 0.3 if context found
+)
+
+# Without context: score = 0.6
+# With context: score = 0.6 + 0.3 = 0.9
+
+text1 = "The code PRJ-2024 was assigned."  # No context, score = 0.6
+text2 = "The project code PRJ-2024 was assigned."  # With context, score = 0.9
+</code></pre>
+</div>
+
+<h2>Combining Multiple Patterns</h2>
+<div class="code-block">
+<pre><code># Recognize various formats of the same entity type
+class FlexibleIDRecognizer:
+    """Recognizer for IDs with multiple format variations"""
+    
+    @staticmethod
+    def create_student_id_recognizer():
+        patterns = [
+            # Format 1: S followed by 7 digits
+            Pattern(name="s_format", regex=r"\bS\d{7}\b", score=0.95),
+            
+            # Format 2: Student ID with dashes
+            Pattern(name="dash_format", regex=r"\bSTU-\d{3}-\d{4}\b", score=0.90),
+            
+            # Format 3: Legacy format with letters
+            Pattern(name="legacy_format", regex=r"\b\d{2}[A-Z]{2}\d{4}\b", score=0.80)
+        ]
+        
+        return PatternRecognizer(
+            supported_entity="STUDENT_ID",
+            patterns=patterns,
+            context=["student", "enrollment", "academic", "course", "grade"]
+        )
+
+# Add to analyzer
+student_recognizer = FlexibleIDRecognizer.create_student_id_recognizer()
+analyzer.registry.add_recognizer(student_recognizer)
+
+# Test all formats
+test_text = """
+Student S1234567 enrolled in CS101.
+Legacy student STU-123-4567 transferred credits.
+Former student 22AB5678 graduated in 2020.
+"""
+
+results = analyzer.analyze(text=test_text, language="en")
+student_ids = [r for r in results if r.entity_type == "STUDENT_ID"]
+print(f"Detected {len(student_ids)} student IDs across different formats")
+</code></pre>
+</div>
+
+<h2>Validation Logic in Custom Recognizers</h2>
+<div class="code-block">
+<pre><code>from presidio_analyzer import EntityRecognizer, RecognizerResult
+from typing import List
+import re
+
+class ValidatedAccountRecognizer(EntityRecognizer):
+    """Custom recognizer with validation logic"""
+    
+    def __init__(self):
+        super().__init__(
+            supported_entities=["VALIDATED_ACCOUNT"],
+            supported_language="en"
+        )
+    
+    def load(self):
+        """Initialize recognizer"""
+        pass
+    
+    def analyze(self, text: str, entities: List[str], nlp_artifacts=None) -> List[RecognizerResult]:
+        """Detect and validate account numbers"""
+        results = []
+        
+        # Pattern: ACC-XXXXXX-C (where C is checksum digit)
+        pattern = r'\bACC-\d{6}-\d\b'
+        
+        for match in re.finditer(pattern, text):
+            account_number = match.group()
+            
+            # Validate checksum
+            if self._validate_checksum(account_number):
+                result = RecognizerResult(
+                    entity_type="VALIDATED_ACCOUNT",
+                    start=match.start(),
+                    end=match.end(),
+                    score=0.95
+                )
+                results.append(result)
+        
+        return results
+    
+    def _validate_checksum(self, account: str) -> bool:
+        """Validate account number checksum"""
+        # Extract digits: ACC-123456-7 -> 1234567
+        digits = ''.join(c for c in account if c.isdigit())
+        
+        if len(digits) != 7:
+            return False
+        
+        # Simple checksum: last digit = sum of first 6 digits % 10
+        checksum = sum(int(d) for d in digits[:6]) % 10
+        return int(digits[6]) == checksum
+
+# Add to analyzer
+validated_recognizer = ValidatedAccountRecognizer()
+analyzer.registry.add_recognizer(validated_recognizer)
+
+# Test
+text = """
+Valid account: ACC-123456-6 (checksum valid)
+Invalid account: ACC-123456-9 (checksum invalid)
+"""
+
+results = analyzer.analyze(text=text, language="en")
+# Only ACC-123456-6 will be detected
+</code></pre>
+</div>
+
+<h2>Industry-Specific Recognizer Library</h2>
+
+<h3>Healthcare Recognizers</h3>
+<div class="code-block">
+<pre><code>class HealthcareRecognizers:
+    @staticmethod
+    def get_all():
+        return [
+            # National Provider Identifier (NPI)
+            PatternRecognizer(
+                supported_entity="NPI",
+                patterns=[Pattern("npi", r"\b\d{10}\b", 0.7)],
+                context=["provider", "NPI", "physician", "doctor"]
+            ),
+            
+            # DEA Number (Drug Enforcement Administration)
+            PatternRecognizer(
+                supported_entity="DEA_NUMBER",
+                patterns=[Pattern("dea", r"\b[A-Z]{2}\d{7}\b", 0.85)],
+                context=["DEA", "prescriber", "controlled substance"]
+            ),
+            
+            # ICD-10 Diagnosis Codes
+            PatternRecognizer(
+                supported_entity="ICD10_CODE",
+                patterns=[Pattern("icd10", r"\b[A-Z]\d{2}(\.\d{1,4})?\b", 0.75)],
+                context=["diagnosis", "ICD", "condition", "disease"]
+            )
+        ]
+</code></pre>
+</div>
+
+<h3>Financial Recognizers</h3>
+<div class="code-block">
+<pre><code>class FinancialRecognizers:
+    @staticmethod
+    def get_all():
+        return [
+            # CUSIP (securities identifier)
+            PatternRecognizer(
+                supported_entity="CUSIP",
+                patterns=[Pattern("cusip", r"\b[0-9]{3}[0-9A-Z]{5}[0-9]\b", 0.85)],
+                context=["security", "bond", "stock", "CUSIP"]
+            ),
+            
+            # SWIFT/BIC Code
+            PatternRecognizer(
+                supported_entity="SWIFT_CODE",
+                patterns=[Pattern("swift", r"\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b", 0.80)],
+                context=["bank", "SWIFT", "BIC", "transfer", "wire"]
+            ),
+            
+            # Internal Transaction ID
+            PatternRecognizer(
+                supported_entity="TRANSACTION_ID",
+                patterns=[Pattern("txn", r"\bTXN-\d{12}\b", 0.90)],
+                context=["transaction", "payment", "transfer"]
+            )
+        ]
+</code></pre>
+</div>
+
+<h2>Managing Custom Recognizers at Scale</h2>
+<div class="code-block">
+<pre><code>class RecognizerRegistry:
+    """Centralized management of custom recognizers"""
+    
+    def __init__(self):
+        self.recognizers = {}
+        self.analyzer = AnalyzerEngine()
+    
+    def register(self, name: str, recognizer):
+        """Register a custom recognizer"""
+        self.recognizers[name] = recognizer
+        self.analyzer.registry.add_recognizer(recognizer)
+        print(f"Registered recognizer: {name}")
+    
+    def register_batch(self, recognizers: dict):
+        """Register multiple recognizers"""
+        for name, recognizer in recognizers.items():
+            self.register(name, recognizer)
+    
+    def unregister(self, name: str):
+        """Remove a recognizer"""
+        if name in self.recognizers:
+            recognizer = self.recognizers[name]
+            self.analyzer.registry.remove_recognizer(recognizer)
+            del self.recognizers[name]
+            print(f"Unregistered recognizer: {name}")
+    
+    def list_recognizers(self):
+        """List all registered custom recognizers"""
+        return list(self.recognizers.keys())
+    
+    def analyze(self, text: str, **kwargs):
+        """Analyze text with all registered recognizers"""
+        return self.analyzer.analyze(text=text, **kwargs)
+
+# Usage
+registry = RecognizerRegistry()
+
+# Register healthcare recognizers
+for recognizer in HealthcareRecognizers.get_all():
+    registry.register(recognizer.supported_entities[0], recognizer)
+
+# Register financial recognizers
+for recognizer in FinancialRecognizers.get_all():
+    registry.register(recognizer.supported_entities[0], recognizer)
+
+print(f"Active recognizers: {registry.list_recognizers()}")
+</code></pre>
+</div>
+
+<h2>Testing Custom Recognizers</h2>
+<div class="code-block">
+<pre><code>import unittest
+
+class TestCustomRecognizers(unittest.TestCase):
+    def setUp(self):
+        self.analyzer = AnalyzerEngine()
+        self.employee_recognizer = PatternRecognizer(
+            supported_entity="EMPLOYEE_ID",
+            patterns=[Pattern("emp", r"\bEMP-\d{5}\b", 0.9)]
+        )
+        self.analyzer.registry.add_recognizer(self.employee_recognizer)
+    
+    def test_employee_id_detection(self):
+        """Test employee ID is detected"""
+        text = "Employee EMP-12345 submitted a request"
+        results = self.analyzer.analyze(text=text, language="en")
+        
+        emp_results = [r for r in results if r.entity_type == "EMPLOYEE_ID"]
+        self.assertEqual(len(emp_results), 1)
+        self.assertEqual(text[emp_results[0].start:emp_results[0].end], "EMP-12345")
+    
+    def test_no_false_positives(self):
+        """Test that similar patterns are not detected"""
+        text = "The EMP file contains data"
+        results = self.analyzer.analyze(text=text, language="en")
+        
+        emp_results = [r for r in results if r.entity_type == "EMPLOYEE_ID"]
+        self.assertEqual(len(emp_results), 0)
+    
+    def test_multiple_detections(self):
+        """Test multiple employee IDs in same text"""
+        text = "EMP-11111 and EMP-22222 are working together"
+        results = self.analyzer.analyze(text=text, language="en")
+        
+        emp_results = [r for r in results if r.entity_type == "EMPLOYEE_ID"]
+        self.assertEqual(len(emp_results), 2)
+
+if __name__ == '__main__':
+    unittest.main()
+</code></pre>
+</div>
+
+<h2>Best Practices for Custom Recognizers</h2>
+<ul>
+    <li><strong>Start with patterns:</strong> Use regex patterns for well-defined formats before building complex ML models</li>
+    <li><strong>Use context words:</strong> Improve accuracy by defining relevant context terms</li>
+    <li><strong>Set appropriate scores:</strong> Higher scores (0.9+) for strict patterns, lower (0.6-0.8) for ambiguous ones</li>
+    <li><strong>Validate when possible:</strong> Implement checksum or format validation for higher confidence</li>
+    <li><strong>Test thoroughly:</strong> Create comprehensive test suites with positive and negative cases</li>
+    <li><strong>Document formats:</strong> Maintain clear documentation of recognized patterns and their business meaning</li>
+    <li><strong>Version control:</strong> Track changes to recognizers as business requirements evolve</li>
+    <li><strong>Monitor performance:</strong> Track false positive/negative rates in production</li>
+</ul>
+
+<h2>Common Pitfalls to Avoid</h2>
+<ul>
+    <li><strong>Overly broad patterns:</strong> r"\b\d{6}\b" will match many non-PII numbers</li>
+    <li><strong>Missing word boundaries:</strong> Use \b to avoid partial matches</li>
+    <li><strong>Ignoring case sensitivity:</strong> Consider both uppercase and lowercase variations</li>
+    <li><strong>Not testing edge cases:</strong> Test with malformed, partial, and boundary inputs</li>
+    <li><strong>Hardcoding recognizers:</strong> Use configuration files for easier updates</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

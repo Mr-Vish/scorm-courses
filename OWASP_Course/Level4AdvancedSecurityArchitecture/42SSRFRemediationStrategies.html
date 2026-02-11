@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>4.2 SSRF Remediation Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>4.2 SSRF Remediation Strategies</h1>
+
+<p>Preventing SSRF requires a multi-layered defense strategy. Relying on simple blacklists or regex-based URL validation is often insufficient as attackers can use various encoding techniques or DNS rebinding to bypass these checks.</p>
+
+<h2>Primary Prevention: Deny by Default</h2>
+<p>The most effective way to prevent SSRF is to not allow user-supplied URLs to be fetched by the server. If the application needs to fetch resources, consider the following alternatives:</p>
+<ul>
+    <li><strong>Use a predefined list of resources:</strong> If you only need to fetch certain files, store them locally or use a mapping of identifiers to hardcoded URLs.</li>
+    <li><strong>Use an internal proxy:</strong> Route all outgoing requests through a dedicated proxy that has a strict whitelist of allowed destinations.</li>
+</ul>
+
+<h2>Secondary Prevention: Strict Input Validation</h2>
+<p>If you must accept user-supplied URLs, implement rigorous validation:</p>
+<ul>
+    <li><strong>Whitelist approach:</strong> Only allow connections to specific, trusted domains and schemes (e.g., only <code>https://trusted.com</code>).</li>
+    <li><strong>Validate the IP address:</strong> After resolving the domain name, check that the IP address does not belong to a private, local, or reserved range (e.g., <code>10.0.0.0/8</code>, <code>127.0.0.0/8</code>, <code>192.168.0.0/16</code>).</li>
+    <li><strong>Disable redirects:</strong> Attackers often use redirects (301, 302) to bypass initial URL checks. Ensure your HTTP client is configured to not automatically follow redirects, or validate the destination of each redirect.</li>
+</ul>
+
+<h2>Hands-on Example: Secure Python (Flask) Code</h2>
+<p>Here is an improved version of the previous fetching endpoint with basic validation:</p>
+<pre>
+import requests
+from flask import Flask, request, abort
+from urllib.parse import urlparse
+import socket
+
+app = Flask(__name__)
+
+ALLOWED_DOMAINS = ['trusted-images.com', 'api.external-service.com']
+
+def is_safe_url(url):
+    parsed_url = urlparse(url)
+    if parsed_url.scheme not in ['http', 'https']:
+        return False
+    if parsed_url.hostname not in ALLOWED_DOMAINS:
+        return False
+
+    # Resolve IP and check if it's internal
+    try:
+        ip_address = socket.gethostbyname(parsed_url.hostname)
+        if ip_address.startswith(('127.', '10.', '192.168.', '169.254.')):
+            return False
+    except socket.error:
+        return False
+
+    return True
+
+@app.route('/fetch_url_secure')
+def fetch_url():
+    url = request.args.get('url')
+    if not is_safe_url(url):
+        abort(400, description="Invalid or unsafe URL")
+
+    # Fetch with no redirects to prevent bypass
+    response = requests.get(url, allow_redirects=False)
+    return response.text
+</pre>
+
+<h2>Network Layer Defenses</h2>
+<p>Beyond application-level fixes, network configuration plays a vital role:</p>
+<ul>
+    <li><strong>Segmentation:</strong> Isolate the application server from sensitive internal services. Ensure that the web server has no network access to internal databases or management consoles.</li>
+    <li><strong>Egress Filtering:</strong> Implement firewall rules that restrict the types of outgoing connections the application server can make. Only allow connections to necessary external services on specific ports.</li>
+</ul>
+
+<p>By combining rigorous application validation with strong network-level controls, you can significantly reduce the risk of a successful SSRF attack.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

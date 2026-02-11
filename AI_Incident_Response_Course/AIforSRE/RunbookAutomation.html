@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Runbook Automation and Post-Mortems</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Runbook Automation and Post-Mortems</h1>
+
+
+<h2>AI-Assisted Runbook Execution</h2>
+<p>Runbooks contain step-by-step procedures for handling known incidents. LLMs can make runbooks smarter by selecting the right runbook, adapting steps to the current situation, and even executing remediation steps with human approval.</p>
+
+<h2>Runbook Selection</h2>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+import json
+
+client = OpenAI()
+
+# Runbook database (in production, store in a vector database)
+RUNBOOKS = {
+    "high_cpu": {
+        "title": "High CPU Usage Remediation",
+        "symptoms": ["CPU &gt; 90%", "slow response times", "request timeouts"],
+        "steps": [
+            "1. Check top processes: top -bn1 | head -20",
+            "2. Identify the runaway process",
+            "3. Check for recent deployments",
+            "4. If deployment-related: rollback to previous version",
+            "5. If traffic spike: scale horizontally",
+        ],
+    },
+    "database_connection_pool": {
+        "title": "Database Connection Pool Exhaustion",
+        "symptoms": ["connection timeout", "pool exhausted", "too many connections"],
+        "steps": [
+            "1. Check current connections: SELECT count(*) FROM pg_stat_activity",
+            "2. Identify idle connections holding locks",
+            "3. Kill idle-in-transaction connections older than 5 min",
+            "4. Check for connection leaks in recent code changes",
+            "5. Temporarily increase pool size if needed",
+        ],
+    },
+}
+
+def select_runbook(incident_description: str) -&gt; dict:
+    '''Use an LLM to match an incident to the best runbook.'''
+    runbook_summaries = {k: v["title"] + ": " + ", ".join(v["symptoms"])
+                         for k, v in RUNBOOKS.items()}
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Incident: {incident_description}
+
+"
+                f"Available runbooks: {json.dumps(runbook_summaries)}
+
+"
+                "Return JSON: {"selected_runbook": str, "confidence": float, "reasoning": str}"
+            ),
+        }],
+    )
+    result = json.loads(response.choices[0].message.content)
+    return RUNBOOKS.get(result["selected_runbook"], {})</code></pre>
+</div>
+
+<h2>AI-Generated Post-Mortems</h2>
+<div class="code-block">
+<pre><code>def generate_post_mortem(
+    incident_timeline: list[str],
+    logs_summary: str,
+    resolution: str,
+    impact: str,
+) -&gt; str:
+    '''Generate a structured post-mortem document from incident data.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                "You are an SRE writing a blameless post-mortem. "
+                "Focus on systemic improvements, not individual mistakes. "
+                "Use the standard post-mortem format."
+            )},
+            {"role": "user", "content": (
+                f"Timeline:
+" + "
+".join(incident_timeline) + "
+
+"
+                f"Log analysis:
+{logs_summary}
+
+"
+                f"Resolution:
+{resolution}
+
+"
+                f"Impact:
+{impact}
+
+"
+                "Generate a post-mortem with these sections:
+"
+                "1. Summary
+"
+                "2. Impact
+"
+                "3. Root Cause
+"
+                "4. Timeline
+"
+                "5. What Went Well
+"
+                "6. What Went Wrong
+"
+                "7. Action Items (with owners and deadlines)"
+            )},
+        ],
+    )
+    return response.choices[0].message.content</code></pre>
+</div>
+
+<h2>Post-Mortem Action Item Tracking</h2>
+<table>
+    <tr><th>Action Item Category</th><th>Example</th><th>Priority</th></tr>
+    <tr><td>Detection</td><td>Add alert for connection pool usage above 80%</td><td>P1</td></tr>
+    <tr><td>Prevention</td><td>Implement connection pool health checks in CI</td><td>P2</td></tr>
+    <tr><td>Mitigation</td><td>Add auto-scaling rule for database connections</td><td>P1</td></tr>
+    <tr><td>Process</td><td>Update runbook with new diagnostic steps</td><td>P3</td></tr>
+    <tr><td>Documentation</td><td>Document the connection pool configuration guide</td><td>P3</td></tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Human approval for actions:</strong> Never let AI execute remediation steps without human confirmation</li>
+    <li><strong>Context window management:</strong> Summarize logs before sending to the LLM - do not send raw gigabytes</li>
+    <li><strong>Sensitive data:</strong> Redact secrets, credentials, and customer data from logs before LLM analysis</li>
+    <li><strong>Feedback loop:</strong> Track whether AI suggestions were helpful and use that data to improve prompts</li>
+    <li><strong>Blameless culture:</strong> Ensure AI-generated post-mortems focus on systems, not individuals</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

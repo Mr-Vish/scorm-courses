@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Exact Match Caching Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Exact Match Caching Patterns</h1>
+
+<h2>Understanding Exact Match Caching</h2>
+<p>Exact match caching represents the foundational approach to GenAI response caching. This strategy stores API responses using a deterministic key derived from the complete input parameters. When an identical request arrives, the system retrieves the cached response instead of making a new API call.</p>
+
+<p>The core principle is simple: if the input is identical, the output should be identical (or acceptably similar). This assumption holds true for most GenAI use cases where deterministic or low-temperature settings are used.</p>
+
+<h2>How Exact Match Caching Works</h2>
+
+<h3>Step 1: Cache Key Generation</h3>
+<p>The cache key must uniquely identify a request based on all parameters that influence the response:</p>
+
+<ul>
+<li><strong>User prompt/query:</strong> The primary input text</li>
+<li><strong>System prompt:</strong> Instructions that shape model behavior</li>
+<li><strong>Model identifier:</strong> Different models produce different outputs</li>
+<li><strong>Temperature setting:</strong> Controls randomness in responses</li>
+<li><strong>Max tokens:</strong> Limits response length</li>
+<li><strong>Conversation history:</strong> For multi-turn conversations</li>
+</ul>
+
+<h3>Step 2: Key Hashing</h3>
+<p>To create efficient, fixed-length keys, the combined parameters are hashed using cryptographic hash functions:</p>
+
+<blockquote>
+<strong>Input Parameters:</strong><br/>
+{<br/>
+&nbsp;&nbsp;"model": "claude-sonnet-4",<br/>
+&nbsp;&nbsp;"messages": [{"role": "user", "content": "What is caching?"}],<br/>
+&nbsp;&nbsp;"temperature": 0.0,<br/>
+&nbsp;&nbsp;"max_tokens": 500<br/>
+}<br/><br/>
+<strong>Hash Function:</strong> SHA-256<br/>
+<strong>Cache Key:</strong> "a3f5b8c9d2e1f4a7b6c5d8e9f1a2b3c4..."
+</blockquote>
+
+<h3>Step 3: Cache Lookup and Storage</h3>
+<p>The system follows this flow:</p>
+<ol>
+<li>Generate cache key from request parameters</li>
+<li>Check if key exists in cache store</li>
+<li>If found (cache hit): Return cached response immediately</li>
+<li>If not found (cache miss): Call GenAI API, store response with key, return response</li>
+</ol>
+
+<h2>Cache Storage Technologies</h2>
+
+<h3>Redis: The Industry Standard</h3>
+<p>Redis is the most popular choice for GenAI caching due to its:</p>
+
+<ul>
+<li><strong>In-Memory Performance:</strong> Sub-millisecond read latency</li>
+<li><strong>Built-in TTL Support:</strong> Automatic expiration of stale entries</li>
+<li><strong>Scalability:</strong> Handles millions of keys efficiently</li>
+<li><strong>Data Structures:</strong> Supports strings, hashes, sets for flexible caching patterns</li>
+<li><strong>Persistence Options:</strong> Can survive restarts while maintaining speed</li>
+<li><strong>Clustering:</strong> Horizontal scaling for high-traffic applications</li>
+</ul>
+
+<h3>Alternative Storage Options:</h3>
+<table>
+    <tr>
+        <th>Technology</th>
+        <th>Best For</th>
+        <th>Advantages</th>
+        <th>Limitations</th>
+    </tr>
+    <tr>
+        <td>Memcached</td>
+        <td>Simple key-value caching</td>
+        <td>Extremely fast, simple</td>
+        <td>No persistence, limited data structures</td>
+    </tr>
+    <tr>
+        <td>DynamoDB</td>
+        <td>AWS-native applications</td>
+        <td>Serverless, auto-scaling</td>
+        <td>Higher latency than Redis</td>
+    </tr>
+    <tr>
+        <td>PostgreSQL</td>
+        <td>Existing database infrastructure</td>
+        <td>No new infrastructure needed</td>
+        <td>Slower than in-memory solutions</td>
+    </tr>
+    <tr>
+        <td>Application Memory</td>
+        <td>Single-instance applications</td>
+        <td>Zero external dependencies</td>
+        <td>Not shared across instances, lost on restart</td>
+    </tr>
+</table>
+
+<h2>Implementation Considerations</h2>
+
+<h3>Cache Key Design Principles</h3>
+<p>Effective cache keys must be:</p>
+
+<ul>
+<li><strong>Deterministic:</strong> Same input always produces same key</li>
+<li><strong>Comprehensive:</strong> Includes all parameters affecting output</li>
+<li><strong>Normalized:</strong> Handles variations in input formatting (whitespace, capitalization)</li>
+<li><strong>Efficient:</strong> Fixed-length hashes for consistent performance</li>
+</ul>
+
+<h3>Normalization Strategies</h3>
+<p>To improve cache hit rates, normalize inputs before hashing:</p>
+
+<ul>
+<li><strong>Whitespace:</strong> Trim leading/trailing spaces, collapse multiple spaces</li>
+<li><strong>Case Sensitivity:</strong> Convert to lowercase for case-insensitive matching</li>
+<li><strong>Punctuation:</strong> Standardize or remove non-essential punctuation</li>
+<li><strong>Parameter Ordering:</strong> Sort JSON keys alphabetically</li>
+</ul>
+
+<blockquote>
+<strong>Example Normalization:</strong><br/>
+Input: "&nbsp;&nbsp;What is CACHING?&nbsp;&nbsp;"<br/>
+Normalized: "what is caching"<br/><br/>
+This allows "What is caching?", "WHAT IS CACHING", and "what is caching" to hit the same cache entry.
+</blockquote>
+
+<h2>Time-To-Live (TTL) Configuration</h2>
+<p>TTL determines how long cached responses remain valid before expiration. Optimal TTL balances freshness with cache efficiency:</p>
+
+<table>
+    <tr>
+        <th>Content Type</th>
+        <th>Recommended TTL</th>
+        <th>Rationale</th>
+    </tr>
+    <tr>
+        <td>Static Documentation</td>
+        <td>24-72 hours</td>
+        <td>Content changes infrequently</td>
+    </tr>
+    <tr>
+        <td>Product Information</td>
+        <td>4-12 hours</td>
+        <td>Occasional updates to pricing/availability</td>
+    </tr>
+    <tr>
+        <td>News Summaries</td>
+        <td>15-60 minutes</td>
+        <td>Rapidly evolving information</td>
+    </tr>
+    <tr>
+        <td>User-Generated Content</td>
+        <td>1-4 hours</td>
+        <td>Balance freshness and efficiency</td>
+    </tr>
+    <tr>
+        <td>Real-Time Data</td>
+        <td>1-5 minutes</td>
+        <td>Frequent updates required</td>
+    </tr>
+</table>
+
+<h2>Cache Hit Rate Optimization</h2>
+<p>The effectiveness of exact match caching depends on achieving high hit rates. Typical hit rates by application type:</p>
+
+<ul>
+<li><strong>FAQ/Documentation Bots:</strong> 40-70% (high query repetition)</li>
+<li><strong>Customer Support:</strong> 25-45% (moderate repetition)</li>
+<li><strong>Content Generation:</strong> 5-15% (low repetition, high uniqueness)</li>
+<li><strong>Code Assistance:</strong> 15-30% (common patterns repeated)</li>
+</ul>
+
+<h3>Strategies to Improve Hit Rates:</h3>
+<ul>
+<li><strong>Query Preprocessing:</strong> Normalize and standardize user inputs</li>
+<li><strong>Prompt Templates:</strong> Use consistent system prompts</li>
+<li><strong>User Education:</strong> Guide users toward common query patterns</li>
+<li><strong>Autocomplete:</strong> Suggest previously cached queries</li>
+<li><strong>Longer TTLs:</strong> Keep entries valid longer (where appropriate)</li>
+</ul>
+
+<h2>Limitations of Exact Match Caching</h2>
+<p>While simple and effective, exact match caching has inherent limitations:</p>
+
+<ul>
+<li><strong>Low Hit Rates for Unique Queries:</strong> Each variation creates a new cache entry</li>
+<li><strong>Semantic Blindness:</strong> "What is AI?" and "Define artificial intelligence" are treated as different</li>
+<li><strong>Cache Bloat:</strong> Many similar queries create redundant entries</li>
+<li><strong>Wasted Storage:</strong> Single-use entries consume memory without benefit</li>
+<li><strong>Cold Start Problem:</strong> New applications have empty caches initially</li>
+</ul>
+
+<h2>When to Use Exact Match Caching</h2>
+<p>Exact match caching is ideal for:</p>
+
+<ul>
+<li><strong>Structured Queries:</strong> Dropdown selections, predefined options</li>
+<li><strong>API Integrations:</strong> Programmatic calls with consistent formatting</li>
+<li><strong>Template-Based Systems:</strong> Limited variation in user inputs</li>
+<li><strong>High-Volume Repetitive Queries:</strong> FAQ systems, common troubleshooting</li>
+<li><strong>Deterministic Outputs:</strong> Temperature = 0 or very low settings</li>
+</ul>
+
+<h2>Minimal Implementation Example</h2>
+<p>A basic exact match cache implementation requires:</p>
+
+<blockquote>
+<strong>Core Components:</strong><br/>
+1. Hash function (SHA-256 or similar)<br/>
+2. Cache client (Redis, Memcached, etc.)<br/>
+3. Wrapper function around GenAI API calls<br/>
+4. TTL configuration<br/><br/>
+<strong>Flow:</strong><br/>
+Request → Generate Hash → Check Cache → [Hit: Return] or [Miss: API Call → Store → Return]
+</blockquote>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Exact match caching provides simple, deterministic response retrieval based on input hashing</li>
+<li>Redis is the industry-standard storage technology for GenAI caching</li>
+<li>Effective cache key design requires normalization and comprehensive parameter inclusion</li>
+<li>TTL configuration must balance data freshness with cache efficiency</li>
+<li>Hit rates vary significantly by application type, typically 10-70%</li>
+<li>Exact match caching works best for structured, repetitive queries with deterministic outputs</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

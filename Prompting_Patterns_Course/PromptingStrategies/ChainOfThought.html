@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Chain-of-Thought and Advanced Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Chain-of-Thought and Advanced Patterns</h1>
+
+
+<h2>Chain-of-Thought (CoT) Prompting</h2>
+<p>Ask the model to reason step-by-step before giving a final answer. This significantly improves accuracy on math, logic, and multi-step reasoning tasks:</p>
+<div class="code-block">
+<pre><code># Without CoT
+Q: If a store has 3 shelves with 8 books each, and 5 books are sold, how many remain?
+A: 19  (correct, but no reasoning shown)
+
+# With CoT
+Q: If a store has 3 shelves with 8 books each, and 5 books are sold, how many remain?
+Think step by step.
+A: Let me work through this:
+   1. Total books: 3 shelves x 8 books = 24 books
+   2. Books sold: 5
+   3. Remaining: 24 - 5 = 19 books
+   The answer is 19.</code></pre>
+</div>
+
+<h2>Advanced Prompting Patterns</h2>
+<table>
+    <tr><th>Pattern</th><th>Description</th><th>Use Case</th></tr>
+    <tr><td>Self-consistency</td><td>Generate multiple CoT answers, pick the majority</td><td>Math, logic problems</td></tr>
+    <tr><td>Tree of Thought</td><td>Explore multiple reasoning paths and evaluate each</td><td>Complex planning</td></tr>
+    <tr><td>ReAct</td><td>Interleave reasoning and action (tool use)</td><td>Agent-based tasks</td></tr>
+    <tr><td>Least-to-Most</td><td>Decompose into sub-problems, solve smallest first</td><td>Multi-step tasks</td></tr>
+    <tr><td>Role prompting</td><td>Assign an expert role to the model</td><td>Domain-specific tasks</td></tr>
+</table>
+
+<h2>Combining Patterns</h2>
+<div class="code-block">
+<pre><code># Role + Few-shot + CoT combined
+You are a senior database administrator.
+
+Example: "Our query takes 30 seconds"
+Analysis:
+1. Check EXPLAIN plan for full table scans
+2. Verify indexes exist on WHERE clause columns
+3. Check for N+1 query patterns
+Recommendation: Add composite index on (user_id, created_at)
+
+Now analyze: "Our dashboard page loads slowly when filtering by date range"</code></pre>
+</div>
+
+<h2>When CoT Helps vs Hurts</h2>
+<ul>
+    <li><strong>Helps:</strong> Math, logic, multi-step reasoning, code debugging, complex analysis</li>
+    <li><strong>Hurts/Neutral:</strong> Simple classification, translation, creative writing, factual recall</li>
+    <li><strong>Overhead:</strong> CoT uses more output tokens, increasing cost and latency</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

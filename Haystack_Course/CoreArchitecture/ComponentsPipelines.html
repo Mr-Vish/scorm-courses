@@ -1,0 +1,328 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Core Architecture and Components</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Core Architecture and Components</h1>
+
+<h2>Understanding Haystack's Architecture</h2>
+<p>Haystack 2.x represents a complete architectural redesign focused on <strong>modularity, composability, and production readiness</strong>. At its core, Haystack uses a directed acyclic graph (DAG) model where data flows through interconnected components, each performing a specific transformation or operation.</p>
+
+<h2>The Four Pillars of Haystack</h2>
+<table>
+    <tr>
+        <th>Concept</th>
+        <th>Description</th>
+        <th>Responsibility</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Component</td>
+        <td>A single processing unit with defined inputs and outputs</td>
+        <td>Performs one specific task in the pipeline</td>
+        <td>DocumentEmbedder, Retriever, Generator</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Pipeline</td>
+        <td>A directed graph connecting multiple components</td>
+        <td>Orchestrates data flow between components</td>
+        <td>Indexing pipeline, Query pipeline</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Document Store</td>
+        <td>Persistent storage for documents and embeddings</td>
+        <td>Stores, indexes, and retrieves documents</td>
+        <td>QdrantDocumentStore, ElasticsearchDocumentStore</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Document</td>
+        <td>A data container with content, metadata, and embeddings</td>
+        <td>Represents a unit of information in the system</td>
+        <td>Text chunk with source file, page number, embeddings</td>
+    </tr>
+</table>
+
+<h2>Components: The Building Blocks</h2>
+<p>Components are the fundamental units of computation in Haystack. Each component:</p>
+<ul>
+    <li><strong>Has a well-defined interface:</strong> Declares expected inputs and outputs</li>
+    <li><strong>Is stateless:</strong> Does not maintain state between invocations (except for initialization)</li>
+    <li><strong>Is composable:</strong> Can be connected to other components via matching input/output types</li>
+    <li><strong>Is testable:</strong> Can be tested in isolation before integration</li>
+</ul>
+
+<h3>Component Categories</h3>
+<blockquote>
+<strong>Converters:</strong> Transform raw data into Documents
+<ul>
+    <li>TextFileToDocument - Reads text files</li>
+    <li>PDFToDocument - Extracts text from PDFs</li>
+    <li>HTMLToDocument - Parses HTML content</li>
+</ul>
+
+<strong>Preprocessors:</strong> Clean and prepare documents
+<ul>
+    <li>DocumentCleaner - Removes unwanted characters and formatting</li>
+    <li>DocumentSplitter - Splits documents into smaller chunks</li>
+</ul>
+
+<strong>Embedders:</strong> Generate vector representations
+<ul>
+    <li>SentenceTransformersDocumentEmbedder - Embeds documents</li>
+    <li>SentenceTransformersTextEmbedder - Embeds query text</li>
+    <li>OpenAIDocumentEmbedder - Uses OpenAI's embedding models</li>
+</ul>
+
+<strong>Retrievers:</strong> Find relevant documents
+<ul>
+    <li>EmbeddingRetriever - Vector similarity search</li>
+    <li>BM25Retriever - Keyword-based retrieval</li>
+</ul>
+
+<strong>Generators:</strong> Create text using LLMs
+<ul>
+    <li>OpenAIGenerator - Uses OpenAI models</li>
+    <li>HuggingFaceLocalGenerator - Uses local models</li>
+</ul>
+
+<strong>Writers:</strong> Persist documents to storage
+<ul>
+    <li>DocumentWriter - Writes documents to document stores</li>
+</ul>
+</blockquote>
+
+<h2>Pipelines: Orchestrating Components</h2>
+<p>A Pipeline connects components into a processing workflow. Pipelines in Haystack are:</p>
+<ul>
+    <li><strong>Explicit:</strong> You define exactly how components connect</li>
+    <li><strong>Type-safe:</strong> Connections are validated at pipeline construction time</li>
+    <li><strong>Serializable:</strong> Can be saved to YAML and loaded in different environments</li>
+    <li><strong>Debuggable:</strong> Each component's output can be inspected</li>
+</ul>
+
+<h3>Building Your First Pipeline</h3>
+<p>Let's build a complete indexing pipeline that processes documents and stores them in a vector database:</p>
+
+<div class="code-block">
+<pre><code>from haystack import Pipeline
+from haystack.components.converters import TextFileToDocument
+from haystack.components.preprocessors import DocumentCleaner, DocumentSplitter
+from haystack.components.embedders import SentenceTransformersDocumentEmbedder
+from haystack.components.writers import DocumentWriter
+from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
+
+# Step 1: Initialize the document store
+document_store = QdrantDocumentStore(
+    url="http://localhost:6333",
+    index="technical_docs",
+    embedding_dim=384,  # Matches the embedding model dimension
+    recreate_index=True,  # Caution: Deletes existing data
+    return_embedding=False,  # Don't return embeddings in search results
+    wait_result_from_api=True  # Ensure writes complete before returning
+)
+
+# Step 2: Create the pipeline
+indexing_pipeline = Pipeline()
+
+# Step 3: Add components
+indexing_pipeline.add_component(
+    "converter", 
+    TextFileToDocument()
+)
+
+indexing_pipeline.add_component(
+    "cleaner", 
+    DocumentCleaner(
+        remove_empty_lines=True,
+        remove_extra_whitespaces=True,
+        remove_repeated_substrings=False
+    )
+)
+
+indexing_pipeline.add_component(
+    "splitter", 
+    DocumentSplitter(
+        split_by="sentence",  # Options: "word", "sentence", "passage", "page"
+        split_length=3,  # Number of sentences per chunk
+        split_overlap=1,  # Overlap between chunks for context preservation
+        split_threshold=0  # Minimum chunk size
+    )
+)
+
+indexing_pipeline.add_component(
+    "embedder", 
+    SentenceTransformersDocumentEmbedder(
+        model="sentence-transformers/all-MiniLM-L6-v2",
+        progress_bar=True,
+        batch_size=32
+    )
+)
+
+indexing_pipeline.add_component(
+    "writer", 
+    DocumentWriter(
+        document_store=document_store,
+        policy="UPSERT"  # Options: "UPSERT", "OVERWRITE", "SKIP"
+    )
+)
+
+# Step 4: Connect components (defines data flow)
+indexing_pipeline.connect("converter.documents", "cleaner.documents")
+indexing_pipeline.connect("cleaner.documents", "splitter.documents")
+indexing_pipeline.connect("splitter.documents", "embedder.documents")
+indexing_pipeline.connect("embedder.documents", "writer.documents")
+
+# Step 5: Run the pipeline
+result = indexing_pipeline.run({
+    "converter": {
+        "sources": ["docs/api_reference.txt", "docs/user_guide.txt"]
+    }
+})
+
+print(f"Indexed {result['writer']['documents_written']} documents")
+</code></pre>
+</div>
+
+<h2>Understanding Pipeline Execution</h2>
+<p>When you call pipeline.run(), Haystack:</p>
+<ol>
+    <li><strong>Validates the pipeline:</strong> Ensures all connections are valid</li>
+    <li><strong>Executes components in order:</strong> Respects dependencies in the DAG</li>
+    <li><strong>Passes data between components:</strong> Matches output names to input names</li>
+    <li><strong>Handles errors:</strong> Provides detailed error messages with component context</li>
+    <li><strong>Returns results:</strong> Collects outputs from all components</li>
+</ol>
+
+<h2>Document Stores: Persistent Storage</h2>
+<p>Document stores provide the persistence layer for your Haystack applications. They store documents, their embeddings, and metadata, and provide efficient retrieval capabilities.</p>
+
+<h3>Choosing a Document Store</h3>
+<table>
+    <tr>
+        <th>Document Store</th>
+        <th>Search Type</th>
+        <th>Best For</th>
+        <th>Deployment</th>
+    </tr>
+    <tr>
+        <td class="rowheader">InMemoryDocumentStore</td>
+        <td>Vector, Keyword</td>
+        <td>Development, testing, prototyping</td>
+        <td>In-process, no setup required</td>
+    </tr>
+    <tr>
+        <td class="rowheader">QdrantDocumentStore</td>
+        <td>Vector</td>
+        <td>Production vector search, high performance</td>
+        <td>Self-hosted or Qdrant Cloud</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ElasticsearchDocumentStore</td>
+        <td>Hybrid (Vector + Keyword)</td>
+        <td>Full-text search with vector capabilities</td>
+        <td>Self-hosted or Elastic Cloud</td>
+    </tr>
+    <tr>
+        <td class="rowheader">WeaviateDocumentStore</td>
+        <td>Vector, Hybrid</td>
+        <td>Cloud-native, multi-tenancy, GraphQL API</td>
+        <td>Self-hosted or Weaviate Cloud</td>
+    </tr>
+    <tr>
+        <td class="rowheader">PineconeDocumentStore</td>
+        <td>Vector</td>
+        <td>Fully managed, serverless vector database</td>
+        <td>Pinecone Cloud only</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ChromaDocumentStore</td>
+        <td>Vector</td>
+        <td>Lightweight, easy setup, local development</td>
+        <td>In-process or client-server</td>
+    </tr>
+</table>
+
+<h2>Document Store Configuration</h2>
+<p>Proper configuration is critical for production performance:</p>
+
+<div class="code-block">
+<pre><code># QdrantDocumentStore - Production Configuration
+from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
+
+document_store = QdrantDocumentStore(
+    url="https://your-cluster.qdrant.io",
+    api_key="your-api-key",  # Use environment variables in production
+    index="production_index",
+    embedding_dim=1536,  # OpenAI ada-002 dimension
+    recreate_index=False,  # Never recreate in production
+    return_embedding=False,  # Reduces response size
+    wait_result_from_api=True,  # Ensures consistency
+    similarity="cosine",  # Options: "cosine", "dot_product", "euclidean"
+    use_sparse_embeddings=False,  # Enable for hybrid search
+    hnsw_config={
+        "m": 16,  # Number of connections per layer
+        "ef_construct": 100  # Size of dynamic candidate list
+    }
+)
+</code></pre>
+</div>
+
+<h2>The Document Object</h2>
+<p>Documents are the fundamental data structure in Haystack. Understanding their structure is essential:</p>
+
+<div class="code-block">
+<pre><code>from haystack import Document
+
+# Creating a document manually
+doc = Document(
+    content="Haystack is a framework for building NLP applications.",
+    meta={
+        "source": "documentation",
+        "page": 1,
+        "author": "deepset",
+        "date": "2024-01-15",
+        "category": "introduction"
+    },
+    id="doc_001",  # Optional: Auto-generated if not provided
+    embedding=[0.1, 0.2, 0.3, ...],  # Optional: Added by embedders
+    score=0.95  # Optional: Added by retrievers
+)
+
+# Accessing document properties
+print(doc.content)  # The actual text
+print(doc.meta["source"])  # Metadata access
+print(doc.id)  # Unique identifier
+</code></pre>
+</div>
+
+<h2>Best Practices for Document Chunking</h2>
+<p>Effective chunking is crucial for retrieval quality:</p>
+
+<ul>
+    <li><strong>Chunk Size:</strong> Balance between context (larger chunks) and precision (smaller chunks). Typical range: 100-500 tokens</li>
+    <li><strong>Overlap:</strong> Include 10-20% overlap to preserve context across chunk boundaries</li>
+    <li><strong>Semantic Boundaries:</strong> Split by sentences or paragraphs rather than arbitrary token counts</li>
+    <li><strong>Metadata Preservation:</strong> Ensure source information is maintained in chunk metadata</li>
+    <li><strong>Testing:</strong> Experiment with different chunking strategies and measure retrieval quality</li>
+</ul>
+
+<blockquote>
+<strong>Example Chunking Strategy:</strong>
+<ul>
+    <li>Technical documentation: Split by section (H2/H3 headers)</li>
+    <li>Long-form articles: Split by paragraph with 1-2 sentence overlap</li>
+    <li>Code documentation: Split by function/class with context</li>
+    <li>Chat transcripts: Split by conversation turn or time window</li>
+</ul>
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

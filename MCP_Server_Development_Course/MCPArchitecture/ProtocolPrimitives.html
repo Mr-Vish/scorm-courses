@@ -1,0 +1,267 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>MCP Protocol Primitives in Detail</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>MCP Protocol Primitives in Detail</h1>
+
+<h2>Deep Dive into MCP Primitives</h2>
+
+<p>This page explores the three fundamental primitives of MCP - Tools, Resources, and Prompts - in comprehensive detail. Understanding how to design and implement these primitives effectively is essential for building production-quality MCP servers.</p>
+
+<h2>Tools: Executable Actions</h2>
+
+<p><strong>Tools</strong> represent actions that AI can perform. They are the primary mechanism for enabling AI to interact with external systems and modify state.</p>
+
+<h3>Tool Design Principles</h3>
+
+<p>Effective tool design follows these principles:</p>
+
+<ul>
+    <li><strong>Single Responsibility:</strong> Each tool should do one thing well</li>
+    <li><strong>Clear Naming:</strong> Tool names should be descriptive and unambiguous</li>
+    <li><strong>Comprehensive Description:</strong> Descriptions help AI understand when to use the tool</li>
+    <li><strong>Validated Inputs:</strong> Define strict input schemas to prevent errors</li>
+    <li><strong>Structured Outputs:</strong> Return consistent, parseable results</li>
+    <li><strong>Error Handling:</strong> Provide clear error messages for troubleshooting</li>
+</ul>
+
+<h3>Tool Schema Structure</h3>
+
+<p>Tools are defined with the following components:</p>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">name</td>
+        <td>Unique identifier for the tool</td>
+        <td>create_user, send_email, query_db</td>
+    </tr>
+    <tr>
+        <td class="rowheader">description</td>
+        <td>Explains what the tool does and when to use it</td>
+        <td>Creates a new user account with email validation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">inputSchema</td>
+        <td>JSON Schema defining required and optional parameters</td>
+        <td>email (required string), name (optional string)</td>
+    </tr>
+</table>
+
+<h3>Tool Categories</h3>
+
+<p>Tools typically fall into these categories:</p>
+
+<ul>
+    <li><strong>Query Tools:</strong> Retrieve data without side effects (search, list, get)</li>
+    <li><strong>Mutation Tools:</strong> Create, update, or delete data (create, update, delete)</li>
+    <li><strong>Action Tools:</strong> Trigger operations (send, execute, deploy)</li>
+    <li><strong>Analysis Tools:</strong> Process and analyze data (analyze, summarize, validate)</li>
+</ul>
+
+<h3>Tool Best Practices</h3>
+
+<ul>
+    <li>Use verb-noun naming convention (get_user, create_ticket, send_email)</li>
+    <li>Include examples in descriptions to guide AI usage</li>
+    <li>Implement idempotency for mutation tools when possible</li>
+    <li>Return rich context in results to help AI understand outcomes</li>
+    <li>Log tool invocations for audit and debugging purposes</li>
+</ul>
+
+<h2>Resources: Contextual Data</h2>
+
+<p><strong>Resources</strong> provide AI with access to data that informs its responses. Unlike tools, resources are read-only and represent information rather than actions.</p>
+
+<h3>Resource Design Principles</h3>
+
+<ul>
+    <li><strong>URI-Based Identification:</strong> Each resource has a unique URI</li>
+    <li><strong>MIME Type Declaration:</strong> Specify content type for proper handling</li>
+    <li><strong>Discoverability:</strong> Resources can be listed and searched</li>
+    <li><strong>Versioning:</strong> Consider version information for changing resources</li>
+    <li><strong>Caching:</strong> Indicate if resources can be cached</li>
+</ul>
+
+<h3>Resource URI Schemes</h3>
+
+<p>Common URI schemes for MCP resources:</p>
+
+<table>
+    <tr>
+        <th>Scheme</th>
+        <th>Purpose</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">file://</td>
+        <td>Local file system</td>
+        <td>file:///home/user/docs/readme.md</td>
+    </tr>
+    <tr>
+        <td class="rowheader">db://</td>
+        <td>Database records</td>
+        <td>db://users/schema</td>
+    </tr>
+    <tr>
+        <td class="rowheader">config://</td>
+        <td>Configuration data</td>
+        <td>config://app/settings</td>
+    </tr>
+    <tr>
+        <td class="rowheader">git://</td>
+        <td>Git repository content</td>
+        <td>git://repo/main/README.md</td>
+    </tr>
+</table>
+
+<h3>Resource Content Types</h3>
+
+<p>Resources support various MIME types:</p>
+
+<ul>
+    <li><strong>text/plain:</strong> Plain text documents</li>
+    <li><strong>text/markdown:</strong> Markdown formatted text</li>
+    <li><strong>application/json:</strong> Structured JSON data</li>
+    <li><strong>application/xml:</strong> XML documents</li>
+    <li><strong>text/html:</strong> HTML content</li>
+</ul>
+
+<h3>Resource Best Practices</h3>
+
+<ul>
+    <li>Use consistent URI naming conventions across your server</li>
+    <li>Provide resource templates for dynamic content</li>
+    <li>Implement resource subscriptions for real-time updates when appropriate</li>
+    <li>Include metadata (last modified, size, version) in resource responses</li>
+    <li>Consider access control for sensitive resources</li>
+</ul>
+
+<h2>Prompts: Reusable Workflows</h2>
+
+<p><strong>Prompts</strong> are templates that encapsulate common AI workflows. They provide consistency and efficiency for repeated tasks.</p>
+
+<h3>Prompt Design Principles</h3>
+
+<ul>
+    <li><strong>Task-Oriented:</strong> Each prompt represents a specific workflow</li>
+    <li><strong>Parameterized:</strong> Accept arguments to customize behavior</li>
+    <li><strong>Composable:</strong> Can reference resources and suggest tool usage</li>
+    <li><strong>Documented:</strong> Clear description of purpose and expected inputs</li>
+</ul>
+
+<h3>Prompt Structure</h3>
+
+<p>Prompts consist of:</p>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td class="rowheader">name</td>
+        <td>Unique identifier for the prompt</td>
+    </tr>
+    <tr>
+        <td class="rowheader">description</td>
+        <td>Explains the prompt's purpose</td>
+    </tr>
+    <tr>
+        <td class="rowheader">arguments</td>
+        <td>Parameters that customize the prompt</td>
+    </tr>
+    <tr>
+        <td class="rowheader">messages</td>
+        <td>The actual prompt content with embedded resources</td>
+    </tr>
+</table>
+
+<h3>Prompt Use Cases</h3>
+
+<ul>
+    <li><strong>Code Review:</strong> Standardized code review workflow with checklist</li>
+    <li><strong>Bug Analysis:</strong> Systematic approach to analyzing bug reports</li>
+    <li><strong>Documentation Generation:</strong> Consistent documentation format</li>
+    <li><strong>Data Analysis:</strong> Structured data exploration workflow</li>
+    <li><strong>Security Audit:</strong> Standardized security assessment process</li>
+</ul>
+
+<h3>Prompt Best Practices</h3>
+
+<ul>
+    <li>Include clear instructions and expected output format</li>
+    <li>Reference relevant resources within prompts</li>
+    <li>Provide examples of successful prompt usage</li>
+    <li>Version prompts as workflows evolve</li>
+    <li>Test prompts with various argument combinations</li>
+</ul>
+
+<h2>Primitive Interaction Patterns</h2>
+
+<p>The three primitives often work together:</p>
+
+<ul>
+    <li><strong>Resource + Tool:</strong> AI reads resource to understand context, then uses tool to take action</li>
+    <li><strong>Prompt + Resource:</strong> Prompt references resources to provide comprehensive context</li>
+    <li><strong>Prompt + Tool:</strong> Prompt guides AI to use specific tools in a workflow</li>
+    <li><strong>All Three:</strong> Complex workflows combine prompts, resources, and tools</li>
+</ul>
+
+<h2>Choosing the Right Primitive</h2>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Primitive</th>
+        <th>Rationale</th>
+    </tr>
+    <tr>
+        <td class="rowheader">AI needs to perform an action</td>
+        <td>Tool</td>
+        <td>Tools execute operations</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AI needs background information</td>
+        <td>Resource</td>
+        <td>Resources provide context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Standardize a workflow</td>
+        <td>Prompt</td>
+        <td>Prompts ensure consistency</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Real-time data query</td>
+        <td>Tool</td>
+        <td>Tools fetch current data</td>
+    </tr>
+</table>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Tools enable AI to perform actions and interact with systems</li>
+    <li>Resources provide contextual data that informs AI responses</li>
+    <li>Prompts standardize workflows and ensure consistency</li>
+    <li>Effective primitive design requires clear naming, validation, and documentation</li>
+    <li>Primitives often work together to enable complex AI capabilities</li>
+</ul>
+
+<p><strong>Next:</strong> You will complete Assessment 1 to test your understanding of MCP Architecture concepts.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

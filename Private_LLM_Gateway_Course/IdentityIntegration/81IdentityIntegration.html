@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module: Identity Integration and RBAC in AI Gateways</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Identity Integration and Role-Based Access Control (RBAC)</h1>
+
+<p>A Private LLM Gateway must not exist as an island. To be truly secure and manageable, it must integrate seamlessly with your organization's existing Identity and Access Management (IAM) systems. This module covers how to bridge the gap between enterprise identity and AI resource access.</p>
+
+<h2>8.1 Leveraging Your Existing IDP</h2>
+<p>The gateway should use your organization's single-sign-on (SSO) provider (like Okta, Azure AD, or Google Workspace) as the source of truth for user identity.
+<ul>
+    <li><strong>OpenID Connect (OIDC):</strong> The standard protocol for authenticating users. The gateway receives an ID token from the provider, verifying the user's identity and group memberships.</li>
+    <li><strong>SAML 2.0:</strong> An older but still widely used protocol for enterprise SSO.</li>
+    <li><strong>OAuth 2.0:</strong> Used for authorizing applications (service accounts) to call the gateway API on behalf of a user.</li>
+</ul></p>
+
+<h2>8.2 Implementing AI-Specific RBAC</h2>
+<p>Once the user's identity is verified, the gateway must determine what they are allowed to do. Role-Based Access Control (RBAC) in an AI context involves defining roles such as:
+<ul>
+    <li><strong>AI-Developer:</strong> Access to experimentation models (Haiku, GPT-4o-mini), low rate limits, and debugging logs.</li>
+    <li><strong>AI-Analyst:</strong> Access to powerful reasoning models (Claude Opus, GPT-4o), permissions to use data analysis tools, and higher token quotas.</li>
+    <li><strong>AI-Administrator:</strong> Permission to manage API keys, set budgets, rotate secrets, and view audit logs across the entire organization.</li>
+    <li><strong>Service-Account:</strong> Automated access for internal applications with scoped permissions to specific models needed for their function.</li>
+</ul></p>
+
+<h2>8.3 Mapping IDP Groups to AI Roles</h2>
+<p>The most efficient way to manage access is by mapping existing IDP groups to AI gateway roles.
+<ul>
+    <li>Members of the "Data Science" group automatically get the **AI-Analyst** role.</li>
+    <li>Members of the "Engineering" group get the **AI-Developer** role.</li>
+    <li>Members of the "Infra-Sec" group get the **AI-Administrator** role.</li>
+</ul>
+<p>This ensures that access is automatically granted or revoked as employees join, change teams, or leave the organization.</p>
+
+<h2>8.4 Dynamic Quota Allocation based on Identity</h2>
+<p>Identity can also drive resource allocation. You might give a "VIP" group higher token-per-minute (TPM) limits or a larger monthly budget than a general user group. This ensures that your most critical users always have the resources they need.</p>
+
+<h2>8.5 Multi-tenancy and Identity</h2>
+<p>For organizations with multiple independent business units, the gateway can provide "virtual multi-tenancy." Each unit acts as a separate tenant within the gateway, with its own isolated set of models, budgets, and logs, all managed through a unified identity framework.</p>
+
+<p>By integrating identity into the core of your AI gateway, you ensure that AI access is governed by the same rigorous standards as the rest of your enterprise infrastructure, reducing risk and simplifying administration at scale.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

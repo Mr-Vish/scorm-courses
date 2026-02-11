@@ -1,0 +1,402 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hooks and Workflow Automation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hooks and Workflow Automation</h1>
+
+<h2>Understanding Hooks in Claude Code CLI</h2>
+<p>Hooks are automated triggers that execute specific actions at defined points in your development workflow. In Claude Code CLI, hooks enable seamless integration of AI-assisted development with existing tools, processes, and quality gates. They transform Claude Code CLI from an interactive assistant into an automated workflow participant that enforces standards, maintains quality, and streamlines repetitive tasks.</p>
+
+<h3>The Hook Execution Model</h3>
+<p>Hooks operate on an event-driven architecture where specific development events trigger predefined actions:</p>
+
+<ul>
+    <li><strong>Event Detection:</strong> Claude Code CLI monitors for specific events (file changes, command completion, etc.)</li>
+    <li><strong>Hook Invocation:</strong> When an event occurs, associated hooks are identified and queued for execution</li>
+    <li><strong>Action Execution:</strong> Hook actions are executed in defined order with appropriate context</li>
+    <li><strong>Result Handling:</strong> Hook results determine whether the workflow continues or is interrupted</li>
+</ul>
+
+<h2>Types of Hooks</h2>
+<p>Claude Code CLI supports multiple hook types that correspond to different stages of the development workflow.</p>
+
+<h3>Pre-Operation Hooks</h3>
+<p>Execute before Claude Code CLI performs specific operations, enabling validation and preparation:</p>
+
+<table>
+    <tr>
+        <th>Hook Type</th>
+        <th>Trigger Event</th>
+        <th>Common Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">pre-read</td>
+        <td>Before reading files</td>
+        <td>Access validation, file decryption, permission checks</td>
+    </tr>
+    <tr>
+        <td class="rowheader">pre-write</td>
+        <td>Before modifying files</td>
+        <td>Backup creation, format validation, conflict detection</td>
+    </tr>
+    <tr>
+        <td class="rowheader">pre-commit</td>
+        <td>Before git commit</td>
+        <td>Linting, testing, code formatting, security scanning</td>
+    </tr>
+    <tr>
+        <td class="rowheader">pre-generate</td>
+        <td>Before code generation</td>
+        <td>Template validation, context verification, naming checks</td>
+    </tr>
+</table>
+
+<h3>Post-Operation Hooks</h3>
+<p>Execute after operations complete, enabling follow-up actions and notifications:</p>
+
+<table>
+    <tr>
+        <th>Hook Type</th>
+        <th>Trigger Event</th>
+        <th>Common Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">post-write</td>
+        <td>After file modification</td>
+        <td>Auto-formatting, import organization, documentation updates</td>
+    </tr>
+    <tr>
+        <td class="rowheader">post-generate</td>
+        <td>After code generation</td>
+        <td>Test generation, documentation creation, dependency updates</td>
+    </tr>
+    <tr>
+        <td class="rowheader">post-refactor</td>
+        <td>After refactoring</td>
+        <td>Test execution, integration verification, changelog updates</td>
+    </tr>
+    <tr>
+        <td class="rowheader">post-review</td>
+        <td>After code review</td>
+        <td>Issue tracking, metrics collection, report generation</td>
+    </tr>
+</table>
+
+<h2>Hook Configuration</h2>
+<p>Hooks are configured in the project's .claude/config.json file using a declarative syntax that specifies trigger conditions and actions.</p>
+
+<h3>Basic Hook Configuration Structure</h3>
+<blockquote>
+{
+  "hooks": {
+    "pre-commit": {
+      "enabled": true,
+      "actions": [
+        {
+          "name": "lint",
+          "command": "npm run lint",
+          "failOnError": true
+        },
+        {
+          "name": "test",
+          "command": "npm test",
+          "failOnError": true
+        }
+      ]
+    },
+    "post-generate": {
+      "enabled": true,
+      "actions": [
+        {
+          "name": "format",
+          "command": "prettier --write {files}",
+          "failOnError": false
+        }
+      ]
+    }
+  }
+}
+</blockquote>
+
+<h3>Hook Configuration Parameters</h3>
+<ul>
+    <li><strong>enabled:</strong> Boolean flag to activate/deactivate the hook</li>
+    <li><strong>actions:</strong> Array of actions to execute in sequence</li>
+    <li><strong>name:</strong> Descriptive identifier for the action</li>
+    <li><strong>command:</strong> Shell command to execute</li>
+    <li><strong>failOnError:</strong> Whether to halt workflow on action failure</li>
+    <li><strong>timeout:</strong> Maximum execution time in milliseconds</li>
+    <li><strong>condition:</strong> Optional condition that must be met for execution</li>
+</ul>
+
+<h2>Advanced Hook Patterns</h2>
+
+<h3>Conditional Hook Execution</h3>
+<p>Hooks can include conditions that determine whether they execute based on context:</p>
+
+<blockquote>
+{
+  "hooks": {
+    "pre-commit": {
+      "enabled": true,
+      "actions": [
+        {
+          "name": "security-scan",
+          "command": "npm audit",
+          "condition": "production-branch",
+          "failOnError": true
+        }
+      ]
+    }
+  },
+  "conditions": {
+    "production-branch": {
+      "type": "git-branch",
+      "pattern": "^(main|production)$"
+    }
+  }
+}
+</blockquote>
+
+<h3>Parameterized Hook Actions</h3>
+<p>Hooks can receive dynamic parameters based on the triggering event:</p>
+
+<blockquote>
+{
+  "hooks": {
+    "post-write": {
+      "enabled": true,
+      "actions": [
+        {
+          "name": "format-changed-files",
+          "command": "prettier --write {changedFiles}",
+          "parameters": {
+            "changedFiles": "${event.files}"
+          }
+        }
+      ]
+    }
+  }
+}
+</blockquote>
+
+<h3>Chained Hook Actions</h3>
+<p>Multiple actions can be chained with dependencies and data flow:</p>
+
+<blockquote>
+{
+  "hooks": {
+    "pre-commit": {
+      "enabled": true,
+      "actions": [
+        {
+          "name": "build",
+          "command": "npm run build",
+          "failOnError": true
+        },
+        {
+          "name": "test",
+          "command": "npm test",
+          "dependsOn": ["build"],
+          "failOnError": true
+        },
+        {
+          "name": "coverage-check",
+          "command": "npm run coverage:check",
+          "dependsOn": ["test"],
+          "failOnError": false
+        }
+      ]
+    }
+  }
+}
+</blockquote>
+
+<h2>Workflow Automation Patterns</h2>
+
+<h3>Quality Gate Automation</h3>
+<p>Hooks enforce quality standards automatically before code changes are committed:</p>
+
+<ul>
+    <li><strong>Code Linting:</strong> Enforce style guidelines and detect code smells</li>
+    <li><strong>Unit Testing:</strong> Verify functionality before committing changes</li>
+    <li><strong>Coverage Thresholds:</strong> Ensure adequate test coverage</li>
+    <li><strong>Security Scanning:</strong> Detect vulnerabilities in dependencies</li>
+    <li><strong>License Compliance:</strong> Verify dependency licenses meet requirements</li>
+</ul>
+
+<h3>Documentation Automation</h3>
+<p>Automatically maintain documentation in sync with code changes:</p>
+
+<ul>
+    <li><strong>API Documentation:</strong> Generate API docs from code annotations</li>
+    <li><strong>Changelog Updates:</strong> Automatically update CHANGELOG.md based on commits</li>
+    <li><strong>README Synchronization:</strong> Update README with new features or changes</li>
+    <li><strong>Type Definitions:</strong> Generate TypeScript definitions from JavaScript</li>
+</ul>
+
+<h3>Dependency Management</h3>
+<p>Automate dependency-related tasks to maintain project health:</p>
+
+<ul>
+    <li><strong>Dependency Updates:</strong> Check for and suggest dependency updates</li>
+    <li><strong>Vulnerability Scanning:</strong> Identify security issues in dependencies</li>
+    <li><strong>License Auditing:</strong> Track and report on dependency licenses</li>
+    <li><strong>Bundle Size Monitoring:</strong> Alert on significant bundle size increases</li>
+</ul>
+
+<h2>Hook Execution Context</h2>
+<p>Hooks execute with access to rich contextual information about the triggering event.</p>
+
+<h3>Available Context Variables</h3>
+<table>
+    <tr>
+        <th>Variable</th>
+        <th>Description</th>
+        <th>Example Value</th>
+    </tr>
+    <tr>
+        <td class="rowheader">${event.type}</td>
+        <td>Type of event that triggered the hook</td>
+        <td>pre-commit, post-generate</td>
+    </tr>
+    <tr>
+        <td class="rowheader">${event.files}</td>
+        <td>Array of affected file paths</td>
+        <td>["src/utils.ts", "tests/utils.test.ts"]</td>
+    </tr>
+    <tr>
+        <td class="rowheader">${git.branch}</td>
+        <td>Current git branch name</td>
+        <td>feature/user-authentication</td>
+    </tr>
+    <tr>
+        <td class="rowheader">${project.root}</td>
+        <td>Project root directory path</td>
+        <td>/home/user/projects/myapp</td>
+    </tr>
+    <tr>
+        <td class="rowheader">${user.name}</td>
+        <td>Current user name</td>
+        <td>john.doe</td>
+    </tr>
+</table>
+
+<h2>Error Handling and Recovery</h2>
+<p>Robust error handling ensures hooks fail gracefully and provide actionable feedback.</p>
+
+<h3>Error Handling Strategies</h3>
+<ul>
+    <li><strong>Fail Fast:</strong> Immediately halt workflow on critical errors (failOnError: true)</li>
+    <li><strong>Continue on Error:</strong> Log errors but continue workflow (failOnError: false)</li>
+    <li><strong>Retry Logic:</strong> Automatically retry transient failures with exponential backoff</li>
+    <li><strong>Fallback Actions:</strong> Execute alternative actions when primary actions fail</li>
+    <li><strong>User Notification:</strong> Alert users to hook failures with clear error messages</li>
+</ul>
+
+<h3>Hook Failure Diagnostics</h3>
+<p>When hooks fail, Claude Code CLI provides detailed diagnostic information:</p>
+
+<ul>
+    <li>Hook name and type that failed</li>
+    <li>Specific action within the hook that caused failure</li>
+    <li>Exit code and error output from failed command</li>
+    <li>Execution time and timeout information</li>
+    <li>Suggested remediation steps</li>
+</ul>
+
+<h2>Performance Considerations</h2>
+<p>Hooks add execution time to workflows, requiring careful optimization.</p>
+
+<h3>Optimization Strategies</h3>
+<ul>
+    <li><strong>Selective Execution:</strong> Use conditions to run hooks only when necessary</li>
+    <li><strong>Parallel Execution:</strong> Run independent actions concurrently</li>
+    <li><strong>Incremental Processing:</strong> Process only changed files, not entire codebase</li>
+    <li><strong>Caching:</strong> Cache results of expensive operations (linting, type checking)</li>
+    <li><strong>Timeout Management:</strong> Set appropriate timeouts to prevent hanging</li>
+</ul>
+
+<h3>Performance Monitoring</h3>
+<p>Track hook execution metrics to identify bottlenecks:</p>
+
+<ul>
+    <li>Execution time per hook and action</li>
+    <li>Failure rates and common failure causes</li>
+    <li>Resource consumption (CPU, memory)</li>
+    <li>Impact on overall workflow duration</li>
+</ul>
+
+<h2>Best Practices</h2>
+
+<h3>Hook Design Principles</h3>
+<ul>
+    <li><strong>Single Responsibility:</strong> Each hook action should have one clear purpose</li>
+    <li><strong>Idempotency:</strong> Hooks should produce same results when run multiple times</li>
+    <li><strong>Fast Feedback:</strong> Prioritize quick-running checks before expensive operations</li>
+    <li><strong>Clear Messaging:</strong> Provide informative output for both success and failure</li>
+    <li><strong>Graceful Degradation:</strong> Non-critical hooks should not block workflows</li>
+</ul>
+
+<h3>Team Collaboration</h3>
+<ul>
+    <li><strong>Shared Configuration:</strong> Commit hook configurations to version control</li>
+    <li><strong>Documentation:</strong> Document hook purposes and requirements in CLAUDE.md</li>
+    <li><strong>Opt-Out Mechanisms:</strong> Provide ways to skip hooks when necessary (with justification)</li>
+    <li><strong>Consistent Standards:</strong> Ensure hooks enforce team-wide standards consistently</li>
+</ul>
+
+<h2>Real-World Use Cases</h2>
+
+<h3>Continuous Quality Enforcement</h3>
+<p>A development team uses pre-commit hooks to enforce quality standards:</p>
+<ul>
+    <li>ESLint checks code style and detects common errors</li>
+    <li>Jest runs unit tests to verify functionality</li>
+    <li>Prettier formats code consistently</li>
+    <li>TypeScript compiler checks type safety</li>
+    <li>Only commits that pass all checks are allowed</li>
+</ul>
+
+<h3>Automated Documentation Maintenance</h3>
+<p>Post-generation hooks maintain documentation automatically:</p>
+<ul>
+    <li>Generate API documentation from JSDoc comments</li>
+    <li>Update README with new component examples</li>
+    <li>Create TypeScript definition files</li>
+    <li>Update changelog with feature descriptions</li>
+</ul>
+
+<h3>Security and Compliance</h3>
+<p>Pre-commit hooks enforce security and compliance requirements:</p>
+<ul>
+    <li>Scan for hardcoded secrets and credentials</li>
+    <li>Check dependencies for known vulnerabilities</li>
+    <li>Verify license compliance for all dependencies</li>
+    <li>Ensure GDPR-compliant data handling patterns</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Hooks automate workflow tasks at specific development lifecycle events</li>
+    <li>Pre-operation hooks enable validation and preparation; post-operation hooks enable follow-up actions</li>
+    <li>Hook configuration uses declarative syntax in .claude/config.json</li>
+    <li>Advanced patterns include conditional execution, parameterization, and action chaining</li>
+    <li>Hooks enforce quality gates, automate documentation, and manage dependencies</li>
+    <li>Proper error handling and performance optimization are essential for effective hooks</li>
+    <li>Best practices emphasize single responsibility, fast feedback, and team collaboration</li>
+    <li>Real-world use cases demonstrate continuous quality enforcement and security compliance</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

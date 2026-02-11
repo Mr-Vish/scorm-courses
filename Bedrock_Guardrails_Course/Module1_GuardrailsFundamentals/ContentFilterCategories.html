@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Content Filter Categories</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Content Filter Categories</h1>
+
+<h2>Understanding Content Classification</h2>
+<p>Amazon Bedrock Guardrails employs sophisticated machine learning models to classify content across five primary categories of harmful or inappropriate material. Each category addresses specific types of content risks and can be configured independently with different filter strengths for inputs and outputs.</p>
+
+<p>Understanding these categories in depth is essential for designing effective guardrail strategies that protect users while maintaining application functionality.</p>
+
+<h2>Category 1: Hate Speech and Discriminatory Content</h2>
+<p>The hate content filter detects and blocks content that expresses, incites, or promotes hatred, discrimination, or prejudice against individuals or groups based on protected characteristics.</p>
+
+<h3>What This Category Covers</h3>
+<ul>
+    <li><strong>Identity-Based Attacks:</strong> Content targeting race, ethnicity, national origin, religion, caste, sexual orientation, gender identity, or disability</li>
+    <li><strong>Dehumanizing Language:</strong> Comparisons of groups to animals, objects, or subhuman entities</li>
+    <li><strong>Supremacist Ideologies:</strong> Content promoting the superiority of one group over others</li>
+    <li><strong>Hate Symbols and Imagery:</strong> References to symbols, gestures, or imagery associated with hate groups</li>
+    <li><strong>Incitement to Discrimination:</strong> Content encouraging exclusion, segregation, or discriminatory treatment</li>
+</ul>
+
+<h3>Why This Matters</h3>
+<p>Hate speech causes psychological harm to targeted individuals and communities, creates hostile environments, and can incite real-world violence. Organizations have both ethical obligations and legal requirements (in many jurisdictions) to prevent the dissemination of hate speech through their platforms. Additionally, allowing hate content severely damages brand reputation and user trust.</p>
+
+<h3>Detection Challenges</h3>
+<p>Hate speech detection presents unique challenges due to context dependency, evolving language, coded language, and cultural variations. The same phrase might be hateful in one context but acceptable in another (e.g., academic discussions of historical discrimination). Guardrails use advanced natural language understanding to evaluate context, but edge cases remain challenging.</p>
+
+<h3>Configuration Considerations</h3>
+<p>Most organizations should configure hate speech filters at HIGH strength for both inputs and outputs. The reputational and legal risks of allowing hate content typically outweigh concerns about false positives. However, applications focused on content moderation research, historical analysis, or educational contexts may require more nuanced configurations.</p>
+
+<h2>Category 2: Violence and Graphic Content</h2>
+<p>The violence filter identifies content depicting, glorifying, or providing instructions for violent acts, self-harm, or graphic injury.</p>
+
+<h3>What This Category Covers</h3>
+<ul>
+    <li><strong>Physical Violence:</strong> Descriptions of assault, murder, torture, or physical harm to humans or animals</li>
+    <li><strong>Self-Harm Content:</strong> Instructions or encouragement for suicide, self-injury, or eating disorders</li>
+    <li><strong>Graphic Injury Descriptions:</strong> Detailed depictions of wounds, gore, or bodily harm</li>
+    <li><strong>Weapons and Dangerous Items:</strong> Instructions for creating weapons, explosives, or dangerous substances</li>
+    <li><strong>Violent Ideation:</strong> Content expressing intent or desire to commit violent acts</li>
+    <li><strong>Glorification of Violence:</strong> Content celebrating or promoting violent acts as desirable or heroic</li>
+</ul>
+
+<h3>Why This Matters</h3>
+<p>Exposure to violent content can cause psychological trauma, particularly for vulnerable populations. Content providing instructions for violence or self-harm poses direct safety risks. Organizations face liability if their AI systems provide information that contributes to real-world harm. Additionally, many jurisdictions have laws restricting violent content, especially when accessible to minors.</p>
+
+<h3>Contextual Nuances</h3>
+<p>Violence filtering must distinguish between harmful content and legitimate discussions. News reporting, historical documentation, medical education, and creative fiction may include violence descriptions that serve informational or artistic purposes. Guardrails evaluate whether violence is gratuitous and glorified versus contextually appropriate and educational.</p>
+
+<h3>Application-Specific Considerations</h3>
+<p>Healthcare applications discussing medical procedures, news aggregation services, or creative writing tools may require lower violence filter strengths to avoid blocking legitimate content. Conversely, applications targeting children or vulnerable populations should maintain maximum filter strength regardless of false positive risks.</p>
+
+<h2>Category 3: Sexual Content</h2>
+<p>The sexual content filter detects sexually explicit material, sexual solicitation, and content sexualizing minors.</p>
+
+<h3>What This Category Covers</h3>
+<ul>
+    <li><strong>Explicit Sexual Descriptions:</strong> Graphic depictions of sexual acts or anatomy</li>
+    <li><strong>Sexual Solicitation:</strong> Content propositioning or seeking sexual interactions</li>
+    <li><strong>Child Sexual Abuse Material (CSAM):</strong> Any content sexualizing minors (zero tolerance)</li>
+    <li><strong>Non-Consensual Sexual Content:</strong> Descriptions of sexual assault or non-consensual acts</li>
+    <li><strong>Sexual Objectification:</strong> Content reducing individuals to sexual objects</li>
+    <li><strong>Adult Services:</strong> Content promoting or advertising sexual services</li>
+</ul>
+
+<h3>Why This Matters</h3>
+<p>Sexual content is inappropriate for most business applications and can create hostile work environments, violate workplace policies, and expose organizations to harassment claims. Content involving minors is illegal in virtually all jurisdictions and carries severe criminal penalties. Even adult sexual content, while legal in many contexts, is inappropriate for professional and public-facing applications.</p>
+
+<h3>Zero Tolerance for CSAM</h3>
+<p>Any content sexualizing minors must be blocked with absolute certainty. This category should always be configured at HIGH strength with no exceptions. Organizations have legal obligations to report CSAM, and failure to prevent its generation or distribution carries criminal liability.</p>
+
+<h3>Legitimate Use Cases</h3>
+<p>Healthcare applications (sexual health education, reproductive medicine), relationship counseling platforms, and sex education tools may require nuanced sexual content policies. These applications should implement additional safeguards (age verification, professional context validation) alongside carefully tuned guardrails.</p>
+
+<h2>Category 4: Misconduct and Illegal Activities</h2>
+<p>The misconduct filter identifies content promoting illegal activities, fraud, deception, or unethical behavior.</p>
+
+<h3>What This Category Covers</h3>
+<ul>
+    <li><strong>Illegal Activities:</strong> Instructions or encouragement for crimes (theft, fraud, hacking, drug trafficking)</li>
+    <li><strong>Fraudulent Schemes:</strong> Content promoting scams, pyramid schemes, or financial fraud</li>
+    <li><strong>Deceptive Practices:</strong> Instructions for deception, impersonation, or manipulation</li>
+    <li><strong>Regulatory Violations:</strong> Content encouraging violation of laws or regulations</li>
+    <li><strong>Professional Misconduct:</strong> Guidance on violating professional ethics or standards</li>
+    <li><strong>Academic Dishonesty:</strong> Instructions for plagiarism, cheating, or falsifying credentials</li>
+</ul>
+
+<h3>Why This Matters</h3>
+<p>Organizations can face legal liability if their AI systems provide information that facilitates illegal activities. Even if the organization is not directly liable, association with criminal activity damages reputation and user trust. Additionally, providing guidance on misconduct contradicts organizational values and can lead to regulatory scrutiny.</p>
+
+<h3>Distinguishing Education from Promotion</h3>
+<p>A critical challenge in misconduct filtering is distinguishing between educational content about illegal activities (cybersecurity training, fraud prevention education, legal analysis) and content promoting such activities. Guardrails evaluate intent, tone, and context to make this distinction, but complex cases may require human review.</p>
+
+<h3>Industry-Specific Considerations</h3>
+<p>Financial services applications must be particularly vigilant about fraud and financial misconduct content. Healthcare applications must prevent medical advice that violates regulations. Legal applications must avoid providing guidance that constitutes unauthorized practice of law. Each industry has specific misconduct categories requiring tailored guardrail configurations.</p>
+
+<h2>Category 5: Prompt Attacks and Adversarial Inputs</h2>
+<p>The prompt attack filter detects attempts to manipulate, jailbreak, or bypass AI system restrictions through adversarial prompting techniques.</p>
+
+<h3>What This Category Covers</h3>
+<ul>
+    <li><strong>Jailbreak Attempts:</strong> Prompts designed to override system instructions or safety guidelines</li>
+    <li><strong>Role-Playing Exploits:</strong> Requests for the AI to assume personas that bypass restrictions</li>
+    <li><strong>Instruction Injection:</strong> Attempts to inject new instructions that override original system prompts</li>
+    <li><strong>Context Manipulation:</strong> Prompts that manipulate conversation context to enable restricted outputs</li>
+    <li><strong>Encoding Attacks:</strong> Using alternative encodings (base64, ROT13) to hide malicious intent</li>
+    <li><strong>Multi-Step Attacks:</strong> Breaking restricted requests into seemingly innocent steps</li>
+</ul>
+
+<h3>Why This Matters</h3>
+<p>Adversarial users continuously develop sophisticated techniques to bypass AI safety measures. Successful prompt attacks can cause AI systems to generate any of the harmful content types described above, despite other guardrails being in place. Prompt attack detection provides defense-in-depth protection against evolving adversarial techniques.</p>
+
+<h3>The Arms Race Dynamic</h3>
+<p>Prompt attack detection operates in an adversarial environment where attackers continuously develop new bypass techniques. As guardrails improve, attackers adapt. This dynamic requires continuous monitoring, regular guardrail updates, and staying informed about emerging attack patterns. Organizations should treat prompt attack protection as an ongoing security process, not a one-time configuration.</p>
+
+<h3>Configuration Strategy</h3>
+<p>Prompt attack filters should typically be configured at HIGH strength for inputs (where attacks originate) but can be set to NONE for outputs (since attacks target input processing). However, some sophisticated attacks attempt to manipulate outputs to influence subsequent interactions, so output filtering may be appropriate for multi-turn conversational applications.</p>
+
+<h2>Filter Strength Levels Explained</h2>
+<p>Each content category supports four filter strength levels that control detection sensitivity:</p>
+
+<table>
+    <tr>
+        <th>Strength Level</th>
+        <th>Detection Sensitivity</th>
+        <th>False Positive Rate</th>
+        <th>Recommended Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">NONE</td>
+        <td>No filtering applied</td>
+        <td>N/A</td>
+        <td>Categories not relevant to application context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LOW</td>
+        <td>Detects only clear, unambiguous violations</td>
+        <td>Very low</td>
+        <td>Applications requiring maximum flexibility; internal tools</td>
+    </tr>
+    <tr>
+        <td class="rowheader">MEDIUM</td>
+        <td>Balanced detection with moderate sensitivity</td>
+        <td>Low to moderate</td>
+        <td>General-purpose applications; balanced risk tolerance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">HIGH</td>
+        <td>Aggressive detection; catches subtle violations</td>
+        <td>Moderate to high</td>
+        <td>Public-facing applications; high-risk contexts; applications for minors</td>
+    </tr>
+</table>
+
+<h2>Independent Input and Output Configuration</h2>
+<p>A powerful feature of Bedrock Guardrails is the ability to configure different filter strengths for inputs versus outputs. Common patterns include:</p>
+
+<ul>
+    <li><strong>Stricter Input Filtering:</strong> HIGH input filtering with MEDIUM output filtering prevents malicious inputs while allowing models more flexibility in responses</li>
+    <li><strong>Stricter Output Filtering:</strong> MEDIUM input filtering with HIGH output filtering allows users to discuss sensitive topics while ensuring responses remain appropriate</li>
+    <li><strong>Symmetric Filtering:</strong> Same strength for inputs and outputs provides consistent policy enforcement</li>
+</ul>
+
+<p>The optimal configuration depends on application context, user base, and risk tolerance.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Five primary content categories address distinct types of harmful content: hate, violence, sexual, misconduct, and prompt attacks</li>
+    <li>Each category has specific detection challenges and requires contextual understanding</li>
+    <li>Filter strength levels (NONE, LOW, MEDIUM, HIGH) control detection sensitivity and false positive rates</li>
+    <li>Input and output filters can be configured independently for nuanced policy enforcement</li>
+    <li>Application context, user base, and industry regulations should guide filter configuration decisions</li>
+    <li>Prompt attack detection provides defense-in-depth protection against adversarial manipulation</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

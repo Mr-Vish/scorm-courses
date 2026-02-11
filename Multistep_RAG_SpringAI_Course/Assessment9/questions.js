@@ -1,0 +1,1 @@
+test.AddQuestion( new Question ("com.scorm.multistep.rag.q9_1", "Which of the following is part of the 'RAG Triad' of metrics?", QUESTION_TYPE_CHOICE, new Array("Faithfulness", "Latency", "Model Size", "API Cost"), "Faithfulness", "obj_module_9"));

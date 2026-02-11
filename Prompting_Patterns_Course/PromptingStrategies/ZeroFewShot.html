@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Zero-Shot and Few-Shot Prompting</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Zero-Shot and Few-Shot Prompting</h1>
+
+
+<h2>Zero-Shot Prompting</h2>
+<p>Ask the model to perform a task without any examples. The model relies on its training knowledge to understand what is expected:</p>
+<div class="code-block">
+<pre><code># Zero-shot classification
+Classify the following review as positive, negative, or neutral:
+"The battery life is great but the screen is too dim."
+
+Response: neutral</code></pre>
+</div>
+
+<h2>Few-Shot Prompting</h2>
+<p>Provide examples before the actual task. This dramatically improves accuracy for specific formats and edge cases:</p>
+<div class="code-block">
+<pre><code># Few-shot sentiment analysis
+Review: "Absolutely love this product!" -&gt; positive
+Review: "Worst purchase I ever made" -&gt; negative
+Review: "It works as expected, nothing special" -&gt; neutral
+Review: "The battery is amazing but the camera is terrible" -&gt; ?
+
+Response: mixed</code></pre>
+</div>
+
+<h2>When to Use Each</h2>
+<table>
+    <tr><th>Approach</th><th>Best For</th><th>Limitations</th></tr>
+    <tr><td>Zero-shot</td><td>Common tasks, large models, quick prototyping</td><td>May not match specific format requirements</td></tr>
+    <tr><td>One-shot (1 example)</td><td>Showing desired output format</td><td>May not cover edge cases</td></tr>
+    <tr><td>Few-shot (2-5 examples)</td><td>Specific formats, classification, extraction</td><td>Uses more context window tokens</td></tr>
+</table>
+
+<h2>Tips for Effective Few-Shot Prompts</h2>
+<ul>
+    <li>Choose diverse examples that cover different cases</li>
+    <li>Include at least one edge case example</li>
+    <li>Keep examples consistent in format</li>
+    <li>Place examples closest to the actual task (recency bias)</li>
+    <li>3-5 examples is usually sufficient; more rarely helps</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

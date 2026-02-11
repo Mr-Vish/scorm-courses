@@ -1,0 +1,369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Performance Optimization and Tuning</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Performance Optimization and Tuning</h1>
+
+<h2>Understanding Performance Optimization</h2>
+<p>Performance optimization for local LLM deployment involves systematically identifying bottlenecks and applying targeted improvements to maximize throughput, minimize latency, and optimize resource utilization. Effective optimization requires understanding the inference pipeline, hardware characteristics, and workload patterns.</p>
+
+<h2>Performance Measurement and Profiling</h2>
+<p>Optimization begins with accurate measurement. Establishing baseline metrics enables quantitative assessment of improvement efforts.</p>
+
+<h3>Key Performance Indicators</h3>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Definition</th>
+        <th>Target Values</th>
+        <th>Optimization Focus</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Tokens Per Second</td>
+        <td>Generation speed</td>
+        <td>20+ for interactive, 50+ for production</td>
+        <td>Hardware, quantization, batch size</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Time to First Token</td>
+        <td>Initial response latency</td>
+        <td>&lt;500ms for interactive applications</td>
+        <td>Prompt processing, model loading</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Throughput</td>
+        <td>Requests processed per hour</td>
+        <td>Depends on use case</td>
+        <td>Concurrency, batching, caching</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Memory Utilization</td>
+        <td>RAM/VRAM consumption</td>
+        <td>&lt;80% for stability</td>
+        <td>Quantization, context length</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GPU Utilization</td>
+        <td>GPU compute usage</td>
+        <td>70-95% during inference</td>
+        <td>Batch size, layer distribution</td>
+    </tr>
+</table>
+
+<h2>Quantization Optimization</h2>
+<p>Quantization represents the most impactful optimization technique, trading minimal quality loss for substantial performance gains.</p>
+
+<h3>Quantization Level Selection</h3>
+<p>Different quantization levels offer distinct trade-offs:</p>
+
+<table>
+    <tr>
+        <th>Quantization</th>
+        <th>Quality vs Original</th>
+        <th>Speed Improvement</th>
+        <th>Memory Reduction</th>
+        <th>Recommended Use</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Q2_K</td>
+        <td>85-90%</td>
+        <td>4x</td>
+        <td>8x</td>
+        <td>Extreme resource constraints only</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Q4_K_M</td>
+        <td>95-97%</td>
+        <td>2x</td>
+        <td>4x</td>
+        <td>Standard deployment—best balance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Q5_K_M</td>
+        <td>97-99%</td>
+        <td>1.6x</td>
+        <td>3.2x</td>
+        <td>Quality-sensitive applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Q8_0</td>
+        <td>99%+</td>
+        <td>1.3x</td>
+        <td>2x</td>
+        <td>Maximum quality requirements</td>
+    </tr>
+</table>
+
+<h3>Quantization Strategy</h3>
+<p>Optimal quantization selection depends on application requirements:</p>
+<ul>
+    <li><strong>Interactive Chat:</strong> Q4_K_M provides excellent balance</li>
+    <li><strong>Content Generation:</strong> Q5_K_M for higher quality outputs</li>
+    <li><strong>Code Generation:</strong> Q5_K_M or Q8_0 for accuracy</li>
+    <li><strong>Summarization:</strong> Q4_K_M sufficient for most cases</li>
+    <li><strong>Edge Deployment:</strong> Q2_K or Q4_K_M for resource constraints</li>
+</ul>
+
+<h2>Context Window Optimization</h2>
+<p>Context window size directly impacts memory consumption and processing time. Optimizing context length improves performance without sacrificing functionality.</p>
+
+<h3>Context Length Strategies</h3>
+<ul>
+    <li><strong>Minimum Viable Context:</strong> Use shortest context that meets requirements</li>
+    <li><strong>Dynamic Truncation:</strong> Trim older messages in conversations</li>
+    <li><strong>Summarization:</strong> Compress conversation history periodically</li>
+    <li><strong>Sliding Window:</strong> Maintain fixed-size context with rolling updates</li>
+</ul>
+
+<h3>Context Length Impact</h3>
+<table>
+    <tr>
+        <th>Context Length</th>
+        <th>Memory Impact</th>
+        <th>Processing Time</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">512 tokens</td>
+        <td>Minimal</td>
+        <td>Fast</td>
+        <td>Quick Q&A, simple tasks</td>
+    </tr>
+    <tr>
+        <td class="rowheader">2048 tokens</td>
+        <td>Moderate</td>
+        <td>Standard</td>
+        <td>Conversations, short documents</td>
+    </tr>
+    <tr>
+        <td class="rowheader">4096 tokens</td>
+        <td>Significant</td>
+        <td>Slower</td>
+        <td>Long conversations, medium documents</td>
+    </tr>
+    <tr>
+        <td class="rowheader">8192+ tokens</td>
+        <td>High</td>
+        <td>Much slower</td>
+        <td>Extensive documents, complex analysis</td>
+    </tr>
+</table>
+
+<h2>Batch Processing Optimization</h2>
+<p>Batch processing enables efficient handling of multiple requests by processing them simultaneously, improving overall throughput at the cost of individual request latency.</p>
+
+<h3>Batching Strategies</h3>
+<ul>
+    <li><strong>Static Batching:</strong> Fixed batch size, simple implementation</li>
+    <li><strong>Dynamic Batching:</strong> Variable batch size based on queue depth</li>
+    <li><strong>Continuous Batching:</strong> Add requests to in-progress batches</li>
+    <li><strong>Priority Batching:</strong> Separate queues for different priority levels</li>
+</ul>
+
+<h3>Batch Size Trade-offs</h3>
+<table>
+    <tr>
+        <th>Batch Size</th>
+        <th>Throughput</th>
+        <th>Latency</th>
+        <th>Memory Usage</th>
+    </tr>
+    <tr>
+        <td class="rowheader">1 (No batching)</td>
+        <td>Baseline</td>
+        <td>Minimum</td>
+        <td>Baseline</td>
+    </tr>
+    <tr>
+        <td class="rowheader">4-8</td>
+        <td>2-3x</td>
+        <td>+20-50%</td>
+        <td>+30-60%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">16-32</td>
+        <td>4-6x</td>
+        <td>+100-200%</td>
+        <td>+100-150%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">64+</td>
+        <td>6-8x</td>
+        <td>+300-500%</td>
+        <td>+200-300%</td>
+    </tr>
+</table>
+
+<h2>GPU Layer Distribution</h2>
+<p>When VRAM is insufficient to hold the entire model, distributing layers between GPU and CPU optimizes performance within hardware constraints.</p>
+
+<h3>Layer Distribution Strategies</h3>
+<ul>
+    <li><strong>Maximum GPU:</strong> Place as many layers as possible on GPU</li>
+    <li><strong>Balanced Distribution:</strong> Distribute based on layer computational intensity</li>
+    <li><strong>Dynamic Adjustment:</strong> Modify distribution based on workload</li>
+</ul>
+
+<h3>Performance by Layer Distribution</h3>
+<p>Example: Llama 3 8B (32 layers) on 8GB VRAM GPU</p>
+<table>
+    <tr>
+        <th>GPU Layers</th>
+        <th>CPU Layers</th>
+        <th>Tokens/Second</th>
+        <th>VRAM Usage</th>
+    </tr>
+    <tr>
+        <td class="rowheader">0</td>
+        <td>32</td>
+        <td>5-8</td>
+        <td>0 GB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">16</td>
+        <td>16</td>
+        <td>20-30</td>
+        <td>4 GB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">28</td>
+        <td>4</td>
+        <td>40-55</td>
+        <td>7 GB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">32</td>
+        <td>0</td>
+        <td>50-70</td>
+        <td>8 GB</td>
+    </tr>
+</table>
+
+<h2>Caching Strategies</h2>
+<p>Intelligent caching reduces redundant computation and improves response times for repeated or similar queries.</p>
+
+<h3>Cache Types</h3>
+<ul>
+    <li><strong>KV Cache:</strong> Stores attention key-value pairs during generation</li>
+    <li><strong>Prompt Cache:</strong> Caches processed prompts for reuse</li>
+    <li><strong>Response Cache:</strong> Stores complete responses for identical queries</li>
+    <li><strong>Embedding Cache:</strong> Caches token embeddings for frequent inputs</li>
+</ul>
+
+<h3>Cache Effectiveness</h3>
+<table>
+    <tr>
+        <th>Cache Type</th>
+        <th>Speed Improvement</th>
+        <th>Memory Cost</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">KV Cache</td>
+        <td>2-5x for generation</td>
+        <td>Proportional to context</td>
+        <td>All deployments (standard)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompt Cache</td>
+        <td>10-100x for repeated prompts</td>
+        <td>Moderate</td>
+        <td>Template-based applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Response Cache</td>
+        <td>Instant for exact matches</td>
+        <td>High for large caches</td>
+        <td>FAQ systems, common queries</td>
+    </tr>
+</table>
+
+<h2>System-Level Optimizations</h2>
+<p>Operating system and system-level configurations impact LLM performance:</p>
+
+<h3>Operating System Tuning</h3>
+<ul>
+    <li><strong>Process Priority:</strong> Elevate inference process priority</li>
+    <li><strong>CPU Affinity:</strong> Pin processes to specific CPU cores</li>
+    <li><strong>Memory Locking:</strong> Prevent model swapping to disk</li>
+    <li><strong>Huge Pages:</strong> Enable large memory pages for efficiency</li>
+    <li><strong>Power Management:</strong> Disable CPU frequency scaling for consistency</li>
+</ul>
+
+<h3>Driver and Firmware Optimization</h3>
+<ul>
+    <li><strong>GPU Drivers:</strong> Use latest stable drivers for performance improvements</li>
+    <li><strong>CUDA/ROCm:</strong> Ensure compatible compute platform versions</li>
+    <li><strong>BIOS Settings:</strong> Enable performance modes, disable power-saving features</li>
+    <li><strong>PCIe Configuration:</strong> Verify GPU running at full PCIe bandwidth</li>
+</ul>
+
+<h2>Workload-Specific Optimization</h2>
+<p>Different workload patterns benefit from different optimization approaches:</p>
+
+<h3>Interactive Chat Optimization</h3>
+<ul>
+    <li><strong>Priority:</strong> Low latency, consistent response times</li>
+    <li><strong>Techniques:</strong> Smaller models, aggressive quantization, KV caching</li>
+    <li><strong>Configuration:</strong> Single-request processing, minimal batch size</li>
+</ul>
+
+<h3>Batch Document Processing</h3>
+<ul>
+    <li><strong>Priority:</strong> Maximum throughput, efficient resource use</li>
+    <li><strong>Techniques:</strong> Large batch sizes, parallel processing, response caching</li>
+    <li><strong>Configuration:</strong> Queue-based processing, dynamic batching</li>
+</ul>
+
+<h3>Real-Time Analysis</h3>
+<ul>
+    <li><strong>Priority:</strong> Predictable latency, high availability</li>
+    <li><strong>Techniques:</strong> Model warm-up, pre-allocated resources, redundancy</li>
+    <li><strong>Configuration:</strong> Always-loaded models, health monitoring</li>
+</ul>
+
+<h2>Performance Monitoring and Continuous Improvement</h2>
+<p>Ongoing monitoring identifies performance degradation and optimization opportunities:</p>
+
+<h3>Monitoring Metrics</h3>
+<ul>
+    <li><strong>Request Latency Distribution:</strong> P50, P95, P99 percentiles</li>
+    <li><strong>Resource Utilization Trends:</strong> CPU, GPU, memory over time</li>
+    <li><strong>Error Rates:</strong> Failed requests, timeouts, OOM errors</li>
+    <li><strong>Queue Depth:</strong> Pending request backlog</li>
+    <li><strong>Cache Hit Rates:</strong> Effectiveness of caching strategies</li>
+</ul>
+
+<h3>Optimization Iteration Process</h3>
+<ol>
+    <li><strong>Baseline Measurement:</strong> Establish current performance metrics</li>
+    <li><strong>Bottleneck Identification:</strong> Determine limiting factors</li>
+    <li><strong>Targeted Optimization:</strong> Apply specific improvements</li>
+    <li><strong>Performance Validation:</strong> Measure impact of changes</li>
+    <li><strong>Iteration:</strong> Repeat process for continuous improvement</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Performance optimization requires systematic measurement and targeted improvements</li>
+    <li>Quantization provides the most significant performance gains with minimal quality impact</li>
+    <li>Context window optimization reduces memory consumption and processing time</li>
+    <li>Batch processing dramatically improves throughput for non-interactive workloads</li>
+    <li>GPU layer distribution optimizes performance when VRAM is limited</li>
+    <li>Caching strategies eliminate redundant computation for repeated queries</li>
+    <li>System-level tuning and driver optimization provide incremental improvements</li>
+    <li>Workload-specific optimization aligns techniques with application requirements</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

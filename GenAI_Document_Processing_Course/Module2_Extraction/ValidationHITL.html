@@ -1,0 +1,238 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Validation Rules and Human-in-the-Loop</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Validation Rules and Human-in-the-Loop</h1>
+
+<h2>Validation Rule Types</h2>
+<table>
+    <tr>
+        <th>Rule Type</th>
+        <th>Purpose</th>
+        <th>Example</th>
+        <th>Action on Failure</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Format Validation</td>
+        <td>Ensure correct data format</td>
+        <td>Date matches YYYY-MM-DD</td>
+        <td>Auto-correct or flag</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Range Validation</td>
+        <td>Check values within bounds</td>
+        <td>Amount between $0 and $1M</td>
+        <td>Flag for review</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cross-Reference</td>
+        <td>Verify internal consistency</td>
+        <td>Line items sum to total</td>
+        <td>Flag discrepancy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Business Rules</td>
+        <td>Check against master data</td>
+        <td>Vendor exists in system</td>
+        <td>Route for approval</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Confidence Check</td>
+        <td>Verify extraction quality</td>
+        <td>Confidence &gt; 85%</td>
+        <td>Human review if low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Completeness</td>
+        <td>All required fields present</td>
+        <td>Invoice number not null</td>
+        <td>Request re-extraction</td>
+    </tr>
+</table>
+
+<h2>Implementing Validation Logic</h2>
+<blockquote>
+def validate_invoice(extracted_data):
+    errors = []
+    warnings = []
+    
+    # Format validation
+    if not re.match(r'^\d{4}-\d{2}-\d{2}$', extracted_data['invoice_date']):
+        errors.append("Invalid date format")
+    
+    # Range validation
+    if extracted_data['total_amount'] < 0 or extracted_data['total_amount'] > 1000000:
+        warnings.append("Amount outside normal range")
+    
+    # Cross-reference validation
+    line_items_sum = sum(item['total'] for item in extracted_data['line_items'])
+    if abs(line_items_sum - extracted_data['total_amount']) > 0.01:
+        errors.append(f"Line items sum ({line_items_sum}) != total ({extracted_data['total_amount']})")
+    
+    # Business rule validation
+    if not vendor_exists(extracted_data['vendor_name']):
+        warnings.append("Vendor not found in master data")
+    
+    # Confidence check
+    if extracted_data.get('confidence', 1.0) < 0.85:
+        warnings.append("Low extraction confidence")
+    
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "warnings": warnings,
+        "requires_review": len(errors) > 0 or len(warnings) > 0
+    }
+</blockquote>
+
+<h2>Human-in-the-Loop Workflow Design</h2>
+<p>Effective HITL systems balance automation with quality:</p>
+
+<h3>Confidence-Based Routing</h3>
+<table>
+    <tr>
+        <th>Confidence Level</th>
+        <th>Routing Decision</th>
+        <th>Review Type</th>
+        <th>SLA</th>
+    </tr>
+    <tr>
+        <td class="rowheader">&gt; 95%</td>
+        <td>Auto-approve</td>
+        <td>5% random spot-check</td>
+        <td>Immediate</td>
+    </tr>
+    <tr>
+        <td class="rowheader">85-95%</td>
+        <td>Quick verification</td>
+        <td>Review flagged fields only</td>
+        <td>Within 1 hour</td>
+    </tr>
+    <tr>
+        <td class="rowheader">70-85%</td>
+        <td>Standard review</td>
+        <td>Full document review</td>
+        <td>Within 4 hours</td>
+    </tr>
+    <tr>
+        <td class="rowheader">&lt; 70%</td>
+        <td>Manual processing</td>
+        <td>Complete re-extraction</td>
+        <td>Within 24 hours</td>
+    </tr>
+</table>
+
+<h3>Review Interface Requirements</h3>
+<ul>
+    <li><strong>Side-by-Side View:</strong> Original document and extracted data</li>
+    <li><strong>Field Highlighting:</strong> Click field to see source location in document</li>
+    <li><strong>Confidence Indicators:</strong> Visual cues for low-confidence fields</li>
+    <li><strong>Quick Actions:</strong> Approve, reject, or edit with single click</li>
+    <li><strong>Keyboard Shortcuts:</strong> Fast navigation for power users</li>
+    <li><strong>Batch Operations:</strong> Approve multiple documents at once</li>
+</ul>
+
+<h2>Feedback Loop Implementation</h2>
+<blockquote>
+Continuous Improvement Process:
+
+1. Capture Corrections:
+   - Log all human edits with timestamps
+   - Store original extraction and corrected version
+   - Tag correction type (format, value, missing field)
+
+2. Analyze Patterns:
+   - Weekly review of common errors
+   - Identify systematic issues
+   - Calculate error rates by document type
+
+3. Update System:
+   - Refine extraction prompts
+   - Add validation rules
+   - Update schemas
+   - Retrain classifiers if needed
+
+4. Measure Impact:
+   - Track accuracy improvements
+   - Monitor reduction in review rate
+   - Calculate ROI of improvements
+
+Target: 2% monthly improvement in auto-approval rate
+</blockquote>
+
+<h2>Exception Handling Strategies</h2>
+<ul>
+    <li><strong>Missing Fields:</strong> Request re-scan or mark as incomplete</li>
+    <li><strong>Conflicting Data:</strong> Flag for human decision</li>
+    <li><strong>Illegible Text:</strong> Request higher quality scan</li>
+    <li><strong>Unexpected Format:</strong> Route to manual processing, update templates</li>
+    <li><strong>Duplicate Documents:</strong> Check hash, flag potential duplicates</li>
+</ul>
+
+<h2>Quality Metrics</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Target</th>
+        <th>Measurement</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Extraction Accuracy</td>
+        <td>&gt; 95%</td>
+        <td>% fields correct without human edit</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Auto-Approval Rate</td>
+        <td>&gt; 70%</td>
+        <td>% documents processed without review</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Review Time</td>
+        <td>&lt; 2 minutes</td>
+        <td>Average time per document review</td>
+    </tr>
+    <tr>
+        <td class="rowheader">False Positive Rate</td>
+        <td>&lt; 2%</td>
+        <td>% auto-approved with errors</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Reviewer Agreement</td>
+        <td>&gt; 98%</td>
+        <td>% agreement between reviewers</td>
+    </tr>
+</table>
+
+<h2>Escalation Procedures</h2>
+<blockquote>
+When to Escalate:
+
+Level 1 → Level 2 (Supervisor):
+- Unusual document types
+- High-value transactions (&gt; $100K)
+- Conflicting information
+
+Level 2 → Level 3 (Subject Matter Expert):
+- Legal document interpretation
+- Complex contract clauses
+- Regulatory compliance questions
+
+Level 3 → Management:
+- Policy exceptions
+- System-wide issues
+- Vendor disputes
+
+Document all escalations with reasoning and resolution
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

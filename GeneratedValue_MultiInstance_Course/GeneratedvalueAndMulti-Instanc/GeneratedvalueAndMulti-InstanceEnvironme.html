@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>@GeneratedValue and Multi-Instance Environments</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>@GeneratedValue and Multi-Instance Environments</h1>
+
+<h2>Course Overview</h2>
+<p>In modern distributed systems, running multiple instances of your Spring Boot application is essential for scalability and high availability. The JPA @GeneratedValue annotation seems straightforward for auto-generating primary keys, but it harbors critical pitfalls in multi-instance deployments that can lead to ID collisions, data corruption, and system failures.</p>
+
+<p>This course explores the hidden dangers of @GeneratedValue in distributed environments and provides production-ready solutions to prevent catastrophic failures.</p>
+
+<h2>What You Will Learn</h2>
+<ul>
+    <li>How @GeneratedValue works and its generation strategies</li>
+    <li>Why ID collisions occur in multi-instance environments</li>
+    <li>Critical differences between AUTO, IDENTITY, SEQUENCE, and TABLE strategies</li>
+    <li>When each strategy is safe vs. dangerous in distributed systems</li>
+    <li>UUID-based solutions for collision-free ID generation</li>
+    <li>Best practices for production deployments</li>
+</ul>
+
+<h2>Target Audience</h2>
+<ul>
+    <li><strong>Backend Developers</strong> building Spring Boot microservices</li>
+    <li><strong>System Architects</strong> designing scalable distributed systems</li>
+    <li><strong>DevOps Engineers</strong> deploying multi-instance applications</li>
+    <li><strong>Database Administrators</strong> managing production databases</li>
+</ul>
+
+<h2>Prerequisites</h2>
+<ul>
+    <li>Working knowledge of Spring Boot and JPA</li>
+    <li>Understanding of database primary keys</li>
+    <li>Basic familiarity with distributed systems concepts</li>
+    <li>Experience with entity mapping in JPA</li>
+</ul>
+
+<h2>Why This Matters</h2>
+<p>Consider this scenario: Your e-commerce application runs 3 instances behind a load balancer. Two customers simultaneously place orders, hitting different instances. Both instances generate ID=1001 for their orders. Result? One order overwrites the other, causing data loss and potential revenue loss.</p>
+
+<p>This isn't theoretical—it happens in production systems that don't properly configure @GeneratedValue for distributed environments.</p>
+
+<h2>Real-World Impact</h2>
+<ul>
+    <li><strong>Data Integrity:</strong> ID collisions cause silent data corruption</li>
+    <li><strong>System Reliability:</strong> Constraint violations crash transactions</li>
+    <li><strong>Debugging Nightmares:</strong> Race conditions are hard to reproduce</li>
+    <li><strong>Business Risk:</strong> Lost orders, duplicate records, audit failures</li>
+</ul>
+
+<h2>Course Structure</h2>
+<ol>
+    <li><strong>What Is @GeneratedValue:</strong> Deep dive into generation strategies</li>
+    <li><strong>The Core Problem:</strong> Understanding ID collisions in distributed systems</li>
+    <li><strong>Strategy Breakdown:</strong> When each strategy fails and why</li>
+    <li><strong>UUID Solution:</strong> Collision-free ID generation</li>
+    <li><strong>Best Practices:</strong> Production-ready patterns</li>
+</ol>
+
+<h2>Learning Approach</h2>
+<p>Each module combines:</p>
+<ul>
+    <li><strong>Conceptual Understanding:</strong> Why problems occur</li>
+    <li><strong>Code Examples:</strong> Real Spring Boot implementations</li>
+    <li><strong>Failure Scenarios:</strong> What goes wrong and when</li>
+    <li><strong>Solutions:</strong> How to fix and prevent issues</li>
+    <li><strong>Assessments:</strong> Validate your understanding</li>
+</ul>
+
+<h2>Expected Outcomes</h2>
+<p>By completing this course, you will:</p>
+<ul>
+    <li>Identify dangerous @GeneratedValue configurations</li>
+    <li>Choose appropriate ID generation strategies for your architecture</li>
+    <li>Implement collision-free ID generation in distributed systems</li>
+    <li>Avoid common pitfalls that cause production failures</li>
+    <li>Design scalable, reliable entity ID strategies</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

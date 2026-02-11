@@ -1,0 +1,485 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Security and Risk Management</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Ethics, Governance, and Risk Management</h1>
+<h2>Part 2: Security and Risk Management</h2>
+
+<h2>Security Considerations for AI-Generated Code</h2>
+
+<h3>Common Security Vulnerabilities in AI-Generated Code</h3>
+
+<h4>Injection Vulnerabilities</h4>
+<p>AI models may generate code susceptible to injection attacks:</p>
+
+<ul>
+    <li><strong>SQL Injection:</strong>
+        <ul>
+            <li>Concatenating user input directly into SQL queries</li>
+            <li>Failing to use parameterized queries or prepared statements</li>
+            <li>Inadequate input validation and sanitization</li>
+            <li>Mitigation: Always use parameterized queries, validate inputs, apply principle of least privilege</li>
+        </ul>
+    </li>
+    <li><strong>Command Injection:</strong>
+        <ul>
+            <li>Executing system commands with unsanitized user input</li>
+            <li>Using shell execution functions without proper escaping</li>
+            <li>Insufficient validation of command parameters</li>
+            <li>Mitigation: Avoid shell execution, use safe APIs, validate and sanitize all inputs</li>
+        </ul>
+    </li>
+    <li><strong>Cross-Site Scripting (XSS):</strong>
+        <ul>
+            <li>Rendering user input without proper encoding</li>
+            <li>Inadequate output sanitization in web applications</li>
+            <li>Improper handling of HTML, JavaScript, or CSS content</li>
+            <li>Mitigation: Encode all output, use Content Security Policy, validate inputs</li>
+        </ul>
+    </li>
+    <li><strong>LDAP, XML, and NoSQL Injection:</strong>
+        <ul>
+            <li>Similar patterns in other query languages and data stores</li>
+            <li>Lack of proper input validation and escaping</li>
+            <li>Mitigation: Use safe APIs, validate inputs, apply context-specific encoding</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Authentication and Authorization Flaws</h4>
+<ul>
+    <li><strong>Weak Authentication:</strong>
+        <ul>
+            <li>Inadequate password requirements or storage</li>
+            <li>Missing multi-factor authentication</li>
+            <li>Insecure session management</li>
+            <li>Hardcoded credentials in code</li>
+        </ul>
+    </li>
+    <li><strong>Broken Authorization:</strong>
+        <ul>
+            <li>Missing access control checks</li>
+            <li>Insecure direct object references</li>
+            <li>Privilege escalation vulnerabilities</li>
+            <li>Inadequate role-based access control</li>
+        </ul>
+    </li>
+    <li><strong>Session Management Issues:</strong>
+        <ul>
+            <li>Predictable session identifiers</li>
+            <li>Session fixation vulnerabilities</li>
+            <li>Inadequate session timeout</li>
+            <li>Insecure session storage</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Data Exposure and Privacy Violations</h4>
+<ul>
+    <li><strong>Sensitive Data Exposure:</strong>
+        <ul>
+            <li>Logging sensitive information (passwords, tokens, PII)</li>
+            <li>Storing sensitive data in plain text</li>
+            <li>Transmitting data over unencrypted connections</li>
+            <li>Exposing sensitive data in error messages</li>
+        </ul>
+    </li>
+    <li><strong>Inadequate Encryption:</strong>
+        <ul>
+            <li>Using weak or deprecated encryption algorithms</li>
+            <li>Improper key management</li>
+            <li>Missing encryption for data at rest or in transit</li>
+            <li>Hardcoded encryption keys</li>
+        </ul>
+    </li>
+    <li><strong>Privacy Violations:</strong>
+        <ul>
+            <li>Collecting unnecessary personal data</li>
+            <li>Inadequate data anonymization</li>
+            <li>Missing consent mechanisms</li>
+            <li>Non-compliance with privacy regulations (GDPR, CCPA)</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Insecure Dependencies and Components</h4>
+<ul>
+    <li><strong>Vulnerable Dependencies:</strong>
+        <ul>
+            <li>Using libraries with known security vulnerabilities</li>
+            <li>Outdated or unmaintained dependencies</li>
+            <li>Unnecessary dependencies increasing attack surface</li>
+        </ul>
+    </li>
+    <li><strong>Supply Chain Risks:</strong>
+        <ul>
+            <li>Malicious packages or compromised dependencies</li>
+            <li>Typosquatting attacks</li>
+            <li>Dependency confusion vulnerabilities</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Security Best Practices for AI-Generated Code</h3>
+
+<h4>Secure Development Lifecycle Integration</h4>
+<ul>
+    <li><strong>Security Requirements:</strong>
+        <ul>
+            <li>Define security requirements before code generation</li>
+            <li>Include security constraints in AI prompts</li>
+            <li>Specify compliance requirements (OWASP, PCI DSS, HIPAA)</li>
+        </ul>
+    </li>
+    <li><strong>Threat Modeling:</strong>
+        <ul>
+            <li>Identify potential threats and attack vectors</li>
+            <li>Assess risks associated with AI-generated code</li>
+            <li>Prioritize security controls based on risk</li>
+        </ul>
+    </li>
+    <li><strong>Security Testing:</strong>
+        <ul>
+            <li>Static Application Security Testing (SAST)</li>
+            <li>Dynamic Application Security Testing (DAST)</li>
+            <li>Interactive Application Security Testing (IAST)</li>
+            <li>Software Composition Analysis (SCA)</li>
+            <li>Penetration testing for critical applications</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Defense in Depth Strategy</h4>
+<ul>
+    <li><strong>Input Validation:</strong>
+        <ul>
+            <li>Validate all inputs at boundaries</li>
+            <li>Use allowlists rather than denylists</li>
+            <li>Implement context-specific validation</li>
+            <li>Reject invalid input rather than sanitizing</li>
+        </ul>
+    </li>
+    <li><strong>Output Encoding:</strong>
+        <ul>
+            <li>Encode output based on context (HTML, JavaScript, SQL)</li>
+            <li>Use framework-provided encoding functions</li>
+            <li>Apply encoding as close to output as possible</li>
+        </ul>
+    </li>
+    <li><strong>Least Privilege:</strong>
+        <ul>
+            <li>Grant minimum necessary permissions</li>
+            <li>Use separate accounts for different functions</li>
+            <li>Implement role-based access control</li>
+            <li>Regularly review and revoke unnecessary privileges</li>
+        </ul>
+    </li>
+    <li><strong>Secure Defaults:</strong>
+        <ul>
+            <li>Configure systems securely by default</li>
+            <li>Disable unnecessary features and services</li>
+            <li>Use secure communication protocols (HTTPS, TLS)</li>
+            <li>Implement secure session management</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Security Code Review Checklist</h4>
+<table>
+    <tr>
+        <th>Category</th>
+        <th>Review Items</th>
+    </tr>
+    <tr>
+        <td>Input Validation</td>
+        <td>All inputs validated, allowlist approach used, context-specific validation</td>
+    </tr>
+    <tr>
+        <td>Authentication</td>
+        <td>Strong authentication, MFA supported, secure password storage</td>
+    </tr>
+    <tr>
+        <td>Authorization</td>
+        <td>Access controls enforced, RBAC implemented, no privilege escalation</td>
+    </tr>
+    <tr>
+        <td>Data Protection</td>
+        <td>Sensitive data encrypted, secure transmission, no data leakage</td>
+    </tr>
+    <tr>
+        <td>Error Handling</td>
+        <td>Generic error messages, no sensitive data in errors, proper logging</td>
+    </tr>
+    <tr>
+        <td>Dependencies</td>
+        <td>No vulnerable dependencies, minimal dependencies, regular updates</td>
+    </tr>
+    <tr>
+        <td>Cryptography</td>
+        <td>Strong algorithms, proper key management, no hardcoded secrets</td>
+    </tr>
+</table>
+
+<h2>Comprehensive Risk Management</h2>
+
+<h3>Risk Assessment Framework</h3>
+
+<h4>Risk Identification</h4>
+<p>Systematically identify risks across multiple dimensions:</p>
+
+<ul>
+    <li><strong>Technical Risks:</strong>
+        <ul>
+            <li>Code quality and correctness issues</li>
+            <li>Performance and scalability problems</li>
+            <li>Integration and compatibility challenges</li>
+            <li>Technical debt accumulation</li>
+        </ul>
+    </li>
+    <li><strong>Security Risks:</strong>
+        <ul>
+            <li>Vulnerability introduction</li>
+            <li>Data breaches and exposure</li>
+            <li>Compliance violations</li>
+            <li>Supply chain attacks</li>
+        </ul>
+    </li>
+    <li><strong>Operational Risks:</strong>
+        <ul>
+            <li>Service availability and reliability</li>
+            <li>Vendor dependency and lock-in</li>
+            <li>Tool unavailability or degradation</li>
+            <li>Support and maintenance challenges</li>
+        </ul>
+    </li>
+    <li><strong>Legal and Compliance Risks:</strong>
+        <ul>
+            <li>Intellectual property infringement</li>
+            <li>Regulatory non-compliance</li>
+            <li>Contractual violations</li>
+            <li>Liability for AI-generated code issues</li>
+        </ul>
+    </li>
+    <li><strong>Reputational Risks:</strong>
+        <ul>
+            <li>Quality issues affecting brand reputation</li>
+            <li>Security breaches damaging trust</li>
+            <li>Ethical concerns harming public perception</li>
+            <li>Customer dissatisfaction</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Risk Analysis and Prioritization</h4>
+
+<table>
+    <tr>
+        <th>Risk</th>
+        <th>Likelihood</th>
+        <th>Impact</th>
+        <th>Priority</th>
+        <th>Mitigation Strategy</th>
+    </tr>
+    <tr>
+        <td>Security vulnerability introduction</td>
+        <td>Medium</td>
+        <td>High</td>
+        <td>Critical</td>
+        <td>Mandatory security scanning, code review, testing</td>
+    </tr>
+    <tr>
+        <td>Copyright infringement</td>
+        <td>Low</td>
+        <td>High</td>
+        <td>High</td>
+        <td>License scanning, legal review, similarity analysis</td>
+    </tr>
+    <tr>
+        <td>Data privacy violation</td>
+        <td>Low</td>
+        <td>High</td>
+        <td>High</td>
+        <td>Data classification, access controls, privacy review</td>
+    </tr>
+    <tr>
+        <td>Code quality issues</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Quality gates, code review, automated testing</td>
+    </tr>
+    <tr>
+        <td>Vendor lock-in</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Multi-vendor strategy, portable practices</td>
+    </tr>
+    <tr>
+        <td>Developer skill degradation</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Continued training, manual coding practice</td>
+    </tr>
+    <tr>
+        <td>Tool unavailability</td>
+        <td>Low</td>
+        <td>Medium</td>
+        <td>Low</td>
+        <td>Contingency plans, alternative tools</td>
+    </tr>
+</table>
+
+<h3>Risk Mitigation Strategies</h3>
+
+<h4>Preventive Controls</h4>
+<ul>
+    <li><strong>Policy and Standards:</strong> Establish clear policies and standards for AI code generation</li>
+    <li><strong>Training and Education:</strong> Ensure developers understand risks and mitigation strategies</li>
+    <li><strong>Tool Selection:</strong> Choose tools with strong security and privacy features</li>
+    <li><strong>Access Controls:</strong> Limit access to AI tools based on role and need</li>
+</ul>
+
+<h4>Detective Controls</h4>
+<ul>
+    <li><strong>Automated Scanning:</strong> Continuous security and quality scanning</li>
+    <li><strong>Code Review:</strong> Human review of all AI-generated code</li>
+    <li><strong>Monitoring and Logging:</strong> Track AI tool usage and code generation</li>
+    <li><strong>Auditing:</strong> Regular audits of AI-generated code and practices</li>
+</ul>
+
+<h4>Corrective Controls</h4>
+<ul>
+    <li><strong>Incident Response:</strong> Procedures for addressing issues in AI-generated code</li>
+    <li><strong>Remediation Processes:</strong> Fix identified vulnerabilities and issues</li>
+    <li><strong>Rollback Capabilities:</strong> Ability to revert problematic changes</li>
+    <li><strong>Post-Incident Review:</strong> Learn from incidents to prevent recurrence</li>
+</ul>
+
+<h2>Continuous Improvement and Adaptation</h2>
+
+<h3>Monitoring and Measurement</h3>
+
+<h4>Key Performance Indicators (KPIs)</h4>
+<ul>
+    <li><strong>Security KPIs:</strong>
+        <ul>
+            <li>Number of vulnerabilities in AI-generated code</li>
+            <li>Time to detect and remediate security issues</li>
+            <li>Security scan pass rate</li>
+            <li>Percentage of code passing security review</li>
+        </ul>
+    </li>
+    <li><strong>Quality KPIs:</strong>
+        <ul>
+            <li>Defect density in AI-generated code</li>
+            <li>Code coverage percentage</li>
+            <li>Code maintainability index</li>
+            <li>Technical debt ratio</li>
+        </ul>
+    </li>
+    <li><strong>Compliance KPIs:</strong>
+        <ul>
+            <li>Compliance audit pass rate</li>
+            <li>Number of compliance violations</li>
+            <li>Time to achieve compliance</li>
+            <li>Percentage of code meeting standards</li>
+        </ul>
+    </li>
+    <li><strong>Operational KPIs:</strong>
+        <ul>
+            <li>AI tool availability and performance</li>
+            <li>Developer satisfaction scores</li>
+            <li>Adoption rate and usage frequency</li>
+            <li>Return on investment (ROI)</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Feedback Loops and Learning</h3>
+
+<ul>
+    <li><strong>Developer Feedback:</strong>
+        <ul>
+            <li>Regular surveys and interviews</li>
+            <li>Feedback channels for issues and suggestions</li>
+            <li>User groups and forums</li>
+        </ul>
+    </li>
+    <li><strong>Incident Analysis:</strong>
+        <ul>
+            <li>Root cause analysis for security incidents</li>
+            <li>Pattern identification in quality issues</li>
+            <li>Lessons learned documentation</li>
+        </ul>
+    </li>
+    <li><strong>Continuous Improvement:</strong>
+        <ul>
+            <li>Regular review of policies and practices</li>
+            <li>Updates based on new threats and vulnerabilities</li>
+            <li>Adoption of emerging best practices</li>
+            <li>Tool and process optimization</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Staying Current with Evolving Landscape</h3>
+
+<ul>
+    <li><strong>Technology Monitoring:</strong>
+        <ul>
+            <li>Track new AI code generation tools and capabilities</li>
+            <li>Evaluate emerging security threats and vulnerabilities</li>
+            <li>Monitor regulatory and legal developments</li>
+            <li>Follow industry best practices and standards</li>
+        </ul>
+    </li>
+    <li><strong>Community Engagement:</strong>
+        <ul>
+            <li>Participate in industry forums and conferences</li>
+            <li>Share experiences and learn from peers</li>
+            <li>Contribute to open-source security tools</li>
+            <li>Collaborate on standards development</li>
+        </ul>
+    </li>
+    <li><strong>Continuous Learning:</strong>
+        <ul>
+            <li>Ongoing training for developers and security teams</li>
+            <li>Certifications in AI security and ethics</li>
+            <li>Research and experimentation with new approaches</li>
+            <li>Knowledge sharing within organization</li>
+        </ul>
+    </li>
+</ul>
+
+<h2>Module 3 Summary</h2>
+<p>In this module, you have learned:</p>
+<ul>
+    <li>Ethical AI code generation requires transparency, accountability, fairness, privacy protection, and safety</li>
+    <li>Bias in AI-generated code stems from training data, representation gaps, and algorithmic issues</li>
+    <li>Intellectual property and licensing concerns require careful attention, code scanning, and legal consultation</li>
+    <li>Responsible AI frameworks like IEEE Ethically Aligned Design, EU AI Act, and NIST provide guidance</li>
+    <li>Common security vulnerabilities include injection flaws, authentication/authorization issues, data exposure, and insecure dependencies</li>
+    <li>Security best practices include secure development lifecycle integration, defense in depth, and comprehensive code review</li>
+    <li>Comprehensive risk management requires identification, analysis, prioritization, and mitigation across technical, security, operational, legal, and reputational dimensions</li>
+    <li>Risk mitigation strategies include preventive, detective, and corrective controls</li>
+    <li>Continuous improvement requires monitoring KPIs, establishing feedback loops, and staying current with the evolving landscape</li>
+    <li>Success requires organizational commitment to ethics, security, and responsible AI practices</li>
+</ul>
+
+<p><strong>You are now ready to take Assessment 3 to validate your understanding of Ethics, Governance, and Risk Management.</strong></p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

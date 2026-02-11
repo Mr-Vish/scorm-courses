@@ -1,0 +1,345 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>AI Services and Structured Outputs</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AI Services and Structured Outputs</h1>
+
+<h2>What are AI Services?</h2>
+<p><strong>AI Services</strong> are LangChain4j's high-level abstraction that allows you to define AI-powered interfaces using simple Java interfaces. The framework automatically handles prompt construction, LLM invocation, and response parsing.</p>
+
+<h2>Creating Your First AI Service</h2>
+<p>Define an interface and let LangChain4j implement it:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.service.AiServices;
+
+public interface Assistant {
+    String chat(String message);
+}
+
+// Create implementation
+ChatLanguageModel model = OpenAiChatModel.builder()
+    .apiKey(System.getenv("OPENAI_API_KEY"))
+    .modelName("gpt-4")
+    .build();
+
+Assistant assistant = AiServices.create(Assistant.class, model);
+
+// Use it
+String response = assistant.chat("What is Java?");
+System.out.println(response);
+</code></pre>
+</div>
+
+<h2>System Messages with Annotations</h2>
+<p>Use <strong>@SystemMessage</strong> to define AI behavior:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.service.SystemMessage;
+
+public interface CodeReviewer {
+    
+    @SystemMessage("You are an expert Java code reviewer. " +
+                   "Analyze code for bugs, performance issues, and best practices.")
+    String reviewCode(String code);
+}
+
+// Usage
+CodeReviewer reviewer = AiServices.create(CodeReviewer.class, model);
+String feedback = reviewer.reviewCode("""
+    public void processData(List data) {
+        for (int i = 0; i < data.size(); i++) {
+            System.out.println(data.get(i));
+        }
+    }
+    """);
+</code></pre>
+</div>
+
+<h2>Structured Outputs with POJOs</h2>
+<p>LangChain4j can automatically parse LLM responses into Java objects:</p>
+
+<div class="code-block">
+<pre><code>public class Person {
+    private String name;
+    private int age;
+    private String occupation;
+    
+    // Getters and setters
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public int getAge() { return age; }
+    public void setAge(int age) { this.age = age; }
+    public String getOccupation() { return occupation; }
+    public void setOccupation(String occupation) { this.occupation = occupation; }
+}
+
+public interface PersonExtractor {
+    
+    @SystemMessage("Extract person information from the text")
+    Person extractPerson(String text);
+}
+
+// Usage
+PersonExtractor extractor = AiServices.create(PersonExtractor.class, model);
+Person person = extractor.extractPerson(
+    "John Smith is a 35-year-old software engineer"
+);
+
+System.out.println(person.getName());       // John Smith
+System.out.println(person.getAge());        // 35
+System.out.println(person.getOccupation()); // software engineer
+</code></pre>
+</div>
+
+<h2>Extracting Lists and Collections</h2>
+<p>Return collections of structured data:</p>
+
+<div class="code-block">
+<pre><code>public class Task {
+    private String title;
+    private String priority;
+    private String assignee;
+    
+    // Getters and setters omitted for brevity
+}
+
+public interface TaskExtractor {
+    
+    @SystemMessage("Extract all tasks from the meeting notes")
+    List&lt;Task&gt; extractTasks(String meetingNotes);
+}
+
+// Usage
+TaskExtractor extractor = AiServices.create(TaskExtractor.class, model);
+List&lt;Task&gt; tasks = extractor.extractTasks("""
+    Meeting Notes:
+    - John needs to fix the login bug (HIGH priority)
+    - Sarah will update the documentation (MEDIUM priority)
+    - Mike should review the pull request (LOW priority)
+    """);
+
+tasks.forEach(task -&gt; 
+    System.out.println(task.getTitle() + " - " + task.getPriority())
+);
+</code></pre>
+</div>
+
+<h2>User Messages with Variables</h2>
+<p>Use <strong>@UserMessage</strong> with placeholders for dynamic prompts:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V;
+
+public interface Translator {
+    
+    @SystemMessage("You are a professional translator")
+    @UserMessage("Translate the following text from {{sourceLanguage}} to {{targetLanguage}}: {{text}}")
+    String translate(@V("sourceLanguage") String source,
+                     @V("targetLanguage") String target,
+                     @V("text") String text);
+}
+
+// Usage
+Translator translator = AiServices.create(Translator.class, model);
+String result = translator.translate("English", "Spanish", "Hello, how are you?");
+System.out.println(result); // Hola, ¿cómo estás?
+</code></pre>
+</div>
+
+<h2>Enum-Based Outputs</h2>
+<p>Extract categorical data using enums:</p>
+
+<div class="code-block">
+<pre><code>public enum Sentiment {
+    POSITIVE, NEGATIVE, NEUTRAL
+}
+
+public interface SentimentAnalyzer {
+    
+    @SystemMessage("Analyze the sentiment of the given text")
+    Sentiment analyzeSentiment(String text);
+}
+
+// Usage
+SentimentAnalyzer analyzer = AiServices.create(SentimentAnalyzer.class, model);
+
+Sentiment s1 = analyzer.analyzeSentiment("I love this product!");
+System.out.println(s1); // POSITIVE
+
+Sentiment s2 = analyzer.analyzeSentiment("This is terrible");
+System.out.println(s2); // NEGATIVE
+</code></pre>
+</div>
+
+<h2>Complex Nested Structures</h2>
+<p>Parse complex JSON-like structures:</p>
+
+<div class="code-block">
+<pre><code>public class Recipe {
+    private String name;
+    private int prepTimeMinutes;
+    private List&lt;String&gt; ingredients;
+    private List&lt;String&gt; instructions;
+    private String difficulty;
+    
+    // Getters and setters
+}
+
+public interface RecipeGenerator {
+    
+    @SystemMessage("You are a professional chef")
+    @UserMessage("Create a {{difficulty}} recipe for {{dish}}")
+    Recipe generateRecipe(@V("difficulty") String difficulty,
+                          @V("dish") String dish);
+}
+
+// Usage
+RecipeGenerator generator = AiServices.create(RecipeGenerator.class, model);
+Recipe recipe = generator.generateRecipe("easy", "chocolate chip cookies");
+
+System.out.println("Recipe: " + recipe.getName());
+System.out.println("Prep time: " + recipe.getPrepTimeMinutes() + " minutes");
+System.out.println("Ingredients: " + recipe.getIngredients());
+</code></pre>
+</div>
+
+<h2>AI Services with Memory</h2>
+<p>Add conversation memory to AI Services:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+
+public interface ConversationalAssistant {
+    String chat(String message);
+}
+
+// Create with memory
+ChatMemory memory = MessageWindowChatMemory.withMaxMessages(10);
+
+ConversationalAssistant assistant = AiServices.builder(ConversationalAssistant.class)
+    .chatLanguageModel(model)
+    .chatMemory(memory)
+    .build();
+
+// Multi-turn conversation
+assistant.chat("My name is Alice");
+assistant.chat("What's my name?"); // Returns: Your name is Alice
+</code></pre>
+</div>
+
+<h2>Moderation and Content Filtering</h2>
+<p>Add content moderation to AI Services:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.model.moderation.ModerationModel;
+import dev.langchain4j.model.openai.OpenAiModerationModel;
+
+ModerationModel moderationModel = OpenAiModerationModel.builder()
+    .apiKey(System.getenv("OPENAI_API_KEY"))
+    .build();
+
+Assistant assistant = AiServices.builder(Assistant.class)
+    .chatLanguageModel(model)
+    .moderationModel(moderationModel)
+    .build();
+
+// Inappropriate content will be flagged
+</code></pre>
+</div>
+
+<h2>Comparison: AI Services vs Direct Model Usage</h2>
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>AI Services</th>
+        <th>Direct Model</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Ease of Use</td>
+        <td>Very simple, declarative</td>
+        <td>More verbose, imperative</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Type Safety</td>
+        <td>Compile-time checking</td>
+        <td>Runtime string handling</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Structured Output</td>
+        <td>Automatic parsing</td>
+        <td>Manual JSON parsing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Flexibility</td>
+        <td>Limited to interface methods</td>
+        <td>Full control over requests</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Best For</td>
+        <td>Business logic, data extraction</td>
+        <td>Custom workflows, fine control</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Clear Method Names:</strong> Use descriptive method names that indicate the AI's task</li>
+    <li><strong>Specific System Messages:</strong> Provide detailed instructions for consistent results</li>
+    <li><strong>Validation:</strong> Always validate structured outputs before using them</li>
+    <li><strong>Error Handling:</strong> Wrap AI Service calls in try-catch blocks</li>
+    <li><strong>Testing:</strong> Create unit tests with mock models for AI Services</li>
+    <li><strong>Documentation:</strong> Document expected input formats and output structures</li>
+</ul>
+
+<h2>Real-World Example: Customer Support Bot</h2>
+<div class="code-block">
+<pre><code>public class SupportTicket {
+    private String category;
+    private String priority;
+    private String summary;
+    private List&lt;String&gt; suggestedActions;
+}
+
+public interface SupportBot {
+    
+    @SystemMessage("You are a customer support AI. Analyze support requests " +
+                   "and categorize them appropriately.")
+    SupportTicket analyzeRequest(String customerMessage);
+    
+    @SystemMessage("You are a helpful customer support agent")
+    String respondToCustomer(String customerMessage);
+}
+
+// Usage in Spring Boot Controller
+@RestController
+public class SupportController {
+    
+    private final SupportBot supportBot;
+    
+    public SupportController(SupportBot supportBot) {
+        this.supportBot = supportBot;
+    }
+    
+    @PostMapping("/support/ticket")
+    public SupportTicket createTicket(@RequestBody String message) {
+        return supportBot.analyzeRequest(message);
+    }
+}
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

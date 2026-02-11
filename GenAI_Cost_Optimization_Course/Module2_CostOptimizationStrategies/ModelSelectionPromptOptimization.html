@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Model Selection and Prompt Optimization</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Cost Optimization Strategies</h1>
+<h2>Model Selection and Prompt Optimization</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will learn to:</p>
+<ul>
+<li>Apply strategic model selection based on task requirements and cost constraints</li>
+<li>Implement prompt optimization techniques to reduce token consumption</li>
+<li>Design efficient system prompts that balance functionality and cost</li>
+<li>Optimize output generation to minimize expensive output tokens</li>
+<li>Implement model routing strategies for cost-effective multi-model architectures</li>
+</ul>
+
+<h2>Strategic Model Selection</h2>
+<p>Model selection represents the single most impactful decision for GenAI cost optimization. Choosing an appropriately capable model for each task can reduce costs by 90% or more while maintaining acceptable quality. The key is matching model capabilities to task requirements rather than defaulting to the most powerful (and expensive) option.</p>
+
+<h3>The Model Capability Spectrum</h3>
+<p>Foundation models exist on a spectrum from lightweight, fast, and inexpensive to heavyweight, sophisticated, and costly. Understanding where your tasks fall on this spectrum enables optimal model selection.</p>
+
+<table>
+<tr>
+<th>Model Tier</th>
+<th>Capabilities</th>
+<th>Cost Range</th>
+<th>Ideal Use Cases</th>
+</tr>
+<tr>
+<td class="rowheader">Ultra-Light (Titan Lite)</td>
+<td>Simple classification, extraction, basic Q&A</td>
+<td>$0.15-0.20 per 1M tokens</td>
+<td>High-volume filtering, simple categorization</td>
+</tr>
+<tr>
+<td class="rowheader">Light (Haiku, Titan Express)</td>
+<td>Moderate reasoning, structured output, summarization</td>
+<td>$0.60-4.00 per 1M tokens</td>
+<td>Customer support, content moderation, data extraction</td>
+</tr>
+<tr>
+<td class="rowheader">Balanced (Sonnet, Command R+)</td>
+<td>Complex reasoning, nuanced understanding, creative tasks</td>
+<td>$3.00-15.00 per 1M tokens</td>
+<td>General-purpose applications, RAG, analysis</td>
+</tr>
+<tr>
+<td class="rowheader">Premium (Opus, Jurassic Ultra)</td>
+<td>Advanced reasoning, research, complex problem-solving</td>
+<td>$15.00-75.00 per 1M tokens</td>
+<td>Legal analysis, medical diagnosis, strategic planning</td>
+</tr>
+</table>
+
+<h3>Task-Based Model Selection Framework</h3>
+<p>Apply this decision framework to select the most cost-effective model for each task:</p>
+
+<p><strong>Step 1: Classify Task Complexity</strong></p>
+<ul>
+<li><strong>Simple:</strong> Single-step operations with clear right/wrong answers (classification, extraction, yes/no questions)</li>
+<li><strong>Moderate:</strong> Multi-step reasoning with structured outputs (summarization, basic analysis, templated generation)</li>
+<li><strong>Complex:</strong> Deep reasoning, creativity, or nuanced judgment (research, strategic advice, complex problem-solving)</li>
+</ul>
+
+<p><strong>Step 2: Assess Quality Requirements</strong></p>
+<ul>
+<li><strong>Acceptable:</strong> Errors can be tolerated or corrected downstream</li>
+<li><strong>High:</strong> Errors are problematic but not catastrophic</li>
+<li><strong>Critical:</strong> Errors have serious consequences (legal, medical, financial)</li>
+</ul>
+
+<p><strong>Step 3: Match Model to Requirements</strong></p>
+<ul>
+<li>Simple + Acceptable Quality = Ultra-Light or Light models</li>
+<li>Moderate + High Quality = Light or Balanced models</li>
+<li>Complex + Critical Quality = Balanced or Premium models</li>
+</ul>
+
+<h3>Real-World Model Selection Examples</h3>
+
+<p><strong>Example 1: Email Classification System</strong></p>
+<ul>
+<li><strong>Task:</strong> Categorize incoming emails into 5 departments</li>
+<li><strong>Complexity:</strong> Simple (single classification decision)</li>
+<li><strong>Quality Requirement:</strong> Acceptable (misrouting can be corrected)</li>
+<li><strong>Optimal Model:</strong> Titan Text Lite</li>
+<li><strong>Cost Impact:</strong> $0.15 per 1M tokens vs $15.00 for Claude Opus = 99% savings</li>
+</ul>
+
+<p><strong>Example 2: Customer Support Chatbot</strong></p>
+<ul>
+<li><strong>Task:</strong> Answer product questions, troubleshoot issues</li>
+<li><strong>Complexity:</strong> Moderate (requires understanding context and providing helpful responses)</li>
+<li><strong>Quality Requirement:</strong> High (poor responses damage customer satisfaction)</li>
+<li><strong>Optimal Model:</strong> Claude 3.5 Haiku</li>
+<li><strong>Cost Impact:</strong> $0.80-4.00 per 1M tokens vs $15-75 for premium models = 75-95% savings</li>
+</ul>
+
+<p><strong>Example 3: Legal Contract Analysis</strong></p>
+<ul>
+<li><strong>Task:</strong> Identify risks and obligations in contracts</li>
+<li><strong>Complexity:</strong> Complex (requires deep understanding of legal language and implications)</li>
+<li><strong>Quality Requirement:</strong> Critical (errors could result in legal liability)</li>
+<li><strong>Optimal Model:</strong> Claude 3 Opus</li>
+<li><strong>Cost Impact:</strong> Premium pricing justified by critical quality requirements</li>
+</ul>
+
+<h2>Multi-Model Routing Strategies</h2>
+<p>Rather than using a single model for all tasks, sophisticated applications employ model routing to optimize cost-quality trade-offs dynamically.</p>
+
+<h3>Tiered Processing Architecture</h3>
+<p>Implement a cascade of models from cheapest to most expensive:</p>
+
+<ul>
+<li><strong>Tier 1 - Triage (Ultra-Light Model):</strong> Classify request complexity and route appropriately</li>
+<li><strong>Tier 2 - Standard Processing (Light Model):</strong> Handle 70-80% of requests</li>
+<li><strong>Tier 3 - Complex Processing (Balanced Model):</strong> Handle difficult cases escalated from Tier 2</li>
+<li><strong>Tier 4 - Premium Processing (Premium Model):</strong> Reserved for critical or highly complex requests</li>
+</ul>
+
+<p><strong>Cost Impact Example:</strong></p>
+<ul>
+<li>Single-model approach (Claude Sonnet for all): $10,000/month</li>
+<li>Tiered approach (80% Haiku, 15% Sonnet, 5% Opus): $3,200/month</li>
+<li><strong>Savings: 68%</strong></li>
+</ul>
+
+<h3>Confidence-Based Routing</h3>
+<p>Use model confidence scores to determine when to escalate to more capable models:</p>
+
+<ul>
+<li>Start with lightweight model</li>
+<li>If confidence score < threshold, retry with more capable model</li>
+<li>Optimize threshold based on cost-quality trade-offs</li>
+<li>Monitor escalation rates to identify patterns</li>
+</ul>
+
+<h2>Prompt Optimization Fundamentals</h2>
+<p>Prompt engineering directly impacts token consumption and therefore costs. Efficient prompts achieve the same outcomes with fewer tokens, reducing costs proportionally.</p>
+
+<h3>System Prompt Optimization</h3>
+<p>System prompts are sent with every request, making them a prime target for optimization. A 500-token system prompt sent 1 million times consumes 500 million tokens.</p>
+
+<p><strong>Optimization Techniques:</strong></p>
+
+<ul>
+<li><strong>Eliminate Redundancy:</strong> Remove repetitive instructions and examples</li>
+<li><strong>Use Concise Language:</strong> Replace verbose explanations with direct instructions</li>
+<li><strong>Leverage Model Capabilities:</strong> Modern models understand brief instructions; extensive examples are often unnecessary</li>
+<li><strong>Extract Static Content:</strong> Move unchanging context to documentation rather than prompts</li>
+</ul>
+
+<p><strong>Before Optimization (450 tokens):</strong></p>
+<blockquote>
+You are a helpful customer service assistant for TechCorp, a leading technology company. Your role is to assist customers with their questions about our products and services. You should always be polite, professional, and helpful. When answering questions, make sure to provide accurate information based on our product documentation. If you don't know the answer to a question, you should admit that you don't know rather than making something up. Always try to understand the customer's needs and provide relevant solutions. Remember to thank customers for their patience and for choosing TechCorp.
+</blockquote>
+
+<p><strong>After Optimization (85 tokens):</strong></p>
+<blockquote>
+You are TechCorp's customer service assistant. Provide accurate, helpful responses based on product documentation. If uncertain, acknowledge limitations. Be professional and solution-focused.
+</blockquote>
+
+<p><strong>Cost Impact:</strong> 81% reduction in system prompt tokens = 81% reduction in recurring system prompt costs</p>
+
+<h3>Input Prompt Optimization</h3>
+<p>User-facing prompts and queries also benefit from optimization:</p>
+
+<ul>
+<li><strong>Template Efficiency:</strong> Design prompt templates that minimize token usage</li>
+<li><strong>Context Pruning:</strong> Include only relevant context, not entire documents</li>
+<li><strong>Structured Inputs:</strong> Use JSON or structured formats instead of natural language when appropriate</li>
+<li><strong>Reference Instead of Repeat:</strong> Reference previously provided information rather than repeating it</li>
+</ul>
+
+<h2>Output Optimization Strategies</h2>
+<p>Output tokens cost 3-5x more than input tokens, making output optimization particularly valuable.</p>
+
+<h3>Output Length Control</h3>
+<p>Explicitly constrain output length to prevent unnecessary verbosity:</p>
+
+<ul>
+<li><strong>Set max_tokens Parameter:</strong> Limit maximum output length</li>
+<li><strong>Specify Length in Prompt:</strong> "Provide a 2-sentence summary" vs "Summarize this document"</li>
+<li><strong>Request Structured Output:</strong> JSON or bullet points are typically more concise than prose</li>
+<li><strong>Discourage Elaboration:</strong> "Be concise" or "Provide only essential information"</li>
+</ul>
+
+<p><strong>Cost Impact Example:</strong></p>
+<ul>
+<li>Uncontrolled output: Average 800 tokens at $15/1M = $0.012 per response</li>
+<li>Controlled output: Average 200 tokens at $15/1M = $0.003 per response</li>
+<li><strong>Savings: 75% on output costs</strong></li>
+</ul>
+
+<h3>Structured Output Formats</h3>
+<p>Structured formats like JSON reduce token consumption compared to natural language:</p>
+
+<p><strong>Natural Language Output (180 tokens):</strong></p>
+<blockquote>
+Based on the customer's inquiry, I would recommend the following actions: First, we should verify the customer's account status to ensure they have an active subscription. Second, we need to check the error logs to identify the specific issue they're experiencing. Third, we should provide them with the troubleshooting guide for their product model. Finally, if the issue persists, we should escalate to the technical support team.
+</blockquote>
+
+<p><strong>Structured JSON Output (65 tokens):</strong></p>
+<blockquote>
+{
+  "actions": [
+    "verify_account_status",
+    "check_error_logs",
+    "send_troubleshooting_guide",
+    "escalate_if_unresolved"
+  ],
+  "priority": "medium"
+}
+</blockquote>
+
+<p><strong>Savings: 64% reduction in output tokens</strong></p>
+
+<h2>Context Window Management</h2>
+<p>Efficient use of context windows prevents unnecessary token consumption in multi-turn interactions.</p>
+
+<h3>Conversation History Optimization</h3>
+<p>In conversational applications, history accumulates rapidly:</p>
+
+<ul>
+<li><strong>Sliding Window:</strong> Keep only the last N turns of conversation</li>
+<li><strong>Summarization:</strong> Periodically summarize conversation history into compact form</li>
+<li><strong>Relevance Filtering:</strong> Include only contextually relevant previous messages</li>
+<li><strong>Compression:</strong> Remove formatting, redundancy, and non-essential content from history</li>
+</ul>
+
+<p><strong>Cost Impact Example (10-turn conversation):</strong></p>
+<ul>
+<li>Full history: 5,000 tokens per subsequent request</li>
+<li>Sliding window (last 3 turns): 1,500 tokens per request</li>
+<li>Summarized history: 300 tokens per request</li>
+<li><strong>Savings: 70-94% on context costs</strong></li>
+</ul>
+
+<h3>RAG Context Optimization</h3>
+<p>Retrieval-Augmented Generation adds significant token overhead:</p>
+
+<ul>
+<li><strong>Retrieval Precision:</strong> Retrieve fewer, more relevant documents</li>
+<li><strong>Chunk Size Optimization:</strong> Use smaller chunks that contain only relevant information</li>
+<li><strong>Re-ranking:</strong> Use lightweight re-ranking to select best chunks before expensive LLM processing</li>
+<li><strong>Excerpt Extraction:</strong> Extract only relevant passages from retrieved documents</li>
+</ul>
+
+<h2>Prompt Caching Strategies</h2>
+<p>AWS Bedrock supports prompt caching, which can reduce input token costs by up to 90% for repeated content.</p>
+
+<h3>How Prompt Caching Works</h3>
+<p>Bedrock caches the processed representation of prompt prefixes, eliminating reprocessing costs:</p>
+
+<ul>
+<li>First request: Full input token cost</li>
+<li>Subsequent requests with same prefix: 90% discount on cached portion</li>
+<li>Cache duration: 5 minutes (automatically extended with use)</li>
+<li>Minimum cacheable size: 1,024 tokens</li>
+</ul>
+
+<h3>Effective Caching Patterns</h3>
+
+<p><strong>System Prompt Caching:</strong></p>
+<ul>
+<li>Place system prompts at the beginning of requests</li>
+<li>Keep system prompts consistent across requests</li>
+<li>Benefit: 90% reduction on system prompt costs</li>
+</ul>
+
+<p><strong>Document Context Caching:</strong></p>
+<ul>
+<li>For document Q&A, cache the document content</li>
+<li>Multiple questions about same document benefit from caching</li>
+<li>Benefit: 90% reduction on document token costs after first query</li>
+</ul>
+
+<p><strong>RAG Context Caching:</strong></p>
+<ul>
+<li>Cache frequently retrieved documents or knowledge base content</li>
+<li>Structure prompts to maximize cache hit rates</li>
+<li>Benefit: Significant reduction in RAG overhead costs</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Model selection is the highest-impact optimization, potentially reducing costs by 90%+ for appropriate use cases</li>
+<li>Multi-model routing strategies balance cost and quality by using the right model for each task</li>
+<li>System prompt optimization delivers recurring savings since prompts are sent with every request</li>
+<li>Output optimization is particularly valuable since output tokens cost 3-5x more than input tokens</li>
+<li>Context window management prevents exponential cost growth in conversational and RAG applications</li>
+<li>Prompt caching can reduce input token costs by 90% for repeated content</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

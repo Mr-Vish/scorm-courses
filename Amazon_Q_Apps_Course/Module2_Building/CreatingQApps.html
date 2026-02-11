@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Creating Q Apps - Conversation-to-App and From-Scratch Methods</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+
+
+</head>
+<body>
+<h1>Module 2: Building and Designing Q Apps</h1>
+<h2>Creating Q Apps - Conversation-to-App and From-Scratch Methods</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will:</p>
+<ul>
+<li>Master the conversation-to-app creation workflow and understand when to use it</li>
+<li>Learn the from-scratch application building process with card configuration</li>
+<li>Apply prompt engineering techniques for effective Q Apps</li>
+<li>Understand testing and iteration strategies for application refinement</li>
+</ul>
+
+<h2>Two Paths to Q Apps Creation</h2>
+<p>Amazon Q Apps provides two distinct creation methods, each suited to different scenarios and user preferences. Understanding when and how to use each method is essential for efficient application development.</p>
+
+<h2>Method 1: Conversation-to-App Creation</h2>
+
+<h3>Conceptual Foundation</h3>
+<p>The conversation-to-app method leverages existing interactions with Amazon Q Business as the foundation for application creation. When users have productive conversations that solve specific problems, they can transform those conversations into reusable applications that others can run with different parameters. This approach is particularly powerful because it captures proven problem-solving logic in an immediately shareable format.</p>
+
+<h3>When to Use Conversation-to-App</h3>
+<p>This method is ideal when:</p>
+<ul>
+<li>You've already had a successful Q Business conversation that produced valuable results</li>
+<li>The conversation involved a clear pattern that could be repeated with different inputs</li>
+<li>You want to quickly create an app without manual card configuration</li>
+<li>The use case is straightforward without complex multi-step logic</li>
+<li>You're exploring whether a particular workflow is worth formalizing as an app</li>
+</ul>
+
+<h3>Step-by-Step Conversation-to-App Process</h3>
+
+<h3>Step 1: Have a Productive Q Business Conversation</h3>
+<p>Begin by using Amazon Q Business naturally to solve a problem. For example:</p>
+<blockquote>
+<strong>User:</strong> "I need to analyze our Q3 sales performance for the Northeast region. Can you summarize key metrics, identify top-performing products, and highlight any concerning trends?"<br/><br/>
+<strong>Q Business:</strong> [Provides comprehensive analysis with data from connected sales systems]
+</blockquote>
+<p>The key is to have a conversation that produces genuinely useful results that you or others might want to replicate with different parameters (different quarters, regions, etc.).</p>
+
+<h3>Step 2: Identify the "Create Q App" Option</h3>
+<p>After Q Business provides a satisfactory response, look for the "Create Q App" button or option in the interface. This is typically located near the response or in a menu of actions you can take with the conversation.</p>
+
+<h3>Step 3: Review Auto-Generated Card Structure</h3>
+<p>When you click "Create Q App," the platform analyzes your conversation to identify:</p>
+<ul>
+<li><strong>Variable Elements:</strong> Parts of your query that could change (e.g., "Q3", "Northeast region")</li>
+<li><strong>Fixed Logic:</strong> The core question or analysis approach that should remain constant</li>
+<li><strong>Output Format:</strong> How results should be presented</li>
+</ul>
+<p>The system automatically creates input cards for the variable elements. In our example, it might create:</p>
+<ul>
+<li>Dropdown card for "Quarter" (Q1, Q2, Q3, Q4)</li>
+<li>Dropdown card for "Region" (Northeast, Southeast, Midwest, West)</li>
+<li>Q Business Query card with the analysis logic</li>
+<li>Output card to display results</li>
+</ul>
+
+<h3>Step 4: Customize Card Labels and Options</h3>
+<p>Review each auto-generated card and customize as needed:</p>
+<ul>
+<li><strong>Input Card Labels:</strong> Ensure labels are clear and user-friendly</li>
+<li><strong>Dropdown Options:</strong> Verify that all relevant options are included</li>
+<li><strong>Help Text:</strong> Add descriptions to guide users on what to enter</li>
+<li><strong>Default Values:</strong> Set sensible defaults to streamline usage</li>
+</ul>
+
+<h3>Step 5: Test with Different Parameters</h3>
+<p>Before publishing, test the app with various input combinations to ensure it produces appropriate results across different scenarios. Try edge cases like:</p>
+<ul>
+<li>Different time periods (current quarter vs. historical quarters)</li>
+<li>Different regions (high-performing vs. underperforming)</li>
+<li>Unusual combinations that users might try</li>
+</ul>
+
+<h3>Step 6: Name and Describe Your App</h3>
+<p>Provide a clear, descriptive name and summary:</p>
+<ul>
+<li><strong>Name:</strong> "Regional Sales Performance Analyzer"</li>
+<li><strong>Description:</strong> "Analyzes sales metrics for a selected quarter and region, identifying top products and trends"</li>
+<li><strong>Tags:</strong> Add relevant tags like "sales", "analytics", "regional" for discoverability</li>
+</ul>
+
+<h3>Advantages of Conversation-to-App</h3>
+<ul>
+<li><strong>Speed:</strong> Create apps in minutes rather than hours</li>
+<li><strong>Proven Logic:</strong> The app is based on a conversation that already worked</li>
+<li><strong>Lower Learning Curve:</strong> Minimal understanding of card types required</li>
+<li><strong>Rapid Prototyping:</strong> Quickly test whether an idea is worth developing further</li>
+</ul>
+
+<h3>Limitations of Conversation-to-App</h3>
+<ul>
+<li><strong>Simpler Workflows:</strong> Best for straightforward, single-query applications</li>
+<li><strong>Less Control:</strong> Auto-generation may not perfectly match your vision</li>
+<li><strong>Limited Customization:</strong> Complex multi-step logic may require from-scratch building</li>
+</ul>
+
+<h2>Method 2: From-Scratch Application Building</h2>
+
+<h3>Conceptual Foundation</h3>
+<p>Building from scratch provides complete control over application structure, card configuration, and workflow logic. This method is essential for complex applications that require multiple processing steps, conditional logic, or sophisticated output formatting.</p>
+
+<h3>When to Use From-Scratch Building</h3>
+<p>This method is ideal when:</p>
+<ul>
+<li>You need complex multi-step workflows with multiple queries</li>
+<li>The application requires specific card types or configurations not captured in conversations</li>
+<li>You want precise control over user experience and flow</li>
+<li>The use case involves document uploads, file processing, or plugin integrations</li>
+<li>You're building a production application that will be widely used</li>
+</ul>
+
+<h3>Step-by-Step From-Scratch Process</h3>
+
+<h3>Step 1: Define Application Requirements</h3>
+<p>Before building, clearly articulate:</p>
+<ul>
+<li><strong>Purpose:</strong> What problem does this app solve?</li>
+<li><strong>Users:</strong> Who will use this app and what is their context?</li>
+<li><strong>Inputs:</strong> What information do users need to provide?</li>
+<li><strong>Processing:</strong> What queries or transformations are needed?</li>
+<li><strong>Outputs:</strong> How should results be presented?</li>
+</ul>
+
+<p><strong>Example Requirements:</strong></p>
+<blockquote>
+<strong>Purpose:</strong> Help legal team find approved contract clauses<br/>
+<strong>Users:</strong> Legal staff and contract managers<br/>
+<strong>Inputs:</strong> Clause type, contract category, jurisdiction<br/>
+<strong>Processing:</strong> Search approved clause library and past contracts<br/>
+<strong>Outputs:</strong> Relevant clauses with usage context and recommendations
+</blockquote>
+
+<h3>Step 2: Navigate to Q Apps Creation Interface</h3>
+<p>Access the Q Apps section within Amazon Q Business and select "Create New App" or "Build from Scratch." You'll be presented with a blank canvas and a card library.</p>
+
+<h3>Step 3: Add and Configure Input Cards</h3>
+<p>Start by adding cards to collect user inputs. For each input:</p>
+
+<p><strong>Text Input Card Configuration:</strong></p>
+<ul>
+<li>Label: "Describe the clause you need"</li>
+<li>Placeholder: "e.g., limitation of liability for SaaS agreements"</li>
+<li>Required: Yes</li>
+<li>Help text: "Be specific about the clause type and context"</li>
+</ul>
+
+<p><strong>Dropdown Card Configuration:</strong></p>
+<ul>
+<li>Label: "Contract Category"</li>
+<li>Options: "Software License", "Services Agreement", "Partnership Agreement", "NDA"</li>
+<li>Default: "Software License"</li>
+<li>Required: Yes</li>
+</ul>
+
+<p><strong>Dropdown Card Configuration:</strong></p>
+<ul>
+<li>Label: "Jurisdiction"</li>
+<li>Options: "United States", "European Union", "United Kingdom", "Canada", "Australia"</li>
+<li>Default: "United States"</li>
+<li>Required: No</li>
+</ul>
+
+<h3>Step 4: Add Processing Cards</h3>
+<p>Add cards that perform the application's core logic:</p>
+
+<p><strong>Q Business Query Card Configuration:</strong></p>
+<ul>
+<li>Query Template: "Search our approved contract clause library for [clause type] clauses suitable for [contract category] agreements in [jurisdiction]. Include context about when each clause is appropriate and any jurisdiction-specific considerations."</li>
+<li>Data Sources: Select "Contract Library" and "Executed Contracts" repositories</li>
+<li>Response Length: Medium (500-1000 words)</li>
+</ul>
+
+<h3>Step 5: Add Output Cards</h3>
+<p>Configure how results are presented to users:</p>
+
+<p><strong>Formatted Output Card Configuration:</strong></p>
+<ul>
+<li>Title: "Recommended Clauses"</li>
+<li>Format: Structured list with sections</li>
+<li>Include: Copy-to-clipboard button for each clause</li>
+<li>Include: Links to source documents</li>
+</ul>
+
+<h3>Step 6: Test the Application Flow</h3>
+<p>Run the application with test inputs to verify:</p>
+<ul>
+<li>All input cards collect information correctly</li>
+<li>Query cards receive and process inputs as expected</li>
+<li>Results are relevant and well-formatted</li>
+<li>Error handling works for edge cases</li>
+</ul>
+
+<h3>Step 7: Refine Based on Testing</h3>
+<p>Iterate on the application based on test results:</p>
+<ul>
+<li>Adjust query prompts for better results</li>
+<li>Add or remove input options</li>
+<li>Improve output formatting</li>
+<li>Add help text where users might be confused</li>
+</ul>
+
+<h3>Step 8: Add Metadata and Publish</h3>
+<p>Complete the application with:</p>
+<ul>
+<li>Descriptive name and summary</li>
+<li>Relevant tags for discoverability</li>
+<li>Category assignment</li>
+<li>Usage instructions if needed</li>
+</ul>
+
+<h2>Prompt Engineering for Q Apps</h2>
+
+<h3>Principles of Effective Prompts</h3>
+
+<h3>1. Be Specific and Detailed</h3>
+<p><strong>Weak:</strong> "Find information about the product"</p>
+<p><strong>Strong:</strong> "Find technical specifications, pricing information, and customer use cases for [product name], focusing on features relevant to [industry] customers"</p>
+
+<h3>2. Provide Context</h3>
+<p><strong>Weak:</strong> "Analyze this document"</p>
+<p><strong>Strong:</strong> "Analyze the uploaded contract document for potential risks, focusing on liability clauses, termination conditions, payment terms, and intellectual property provisions. Highlight any terms that deviate from our standard contract template."</p>
+
+<h3>3. Specify Output Format</h3>
+<p><strong>Weak:</strong> "Tell me about competitors"</p>
+<p><strong>Strong:</strong> "Create a comparison table showing [competitor name] vs. our product across these dimensions: pricing, key features, target market, strengths, and weaknesses. Format as a structured table with clear categories."</p>
+
+<h3>4. Use Variable Placeholders Correctly</h3>
+<p>When referencing inputs from previous cards, use clear placeholder syntax:</p>
+<ul>
+<li>[input_card_name] for text inputs</li>
+<li>[dropdown_selection] for dropdown values</li>
+<li>[uploaded_document] for file uploads</li>
+</ul>
+
+<h2>Testing and Iteration Strategies</h2>
+
+<h3>Comprehensive Testing Checklist</h3>
+<ul>
+<li><strong>Functionality:</strong> Does the app produce correct results?</li>
+<li><strong>Usability:</strong> Can users understand what to enter and how to use the app?</li>
+<li><strong>Performance:</strong> Do queries return results in reasonable time?</li>
+<li><strong>Edge Cases:</strong> How does the app handle unusual inputs or missing data?</li>
+<li><strong>Output Quality:</strong> Are results formatted appropriately and actionable?</li>
+</ul>
+
+<h3>Iteration Best Practices</h3>
+<ul>
+<li>Start simple and add complexity incrementally</li>
+<li>Test with real users early and often</li>
+<li>Collect feedback on both results quality and user experience</li>
+<li>Monitor usage patterns to identify improvement opportunities</li>
+<li>Version your apps to allow rollback if changes cause issues</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Conversation-to-app is ideal for quick creation of straightforward applications based on proven Q Business interactions</li>
+<li>From-scratch building provides complete control for complex, multi-step workflows</li>
+<li>Effective prompt engineering requires specificity, context, output format specification, and correct variable usage</li>
+<li>Comprehensive testing across functionality, usability, performance, and edge cases is essential</li>
+<li>Iteration based on user feedback and usage patterns drives continuous improvement</li>
+<li>Both creation methods have distinct advantages and should be selected based on use case complexity and requirements</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

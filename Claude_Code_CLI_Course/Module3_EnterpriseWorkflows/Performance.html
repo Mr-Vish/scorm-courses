@@ -1,0 +1,393 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Performance Optimization and Troubleshooting</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Performance Optimization and Troubleshooting</h1>
+
+<h2>Performance Fundamentals</h2>
+<p>Claude Code CLI performance impacts developer productivity directly—slow responses interrupt flow state, while fast, accurate assistance enhances development velocity. Performance optimization requires understanding the factors that influence response time, implementing strategies to minimize latency, and troubleshooting issues when they arise. Effective performance management balances speed with quality, ensuring Claude Code CLI remains a productivity multiplier rather than a bottleneck.</p>
+
+<h2>Performance Factors</h2>
+
+<h3>Key Performance Dimensions</h3>
+
+<table>
+    <tr>
+        <th>Dimension</th>
+        <th>Impact</th>
+        <th>Typical Range</th>
+        <th>Optimization Priority</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Response Latency</td>
+        <td>Time from request to first response</td>
+        <td>1-10 seconds</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Processing</td>
+        <td>Time to index and understand codebase</td>
+        <td>5-60 seconds</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">File Operations</td>
+        <td>Time to read/write files</td>
+        <td>0.1-2 seconds</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Command Execution</td>
+        <td>Time to run shell commands</td>
+        <td>Variable</td>
+        <td>Medium</td>
+    </tr>
+</table>
+
+<h3>Performance Bottlenecks</h3>
+<p>Common sources of performance degradation:</p>
+
+<ul>
+    <li><strong>Large Context Windows:</strong> Processing extensive codebases or conversation history</li>
+    <li><strong>Network Latency:</strong> API communication delays due to network conditions</li>
+    <li><strong>File System Operations:</strong> Reading many files or large files</li>
+    <li><strong>Complex Queries:</strong> Requests requiring extensive analysis or generation</li>
+    <li><strong>Concurrent Operations:</strong> Multiple simultaneous requests competing for resources</li>
+</ul>
+
+<h2>Context Optimization</h2>
+
+<h3>Selective Context Loading</h3>
+<p>Minimize context size while maintaining relevance:</p>
+
+<blockquote>
+{
+  "context": {
+    "includePatterns": [
+      "src/**/*.ts",
+      "tests/**/*.test.ts",
+      "README.md"
+    ],
+    "excludePatterns": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      "**/*.min.js",
+      "**/*.map"
+    ],
+    "maxFileSize": "100KB",
+    "maxFiles": 500
+  }
+}
+</blockquote>
+
+<h3>Incremental Indexing</h3>
+<p>Update index incrementally rather than full re-indexing:</p>
+
+<ul>
+    <li><strong>File Watching:</strong> Monitor file changes and update index selectively</li>
+    <li><strong>Partial Updates:</strong> Re-index only modified files and their dependencies</li>
+    <li><strong>Background Processing:</strong> Perform indexing asynchronously</li>
+    <li><strong>Index Persistence:</strong> Cache index between sessions</li>
+</ul>
+
+<h3>Context Prioritization</h3>
+<p>Load most relevant context first:</p>
+
+<ul>
+    <li>Recently modified files</li>
+    <li>Files in current working directory</li>
+    <li>Files mentioned in conversation</li>
+    <li>Core application files (main, index, app)</li>
+    <li>Configuration files</li>
+</ul>
+
+<h2>Caching Strategies</h2>
+
+<h3>Response Caching</h3>
+<p>Cache responses for repeated queries:</p>
+
+<table>
+    <tr>
+        <th>Cache Type</th>
+        <th>Use Case</th>
+        <th>TTL</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Query Results</td>
+        <td>Identical queries within session</td>
+        <td>Session duration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">File Analysis</td>
+        <td>Analysis of unchanged files</td>
+        <td>Until file modified</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Code Explanations</td>
+        <td>Explanations of unchanged code</td>
+        <td>24 hours</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Review Results</td>
+        <td>Code review for unchanged files</td>
+        <td>Until file modified</td>
+    </tr>
+</table>
+
+<h3>Cache Invalidation</h3>
+<p>Ensure cache remains accurate:</p>
+
+<ul>
+    <li><strong>File Modification:</strong> Invalidate cache when files change</li>
+    <li><strong>Dependency Changes:</strong> Invalidate when dependencies update</li>
+    <li><strong>Configuration Changes:</strong> Clear cache when settings change</li>
+    <li><strong>Manual Invalidation:</strong> Provide command to clear cache</li>
+</ul>
+
+<h2>Network Optimization</h2>
+
+<h3>Request Batching</h3>
+<p>Combine multiple requests to reduce overhead:</p>
+
+<ul>
+    <li>Batch file reads into single request</li>
+    <li>Combine related queries</li>
+    <li>Group file writes when possible</li>
+    <li>Aggregate analysis requests</li>
+</ul>
+
+<h3>Compression</h3>
+<p>Reduce data transfer size:</p>
+
+<ul>
+    <li><strong>Request Compression:</strong> Compress large requests before sending</li>
+    <li><strong>Response Compression:</strong> Request compressed responses</li>
+    <li><strong>Streaming:</strong> Stream large responses incrementally</li>
+    <li><strong>Delta Encoding:</strong> Send only changes for updates</li>
+</ul>
+
+<h3>Connection Management</h3>
+<p>Optimize network connections:</p>
+
+<ul>
+    <li>Reuse HTTP connections (keep-alive)</li>
+    <li>Use HTTP/2 for multiplexing</li>
+    <li>Implement connection pooling</li>
+    <li>Configure appropriate timeouts</li>
+</ul>
+
+<h2>Resource Management</h2>
+
+<h3>Memory Optimization</h3>
+<p>Manage memory usage effectively:</p>
+
+<ul>
+    <li><strong>Streaming Processing:</strong> Process large files in chunks</li>
+    <li><strong>Lazy Loading:</strong> Load data only when needed</li>
+    <li><strong>Memory Limits:</strong> Set maximum memory usage thresholds</li>
+    <li><strong>Garbage Collection:</strong> Trigger GC for long-running sessions</li>
+</ul>
+
+<h3>CPU Optimization</h3>
+<p>Minimize CPU usage:</p>
+
+<ul>
+    <li>Use efficient algorithms for file parsing</li>
+    <li>Parallelize independent operations</li>
+    <li>Avoid unnecessary re-computation</li>
+    <li>Optimize regular expressions</li>
+</ul>
+
+<h2>Troubleshooting Common Issues</h2>
+
+<h3>Slow Response Times</h3>
+
+<p><strong>Symptoms:</strong></p>
+<ul>
+    <li>Requests take longer than 10 seconds</li>
+    <li>Noticeable delay before responses begin</li>
+    <li>Timeouts on complex queries</li>
+</ul>
+
+<p><strong>Diagnostic Steps:</strong></p>
+<ol>
+    <li>Check network connectivity and latency</li>
+    <li>Review context size and complexity</li>
+    <li>Examine recent conversation history length</li>
+    <li>Verify API rate limits not exceeded</li>
+    <li>Check system resource usage (CPU, memory)</li>
+</ol>
+
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Reduce context size through exclusion patterns</li>
+    <li>Clear conversation history with /clear command</li>
+    <li>Break complex queries into smaller parts</li>
+    <li>Enable caching for repeated operations</li>
+    <li>Upgrade network connection if possible</li>
+</ul>
+
+<h3>High Memory Usage</h3>
+
+<p><strong>Symptoms:</strong></p>
+<ul>
+    <li>System becomes sluggish during Claude Code CLI use</li>
+    <li>Out of memory errors</li>
+    <li>Swap usage increases significantly</li>
+</ul>
+
+<p><strong>Diagnostic Steps:</strong></p>
+<ol>
+    <li>Monitor memory usage with system tools</li>
+    <li>Check size of indexed codebase</li>
+    <li>Review number of open files</li>
+    <li>Examine conversation history size</li>
+</ol>
+
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Exclude large directories from indexing</li>
+    <li>Set maximum file size limits</li>
+    <li>Clear conversation history regularly</li>
+    <li>Restart Claude Code CLI to free memory</li>
+    <li>Increase system RAM if consistently insufficient</li>
+</ul>
+
+<h3>Connection Failures</h3>
+
+<p><strong>Symptoms:</strong></p>
+<ul>
+    <li>Unable to connect to Claude API</li>
+    <li>Intermittent connection drops</li>
+    <li>Timeout errors</li>
+</ul>
+
+<p><strong>Diagnostic Steps:</strong></p>
+<ol>
+    <li>Verify internet connectivity</li>
+    <li>Check API key validity</li>
+    <li>Test API endpoint accessibility</li>
+    <li>Review firewall and proxy settings</li>
+    <li>Check for service outages</li>
+</ol>
+
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Verify and update API key</li>
+    <li>Configure proxy settings if behind corporate firewall</li>
+    <li>Adjust timeout values for slow connections</li>
+    <li>Implement retry logic with exponential backoff</li>
+    <li>Use alternative network connection</li>
+</ul>
+
+<h3>Incorrect or Inconsistent Results</h3>
+
+<p><strong>Symptoms:</strong></p>
+<ul>
+    <li>Claude provides outdated information</li>
+    <li>Responses don't reflect recent code changes</li>
+    <li>Inconsistent behavior across sessions</li>
+</ul>
+
+<p><strong>Diagnostic Steps:</strong></p>
+<ol>
+    <li>Check if codebase index is current</li>
+    <li>Verify file changes are detected</li>
+    <li>Review cache status</li>
+    <li>Examine conversation context</li>
+</ol>
+
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Manually trigger index refresh</li>
+    <li>Clear cache to force re-analysis</li>
+    <li>Use /clear to reset conversation context</li>
+    <li>Explicitly mention recent changes in queries</li>
+    <li>Restart Claude Code CLI to reset state</li>
+</ul>
+
+<h2>Monitoring and Metrics</h2>
+
+<h3>Performance Metrics</h3>
+<p>Track key performance indicators:</p>
+
+<ul>
+    <li><strong>Average Response Time:</strong> Mean time from request to response</li>
+    <li><strong>P95 Response Time:</strong> 95th percentile response time</li>
+    <li><strong>Cache Hit Rate:</strong> Percentage of requests served from cache</li>
+    <li><strong>API Call Volume:</strong> Number of API requests per session</li>
+    <li><strong>Error Rate:</strong> Percentage of failed requests</li>
+    <li><strong>Memory Usage:</strong> Peak and average memory consumption</li>
+</ul>
+
+<h3>Diagnostic Commands</h3>
+<p>Built-in commands for troubleshooting:</p>
+
+<blockquote>
+# Check system health
+claude doctor
+
+# View performance statistics
+claude stats
+
+# Clear cache
+claude cache clear
+
+# Refresh codebase index
+claude index refresh
+
+# View debug logs
+claude logs --level debug
+</blockquote>
+
+<h2>Best Practices</h2>
+
+<h3>Configuration Optimization</h3>
+<ul>
+    <li>Exclude unnecessary files from indexing</li>
+    <li>Set appropriate file size limits</li>
+    <li>Enable caching for repeated operations</li>
+    <li>Configure reasonable timeout values</li>
+</ul>
+
+<h3>Usage Patterns</h3>
+<ul>
+    <li>Break complex tasks into smaller queries</li>
+    <li>Clear conversation history when switching contexts</li>
+    <li>Use specific, focused queries rather than broad requests</li>
+    <li>Leverage caching by repeating similar queries</li>
+</ul>
+
+<h3>Maintenance</h3>
+<ul>
+    <li>Regularly update Claude Code CLI to latest version</li>
+    <li>Monitor performance metrics over time</li>
+    <li>Clear cache periodically to prevent staleness</li>
+    <li>Review and optimize configuration based on usage patterns</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Performance optimization balances speed with quality for productive AI assistance</li>
+    <li>Key factors include response latency, context processing, and network performance</li>
+    <li>Context optimization through selective loading, incremental indexing, and prioritization</li>
+    <li>Caching strategies reduce repeated computation and API calls</li>
+    <li>Network optimization via batching, compression, and connection management</li>
+    <li>Common issues include slow responses, high memory usage, and connection failures</li>
+    <li>Monitoring metrics enable proactive performance management</li>
+    <li>Best practices emphasize configuration optimization, smart usage patterns, and regular maintenance</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

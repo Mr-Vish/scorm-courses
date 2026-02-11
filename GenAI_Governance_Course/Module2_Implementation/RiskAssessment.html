@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>AI Risk Assessment and Classification</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AI Risk Assessment and Classification</h1>
+
+<h2>AI-Specific Risk Categories</h2>
+<p>Traditional IT risk frameworks don't capture AI-specific risks. Organizations need specialized risk taxonomies:</p>
+
+<table>
+    <tr><th>Risk Category</th><th>Description</th><th>Example Scenarios</th><th>Assessment Method</th></tr>
+    <tr><td>Accuracy & Reliability</td><td>Incorrect outputs, hallucinations, inconsistency</td><td>Chatbot provides wrong product info, code assistant suggests vulnerable code</td><td>Benchmark testing, human evaluation, A/B testing</td></tr>
+    <tr><td>Bias & Fairness</td><td>Discriminatory outcomes based on protected characteristics</td><td>Resume screener favors male candidates, loan approval biased by zip code</td><td>Fairness metrics (demographic parity, equalized odds), disparate impact analysis</td></tr>
+    <tr><td>Privacy & Data Protection</td><td>Unauthorized data access, PII leakage, consent violations</td><td>Model memorizes training data, prompt injection extracts PII, data retention violations</td><td>PII detection, data flow mapping, privacy impact assessment</td></tr>
+    <tr><td>Security & Adversarial</td><td>Prompt injection, jailbreaks, data exfiltration</td><td>Attacker bypasses content filters, extracts system prompts, causes denial of service</td><td>Red teaming, penetration testing, adversarial examples</td></tr>
+    <tr><td>Transparency & Explainability</td><td>Inability to explain decisions, black box models</td><td>Loan denial without explanation, medical diagnosis without reasoning</td><td>Explainability techniques (SHAP, LIME), documentation review</td></tr>
+    <tr><td>Legal & Compliance</td><td>Regulatory violations, IP infringement, liability</td><td>GDPR right to explanation not met, copyrighted content in outputs, EU AI Act violations</td><td>Legal review, compliance mapping, regulatory gap analysis</td></tr>
+</table>
+
+<h2>Risk Assessment Questionnaire</h2>
+<p>Every AI use case should complete a risk assessment before development. Here's a practical questionnaire:</p>
+
+<div class="code-block">
+<pre><code># AI Risk Assessment Questionnaire
+
+## Use Case Information
+1. What is the AI system's purpose and intended use?
+2. Who are the primary users and affected stakeholders?
+3. What decisions or actions will the AI system influence?
+4. What is the expected deployment scale (users, requests/day)?
+
+## Data Assessment
+5. What data sources will be used for training and inference?
+6. Does the data contain PII or sensitive information?
+7. Do you have rights and consent to use this data?
+8. Is the data representative of the target population?
+
+## Impact Assessment
+9. What are potential harms if the system makes errors?
+   □ Financial loss  □ Reputational damage  □ Physical harm
+   □ Discrimination  □ Privacy violation    □ Legal liability
+
+10. Are decisions made by the AI system:
+    □ Fully automated  □ Human-in-the-loop  □ Human-on-the-loop
+
+11. Can affected individuals challenge or appeal AI decisions?
+
+## Risk Factors (Score 1-5, 1=Low, 5=High)
+12. Potential for discriminatory outcomes: ___
+13. Severity of harm from errors: ___
+14. Difficulty of human oversight: ___
+15. Regulatory scrutiny level: ___
+16. Complexity and opacity of model: ___
+
+## Risk Score Calculation
+Total Score: ___ (Sum of questions 12-16)
+Risk Tier: 
+- 5-10: Tier 1 (Low Risk)
+- 11-15: Tier 2 (Medium Risk)
+- 16-20: Tier 3 (High Risk)
+- 21-25: Tier 4 (Critical Risk)</code></pre>
+</div>
+
+<h2>Risk Tier Classification</h2>
+<p>Risk tiers determine approval requirements, controls, and monitoring intensity:</p>
+
+<table>
+    <tr><th>Tier</th><th>Risk Level</th><th>Examples</th><th>Approval</th><th>Controls</th><th>Monitoring</th></tr>
+    <tr><td>1</td><td>Low</td><td>Internal summarization, code autocomplete, grammar checking</td><td>Self-service</td><td>Basic logging, usage limits</td><td>Monthly review</td></tr>
+    <tr><td>2</td><td>Medium</td><td>Customer chatbots, content generation, data analysis</td><td>Team lead + security</td><td>PII scanning, output filtering, human review option</td><td>Weekly metrics, quarterly audit</td></tr>
+    <tr><td>3</td><td>High</td><td>Hiring assistance, credit scoring, medical diagnosis support</td><td>Governance board + legal</td><td>Bias testing, explainability, audit trail, human final decision</td><td>Daily metrics, monthly audit, external review</td></tr>
+    <tr><td>4</td><td>Critical</td><td>Autonomous medical treatment, financial trading, critical infrastructure</td><td>Board + regulatory</td><td>Tier 3 + redundancy, fail-safes, external audit, regulatory approval</td><td>Real-time monitoring, continuous audit</td></tr>
+</table>
+
+<h2>Risk Register Template</h2>
+<div class="code-block">
+<pre><code># AI Risk Register Entry
+
+{
+  "risk_id": "RISK-AI-2024-042",
+  "system_name": "Customer Support Chatbot v2.1",
+  "system_id": "SYS-CS-001",
+  "risk_category": "Accuracy & Reliability",
+  "risk_description": "Chatbot provides incorrect product specifications leading to customer dissatisfaction and returns",
+  
+  "likelihood": "Medium",  // Low, Medium, High
+  "impact": "High",        // Low, Medium, High, Critical
+  "risk_score": "High",    // Calculated from likelihood x impact
+  
+  "affected_stakeholders": ["Customers", "Support team", "Sales"],
+  "potential_harms": [
+    "Customer receives wrong product",
+    "Increased return rate and costs",
+    "Reputational damage",
+    "Support team workload increase"
+  ],
+  
+  "inherent_risk": "High",  // Before mitigations
+  "residual_risk": "Medium", // After mitigations
+  
+  "mitigations": [
+    {
+      "control": "RAG system with verified product database",
+      "status": "Implemented",
+      "effectiveness": "High"
+    },
+    {
+      "control": "Confidence threshold - escalate to human below 0.75",
+      "status": "Implemented",
+      "effectiveness": "Medium"
+    },
+    {
+      "control": "Weekly accuracy review on random sample of 100 conversations",
+      "status": "Implemented",
+      "effectiveness": "Medium"
+    },
+    {
+      "control": "User feedback mechanism with 'Was this helpful?' prompt",
+      "status": "Planned",
+      "effectiveness": "Low"
+    }
+  ],
+  
+  "owner": "Jane Smith (Product Manager)",
+  "reviewer": "AI Risk Manager",
+  "last_review_date": "2024-01-15",
+  "next_review_date": "2024-04-15",
+  "status": "Active - Monitoring"
+}</code></pre>
+</div>
+
+<h2>Likelihood and Impact Assessment</h2>
+<p>Quantify risk using consistent criteria:</p>
+
+<table>
+    <tr><th>Likelihood</th><th>Definition</th><th>Frequency</th></tr>
+    <tr><td>Low</td><td>Unlikely to occur</td><td>&lt;1% of interactions</td></tr>
+    <tr><td>Medium</td><td>May occur occasionally</td><td>1-5% of interactions</td></tr>
+    <tr><td>High</td><td>Likely to occur regularly</td><td>&gt;5% of interactions</td></tr>
+</table>
+
+<table>
+    <tr><th>Impact</th><th>Financial</th><th>Reputational</th><th>Legal/Regulatory</th><th>Operational</th></tr>
+    <tr><td>Low</td><td>&lt;$10K</td><td>Minor complaints</td><td>No violations</td><td>Minimal disruption</td></tr>
+    <tr><td>Medium</td><td>$10K-$100K</td><td>Local media attention</td><td>Warning from regulator</td><td>Temporary service degradation</td></tr>
+    <tr><td>High</td><td>$100K-$1M</td><td>National media attention</td><td>Fine or enforcement action</td><td>Service outage</td></tr>
+    <tr><td>Critical</td><td>&gt;$1M</td><td>Lasting brand damage</td><td>License revocation</td><td>Business continuity threat</td></tr>
+</table>
+
+<h2>Risk Heat Map</h2>
+<blockquote>
+<strong>Impact vs Likelihood Matrix</strong>
+
+<table>
+<tr><th>Impact</th><th>Low Likelihood</th><th>Med Likelihood</th><th>High Likelihood</th></tr>
+<tr><td>Critical</td><td>Medium</td><td>High</td><td>Critical</td></tr>
+<tr><td>High</td><td>Low</td><td>Medium</td><td>High</td></tr>
+<tr><td>Medium</td><td>Low</td><td>Medium</td><td>Medium</td></tr>
+<tr><td>Low</td><td>Low</td><td>Low</td><td>Medium</td></tr>
+</table>
+
+<strong>Risk Levels:</strong>
+- Low Risk (Tier 1): Accept with standard controls
+- Medium Risk (Tier 2-3): Mitigate and monitor
+- High/Critical Risk (Tier 3-4): Extensive controls or avoid
+</blockquote>
+
+<h2>Continuous Risk Monitoring</h2>
+<p>Risk assessment isn't one-time. Monitor for changes that increase risk:</p>
+
+<ul>
+    <li><strong>Model Drift:</strong> Accuracy degrades over time as data distributions shift</li>
+    <li><strong>Scope Creep:</strong> System used for purposes beyond original intent</li>
+    <li><strong>Scale Increase:</strong> Higher volume amplifies impact of errors</li>
+    <li><strong>Regulatory Changes:</strong> New laws or enforcement priorities</li>
+    <li><strong>Incident Patterns:</strong> Recurring issues indicate systemic problems</li>
+    <li><strong>Stakeholder Feedback:</strong> User complaints or concerns</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Risk Monitoring Triggers
+
+## Automatic Re-Assessment Required When:
+- Accuracy drops below threshold (e.g., 95% → 90%)
+- Bias metrics exceed tolerance (e.g., disparate impact > 1.25)
+- Incident severity P0 or P1
+- Deployment scale increases >50%
+- New use case or user population added
+- Regulatory change affecting the system
+- Major model or data update
+
+## Review Frequency by Tier:
+- Tier 1: Annual risk review
+- Tier 2: Quarterly risk review
+- Tier 3: Monthly risk review
+- Tier 4: Continuous risk monitoring</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

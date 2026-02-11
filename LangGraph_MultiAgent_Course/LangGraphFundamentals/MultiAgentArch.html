@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-Agent Architectures</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Multi-Agent Architectures</h1>
+
+
+<h2>Multi-Agent Patterns</h2>
+<table>
+    <tr><th>Pattern</th><th>Description</th><th>Use Case</th></tr>
+    <tr><td>Supervisor</td><td>One agent routes to specialist agents</td><td>Customer service with specialized departments</td></tr>
+    <tr><td>Debate</td><td>Agents argue different positions</td><td>Decision analysis, risk assessment</td></tr>
+    <tr><td>Pipeline</td><td>Agents process sequentially</td><td>Content: research -> write -> edit -> review</td></tr>
+    <tr><td>Swarm</td><td>Agents hand off based on context</td><td>Complex workflows with dynamic routing</td></tr>
+</table>
+
+<h2>Human-in-the-Loop</h2>
+<p>LangGraph supports <strong>interrupting graph execution</strong> for human approval:</p>
+<div class="code-block">
+<pre><code># Compile with interrupt points
+app = graph.compile(
+    checkpointer=memory_checkpointer,
+    interrupt_before=["execute_action"]  # Pause before this node
+)
+
+# Run until interrupt
+result = app.invoke({"messages": [user_query]})
+
+# Human reviews and approves
+app.update_state(thread_id, {"approved": True})
+
+# Resume execution
+result = app.invoke(None, config={"thread_id": thread_id})</code></pre>
+</div>
+
+<h2>State Persistence</h2>
+<ul>
+    <li><strong>In-memory:</strong> Fast but lost on restart (development)</li>
+    <li><strong>SQLite:</strong> File-based persistence (single server)</li>
+    <li><strong>PostgreSQL:</strong> Production-grade with concurrent access</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

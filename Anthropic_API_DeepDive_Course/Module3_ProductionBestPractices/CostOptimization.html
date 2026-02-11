@@ -1,0 +1,406 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cost Optimization and Monitoring</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cost Optimization and Monitoring</h1>
+
+<h2>Learning Objectives</h2>
+<ul>
+    <li>Understand API pricing models and cost drivers</li>
+    <li>Master token optimization and cost reduction strategies</li>
+    <li>Implement effective caching and request optimization</li>
+    <li>Learn cost monitoring, budgeting, and alerting techniques</li>
+</ul>
+
+<h2>Understanding API Costs</h2>
+<p>The Anthropic API uses token-based pricing where costs are determined by the number of input and output tokens processed.</p>
+
+<h3>Pricing Model</h3>
+<table>
+    <tr>
+        <th>Model</th>
+        <th>Input Cost</th>
+        <th>Output Cost</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude Opus</td>
+        <td>Highest</td>
+        <td>Highest</td>
+        <td>Complex reasoning, premium quality</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude Sonnet</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Balanced performance and cost</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude Haiku</td>
+        <td>Lowest</td>
+        <td>Lowest</td>
+        <td>Speed and cost efficiency</td>
+    </tr>
+</table>
+
+<h3>Cost Components</h3>
+<ul>
+    <li><strong>Input Tokens:</strong> System prompt + conversation history + user message</li>
+    <li><strong>Output Tokens:</strong> Generated response content</li>
+    <li><strong>Batch Discount:</strong> 50% reduction for batch processing</li>
+    <li><strong>Volume Discounts:</strong> Available for high-volume usage</li>
+</ul>
+
+<h2>Token Optimization Strategies</h2>
+
+<h3>1. Prompt Engineering for Efficiency</h3>
+
+<h4>Concise System Prompts</h4>
+<ul>
+    <li>Remove unnecessary verbosity</li>
+    <li>Use clear, direct language</li>
+    <li>Avoid redundant instructions</li>
+    <li>Consolidate related guidelines</li>
+</ul>
+
+<h4>Example Optimization</h4>
+<div class="code-block">
+<pre><code>Before (150 tokens):
+"You are a highly skilled and experienced customer support representative 
+who works for our company. Your job is to help customers by answering 
+their questions in a friendly and professional manner. Always be polite 
+and courteous. Make sure to provide accurate information..."
+
+After (45 tokens):
+"You are a customer support assistant. Provide accurate, friendly 
+responses to customer questions. Be professional and helpful."
+
+Savings: 105 tokens per request</code></pre>
+</div>
+
+<h3>2. Context Window Management</h3>
+
+<h4>Sliding Window Approach</h4>
+<ul>
+    <li>Keep only recent N conversation turns</li>
+    <li>Discard oldest messages when limit reached</li>
+    <li>Maintain essential context only</li>
+    <li>Typical window: 5-10 recent exchanges</li>
+</ul>
+
+<h4>Conversation Summarization</h4>
+<ul>
+    <li>Periodically summarize conversation history</li>
+    <li>Replace detailed history with concise summary</li>
+    <li>Preserve key information and context</li>
+    <li>Reduce token count by 60-80%</li>
+</ul>
+
+<h4>Selective Context Inclusion</h4>
+<ul>
+    <li>Analyze relevance of each message</li>
+    <li>Include only contextually relevant history</li>
+    <li>Remove tangential conversations</li>
+    <li>Prioritize recent and important exchanges</li>
+</ul>
+
+<h3>3. Output Length Control</h3>
+
+<h4>Appropriate max_tokens Settings</h4>
+<ul>
+    <li><strong>Short Answers:</strong> 256-512 tokens</li>
+    <li><strong>Standard Responses:</strong> 512-1024 tokens</li>
+    <li><strong>Detailed Explanations:</strong> 1024-2048 tokens</li>
+    <li><strong>Long-Form Content:</strong> 2048-4096 tokens</li>
+</ul>
+
+<h4>Stop Sequences</h4>
+<ul>
+    <li>Define custom stop sequences</li>
+    <li>Prevent unnecessary continuation</li>
+    <li>Control output boundaries</li>
+    <li>Reduce over-generation costs</li>
+</ul>
+
+<h4>Prompt-Based Length Control</h4>
+<div class="code-block">
+<pre><code>"Provide a concise answer in 2-3 sentences."
+"Summarize in bullet points (maximum 5 items)."
+"Respond in under 100 words."</code></pre>
+</div>
+
+<h3>4. Strategic Model Selection</h3>
+
+<h4>Task-Model Matching</h4>
+<ul>
+    <li><strong>Simple Classification:</strong> Use Haiku (lowest cost)</li>
+    <li><strong>Content Generation:</strong> Use Sonnet (balanced)</li>
+    <li><strong>Complex Analysis:</strong> Use Opus (when necessary)</li>
+    <li><strong>Batch Processing:</strong> Use batch API (50% discount)</li>
+</ul>
+
+<h4>Dynamic Model Selection</h4>
+<ul>
+    <li>Analyze task complexity automatically</li>
+    <li>Route to appropriate model tier</li>
+    <li>Start with cheaper model, escalate if needed</li>
+    <li>Track model performance vs cost</li>
+</ul>
+
+<h2>Caching Strategies</h2>
+
+<h3>Response Caching</h3>
+
+<h4>Cache Candidates</h4>
+<ul>
+    <li>Frequently asked questions</li>
+    <li>Static content generation</li>
+    <li>Repeated queries with same parameters</li>
+    <li>Common classification tasks</li>
+</ul>
+
+<h4>Cache Key Design</h4>
+<ul>
+    <li>Hash of input parameters</li>
+    <li>Include model and temperature</li>
+    <li>Consider user context if relevant</li>
+    <li>Implement cache versioning</li>
+</ul>
+
+<h4>Cache Invalidation</h4>
+<ul>
+    <li><strong>Time-Based:</strong> Expire after N hours/days</li>
+    <li><strong>Event-Based:</strong> Invalidate on data updates</li>
+    <li><strong>Manual:</strong> Clear cache on demand</li>
+    <li><strong>LRU:</strong> Least recently used eviction</li>
+</ul>
+
+<h3>Prompt Caching (Advanced)</h3>
+<ul>
+    <li>Cache frequently used system prompts</li>
+    <li>Reuse cached context across requests</li>
+    <li>Reduce input token costs</li>
+    <li>Check Anthropic documentation for availability</li>
+</ul>
+
+<h2>Request Optimization</h2>
+
+<h3>Request Deduplication</h3>
+<ul>
+    <li>Detect duplicate or near-duplicate requests</li>
+    <li>Return cached results for duplicates</li>
+    <li>Implement request fingerprinting</li>
+    <li>Track deduplication savings</li>
+</ul>
+
+<h3>Batch Processing for Cost Savings</h3>
+<ul>
+    <li>Use batch API for non-urgent requests (50% discount)</li>
+    <li>Accumulate requests for batch submission</li>
+    <li>Process overnight or during off-peak</li>
+    <li>Ideal for analytics, reporting, bulk operations</li>
+</ul>
+
+<h3>Request Consolidation</h3>
+<ul>
+    <li>Combine multiple related queries</li>
+    <li>Process in single API call</li>
+    <li>Reduce overhead and total tokens</li>
+    <li>Parse structured responses</li>
+</ul>
+
+<h2>Cost Monitoring</h2>
+
+<h3>Key Metrics to Track</h3>
+
+<h4>Usage Metrics</h4>
+<ul>
+    <li><strong>Total Requests:</strong> API calls per day/week/month</li>
+    <li><strong>Token Consumption:</strong> Input and output tokens used</li>
+    <li><strong>Model Distribution:</strong> Usage by model tier</li>
+    <li><strong>Average Tokens per Request:</strong> Efficiency indicator</li>
+</ul>
+
+<h4>Cost Metrics</h4>
+<ul>
+    <li><strong>Daily/Monthly Spend:</strong> Total API costs</li>
+    <li><strong>Cost per Request:</strong> Average cost efficiency</li>
+    <li><strong>Cost by Feature:</strong> Spending by application feature</li>
+    <li><strong>Cost by User/Tenant:</strong> Multi-tenant cost allocation</li>
+</ul>
+
+<h4>Efficiency Metrics</h4>
+<ul>
+    <li><strong>Cache Hit Rate:</strong> Percentage of cached responses</li>
+    <li><strong>Token Efficiency:</strong> Tokens per unit of value</li>
+    <li><strong>Model Utilization:</strong> Appropriate model selection rate</li>
+    <li><strong>Batch Usage:</strong> Percentage of requests batched</li>
+</ul>
+
+<h3>Monitoring Implementation</h3>
+
+<h4>Real-Time Tracking</h4>
+<ul>
+    <li>Log every API request with token counts</li>
+    <li>Calculate costs in real-time</li>
+    <li>Aggregate metrics by time period</li>
+    <li>Display in monitoring dashboards</li>
+</ul>
+
+<h4>Historical Analysis</h4>
+<ul>
+    <li>Track trends over time</li>
+    <li>Identify cost spikes and anomalies</li>
+    <li>Analyze seasonal patterns</li>
+    <li>Forecast future costs</li>
+</ul>
+
+<h2>Budget Management</h2>
+
+<h3>Budget Setting</h3>
+<ul>
+    <li><strong>Daily Budgets:</strong> Prevent runaway costs</li>
+    <li><strong>Monthly Budgets:</strong> Align with business planning</li>
+    <li><strong>Per-Feature Budgets:</strong> Allocate by functionality</li>
+    <li><strong>Per-User Budgets:</strong> Control individual consumption</li>
+</ul>
+
+<h3>Budget Enforcement</h3>
+
+<h4>Soft Limits</h4>
+<ul>
+    <li>Alert when approaching budget (e.g., 80%)</li>
+    <li>Notify stakeholders</li>
+    <li>Continue service with monitoring</li>
+    <li>Prepare for potential throttling</li>
+</ul>
+
+<h4>Hard Limits</h4>
+<ul>
+    <li>Stop processing when budget exceeded</li>
+    <li>Queue requests for next period</li>
+    <li>Display user-friendly messages</li>
+    <li>Implement emergency override procedures</li>
+</ul>
+
+<h3>Cost Allocation</h3>
+<ul>
+    <li>Tag requests by department/project</li>
+    <li>Track costs per business unit</li>
+    <li>Enable chargeback models</li>
+    <li>Support cost center reporting</li>
+</ul>
+
+<h2>Alerting and Notifications</h2>
+
+<h3>Alert Types</h3>
+
+<h4>Threshold Alerts</h4>
+<ul>
+    <li>Daily spend exceeds $X</li>
+    <li>Hourly token usage above normal</li>
+    <li>Cost per request increases significantly</li>
+    <li>Budget utilization reaches 80%, 90%, 100%</li>
+</ul>
+
+<h4>Anomaly Alerts</h4>
+<ul>
+    <li>Unusual spike in API calls</li>
+    <li>Sudden increase in token consumption</li>
+    <li>Unexpected model usage patterns</li>
+    <li>Cache hit rate drops significantly</li>
+</ul>
+
+<h4>Efficiency Alerts</h4>
+<ul>
+    <li>Average tokens per request increasing</li>
+    <li>Expensive model overuse</li>
+    <li>Low cache utilization</li>
+    <li>Batch processing opportunities missed</li>
+</ul>
+
+<h3>Alert Channels</h3>
+<ul>
+    <li>Email notifications</li>
+    <li>Slack/Teams messages</li>
+    <li>PagerDuty for critical alerts</li>
+    <li>Dashboard indicators</li>
+</ul>
+
+<h2>Cost Optimization Checklist</h2>
+<ul>
+    <li>✓ Optimize system prompts for conciseness</li>
+    <li>✓ Implement conversation history management</li>
+    <li>✓ Set appropriate max_tokens limits</li>
+    <li>✓ Use cheapest appropriate model for each task</li>
+    <li>✓ Implement response caching</li>
+    <li>✓ Use batch API for non-urgent requests</li>
+    <li>✓ Deduplicate similar requests</li>
+    <li>✓ Monitor token consumption in real-time</li>
+    <li>✓ Set and enforce budgets</li>
+    <li>✓ Configure cost alerts</li>
+    <li>✓ Analyze cost trends regularly</li>
+    <li>✓ Optimize based on metrics</li>
+</ul>
+
+<h2>ROI Measurement</h2>
+
+<h3>Value Metrics</h3>
+<ul>
+    <li><strong>Automation Savings:</strong> Labor costs reduced</li>
+    <li><strong>Efficiency Gains:</strong> Time saved per task</li>
+    <li><strong>Quality Improvements:</strong> Error reduction, consistency</li>
+    <li><strong>Customer Satisfaction:</strong> NPS, CSAT improvements</li>
+</ul>
+
+<h3>Cost-Benefit Analysis</h3>
+<ul>
+    <li>Calculate total API costs</li>
+    <li>Measure business value delivered</li>
+    <li>Compare to alternative solutions</li>
+    <li>Justify continued investment</li>
+</ul>
+
+<h2>Continuous Optimization</h2>
+
+<h3>Regular Review Cycle</h3>
+<ol>
+    <li><strong>Weekly:</strong> Review cost trends and anomalies</li>
+    <li><strong>Monthly:</strong> Analyze optimization opportunities</li>
+    <li><strong>Quarterly:</strong> Assess ROI and strategy</li>
+    <li><strong>Annually:</strong> Comprehensive cost-benefit review</li>
+</ol>
+
+<h3>Optimization Opportunities</h3>
+<ul>
+    <li>Identify high-cost features</li>
+    <li>Test prompt variations for efficiency</li>
+    <li>Experiment with model selection</li>
+    <li>Improve caching strategies</li>
+    <li>Increase batch processing adoption</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>API costs are driven by input and output token consumption across model tiers</li>
+    <li>Token optimization through prompt engineering and context management reduces costs significantly</li>
+    <li>Strategic model selection matches task complexity to appropriate cost tier</li>
+    <li>Caching and request optimization prevent unnecessary API calls</li>
+    <li>Batch processing provides 50% cost reduction for non-urgent workloads</li>
+    <li>Comprehensive monitoring enables data-driven cost optimization</li>
+    <li>Budget management and alerting prevent cost overruns</li>
+    <li>Continuous optimization and ROI measurement ensure sustainable operations</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

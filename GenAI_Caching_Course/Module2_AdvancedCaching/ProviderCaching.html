@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Provider-Native Caching Features</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Provider-Native Caching Features</h1>
+
+<h2>Understanding Provider-Native Caching</h2>
+<p>Major GenAI providers have recognized the caching imperative and now offer built-in caching mechanisms. These provider-native solutions operate at the API level, caching portions of requests (typically system prompts and context) to reduce costs and improve performance.</p>
+
+<p>Unlike application-level caching which stores complete responses, provider-native caching focuses on <strong>prompt caching</strong>—reusing processed input tokens across multiple requests.</p>
+
+<h2>Anthropic Prompt Caching</h2>
+
+<h3>How It Works</h3>
+<p>Anthropic's Claude models support prompt caching through the <strong>cache_control</strong> parameter. Marked content blocks are cached on Anthropic's servers for 5 minutes, dramatically reducing input token costs for subsequent requests.</p>
+
+<h3>Cost Structure:</h3>
+<table>
+    <tr>
+        <th>Token Type</th>
+        <th>Standard Cost (Claude Sonnet)</th>
+        <th>Cached Cost</th>
+        <th>Savings</th>
+    </tr>
+    <tr>
+        <td>Input Tokens (First Request)</td>
+        <td>$3.00 per 1M tokens</td>
+        <td>$3.75 per 1M tokens (write)</td>
+        <td>-25% (cache write overhead)</td>
+    </tr>
+    <tr>
+        <td>Input Tokens (Cached)</td>
+        <td>$3.00 per 1M tokens</td>
+        <td>$0.30 per 1M tokens (read)</td>
+        <td>90% savings</td>
+    </tr>
+    <tr>
+        <td>Output Tokens</td>
+        <td>$15.00 per 1M tokens</td>
+        <td>$15.00 per 1M tokens</td>
+        <td>No change</td>
+    </tr>
+</table>
+
+<h3>Implementation Pattern:</h3>
+<p>Typical use case involves caching large system prompts or document context:</p>
+
+<blockquote>
+<strong>Scenario:</strong> Legal document analysis assistant<br/>
+<strong>System Prompt:</strong> 5,000 tokens (legal expertise instructions)<br/>
+<strong>Document Context:</strong> 20,000 tokens (contract text)<br/>
+<strong>User Query:</strong> 100 tokens (varies per request)<br/><br/>
+<strong>First Request Cost:</strong><br/>
+- Cache Write: 25,000 tokens × $3.75/1M = $0.094<br/>
+- Output: 500 tokens × $15/1M = $0.0075<br/>
+- Total: $0.1015<br/><br/>
+<strong>Subsequent Requests (within 5 min):</strong><br/>
+- Cached Read: 25,000 tokens × $0.30/1M = $0.0075<br/>
+- New Input: 100 tokens × $3.00/1M = $0.0003<br/>
+- Output: 500 tokens × $15/1M = $0.0075<br/>
+- Total: $0.0153<br/><br/>
+<strong>Savings per Cached Request:</strong> 85%
+</blockquote>
+
+<h3>Cache Duration and Invalidation:</h3>
+<ul>
+<li><strong>TTL:</strong> 5 minutes from last access (automatically extended with each use)</li>
+<li><strong>Minimum Cacheable Size:</strong> 1,024 tokens (smaller blocks not cached)</li>
+<li><strong>Maximum Cache Size:</strong> Varies by model, typically supports full context window</li>
+<li><strong>Invalidation:</strong> Automatic after 5 minutes of inactivity</li>
+</ul>
+
+<h3>Best Practices for Anthropic Prompt Caching:</h3>
+<ul>
+<li><strong>Cache Stable Content:</strong> System prompts, documentation, reference materials</li>
+<li><strong>Position Cached Content First:</strong> Place cacheable blocks at the beginning of messages</li>
+<li><strong>Batch Similar Requests:</strong> Process related queries within 5-minute window</li>
+<li><strong>Monitor Cache Hit Rates:</strong> Track cache_creation_input_tokens vs cache_read_input_tokens</li>
+</ul>
+
+<h2>OpenAI Prompt Caching (Beta)</h2>
+
+<h3>Overview:</h3>
+<p>OpenAI introduced prompt caching for GPT-4 and GPT-3.5 models, automatically caching recent prompts without explicit configuration. The system identifies repeated prompt prefixes and caches them transparently.</p>
+
+<h3>Key Characteristics:</h3>
+<ul>
+<li><strong>Automatic Detection:</strong> No code changes required</li>
+<li><strong>Prefix-Based:</strong> Caches common prompt beginnings</li>
+<li><strong>Short TTL:</strong> Typically 5-10 minutes</li>
+<li><strong>Cost Reduction:</strong> 50% discount on cached input tokens</li>
+</ul>
+
+<h3>Optimization Strategies:</h3>
+<ul>
+<li>Structure prompts with stable prefixes (system instructions, examples)</li>
+<li>Place variable content (user queries) at the end</li>
+<li>Maintain consistent prompt formatting across requests</li>
+<li>Batch process similar requests to maximize cache utilization</li>
+</ul>
+
+<h2>Google Gemini Context Caching</h2>
+
+<h3>Architecture:</h3>
+<p>Gemini's context caching allows caching of large context inputs (documents, code repositories, media files) for up to 1 hour, with significant cost reductions.</p>
+
+<h3>Pricing Model:</h3>
+<table>
+    <tr>
+        <th>Operation</th>
+        <th>Cost (Gemini 1.5 Pro)</th>
+    </tr>
+    <tr>
+        <td>Cache Storage (per hour)</td>
+        <td>$1.00 per 1M tokens</td>
+    </tr>
+    <tr>
+        <td>Cache Read</td>
+        <td>$0.25 per 1M tokens (75% discount)</td>
+    </tr>
+    <tr>
+        <td>Standard Input</td>
+        <td>$1.25 per 1M tokens</td>
+    </tr>
+</table>
+
+<h3>Use Cases:</h3>
+<ul>
+<li><strong>Document Analysis:</strong> Cache entire documents for multiple queries</li>
+<li><strong>Code Review:</strong> Cache codebase context for iterative analysis</li>
+<li><strong>Video Processing:</strong> Cache video content for multiple analysis tasks</li>
+<li><strong>Long Conversations:</strong> Cache conversation history for multi-turn interactions</li>
+</ul>
+
+<h2>Comparing Provider-Native Solutions</h2>
+
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Anthropic</th>
+        <th>OpenAI</th>
+        <th>Google Gemini</th>
+    </tr>
+    <tr>
+        <td>Configuration Required</td>
+        <td>Yes (cache_control)</td>
+        <td>No (automatic)</td>
+        <td>Yes (explicit API)</td>
+    </tr>
+    <tr>
+        <td>Cache Duration</td>
+        <td>5 minutes</td>
+        <td>5-10 minutes</td>
+        <td>Up to 1 hour</td>
+    </tr>
+    <tr>
+        <td>Cost Savings</td>
+        <td>90% on cached tokens</td>
+        <td>50% on cached tokens</td>
+        <td>75% on cached tokens</td>
+    </tr>
+    <tr>
+        <td>Minimum Cache Size</td>
+        <td>1,024 tokens</td>
+        <td>Automatic detection</td>
+        <td>32,768 tokens</td>
+    </tr>
+    <tr>
+        <td>Best For</td>
+        <td>Large system prompts</td>
+        <td>Consistent prompt patterns</td>
+        <td>Very large context (documents, media)</td>
+    </tr>
+</table>
+
+<h2>Combining Provider and Application Caching</h2>
+
+<h3>Layered Caching Strategy:</h3>
+<blockquote>
+<strong>Layer 1:</strong> Application-level response caching (Redis)<br/>
+- Caches complete responses for identical queries<br/>
+- Fastest retrieval (10-50ms)<br/>
+- Highest cost savings (100% API cost avoided)<br/><br/>
+<strong>Layer 2:</strong> Provider-native prompt caching<br/>
+- Caches input context at API level<br/>
+- Reduces input token costs by 50-90%<br/>
+- Automatic or minimal configuration<br/><br/>
+<strong>Layer 3:</strong> No cache (fresh API call)<br/>
+- Full cost, full latency<br/>
+- Required for truly unique requests
+</blockquote>
+
+<h3>Decision Flow:</h3>
+<ol>
+<li>Check application cache for exact/semantic match → Return if found</li>
+<li>If miss, make API call with provider caching enabled</li>
+<li>Provider checks its cache for prompt prefix → Reduces input cost if found</li>
+<li>Store complete response in application cache for future requests</li>
+</ol>
+
+<h2>Monitoring Provider Cache Performance</h2>
+
+<h3>Key Metrics to Track:</h3>
+<ul>
+<li><strong>Cache Write Tokens:</strong> Tokens written to provider cache (first request)</li>
+<li><strong>Cache Read Tokens:</strong> Tokens read from provider cache (subsequent requests)</li>
+<li><strong>Cache Hit Rate:</strong> (Cache Read Tokens) / (Total Input Tokens)</li>
+<li><strong>Cost Savings:</strong> (Standard Cost - Cached Cost) per request</li>
+<li><strong>Latency Impact:</strong> Response time with vs without caching</li>
+</ul>
+
+<h3>Optimization Indicators:</h3>
+<ul>
+<li><strong>Low Cache Hit Rate (&lt;20%):</strong> Restructure prompts to increase reusability</li>
+<li><strong>High Cache Write Overhead:</strong> Reduce cacheable content size</li>
+<li><strong>Frequent Cache Expirations:</strong> Batch requests more aggressively</li>
+</ul>
+
+<h2>Limitations and Considerations</h2>
+
+<h3>Provider-Native Caching Limitations:</h3>
+<ul>
+<li><strong>Short TTL:</strong> 5-60 minutes vs hours/days for application caching</li>
+<li><strong>Input-Only:</strong> Doesn't cache output tokens or complete responses</li>
+<li><strong>Provider Lock-In:</strong> Implementation specific to each provider</li>
+<li><strong>Limited Control:</strong> Cannot customize cache behavior extensively</li>
+<li><strong>Minimum Sizes:</strong> Small prompts may not benefit</li>
+</ul>
+
+<h3>When Provider Caching Adds Most Value:</h3>
+<ul>
+<li>Large, stable system prompts (1,000+ tokens)</li>
+<li>Document/context-heavy applications</li>
+<li>Multi-turn conversations with history</li>
+<li>Batch processing of similar requests</li>
+<li>Applications already using supported providers</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Provider-native caching reduces input token costs by 50-90% for repeated content</li>
+<li>Anthropic offers explicit control, OpenAI provides automatic caching, Gemini supports long-duration context caching</li>
+<li>Cache durations are short (5-60 minutes), complementing rather than replacing application caching</li>
+<li>Optimal strategy combines application-level response caching with provider-native prompt caching</li>
+<li>Restructuring prompts to maximize cacheable content significantly improves cost efficiency</li>
+<li>Monitoring cache hit rates and cost savings is essential for optimization</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

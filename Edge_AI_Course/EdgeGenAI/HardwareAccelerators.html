@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hardware Accelerators and Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hardware Accelerators and Optimization</h1>
+
+
+<h2>Edge Hardware Accelerators</h2>
+<p>Modern edge devices include specialized hardware for AI inference. Understanding these accelerators is key to maximizing performance:</p>
+
+<h2>Accelerator Types</h2>
+<table>
+    <tr><th>Accelerator</th><th>Devices</th><th>Framework</th><th>Strengths</th></tr>
+    <tr><td>Apple Neural Engine</td><td>iPhone, iPad, Mac (M-series)</td><td>Core ML, MLX</td><td>16 TOPS, excellent efficiency</td></tr>
+    <tr><td>Qualcomm Hexagon NPU</td><td>Android phones (Snapdragon)</td><td>QNN, TFLite</td><td>Integrated in SoC, power-efficient</td></tr>
+    <tr><td>Google Edge TPU</td><td>Coral boards, Pixel phones</td><td>TFLite, Edge TPU compiler</td><td>Very fast for quantized models</td></tr>
+    <tr><td>NVIDIA Jetson</td><td>Jetson Orin Nano/NX/AGX</td><td>CUDA, TensorRT</td><td>Full GPU capability for edge</td></tr>
+    <tr><td>Intel Movidius</td><td>Neural Compute Stick</td><td>OpenVINO</td><td>USB-attached AI accelerator</td></tr>
+    <tr><td>WebGPU</td><td>Modern web browsers</td><td>WebLLM, ONNX.js</td><td>Cross-platform via browser</td></tr>
+</table>
+
+<h2>Apple Silicon Optimization with MLX</h2>
+<div class="code-block">
+<pre><code># MLX: Apple's framework optimized for Apple Silicon
+# Unified memory means no CPU-GPU data transfer overhead
+
+from mlx_lm import load, generate
+
+# Load quantized model
+model, tokenizer = load("mlx-community/Phi-3-mini-4k-instruct-4bit")
+
+# Generate with efficient Metal acceleration
+response = generate(
+    model,
+    tokenizer,
+    prompt="Explain edge computing in one paragraph.",
+    max_tokens=150,
+    temp=0.7,
+)
+print(response)
+
+# Performance on M2 Pro: ~40 tokens/sec for Phi-3 Mini (4-bit)
+# Performance on M3 Max: ~80 tokens/sec for Phi-3 Mini (4-bit)</code></pre>
+</div>
+
+<h2>NVIDIA Jetson Deployment</h2>
+<div class="code-block">
+<pre><code># Deploy on NVIDIA Jetson with TensorRT-LLM
+# Jetson Orin NX has 16GB unified memory and can run 7B models
+
+# Step 1: Convert model to TensorRT engine
+# trtllm-build --model_dir ./phi3-hf --output_dir ./phi3-trt #   --gemm_plugin float16 --max_batch_size 1
+
+# Step 2: Run inference
+from tensorrt_llm import LLM, SamplingParams
+
+llm = LLM(model="./phi3-trt")
+params = SamplingParams(temperature=0.7, max_tokens=200)
+
+output = llm.generate("What is edge computing?", sampling_params=params)
+print(output.text)
+
+# Jetson Orin NX performance:
+# Phi-3 Mini FP16: ~25 tokens/sec
+# Phi-3 Mini INT4: ~50 tokens/sec</code></pre>
+</div>
+
+<h2>WebGPU for Browser-Based AI</h2>
+<div class="code-block">
+<pre><code>// Run LLMs in the browser with WebLLM
+import * as webllm from "@anthropic-ai/web-llm";
+
+const engine = await webllm.CreateMLCEngine("Phi-3-mini-4k-instruct-q4f16_1-MLC");
+
+const response = await engine.chat.completions.create({
+    messages: [{ role: "user", content: "What is WebGPU?" }],
+    stream: true,
+});
+
+// Stream tokens to the UI
+for await (const chunk of response) {
+    const content = chunk.choices[0]?.delta?.content || "";
+    document.getElementById("output").textContent += content;
+}
+
+// Performance varies by GPU:
+// RTX 3060 (Chrome): ~30 tokens/sec
+// M2 MacBook (Chrome): ~20 tokens/sec
+// Integrated GPU: ~5-10 tokens/sec</code></pre>
+</div>
+
+<h2>Optimization Checklist for Edge Deployment</h2>
+<ul>
+    <li><strong>Quantize aggressively:</strong> Use INT4 (Q4_K_M) for most edge devices - the quality tradeoff is worth the 4x memory savings</li>
+    <li><strong>Profile before optimizing:</strong> Measure actual bottlenecks (memory, compute, I/O) before making changes</li>
+    <li><strong>Use hardware-specific runtimes:</strong> Core ML on Apple, TensorRT on NVIDIA, QNN on Qualcomm</li>
+    <li><strong>Minimize model loading time:</strong> Use memory-mapped model files (mmap) for faster startup</li>
+    <li><strong>Batch when possible:</strong> Even small batches (2-4) can significantly improve throughput</li>
+    <li><strong>Monitor thermal throttling:</strong> Edge devices may slow down under sustained AI workloads due to heat</li>
+    <li><strong>Hybrid architecture:</strong> Use edge for latency-sensitive tasks and cloud for complex tasks that need larger models</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

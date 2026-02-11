@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Knowledge Bases and RAG Implementation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Knowledge Bases and RAG Implementation</h1>
+
+<h2>Understanding Retrieval-Augmented Generation (RAG)</h2>
+<p>Retrieval-Augmented Generation (RAG) is a technique that enhances foundation model responses by incorporating relevant information from external knowledge sources. Instead of relying solely on the model's training data, RAG enables agents to access up-to-date, domain-specific information stored in knowledge bases.</p>
+
+<p><strong>Why RAG Matters for Agents:</strong></p>
+<ul>
+    <li><strong>Reduces Hallucinations:</strong> Grounds responses in factual, verifiable information</li>
+    <li><strong>Enables Specialization:</strong> Provides domain expertise without model fine-tuning</li>
+    <li><strong>Maintains Currency:</strong> Knowledge bases can be updated without retraining models</li>
+    <li><strong>Improves Accuracy:</strong> Agents cite specific sources rather than generating from memory</li>
+    <li><strong>Supports Compliance:</strong> Ensures responses align with current policies and regulations</li>
+</ul>
+
+<h2>Knowledge Base Architecture</h2>
+<p>Bedrock Knowledge Bases consist of several interconnected components that work together to enable semantic search and retrieval.</p>
+
+<h3>Component 1: Data Source (S3 Bucket)</h3>
+<p>Documents are stored in Amazon S3 in supported formats:</p>
+<ul>
+    <li><strong>Text:</strong> .txt, .md</li>
+    <li><strong>Documents:</strong> .pdf, .doc, .docx</li>
+    <li><strong>Web:</strong> .html</li>
+    <li><strong>Structured:</strong> .csv (with proper formatting)</li>
+</ul>
+
+<p><strong>Document Organization Best Practices:</strong></p>
+<ul>
+    <li>Use clear, descriptive filenames</li>
+    <li>Organize into logical folder structures</li>
+    <li>Include metadata files for additional context</li>
+    <li>Keep documents focused on specific topics</li>
+    <li>Remove outdated or duplicate content</li>
+</ul>
+
+<h3>Component 2: Embeddings Model</h3>
+<p>The embeddings model converts text into high-dimensional vectors that capture semantic meaning. Bedrock supports:</p>
+<ul>
+    <li><strong>Amazon Titan Embeddings:</strong> 1,536 dimensions, multilingual, cost-effective</li>
+    <li><strong>Cohere Embed:</strong> Multiple dimension options, optimized for search</li>
+</ul>
+
+<p><strong>How Embeddings Work:</strong></p>
+<ol>
+    <li>Text is tokenized and processed by the embeddings model</li>
+    <li>Model outputs a vector (array of numbers) representing semantic meaning</li>
+    <li>Similar concepts produce vectors that are close together in vector space</li>
+    <li>Distance metrics (cosine similarity, Euclidean distance) measure relevance</li>
+</ol>
+
+<h3>Component 3: Vector Database</h3>
+<p>Vector databases store embeddings and enable fast similarity search. Bedrock supports:</p>
+<ul>
+    <li><strong>Amazon OpenSearch Serverless:</strong> Fully managed, auto-scaling</li>
+    <li><strong>Amazon Aurora PostgreSQL (pgvector):</strong> Relational database with vector support</li>
+    <li><strong>Pinecone:</strong> Purpose-built vector database</li>
+    <li><strong>Redis Enterprise Cloud:</strong> In-memory vector search</li>
+</ul>
+
+<h3>Component 4: Chunking Strategy</h3>
+<p>Documents are split into smaller chunks for more precise retrieval. Chunking strategies include:</p>
+
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Description</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Fixed Size</td>
+        <td>Split by character or token count</td>
+        <td>Uniform documents, general purpose</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Semantic</td>
+        <td>Split at natural boundaries (paragraphs, sections)</td>
+        <td>Narrative content, articles</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hierarchical</td>
+        <td>Maintain document structure (headings, subsections)</td>
+        <td>Technical documentation, manuals</td>
+    </tr>
+</table>
+
+<p><strong>Chunking Considerations:</strong></p>
+<ul>
+    <li><strong>Chunk Size:</strong> Balance between context (larger chunks) and precision (smaller chunks). Typical range: 200-1000 tokens</li>
+    <li><strong>Overlap:</strong> Include overlapping content between chunks to maintain context across boundaries</li>
+    <li><strong>Metadata:</strong> Preserve document metadata (title, author, date) with each chunk</li>
+</ul>
+
+<h2>Creating a Knowledge Base</h2>
+
+<h3>Step 1: Prepare Documents</h3>
+<p>Organize and upload documents to S3:</p>
+<ul>
+    <li>Clean and format documents for optimal processing</li>
+    <li>Remove irrelevant content (headers, footers, navigation)</li>
+    <li>Ensure text is extractable (not scanned images without OCR)</li>
+    <li>Add metadata files if additional context is needed</li>
+</ul>
+
+<h3>Step 2: Create Knowledge Base</h3>
+<p>Configure the knowledge base with:</p>
+<ul>
+    <li><strong>Name and Description:</strong> Identify the knowledge base purpose</li>
+    <li><strong>IAM Role:</strong> Permissions to access S3, invoke embeddings model, write to vector database</li>
+    <li><strong>Data Source:</strong> S3 bucket and prefix</li>
+    <li><strong>Embeddings Model:</strong> Select appropriate model</li>
+    <li><strong>Vector Database:</strong> Choose and configure vector store</li>
+    <li><strong>Chunking Configuration:</strong> Define strategy and parameters</li>
+</ul>
+
+<h3>Step 3: Sync Data Source</h3>
+<p>Trigger ingestion process to:</p>
+<ol>
+    <li>Read documents from S3</li>
+    <li>Extract text content</li>
+    <li>Split into chunks based on strategy</li>
+    <li>Generate embeddings for each chunk</li>
+    <li>Store embeddings and metadata in vector database</li>
+</ol>
+
+<p>Ingestion time depends on document volume and size. Monitor progress through CloudWatch or console.</p>
+
+<h3>Step 4: Associate with Agent</h3>
+<p>Link the knowledge base to your agent with instructions on when to use it:</p>
+<div class="code-block">
+<pre><code>"Use the Product Documentation knowledge base to answer questions about 
+features, configuration, troubleshooting, and best practices. Always cite 
+the specific document or section when providing information from the 
+knowledge base."</code></pre>
+</div>
+
+<h2>Query and Retrieval Process</h2>
+<p>When an agent needs information from a knowledge base:</p>
+
+<ol>
+    <li><strong>Query Generation:</strong> Agent formulates a search query based on user request</li>
+    <li><strong>Query Embedding:</strong> Query is converted to vector using same embeddings model</li>
+    <li><strong>Similarity Search:</strong> Vector database finds chunks with highest similarity scores</li>
+    <li><strong>Ranking:</strong> Results are ranked by relevance</li>
+    <li><strong>Context Injection:</strong> Top-ranked chunks are added to agent's context</li>
+    <li><strong>Response Generation:</strong> Agent generates response incorporating retrieved information</li>
+</ol>
+
+<h3>Retrieval Configuration</h3>
+<p>Control retrieval behavior through parameters:</p>
+<ul>
+    <li><strong>Number of Results:</strong> How many chunks to retrieve (typically 3-10)</li>
+    <li><strong>Minimum Similarity Score:</strong> Threshold for relevance (0.0-1.0)</li>
+    <li><strong>Metadata Filters:</strong> Restrict search to specific document types, dates, or categories</li>
+</ul>
+
+<h2>Optimizing Knowledge Base Performance</h2>
+
+<h3>Document Quality</h3>
+<ul>
+    <li><strong>Clear Structure:</strong> Use headings, sections, and logical organization</li>
+    <li><strong>Concise Content:</strong> Remove redundancy and filler</li>
+    <li><strong>Accurate Information:</strong> Regularly review and update content</li>
+    <li><strong>Consistent Terminology:</strong> Use standard terms and definitions</li>
+</ul>
+
+<h3>Chunking Optimization</h3>
+<ul>
+    <li>Test different chunk sizes to find optimal balance</li>
+    <li>Use semantic chunking for narrative content</li>
+    <li>Maintain sufficient overlap to preserve context</li>
+    <li>Include relevant metadata with each chunk</li>
+</ul>
+
+<h3>Query Optimization</h3>
+<ul>
+    <li>Instruct agents to formulate specific, focused queries</li>
+    <li>Use metadata filters to narrow search scope</li>
+    <li>Adjust number of retrieved results based on use case</li>
+    <li>Monitor retrieval quality through trace logging</li>
+</ul>
+
+<h2>Multi-Knowledge Base Strategies</h2>
+<p>Agents can access multiple knowledge bases, each serving different purposes:</p>
+
+<h3>Domain-Specific Knowledge Bases</h3>
+<ul>
+    <li><strong>Product Documentation:</strong> Features, configuration, troubleshooting</li>
+    <li><strong>Policy and Procedures:</strong> Company policies, compliance requirements</li>
+    <li><strong>Customer History:</strong> Past interactions, preferences, issues</li>
+    <li><strong>Technical Specifications:</strong> API documentation, system architecture</li>
+</ul>
+
+<h3>Knowledge Base Selection</h3>
+<p>Instruct agents on which knowledge base to query based on request type:</p>
+<div class="code-block">
+<pre><code>"For product feature questions, query the Product Documentation knowledge base.
+For billing or refund policy questions, query the Policies knowledge base.
+For technical integration questions, query the API Documentation knowledge base."</code></pre>
+</div>
+
+<h2>Monitoring and Maintenance</h2>
+
+<h3>Retrieval Metrics</h3>
+<p>Monitor knowledge base effectiveness:</p>
+<ul>
+    <li><strong>Retrieval Frequency:</strong> How often knowledge base is queried</li>
+    <li><strong>Relevance Scores:</strong> Distribution of similarity scores</li>
+    <li><strong>No Results Rate:</strong> Percentage of queries returning no relevant chunks</li>
+    <li><strong>User Feedback:</strong> Satisfaction with knowledge-based responses</li>
+</ul>
+
+<h3>Content Maintenance</h3>
+<ul>
+    <li>Regularly review and update documents</li>
+    <li>Remove outdated or deprecated information</li>
+    <li>Add new content as products and policies evolve</li>
+    <li>Re-sync data sources after significant updates</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>RAG enables agents to access current, domain-specific information without model retraining</li>
+    <li>Knowledge bases consist of data sources, embeddings models, vector databases, and chunking strategies</li>
+    <li>Effective chunking balances context preservation with retrieval precision</li>
+    <li>Query optimization and metadata filtering improve retrieval relevance</li>
+    <li>Multiple knowledge bases can serve different domains within a single agent</li>
+    <li>Regular monitoring and content maintenance ensure knowledge base effectiveness</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

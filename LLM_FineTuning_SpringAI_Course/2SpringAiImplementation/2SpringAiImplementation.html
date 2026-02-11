@@ -1,0 +1,381 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Spring AI Implementation - Per-Request Configuration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring AI Implementation - Per-Request Configuration</h1>
+
+<h2>Introduction to Spring AI ChatOptions</h2>
+<p>Spring AI provides the <strong>ChatOptions</strong> interface for configuring LLM parameters. This abstraction works across multiple providers (OpenAI, Azure OpenAI, Anthropic, Ollama) with provider-specific implementations.</p>
+
+<p>There are two main approaches to parameter configuration:</p>
+<ul>
+    <li><strong>Global Configuration:</strong> Set defaults in application.properties (applies to all requests)</li>
+    <li><strong>Per-Request Configuration:</strong> Specify parameters for individual API calls (recommended for flexibility)</li>
+</ul>
+
+<h2>Project Setup</h2>
+
+<h3>Maven Dependencies</h3>
+<p>Add Spring AI dependencies to your <strong>pom.xml</strong>:</p>
+
+<div class="code-block">
+<pre><code>&lt;dependencies&gt;
+    &lt;!-- Spring AI OpenAI --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-ai-openai-spring-boot-starter&lt;/artifactId&gt;
+        &lt;version&gt;1.0.0-M1&lt;/version&gt;
+    &lt;/dependency&gt;
+    
+    &lt;!-- Spring Boot Web --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+</code></pre>
+</div>
+
+<h3>Gradle Dependencies</h3>
+<p>For Gradle projects, add to <strong>build.gradle</strong>:</p>
+
+<div class="code-block">
+<pre><code>dependencies {
+    implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter:1.0.0-M1'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+}
+</code></pre>
+</div>
+
+<h3>Basic Configuration</h3>
+<p>Configure your API key in <strong>application.properties</strong>:</p>
+
+<div class="code-block">
+<pre><code># OpenAI Configuration
+spring.ai.openai.api-key=${OPENAI_API_KEY}
+spring.ai.openai.chat.options.model=gpt-4
+</code></pre>
+</div>
+
+<h2>Per-Request Configuration: The Recommended Approach</h2>
+<p>Per-request configuration allows different endpoints to use different parameter settings, making your application flexible and optimized for various use cases.</p>
+
+<h3>Example: Creative vs. Precise Endpoints</h3>
+
+<div class="code-block">
+<pre><code>import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/chat")
+public class ChatController {
+
+    private final ChatClient chatClient;
+
+    public ChatController(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    @GetMapping("/creative")
+    public String creativeChat(@RequestParam String message) {
+        return chatClient.prompt()
+                .user(message)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.9f)
+                        .withTopP(0.9f)
+                        .withMaxTokens(500)
+                        .withFrequencyPenalty(0.3f)
+                        .build())
+                .call()
+                .content();
+    }
+
+    @GetMapping("/precise")
+    public String preciseChat(@RequestParam String message) {
+        return chatClient.prompt()
+                .user(message)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.1f)
+                        .withMaxTokens(300)
+                        .withFrequencyPenalty(0.0f)
+                        .build())
+                .call()
+                .content();
+    }
+
+    @GetMapping("/balanced")
+    public String balancedChat(@RequestParam String message) {
+        return chatClient.prompt()
+                .user(message)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.7f)
+                        .withMaxTokens(400)
+                        .build())
+                .call()
+                .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Use Case: JSON Data Extraction</h2>
+<p>For structured data extraction, use deterministic settings to ensure consistent, parseable output:</p>
+
+<div class="code-block">
+<pre><code>import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.stereotype.Service;
+
+@Service
+public class DataExtractionService {
+
+    private final ChatClient chatClient;
+
+    public DataExtractionService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    public String extractStructuredData(String text) {
+        String prompt = """
+                Extract the following information from the text and return as JSON:
+                - name
+                - email
+                - phone
+                
+                Text: %s
+                """.formatted(text);
+
+        return chatClient.prompt()
+                .user(prompt)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.0f)  // Deterministic
+                        .withMaxTokens(200)     // Limit output
+                        .build())
+                .call()
+                .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Use Case: Code Generation</h2>
+<p>For code generation, use low temperature with moderate token limits:</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class CodeGenerationService {
+
+    private final ChatClient chatClient;
+
+    public CodeGenerationService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    public String generateCode(String requirement) {
+        String prompt = """
+                Generate Java code for the following requirement:
+                %s
+                
+                Provide only the code without explanations.
+                """.formatted(requirement);
+
+        return chatClient.prompt()
+                .user(prompt)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.2f)
+                        .withMaxTokens(1000)
+                        .withFrequencyPenalty(0.0f)
+                        .build())
+                .call()
+                .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Use Case: Creative Content Generation</h2>
+<p>For marketing copy or creative writing, use higher temperature and penalties:</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class ContentGenerationService {
+
+    private final ChatClient chatClient;
+
+    public ContentGenerationService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    public String generateMarketingCopy(String product, String targetAudience) {
+        String prompt = """
+                Create engaging marketing copy for:
+                Product: %s
+                Target Audience: %s
+                
+                Make it creative and compelling.
+                """.formatted(product, targetAudience);
+
+        return chatClient.prompt()
+                .user(prompt)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.9f)
+                        .withTopP(0.9f)
+                        .withMaxTokens(300)
+                        .withFrequencyPenalty(0.5f)
+                        .withPresencePenalty(0.3f)
+                        .build())
+                .call()
+                .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Advanced: Dynamic Parameter Selection</h2>
+<p>Create a service that selects parameters based on task type:</p>
+
+<div class="code-block">
+<pre><code>import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ParameterPresetService {
+
+    public OpenAiChatOptions getPresetForTask(TaskType taskType) {
+        return switch (taskType) {
+            case DATA_EXTRACTION -&gt; OpenAiChatOptions.builder()
+                    .withTemperature(0.0f)
+                    .withMaxTokens(200)
+                    .build();
+                    
+            case CODE_GENERATION -&gt; OpenAiChatOptions.builder()
+                    .withTemperature(0.2f)
+                    .withMaxTokens(1000)
+                    .build();
+                    
+            case CREATIVE_WRITING -&gt; OpenAiChatOptions.builder()
+                    .withTemperature(0.9f)
+                    .withTopP(0.9f)
+                    .withMaxTokens(500)
+                    .withFrequencyPenalty(0.5f)
+                    .build();
+                    
+            case GENERAL_CHAT -&gt; OpenAiChatOptions.builder()
+                    .withTemperature(0.7f)
+                    .withMaxTokens(400)
+                    .build();
+                    
+            case TECHNICAL_DOCS -&gt; OpenAiChatOptions.builder()
+                    .withTemperature(0.3f)
+                    .withMaxTokens(800)
+                    .build();
+        };
+    }
+
+    public enum TaskType {
+        DATA_EXTRACTION,
+        CODE_GENERATION,
+        CREATIVE_WRITING,
+        GENERAL_CHAT,
+        TECHNICAL_DOCS
+    }
+}
+</code></pre>
+</div>
+
+<h2>Using Parameter Presets</h2>
+
+<div class="code-block">
+<pre><code>@RestController
+@RequestMapping("/api/smart-chat")
+public class SmartChatController {
+
+    private final ChatClient chatClient;
+    private final ParameterPresetService presetService;
+
+    public SmartChatController(
+            ChatClient.Builder builder,
+            ParameterPresetService presetService) {
+        this.chatClient = builder.build();
+        this.presetService = presetService;
+    }
+
+    @PostMapping("/generate")
+    public String generate(
+            @RequestParam String message,
+            @RequestParam ParameterPresetService.TaskType taskType) {
+        
+        OpenAiChatOptions options = presetService.getPresetForTask(taskType);
+        
+        return chatClient.prompt()
+                .user(message)
+                .options(options)
+                .call()
+                .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Best Practices for Per-Request Configuration</h2>
+<ul>
+    <li><strong>Encapsulate Presets:</strong> Create reusable parameter configurations for common use cases</li>
+    <li><strong>Document Choices:</strong> Comment why specific parameters were chosen for each endpoint</li>
+    <li><strong>Test Variations:</strong> Experiment with different values to find optimal settings</li>
+    <li><strong>Monitor Performance:</strong> Track token usage and response quality in production</li>
+    <li><strong>Use Constants:</strong> Define parameter values as constants for easy adjustment</li>
+</ul>
+
+<h2>Error Handling</h2>
+<p>Always implement proper error handling for LLM calls:</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class RobustChatService {
+
+    private final ChatClient chatClient;
+
+    public RobustChatService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    public String chat(String message) {
+        try {
+            return chatClient.prompt()
+                    .user(message)
+                    .options(OpenAiChatOptions.builder()
+                            .withTemperature(0.7f)
+                            .withMaxTokens(500)
+                            .build())
+                    .call()
+                    .content();
+        } catch (Exception e) {
+            // Log error and return fallback response
+            return "I apologize, but I'm unable to process your request at the moment.";
+        }
+    }
+}
+</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Per-request configuration provides maximum flexibility</li>
+    <li>Different use cases require different parameter settings</li>
+    <li>Spring AI's ChatOptions provides a clean, type-safe API</li>
+    <li>Encapsulate common parameter combinations as presets</li>
+    <li>Always implement error handling for production systems</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

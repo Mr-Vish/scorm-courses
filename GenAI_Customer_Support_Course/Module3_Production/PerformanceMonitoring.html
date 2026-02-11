@@ -1,0 +1,307 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Performance Optimization and Monitoring</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Performance Optimization and Monitoring</h1>
+
+<h2>Latency Optimization Strategies</h2>
+<p>Customer support requires fast response times. Target: &lt; 2 seconds for initial response.</p>
+
+<table>
+    <tr>
+        <th>Optimization</th>
+        <th>Latency Reduction</th>
+        <th>Implementation Complexity</th>
+        <th>Cost Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Response Caching</td>
+        <td>80-95%</td>
+        <td>Low</td>
+        <td>Minimal</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Embedding Caching</td>
+        <td>30-50%</td>
+        <td>Low</td>
+        <td>Minimal</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Streaming Responses</td>
+        <td>Perceived: 60-80%</td>
+        <td>Medium</td>
+        <td>None</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Quantization</td>
+        <td>20-40%</td>
+        <td>Medium</td>
+        <td>Reduced compute</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Parallel Retrieval</td>
+        <td>40-60%</td>
+        <td>Medium</td>
+        <td>Minimal</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Edge Deployment</td>
+        <td>30-50%</td>
+        <td>High</td>
+        <td>Increased infrastructure</td>
+    </tr>
+</table>
+
+<h2>Streaming Response Implementation</h2>
+<blockquote>
+Improve perceived latency with streaming:
+
+Traditional Approach:
+User sends query → Wait 3 seconds → Full response appears
+
+Streaming Approach:
+User sends query → 0.5s → First tokens appear → Continuous stream
+
+Implementation:
+- Use Server-Sent Events (SSE) or WebSockets
+- Stream LLM output token-by-token
+- Display partial response as it generates
+- User sees progress immediately
+
+Perceived Latency: Reduced by 60-80%
+Actual Latency: Same, but better UX
+</blockquote>
+
+<h2>Caching Strategy Deep Dive</h2>
+<p>Multi-layer caching for maximum performance:</p>
+
+<ul>
+    <li><strong>L1 - Exact Match Cache:</strong> Hash of query → cached response (1-hour TTL)</li>
+    <li><strong>L2 - Semantic Cache:</strong> Similar queries → cached response (similarity &gt; 0.95)</li>
+    <li><strong>L3 - Embedding Cache:</strong> Query embeddings (24-hour TTL)</li>
+    <li><strong>L4 - Retrieval Cache:</strong> Retrieved documents for common queries (6-hour TTL)</li>
+</ul>
+
+<blockquote>
+Cache Hit Rate Targets:
+- L1 (Exact): 15-25% of queries
+- L2 (Semantic): 10-20% of queries
+- L3 (Embeddings): 40-60% of queries
+- L4 (Retrieval): 30-50% of queries
+
+Overall cache hit rate: 60-80%
+Cost savings: 60-80% reduction in LLM API calls
+</blockquote>
+
+<h2>Cost Optimization</h2>
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Cost Reduction</th>
+        <th>Trade-offs</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Smaller Models for Simple Queries</td>
+        <td>50-70%</td>
+        <td>Requires query classification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Aggressive Caching</td>
+        <td>60-80%</td>
+        <td>Potential staleness</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Compression</td>
+        <td>30-50%</td>
+        <td>May lose some context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batch Processing</td>
+        <td>20-40%</td>
+        <td>Not suitable for real-time</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Self-Hosted Models</td>
+        <td>40-90% at scale</td>
+        <td>High upfront investment</td>
+    </tr>
+</table>
+
+<h2>Tiered Model Strategy</h2>
+<blockquote>
+Use different models based on query complexity:
+
+Tier 1 - Simple Queries (40% of traffic):
+- Model: GPT-3.5 or equivalent
+- Use cases: FAQs, simple lookups, greetings
+- Cost: $0.001 per query
+- Latency: &lt; 1 second
+
+Tier 2 - Moderate Complexity (45% of traffic):
+- Model: GPT-4 or Claude
+- Use cases: Multi-step reasoning, context-heavy
+- Cost: $0.01 per query
+- Latency: 1-2 seconds
+
+Tier 3 - Complex Queries (15% of traffic):
+- Model: GPT-4 with extended context
+- Use cases: Technical troubleshooting, multi-intent
+- Cost: $0.05 per query
+- Latency: 2-4 seconds
+
+Classification: Use fast classifier to route queries
+Average cost per query: $0.008 (vs $0.01 with single model)
+Cost savings: 20%
+</blockquote>
+
+<h2>Monitoring and Observability</h2>
+<p>Comprehensive monitoring for production systems:</p>
+
+<h2>Key Metrics to Track</h2>
+<table>
+    <tr>
+        <th>Metric Category</th>
+        <th>Specific Metrics</th>
+        <th>Alert Threshold</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Latency</td>
+        <td>P50, P95, P99 response time</td>
+        <td>P95 &gt; 3 seconds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Availability</td>
+        <td>Uptime, error rate</td>
+        <td>Uptime &lt; 99.9%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Quality</td>
+        <td>CSAT, FCR, escalation rate</td>
+        <td>CSAT &lt; 3.5/5.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost</td>
+        <td>Cost per conversation, API spend</td>
+        <td>20% over budget</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Usage</td>
+        <td>Conversations/hour, peak load</td>
+        <td>Approaching capacity</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Performance</td>
+        <td>Confidence scores, hallucination rate</td>
+        <td>Confidence &lt; 60% avg</td>
+    </tr>
+</table>
+
+<h2>Distributed Tracing</h2>
+<blockquote>
+Trace requests across microservices:
+
+Example Trace:
+1. API Gateway: 50ms
+2. Authentication: 100ms
+3. Intent Classification: 200ms
+4. Vector Search: 300ms
+5. LLM Generation: 1500ms
+6. Response Formatting: 50ms
+Total: 2200ms
+
+Identify bottlenecks:
+→ LLM generation is 68% of total time
+→ Optimization target: Implement streaming or caching
+
+Tools: OpenTelemetry, Jaeger, Zipkin, AWS X-Ray
+</blockquote>
+
+<h2>Alerting Strategy</h2>
+<ul>
+    <li><strong>Critical Alerts (Page on-call):</strong> System down, data breach, P95 latency &gt; 5s</li>
+    <li><strong>High Priority (Slack notification):</strong> Error rate &gt; 5%, CSAT drop &gt; 0.5 points</li>
+    <li><strong>Medium Priority (Email):</strong> Cache hit rate drop, cost spike &gt; 20%</li>
+    <li><strong>Low Priority (Dashboard):</strong> Gradual performance degradation, usage trends</li>
+</ul>
+
+<h2>Load Testing and Capacity Planning</h2>
+<blockquote>
+Load Testing Scenarios:
+
+1. Normal Load:
+   - 100 concurrent users
+   - 10 conversations/second
+   - Target: P95 &lt; 2 seconds
+
+2. Peak Load (2x normal):
+   - 200 concurrent users
+   - 20 conversations/second
+   - Target: P95 &lt; 3 seconds
+
+3. Stress Test (5x normal):
+   - 500 concurrent users
+   - 50 conversations/second
+   - Target: Graceful degradation, no crashes
+
+4. Spike Test:
+   - Sudden jump from 10 to 100 conversations/second
+   - Target: Auto-scaling responds within 2 minutes
+
+Tools: JMeter, Locust, k6, Artillery
+</blockquote>
+
+<h2>Auto-Scaling Configuration</h2>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Scale Trigger</th>
+        <th>Min Instances</th>
+        <th>Max Instances</th>
+    </tr>
+    <tr>
+        <td class="rowheader">API Servers</td>
+        <td>CPU &gt; 70% or Queue depth &gt; 100</td>
+        <td>3</td>
+        <td>20</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LLM Inference</td>
+        <td>GPU utilization &gt; 80%</td>
+        <td>2</td>
+        <td>10</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vector Search</td>
+        <td>Query latency &gt; 500ms</td>
+        <td>2</td>
+        <td>8</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cache Layer</td>
+        <td>Memory &gt; 80%</td>
+        <td>2</td>
+        <td>6</td>
+    </tr>
+</table>
+
+<h2>Disaster Recovery and Business Continuity</h2>
+<ul>
+    <li><strong>Multi-Region Deployment:</strong> Active-active or active-passive across regions</li>
+    <li><strong>Database Replication:</strong> Real-time replication with automatic failover</li>
+    <li><strong>Backup Strategy:</strong> Hourly incremental, daily full backups, 30-day retention</li>
+    <li><strong>Failover Testing:</strong> Quarterly disaster recovery drills</li>
+    <li><strong>RTO (Recovery Time Objective):</strong> &lt; 15 minutes</li>
+    <li><strong>RPO (Recovery Point Objective):</strong> &lt; 5 minutes of data loss</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

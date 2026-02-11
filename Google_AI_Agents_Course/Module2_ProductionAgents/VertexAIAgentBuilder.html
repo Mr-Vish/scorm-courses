@@ -1,0 +1,374 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Vertex AI Agent Builder Platform</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Vertex AI Agent Builder Platform</h1>
+
+<h2>Platform Overview</h2>
+<p>Vertex AI Agent Builder is Google Cloud's fully managed platform for creating, deploying, and managing AI agents at scale. It provides a comprehensive environment that handles infrastructure, scaling, monitoring, and integration with Google Cloud services.</p>
+
+<h3>Key Platform Features</h3>
+<ul>
+<li><strong>No Infrastructure Management:</strong> Fully managed service handles scaling and availability</li>
+<li><strong>Integrated Development:</strong> Build, test, and deploy from a single platform</li>
+<li><strong>Enterprise Security:</strong> Built-in authentication, authorization, and data encryption</li>
+<li><strong>Monitoring and Logging:</strong> Comprehensive observability with Cloud Logging and Monitoring</li>
+<li><strong>Version Control:</strong> Manage multiple agent versions and rollback capabilities</li>
+<li><strong>Cost Optimization:</strong> Pay-per-use pricing with automatic resource optimization</li>
+</ul>
+
+<h2>Agent Builder Console</h2>
+<blockquote>
+# Access Agent Builder through Google Cloud Console
+1. Navigate to Vertex AI in Google Cloud Console
+2. Select "Agent Builder" from the menu
+3. Click "Create Agent" to start
+
+# Or use gcloud CLI
+gcloud ai agents create my-agent \
+    --region=us-central1 \
+    --display-name="Customer Support Agent" \
+    --model=gemini-1.5-pro
+</blockquote>
+
+<h2>Creating Agents Programmatically</h2>
+
+<h3>Basic Agent Creation</h3>
+<blockquote>
+from vertexai.preview import reasoning_engines
+from google.cloud import aiplatform
+
+# Initialize Vertex AI
+aiplatform.init(
+    project="my-project-id",
+    location="us-central1"
+)
+
+# Define agent tools
+def get_order_status(order_id: str) -> dict:
+    """Retrieve order status from database."""
+    return {
+        "order_id": order_id,
+        "status": "shipped",
+        "tracking": "1Z999AA10123456784"
+    }
+
+def cancel_order(order_id: str, reason: str) -> dict:
+    """Cancel an order."""
+    return {
+        "order_id": order_id,
+        "status": "cancelled",
+        "refund_amount": 99.99
+    }
+
+# Create the agent
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[get_order_status, cancel_order],
+    agent_executor_kwargs={
+        "return_intermediate_steps": True,
+        "max_iterations": 10
+    }
+)
+
+# Deploy to Vertex AI
+deployed_agent = reasoning_engines.ReasoningEngine.create(
+    agent,
+    requirements=[
+        "langchain==0.1.0",
+        "langchain-google-vertexai==0.1.0"
+    ],
+    display_name="Order Management Agent",
+    description="Agent for handling customer order inquiries"
+)
+
+print(f"Agent deployed: {deployed_agent.resource_name}")
+</blockquote>
+
+<h3>Agent with System Instructions</h3>
+<blockquote>
+# Create agent with detailed instructions
+system_instruction = """You are a professional customer support agent for an e-commerce company.
+
+Your responsibilities:
+- Help customers track their orders
+- Process order cancellations when requested
+- Provide shipping information
+- Escalate complex issues to human agents
+
+Guidelines:
+- Always be polite and professional
+- Verify order IDs before taking actions
+- Explain cancellation policies clearly
+- Confirm actions before executing them
+- Never share sensitive customer information
+
+When you cannot help:
+- Apologize and explain limitations
+- Offer to connect with a human agent
+- Provide alternative contact methods
+"""
+
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[get_order_status, cancel_order, escalate_to_human],
+    system_instruction=system_instruction,
+    agent_executor_kwargs={
+        "return_intermediate_steps": True,
+        "max_iterations": 8,
+        "early_stopping_method": "generate"
+    }
+)
+</blockquote>
+
+<h2>Agent Configuration Options</h2>
+<table>
+<tr>
+<th>Parameter</th>
+<th>Purpose</th>
+<th>Recommended Value</th>
+</tr>
+<tr>
+<td class="rowheader">model</td>
+<td>LLM for reasoning</td>
+<td>gemini-1.5-pro for complex tasks</td>
+</tr>
+<tr>
+<td class="rowheader">temperature</td>
+<td>Response creativity</td>
+<td>0.2-0.4 for factual, 0.7-0.9 for creative</td>
+</tr>
+<tr>
+<td class="rowheader">max_iterations</td>
+<td>Maximum reasoning steps</td>
+<td>5-10 for most tasks</td>
+</tr>
+<tr>
+<td class="rowheader">top_p</td>
+<td>Nucleus sampling</td>
+<td>0.8-0.95</td>
+</tr>
+<tr>
+<td class="rowheader">top_k</td>
+<td>Token selection diversity</td>
+<td>40</td>
+</tr>
+</table>
+
+<h2>Deploying and Managing Agents</h2>
+
+<h3>Deployment with Resource Configuration</h3>
+<blockquote>
+# Deploy with specific resource requirements
+deployed_agent = reasoning_engines.ReasoningEngine.create(
+    agent,
+    requirements=["langchain==0.1.0", "requests==2.31.0"],
+    display_name="Production Agent",
+    description="Customer support agent for production",
+    # Resource configuration
+    extra_packages=["pandas", "numpy"],
+    sys_version="3.10",
+    # Deployment settings
+    enable_automatic_updates=False,
+    labels={
+        "environment": "production",
+        "team": "customer-support",
+        "version": "v1.2.0"
+    }
+)
+</blockquote>
+
+<h3>Querying Deployed Agents</h3>
+<blockquote>
+# Query the deployed agent
+response = deployed_agent.query(
+    input="What's the status of order #12345?"
+)
+
+print(response["output"])
+
+# With additional parameters
+response = deployed_agent.query(
+    input="Cancel order #12345",
+    config={
+        "temperature": 0.1,
+        "max_iterations": 5
+    }
+)
+</blockquote>
+
+<h3>Updating Deployed Agents</h3>
+<blockquote>
+# Update agent configuration
+deployed_agent.update(
+    display_name="Customer Support Agent v2",
+    description="Updated with new cancellation policies"
+)
+
+# Deploy new version
+new_version = reasoning_engines.ReasoningEngine.create(
+    updated_agent,
+    requirements=["langchain==0.1.1"],
+    display_name="Customer Support Agent",
+    labels={"version": "v2.0.0"}
+)
+
+# List all versions
+agents = reasoning_engines.ReasoningEngine.list(
+    filter='labels.team="customer-support"'
+)
+
+for agent in agents:
+    print(f"{agent.display_name}: {agent.resource_name}")
+</blockquote>
+
+<h2>Agent Testing and Validation</h2>
+
+<h3>Local Testing Before Deployment</h3>
+<blockquote>
+# Test agent locally before deploying
+test_cases = [
+    "What's the status of order #12345?",
+    "I want to cancel my order #67890",
+    "When will my package arrive?",
+    "Can you help me return an item?"
+]
+
+for test_input in test_cases:
+    print(f"\nTest: {test_input}")
+    response = agent.query(input=test_input)
+    print(f"Response: {response['output']}")
+    
+    # Validate response
+    assert len(response['output']) > 0, "Empty response"
+    assert "error" not in response['output'].lower(), "Error in response"
+</blockquote>
+
+<h3>Integration Testing</h3>
+<blockquote>
+import unittest
+
+class AgentIntegrationTest(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        cls.agent = deployed_agent
+    
+    def test_order_status_query(self):
+        """Test order status retrieval."""
+        response = self.agent.query(
+            input="Check status of order #TEST123"
+        )
+        self.assertIn("status", response["output"].lower())
+    
+    def test_order_cancellation(self):
+        """Test order cancellation flow."""
+        response = self.agent.query(
+            input="Cancel order #TEST456"
+        )
+        self.assertIn("cancel", response["output"].lower())
+    
+    def test_invalid_order_handling(self):
+        """Test handling of invalid order IDs."""
+        response = self.agent.query(
+            input="Status of order #INVALID"
+        )
+        self.assertIn("not found", response["output"].lower())
+    
+    def test_response_time(self):
+        """Test response time is acceptable."""
+        import time
+        start = time.time()
+        response = self.agent.query(input="Hello")
+        duration = time.time() - start
+        self.assertLess(duration, 5.0, "Response too slow")
+
+if __name__ == "__main__":
+    unittest.main()
+</blockquote>
+
+<h2>Agent Versioning Strategy</h2>
+<blockquote>
+# Version naming convention
+version_pattern = "v{major}.{minor}.{patch}"
+
+# Deploy with version labels
+def deploy_agent_version(agent, major, minor, patch):
+    """Deploy agent with semantic versioning."""
+    version = f"v{major}.{minor}.{patch}"
+    
+    return reasoning_engines.ReasoningEngine.create(
+        agent,
+        display_name=f"Agent {version}",
+        labels={
+            "version": version,
+            "major": str(major),
+            "minor": str(minor),
+            "patch": str(patch),
+            "deployed_at": datetime.now().isoformat()
+        }
+    )
+
+# Deploy new version
+production_agent = deploy_agent_version(agent, 1, 2, 0)
+
+# Rollback to previous version
+def rollback_to_version(version: str):
+    """Rollback to a specific version."""
+    agents = reasoning_engines.ReasoningEngine.list(
+        filter=f'labels.version="{version}"'
+    )
+    if agents:
+        return agents[0]
+    raise ValueError(f"Version {version} not found")
+
+# Rollback example
+previous_agent = rollback_to_version("v1.1.0")
+</blockquote>
+
+<h2>Environment Management</h2>
+<table>
+<tr>
+<th>Environment</th>
+<th>Purpose</th>
+<th>Configuration</th>
+</tr>
+<tr>
+<td class="rowheader">Development</td>
+<td>Testing and experimentation</td>
+<td>High temperature, verbose logging</td>
+</tr>
+<tr>
+<td class="rowheader">Staging</td>
+<td>Pre-production validation</td>
+<td>Production-like settings, test data</td>
+</tr>
+<tr>
+<td class="rowheader">Production</td>
+<td>Live customer interactions</td>
+<td>Low temperature, optimized performance</td>
+</tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Gradual Rollout:</strong> Deploy to small percentage of traffic first</li>
+<li><strong>Monitoring:</strong> Set up alerts for errors, latency, and costs</li>
+<li><strong>Testing:</strong> Comprehensive testing before production deployment</li>
+<li><strong>Documentation:</strong> Document agent capabilities and limitations</li>
+<li><strong>Version Control:</strong> Use semantic versioning and maintain changelog</li>
+<li><strong>Rollback Plan:</strong> Always have a rollback strategy ready</li>
+<li><strong>Resource Limits:</strong> Set appropriate quotas and rate limits</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

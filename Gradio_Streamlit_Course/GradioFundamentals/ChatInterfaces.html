@@ -1,0 +1,439 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building Chat Interfaces with Streaming</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building Chat Interfaces with Streaming</h1>
+
+<h2>ChatInterface Component</h2>
+<p>Gradio's ChatInterface is a specialized component designed specifically for conversational AI applications. It handles conversation history, message formatting, and streaming responses automatically.</p>
+
+<h2>Basic Chat Interface</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI()
+
+def chat_function(message, history):
+    '''
+    Handle chat messages with conversation history.
+    
+    Args:
+        message: Current user message (string)
+        history: List of [user_msg, assistant_msg] pairs
+    
+    Returns:
+        Assistant's response (string)
+    '''
+    # Build messages array from history
+    messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    # Add current message
+    messages.append({"role": "user", "content": message})
+    
+    # Get response
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages
+    )
+    
+    return response.choices[0].message.content
+
+demo = gr.ChatInterface(
+    fn=chat_function,
+    title="AI Assistant",
+    description="Chat with GPT-4o-mini",
+    examples=["Explain machine learning", "Write a Python function"],
+    retry_btn="Retry",
+    undo_btn="Undo",
+    clear_btn="Clear"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Streaming Responses</h2>
+<p>Streaming provides a better user experience by showing responses as they're generated, rather than waiting for the complete response.</p>
+
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI()
+
+def chat_with_streaming(message, history):
+    '''Stream responses token by token.'''
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    # Create streaming response
+    stream = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        stream=True
+    )
+    
+    # Yield tokens as they arrive
+    partial_response = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            partial_response += chunk.choices[0].delta.content
+            yield partial_response
+
+demo = gr.ChatInterface(
+    fn=chat_with_streaming,
+    title="Streaming AI Assistant",
+    description="Responses stream in real-time"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Advanced Chat with System Prompts</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI()
+
+def chat_with_system_prompt(message, history, system_prompt, temperature):
+    '''Chat with customizable system prompt and temperature.'''
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    stream = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        temperature=temperature,
+        stream=True
+    )
+    
+    partial_response = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            partial_response += chunk.choices[0].delta.content
+            yield partial_response
+
+# Create interface with additional inputs
+with gr.Blocks() as demo:
+    gr.Markdown("# Customizable AI Assistant")
+    
+    with gr.Row():
+        system_prompt = gr.Textbox(
+            label="System Prompt",
+            value="You are a helpful AI assistant.",
+            lines=3
+        )
+        temperature = gr.Slider(
+            minimum=0,
+            maximum=2,
+            value=0.7,
+            step=0.1,
+            label="Temperature"
+        )
+    
+    chatbot = gr.ChatInterface(
+        fn=chat_with_system_prompt,
+        additional_inputs=[system_prompt, temperature],
+        title="Chat"
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Multi-Modal Chat Interface</h2>
+<p>Handle both text and images in conversations:</p>
+
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+import base64
+
+client = OpenAI()
+
+def encode_image(image_path):
+    '''Encode image to base64.'''
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+def multimodal_chat(message, history):
+    '''Handle text and image inputs.'''
+    messages = [{"role": "system", "content": "You are a helpful assistant that can analyze images."}]
+    
+    for user_msg, assistant_msg in history:
+        if isinstance(user_msg, tuple):  # Image message
+            image_path = user_msg[0]
+            base64_image = encode_image(image_path)
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                ]
+            })
+        else:  # Text message
+            messages.append({"role": "user", "content": user_msg})
+        
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    # Handle current message
+    if isinstance(message, dict) and "files" in message:
+        # Image uploaded
+        image_path = message["files"][0]
+        text = message.get("text", "What's in this image?")
+        base64_image = encode_image(image_path)
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": text},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+            ]
+        })
+    else:
+        messages.append({"role": "user", "content": message})
+    
+    stream = client.chat.completions.create(
+        model="gpt-4o",
+        messages=messages,
+        stream=True
+    )
+    
+    partial_response = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            partial_response += chunk.choices[0].delta.content
+            yield partial_response
+
+demo = gr.ChatInterface(
+    fn=multimodal_chat,
+    multimodal=True,
+    title="Multi-Modal AI Assistant",
+    description="Upload images and ask questions about them"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Chat with Memory Management</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI()
+
+def chat_with_memory_limit(message, history, max_history=10):
+    '''Limit conversation history to prevent context overflow.'''
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    
+    # Only keep last N exchanges
+    recent_history = history[-max_history:] if len(history) > max_history else history
+    
+    for user_msg, assistant_msg in recent_history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    stream = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        stream=True
+    )
+    
+    partial_response = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            partial_response += chunk.choices[0].delta.content
+            yield partial_response
+
+with gr.Blocks() as demo:
+    gr.Markdown("# Chat with Memory Management")
+    
+    max_history = gr.Slider(
+        minimum=1,
+        maximum=20,
+        value=10,
+        step=1,
+        label="Max History (exchanges)"
+    )
+    
+    chatbot = gr.ChatInterface(
+        fn=chat_with_memory_limit,
+        additional_inputs=[max_history]
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Error Handling in Chat</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+import time
+
+client = OpenAI()
+
+def robust_chat(message, history):
+    '''Chat with error handling and retry logic.'''
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    max_retries = 3
+    retry_delay = 1
+    
+    for attempt in range(max_retries):
+        try:
+            stream = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                stream=True,
+                timeout=30
+            )
+            
+            partial_response = ""
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    partial_response += chunk.choices[0].delta.content
+                    yield partial_response
+            
+            return  # Success, exit function
+            
+        except Exception as e:
+            if attempt < max_retries - 1:
+                yield f"Error occurred, retrying... (Attempt {attempt + 1}/{max_retries})"
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                yield f"Sorry, I encountered an error: {str(e)}. Please try again."
+
+demo = gr.ChatInterface(
+    fn=robust_chat,
+    title="Robust Chat Assistant",
+    description="Includes error handling and retry logic"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Chat Interface Customization Options</h2>
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Purpose</th>
+        <th>Example Value</th>
+    </tr>
+    <tr>
+        <td class="rowheader">chatbot</td>
+        <td>Customize chatbot appearance</td>
+        <td>gr.Chatbot(height=500)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">textbox</td>
+        <td>Customize input textbox</td>
+        <td>gr.Textbox(placeholder="Ask me...")</td>
+    </tr>
+    <tr>
+        <td class="rowheader">examples</td>
+        <td>Provide example prompts</td>
+        <td>["Question 1", "Question 2"]</td>
+    </tr>
+    <tr>
+        <td class="rowheader">additional_inputs</td>
+        <td>Add extra controls</td>
+        <td>[temperature_slider, model_dropdown]</td>
+    </tr>
+    <tr>
+        <td class="rowheader">retry_btn</td>
+        <td>Enable retry button</td>
+        <td>"Retry" or None</td>
+    </tr>
+    <tr>
+        <td class="rowheader">undo_btn</td>
+        <td>Enable undo button</td>
+        <td>"Undo" or None</td>
+    </tr>
+    <tr>
+        <td class="rowheader">clear_btn</td>
+        <td>Enable clear button</td>
+        <td>"Clear" or None</td>
+    </tr>
+</table>
+
+<h2>Performance Optimization</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+from functools import lru_cache
+
+client = OpenAI()
+
+@lru_cache(maxsize=100)
+def get_cached_response(message_tuple):
+    '''Cache responses for identical messages.'''
+    message = message_tuple[0]
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": message}]
+    )
+    return response.choices[0].message.content
+
+def optimized_chat(message, history):
+    '''Use caching for repeated questions.'''
+    # Convert to tuple for caching (lists aren't hashable)
+    cache_key = (message,)
+    
+    try:
+        response = get_cached_response(cache_key)
+        return response
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+demo = gr.ChatInterface(
+    fn=optimized_chat,
+    title="Optimized Chat (with caching)"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Best Practices for Chat Interfaces</h2>
+<ul>
+    <li><strong>Always Use Streaming:</strong> Improves perceived performance and user experience</li>
+    <li><strong>Limit History:</strong> Prevent context overflow by limiting conversation history</li>
+    <li><strong>Handle Errors Gracefully:</strong> Implement retry logic and user-friendly error messages</li>
+    <li><strong>Add System Prompts:</strong> Guide model behavior with clear system instructions</li>
+    <li><strong>Provide Examples:</strong> Help users understand what questions to ask</li>
+    <li><strong>Monitor Token Usage:</strong> Track and display token consumption for transparency</li>
+    <li><strong>Implement Timeouts:</strong> Prevent hanging requests with appropriate timeout values</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

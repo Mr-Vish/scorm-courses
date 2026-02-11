@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Guardrails for Responsible AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Guardrails for Responsible AI</h1>
+
+
+<h2>What Are Bedrock Guardrails?</h2>
+<p>Guardrails are configurable <strong>safety filters</strong> that evaluate both user inputs and model outputs against your policies. They work with any Bedrock model.</p>
+
+<h2>Guardrail Components</h2>
+<ul>
+    <li><strong>Content Filters:</strong> Block harmful content by category (hate, violence, sexual, misconduct) with configurable thresholds (LOW/MEDIUM/HIGH)</li>
+    <li><strong>Denied Topics:</strong> Define specific topics the model must refuse to discuss</li>
+    <li><strong>Word Filters:</strong> Block specific words or phrases in input/output</li>
+    <li><strong>Sensitive Information Filters:</strong> Detect and mask PII (names, emails, SSNs, credit cards)</li>
+    <li><strong>Contextual Grounding:</strong> Detect hallucinations by checking if responses are grounded in provided context</li>
+</ul>
+
+<h2>Configuration Example</h2>
+<div class="code-block">
+<pre><code>guardrail = bedrock.create_guardrail(
+    name="CustomerServiceGuardrail",
+    contentPolicyConfig={
+        "filtersConfig": [
+            {"type": "HATE", "inputStrength": "HIGH", "outputStrength": "HIGH"},
+            {"type": "VIOLENCE", "inputStrength": "HIGH", "outputStrength": "HIGH"}
+        ]
+    },
+    topicPolicyConfig={
+        "topicsConfig": [
+            {
+                "name": "Investment Advice",
+                "definition": "Providing specific investment recommendations",
+                "type": "DENY"
+            }
+        ]
+    }
+)</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

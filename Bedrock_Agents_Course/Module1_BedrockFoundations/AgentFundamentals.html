@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Agent Fundamentals and Use Cases</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Agent Fundamentals and Use Cases</h1>
+
+<h2>What Makes an AI Agent "Autonomous"?</h2>
+<p>The term "agent" in AI refers to a system that can perceive its environment, make decisions, and take actions to achieve specific goals. Unlike traditional chatbots that simply respond to queries, autonomous agents exhibit several key characteristics:</p>
+
+<ul>
+    <li><strong>Goal-Oriented Behavior:</strong> Agents work toward defined objectives, breaking down complex requests into actionable steps</li>
+    <li><strong>Reasoning and Planning:</strong> Agents analyze situations, consider multiple approaches, and select optimal strategies</li>
+    <li><strong>Tool Use:</strong> Agents can invoke external APIs, query databases, and interact with systems to accomplish tasks</li>
+    <li><strong>Contextual Awareness:</strong> Agents maintain conversation history and retrieve relevant information from knowledge bases</li>
+    <li><strong>Adaptive Behavior:</strong> Agents adjust their approach based on feedback and changing circumstances</li>
+    <li><strong>Multi-Step Execution:</strong> Agents can chain multiple actions together to complete complex workflows</li>
+</ul>
+
+<h2>The Agent Reasoning Loop</h2>
+<p>At the heart of every Bedrock Agent is a reasoning loop powered by the foundation model. This loop follows a pattern known as ReAct (Reasoning + Acting):</p>
+
+<h3>Step 1: Thought</h3>
+<p>The agent analyzes the user's request and current context to understand what needs to be accomplished. This involves:</p>
+<ul>
+    <li>Parsing the natural language input</li>
+    <li>Identifying the user's intent and goals</li>
+    <li>Reviewing available tools and knowledge</li>
+    <li>Considering constraints and requirements</li>
+</ul>
+
+<h3>Step 2: Action</h3>
+<p>Based on its reasoning, the agent decides what action to take. This could be:</p>
+<ul>
+    <li>Invoking an API through an action group</li>
+    <li>Querying a knowledge base for information</li>
+    <li>Asking the user for clarification</li>
+    <li>Returning a final answer</li>
+</ul>
+
+<h3>Step 3: Observation</h3>
+<p>The agent receives the results of its action and incorporates this new information into its understanding. This might include:</p>
+<ul>
+    <li>API response data</li>
+    <li>Retrieved documents from knowledge bases</li>
+    <li>Error messages or exceptions</li>
+    <li>User feedback</li>
+</ul>
+
+<h3>Step 4: Iteration</h3>
+<p>The agent repeats the Thought-Action-Observation cycle until it has sufficient information to provide a complete answer or has accomplished the requested task. This iterative process allows agents to handle complex, multi-step workflows without explicit programming of each step.</p>
+
+<h2>Agent vs. Traditional Approaches</h2>
+<p>Understanding when to use agents versus traditional approaches is crucial for effective system design.</p>
+
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Traditional Chatbot</th>
+        <th>Bedrock Agent</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Decision Logic</td>
+        <td>Rule-based, predefined flows</td>
+        <td>Dynamic reasoning by foundation model</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Flexibility</td>
+        <td>Limited to programmed scenarios</td>
+        <td>Handles novel requests through reasoning</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Tool Integration</td>
+        <td>Hardcoded API calls</td>
+        <td>Dynamic tool selection based on context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Maintenance</td>
+        <td>Requires code changes for new scenarios</td>
+        <td>Adapts through instruction updates</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Handling</td>
+        <td>Limited state management</td>
+        <td>Rich context with knowledge base integration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost</td>
+        <td>Lower per-interaction cost</td>
+        <td>Higher due to model invocations</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Predictability</td>
+        <td>Highly predictable behavior</td>
+        <td>More variable, requires testing</td>
+    </tr>
+</table>
+
+<h2>Enterprise Use Cases for Bedrock Agents</h2>
+
+<h3>1. Customer Service and Support</h3>
+<p><strong>Scenario:</strong> A telecommunications company receives thousands of customer inquiries daily about billing, service issues, and account management.</p>
+
+<p><strong>Agent Implementation:</strong></p>
+<ul>
+    <li><strong>Instructions:</strong> "You are a customer service agent for TelCo. Help customers with billing questions, service troubleshooting, and account changes. Always verify customer identity before accessing account details."</li>
+    <li><strong>Action Groups:</strong> GetAccountDetails, ProcessPayment, ScheduleTechnician, UpdateServicePlan</li>
+    <li><strong>Knowledge Base:</strong> Product documentation, troubleshooting guides, policy documents</li>
+    <li><strong>Guardrails:</strong> PII protection, professional tone enforcement</li>
+</ul>
+
+<p><strong>Value Delivered:</strong> 24/7 availability, instant access to account information, consistent service quality, reduced wait times, and lower operational costs compared to human-only support.</p>
+
+<h3>2. IT Operations and DevOps</h3>
+<p><strong>Scenario:</strong> A software company needs to automate incident response, system monitoring, and infrastructure management tasks.</p>
+
+<p><strong>Agent Implementation:</strong></p>
+<ul>
+    <li><strong>Instructions:</strong> "You are an IT operations agent. Monitor system health, respond to incidents, and execute remediation procedures. Escalate critical issues to on-call engineers."</li>
+    <li><strong>Action Groups:</strong> CheckSystemStatus, RestartService, ScaleResources, QueryLogs, CreateTicket</li>
+    <li><strong>Knowledge Base:</strong> Runbooks, architecture diagrams, incident history, best practices</li>
+    <li><strong>Guardrails:</strong> Prevent destructive operations without approval</li>
+</ul>
+
+<p><strong>Value Delivered:</strong> Faster incident response, automated routine tasks, reduced mean time to resolution (MTTR), and freed-up engineering time for strategic work.</p>
+
+<h3>3. Data Analysis and Business Intelligence</h3>
+<p><strong>Scenario:</strong> Business analysts need to query data warehouses, generate reports, and extract insights without writing SQL or using complex BI tools.</p>
+
+<p><strong>Agent Implementation:</strong></p>
+<ul>
+    <li><strong>Instructions:</strong> "You are a data analysis agent. Help users query databases, generate visualizations, and interpret business metrics. Explain findings in plain language."</li>
+    <li><strong>Action Groups:</strong> ExecuteQuery, GenerateChart, ExportReport, CalculateMetrics</li>
+    <li><strong>Knowledge Base:</strong> Data dictionary, business definitions, analysis templates</li>
+    <li><strong>Guardrails:</strong> Prevent unauthorized data access, limit query complexity</li>
+</ul>
+
+<p><strong>Value Delivered:</strong> Democratized data access, faster insights, reduced dependency on data teams, and improved decision-making speed.</p>
+
+<h3>4. Document Processing and Knowledge Management</h3>
+<p><strong>Scenario:</strong> A legal firm needs to analyze contracts, extract key terms, and answer questions about case law and regulations.</p>
+
+<p><strong>Agent Implementation:</strong></p>
+<ul>
+    <li><strong>Instructions:</strong> "You are a legal research agent. Analyze contracts, identify risks, and answer questions about legal precedents. Always cite sources."</li>
+    <li><strong>Action Groups:</strong> ExtractContractTerms, CompareDocuments, GenerateSummary</li>
+    <li><strong>Knowledge Base:</strong> Case law database, contract templates, regulatory documents</li>
+    <li><strong>Guardrails:</strong> Ensure factual accuracy, prevent legal advice beyond scope</li>
+</ul>
+
+<p><strong>Value Delivered:</strong> Accelerated document review, consistent analysis quality, reduced research time, and improved risk identification.</p>
+
+<h3>5. E-commerce and Personalization</h3>
+<p><strong>Scenario:</strong> An online retailer wants to provide personalized shopping assistance, product recommendations, and order management.</p>
+
+<p><strong>Agent Implementation:</strong></p>
+<ul>
+    <li><strong>Instructions:</strong> "You are a shopping assistant. Help customers find products, answer questions, and complete purchases. Provide personalized recommendations based on preferences."</li>
+    <li><strong>Action Groups:</strong> SearchProducts, GetRecommendations, CheckInventory, PlaceOrder, TrackShipment</li>
+    <li><strong>Knowledge Base:</strong> Product catalog, reviews, sizing guides, return policies</li>
+    <li><strong>Guardrails:</strong> Prevent inappropriate product suggestions, ensure pricing accuracy</li>
+</ul>
+
+<p><strong>Value Delivered:</strong> Improved conversion rates, higher average order value, reduced cart abandonment, and enhanced customer satisfaction.</p>
+
+<h2>Agent Design Patterns</h2>
+
+<h3>Single-Purpose Specialist Agent</h3>
+<p>Focused on one specific domain or task type. Examples include a password reset agent, invoice processing agent, or appointment scheduling agent. These agents excel at their narrow domain but don't handle general queries.</p>
+
+<p><strong>When to Use:</strong> Well-defined, repetitive tasks with clear success criteria and limited scope.</p>
+
+<h3>General-Purpose Assistant Agent</h3>
+<p>Handles a broad range of queries across multiple domains. These agents are more flexible but may lack deep expertise in any single area.</p>
+
+<p><strong>When to Use:</strong> Customer-facing scenarios where query types are unpredictable, or internal tools where users need help with various tasks.</p>
+
+<h3>Supervisor-Subordinate Architecture</h3>
+<p>A supervisor agent routes requests to specialized sub-agents based on intent. For example, a customer service supervisor might delegate to billing, technical support, or account management specialists.</p>
+
+<p><strong>When to Use:</strong> Complex domains requiring deep expertise in multiple areas, or when different sub-agents need different action groups or knowledge bases.</p>
+
+<h3>Human-in-the-Loop Agent</h3>
+<p>Agent performs analysis and recommends actions but requires human approval before execution. Uses "return of control" pattern to hand off decisions.</p>
+
+<p><strong>When to Use:</strong> High-stakes decisions (financial transactions, medical recommendations), compliance requirements, or building user trust during initial deployment.</p>
+
+<h2>Limitations and Considerations</h2>
+<p>While Bedrock Agents are powerful, they have important limitations:</p>
+
+<h3>Hallucination Risk</h3>
+<p>Foundation models can generate plausible-sounding but incorrect information. Mitigation strategies include:</p>
+<ul>
+    <li>Grounding responses in knowledge bases</li>
+    <li>Requiring citations for factual claims</li>
+    <li>Implementing verification steps for critical information</li>
+    <li>Using guardrails to detect and prevent hallucinations</li>
+</ul>
+
+<h3>Cost at Scale</h3>
+<p>Each agent invocation involves multiple model calls (reasoning, action selection, response generation). For high-volume applications, costs can be significant. Consider:</p>
+<ul>
+    <li>Caching frequently accessed information</li>
+    <li>Using smaller models for simple queries</li>
+    <li>Implementing rate limiting and quotas</li>
+    <li>Monitoring token usage and optimizing prompts</li>
+</ul>
+
+<h3>Latency Considerations</h3>
+<p>Agent responses involve multiple steps (reasoning, action execution, knowledge retrieval), leading to higher latency than simple model invocations. Typical response times range from 2-10 seconds depending on complexity.</p>
+
+<h3>Determinism and Testing</h3>
+<p>Unlike traditional software, agent behavior can vary between invocations even with identical inputs. This makes testing more challenging and requires:</p>
+<ul>
+    <li>Comprehensive test suites covering edge cases</li>
+    <li>Monitoring and logging of agent decisions</li>
+    <li>Gradual rollout with canary deployments</li>
+    <li>User feedback mechanisms</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Agents are autonomous systems that reason, plan, and take actions to achieve goals</li>
+    <li>The ReAct loop (Reasoning + Acting) enables agents to handle complex, multi-step tasks</li>
+    <li>Agents excel at scenarios requiring flexibility, context awareness, and tool integration</li>
+    <li>Common use cases include customer service, IT operations, data analysis, and document processing</li>
+    <li>Design patterns range from single-purpose specialists to multi-agent architectures</li>
+    <li>Important limitations include hallucination risk, cost, latency, and testing complexity</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Agent Instructions and Prompt Engineering</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Agent Instructions and Prompt Engineering</h1>
+
+<h2>The Role of Instructions in Agent Behavior</h2>
+<p>Agent instructions serve as the foundational system prompt that defines an agent's identity, capabilities, constraints, and behavioral guidelines. Unlike user prompts that change with each interaction, instructions remain constant across all invocations, providing the agent with a consistent operational framework.</p>
+
+<p>Well-crafted instructions are critical to agent success. They determine how the agent interprets requests, which actions it considers appropriate, how it handles edge cases, and the tone and style of its responses. Poor instructions lead to unpredictable behavior, inappropriate actions, and user frustration.</p>
+
+<h2>Anatomy of Effective Agent Instructions</h2>
+<p>Comprehensive agent instructions typically include several key components:</p>
+
+<h3>1. Role Definition</h3>
+<p>Clearly state what the agent is and what it does. This establishes context for all subsequent reasoning.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>You are a customer service agent for Acme Corporation, a B2B software company. 
+Your role is to assist enterprise customers with account management, billing inquiries, 
+technical support routing, and product information.</code></pre>
+</div>
+
+<p>The role definition should be specific enough to guide behavior but not so narrow that it prevents the agent from handling reasonable variations of requests.</p>
+
+<h3>2. Capabilities and Scope</h3>
+<p>Explicitly list what the agent can and cannot do. This helps the agent understand when to attempt actions versus when to decline or escalate.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>You can:
+- Look up customer account details and order history
+- Process refund requests up to $500
+- Schedule callbacks with technical support
+- Answer questions about product features and pricing
+
+You cannot:
+- Make changes to contracts or agreements
+- Provide legal or compliance advice
+- Access or modify other customers' accounts
+- Approve refunds over $500 (escalate to supervisor)</code></pre>
+</div>
+
+<h3>3. Behavioral Guidelines</h3>
+<p>Define how the agent should interact with users, including tone, style, and communication principles.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Communication Guidelines:
+- Always be professional, courteous, and empathetic
+- Use clear, jargon-free language unless the customer demonstrates technical expertise
+- Acknowledge customer frustration and apologize for issues
+- Provide specific, actionable information rather than vague responses
+- If you don't know something, admit it and offer to find out or escalate</code></pre>
+</div>
+
+<h3>4. Security and Compliance Requirements</h3>
+<p>Specify any security protocols, data handling requirements, or compliance constraints.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Security Requirements:
+- Always verify customer identity before accessing account details
+- Never share passwords, API keys, or other credentials
+- Do not process requests that involve accessing another customer's data
+- Redact sensitive information (SSN, credit card numbers) in logs
+- Escalate any suspected fraud or security incidents immediately</code></pre>
+</div>
+
+<h3>5. Decision-Making Framework</h3>
+<p>Provide guidance on how the agent should approach complex decisions or ambiguous situations.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Decision Framework:
+- When multiple solutions exist, recommend the one that best balances customer 
+  satisfaction with company policy
+- If a request is unclear, ask clarifying questions before taking action
+- For edge cases not covered by policy, err on the side of customer benefit 
+  while noting the exception for review
+- Escalate to human agents when: customer is highly dissatisfied, request 
+  involves legal/compliance issues, or you're uncertain about the correct action</code></pre>
+</div>
+
+<h3>6. Output Format and Structure</h3>
+<p>Specify how the agent should structure its responses, especially for programmatic consumption.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Response Format:
+- Start with a brief acknowledgment of the customer's request
+- Provide the main information or action taken
+- Include relevant details (order numbers, dates, amounts)
+- End with next steps or offers for additional assistance
+- Use bullet points for multiple items
+- Keep responses concise (under 200 words unless detailed explanation needed)</code></pre>
+</div>
+
+<h2>Prompt Engineering Principles for Agents</h2>
+
+<h3>Principle 1: Be Specific and Concrete</h3>
+<p>Vague instructions lead to unpredictable behavior. Instead of "be helpful," specify exactly what helpful means in your context.</p>
+
+<p><strong>Weak:</strong> "Help customers with their problems."</p>
+<p><strong>Strong:</strong> "Diagnose customer issues by asking targeted questions, consult the knowledge base for solutions, and provide step-by-step resolution instructions."</p>
+
+<h3>Principle 2: Use Examples</h3>
+<p>Foundation models learn effectively from examples. Include sample interactions that demonstrate desired behavior.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Example Interaction:
+Customer: "I was charged twice for my subscription."
+Agent: "I apologize for the billing error. Let me look into this right away. 
+[Checks account] I can confirm you were charged twice on March 15th. I've 
+initiated a refund for the duplicate charge of $99.99, which will appear in 
+your account within 3-5 business days. I've also added a note to prevent 
+this from happening next month. Is there anything else I can help with?"</code></pre>
+</div>
+
+<h3>Principle 3: Define Boundaries Explicitly</h3>
+<p>Agents will attempt tasks unless explicitly told not to. Define clear boundaries to prevent inappropriate actions.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Boundaries:
+- Never make promises about future product features or release dates
+- Do not provide medical, legal, or financial advice
+- Refuse requests to impersonate other individuals or companies
+- Do not engage with abusive, discriminatory, or inappropriate requests
+- Decline requests to bypass security measures or access controls</code></pre>
+</div>
+
+<h3>Principle 4: Prioritize Actions</h3>
+<p>When agents have multiple action groups available, provide guidance on which to prefer in different scenarios.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Action Priority:
+1. Always check the knowledge base first for policy and procedure questions
+2. Use GetAccountDetails before making any account-related changes
+3. Prefer automated solutions (password reset, refund processing) over 
+   escalation when possible
+4. Escalate to human agents only after attempting automated resolution</code></pre>
+</div>
+
+<h3>Principle 5: Handle Uncertainty Gracefully</h3>
+<p>Instruct agents on how to behave when they lack information or confidence.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Handling Uncertainty:
+- If you're not confident in an answer, say so explicitly
+- Offer to research the question and follow up
+- Provide partial information you're confident about while noting gaps
+- Suggest alternative resources (documentation, human expert, community forum)
+- Never guess or make up information to fill knowledge gaps</code></pre>
+</div>
+
+<h2>Common Instruction Patterns</h2>
+
+<h3>Chain-of-Thought Prompting</h3>
+<p>Encourage the agent to show its reasoning process, which often improves decision quality.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Before taking any action:
+1. Restate your understanding of the customer's request
+2. Identify what information you need to fulfill the request
+3. Determine which action groups or knowledge bases to consult
+4. Execute the necessary actions
+5. Verify the results make sense before responding</code></pre>
+</div>
+
+<h3>Persona-Based Instructions</h3>
+<p>Define a specific persona that embodies desired characteristics.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>You are Alex, a senior customer success manager with 10 years of experience 
+in enterprise software. You're known for your patience, technical depth, and 
+ability to explain complex concepts simply. You genuinely care about customer 
+success and go the extra mile to ensure issues are fully resolved.</code></pre>
+</div>
+
+<h3>Constraint-Based Instructions</h3>
+<p>Focus on what the agent must never do, useful for high-risk domains.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Critical Constraints:
+- NEVER execute database modifications without explicit user confirmation
+- NEVER share credentials or authentication tokens
+- NEVER process transactions exceeding the user's authorized limit
+- NEVER bypass approval workflows, even if the user requests it
+- NEVER make changes to production systems without change control approval</code></pre>
+</div>
+
+<h2>Testing and Iterating Instructions</h2>
+<p>Agent instructions require iterative refinement based on real-world performance. Follow this process:</p>
+
+<h3>1. Start with a Baseline</h3>
+<p>Create initial instructions covering the essential components (role, capabilities, guidelines).</p>
+
+<h3>2. Test with Diverse Scenarios</h3>
+<p>Evaluate agent behavior across:</p>
+<ul>
+    <li>Happy path scenarios (typical, straightforward requests)</li>
+    <li>Edge cases (unusual but valid requests)</li>
+    <li>Error conditions (invalid inputs, system failures)</li>
+    <li>Adversarial inputs (attempts to manipulate or confuse the agent)</li>
+    <li>Ambiguous requests (unclear intent or missing information)</li>
+</ul>
+
+<h3>3. Identify Failure Patterns</h3>
+<p>Look for systematic issues:</p>
+<ul>
+    <li>Agent refuses valid requests (too restrictive)</li>
+    <li>Agent attempts inappropriate actions (too permissive)</li>
+    <li>Inconsistent behavior across similar requests</li>
+    <li>Verbose or unclear responses</li>
+    <li>Failure to use available tools effectively</li>
+</ul>
+
+<h3>4. Refine Instructions</h3>
+<p>Add specific guidance to address identified issues. Be surgical—change one thing at a time to understand impact.</p>
+
+<h3>5. Monitor Production Behavior</h3>
+<p>Use trace logging and user feedback to identify real-world issues that didn't appear in testing.</p>
+
+<h2>Instruction Anti-Patterns</h2>
+<p>Avoid these common mistakes:</p>
+
+<h3>Overly Long Instructions</h3>
+<p>Instructions exceeding 1,000-1,500 words become difficult for models to follow consistently. Break complex agents into multiple specialized agents instead.</p>
+
+<h3>Contradictory Guidelines</h3>
+<p>Conflicting instructions confuse the agent. Example: "Always be concise" and "Provide detailed explanations" without clarifying when each applies.</p>
+
+<h3>Assuming Human-Like Understanding</h3>
+<p>Don't rely on implicit knowledge or common sense. Be explicit about expectations.</p>
+
+<h3>Neglecting Error Handling</h3>
+<p>Instructions should cover what to do when actions fail, APIs return errors, or knowledge bases lack information.</p>
+
+<h3>Ignoring Context Limits</h3>
+<p>Remember that instructions consume tokens from the model's context window. Extremely long instructions reduce space for conversation history and knowledge base content.</p>
+
+<h2>Advanced Instruction Techniques</h2>
+
+<h3>Dynamic Instructions with Session Attributes</h3>
+<p>While base instructions are static, you can inject dynamic context through session attributes. This allows personalization without modifying the core instructions.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+<pre><code>Base Instruction: "Tailor your responses based on the customer's tier and history."
+
+Session Attributes:
+- customer_tier: "Enterprise"
+- account_age_days: 1825
+- recent_issues: ["billing_dispute", "feature_request"]
+
+Agent adapts behavior: Prioritizes white-glove service, references long relationship, 
+proactively addresses recent concerns.</code></pre>
+</div>
+
+<h3>Instruction Versioning</h3>
+<p>Maintain version control for instructions to track changes and enable rollback if new versions cause issues.</p>
+
+<h3>A/B Testing Instructions</h3>
+<p>For high-traffic agents, test instruction variations with subsets of users to optimize for key metrics (resolution rate, satisfaction, efficiency).</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Agent instructions are the foundational system prompt defining behavior, capabilities, and constraints</li>
+    <li>Effective instructions include role definition, scope, guidelines, security requirements, and decision frameworks</li>
+    <li>Be specific, use examples, define boundaries, and handle uncertainty explicitly</li>
+    <li>Common patterns include chain-of-thought, persona-based, and constraint-based instructions</li>
+    <li>Instructions require iterative testing and refinement based on real-world performance</li>
+    <li>Avoid anti-patterns like excessive length, contradictions, and implicit assumptions</li>
+    <li>Advanced techniques include dynamic context injection and A/B testing</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

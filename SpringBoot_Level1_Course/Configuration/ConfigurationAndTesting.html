@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Configuration - External Configuration and Testing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>External Configuration and Testing Basics</h1>
+
+<h2>Externalizing Configuration</h2>
+<p>Configuration should not be hardcoded. Spring Boot uses application.properties or application.yml files for external configuration.</p>
+
+<h3>Common Configuration Properties</h3>
+<table>
+    <tr>
+        <th>Property</th>
+        <th>Default</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td>server.port</td>
+        <td>8080</td>
+        <td>Server port number</td>
+    </tr>
+    <tr>
+        <td>spring.datasource.url</td>
+        <td>-</td>
+        <td>Database connection URL</td>
+    </tr>
+    <tr>
+        <td>spring.jpa.show-sql</td>
+        <td>false</td>
+        <td>Show SQL queries in logs</td>
+    </tr>
+    <tr>
+        <td>logging.level.root</td>
+        <td>INFO</td>
+        <td>Root logging level</td>
+    </tr>
+</table>
+
+<h3>Custom Properties</h3>
+<p>You can define custom properties and inject them:</p>
+<blockquote>
+# application.properties<br/>
+app.name=Todo API<br/>
+app.version=1.0.0<br/>
+app.max-todos=100
+</blockquote>
+
+<blockquote>
+@Component<br/>
+public class AppConfig {<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Value("${app.name}")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private String appName;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Value("${app.max-todos:50}") // Default value: 50<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private int maxTodos;<br/>
+}
+</blockquote>
+
+<h2>Logging Configuration</h2>
+<p>Spring Boot uses SLF4J with Logback. Configure logging levels:</p>
+<blockquote>
+# Logging configuration<br/>
+logging.level.com.example.todoapi=DEBUG<br/>
+logging.level.org.springframework.web=DEBUG<br/>
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %msg%n
+</blockquote>
+
+<h3>Log Levels</h3>
+<ul>
+    <li><strong>ERROR:</strong> Serious failures that stop the application</li>
+    <li><strong>WARN:</strong> Potential issues that should be monitored</li>
+    <li><strong>INFO:</strong> General application progress (default)</li>
+    <li><strong>DEBUG:</strong> Detailed information for troubleshooting</li>
+    <li><strong>TRACE:</strong> Most verbose level</li>
+</ul>
+
+<h2>Unit Testing with Spring Boot</h2>
+<p>Spring Boot makes testing easy with @SpringBootTest and other testing annotations.</p>
+
+<h3>Service Layer Testing</h3>
+<blockquote>
+@ExtendWith(MockitoExtension.class)<br/>
+class TodoItemServiceTest {<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Mock<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private TodoItemRepository repository;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@InjectMocks<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private TodoItemService service;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Test<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;void whenCreateTodo_thenSaveIsCalled() {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TodoItem newTodo = new TodoItem("Test", "Description");<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;when(repository.save(any(TodoItem.class))).thenReturn(newTodo);<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TodoItem result = service.createTodo(newTodo);<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;verify(repository, times(1)).save(any(TodoItem.class));<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assertEquals("Test", result.getTitle());<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h3>Integration Testing</h3>
+<blockquote>
+@SpringBootTest<br/>
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)<br/>
+class TodoItemIntegrationTest {<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Autowired<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private TodoItemService service;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Test<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;void testCreateAndRetrieveTodo() {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TodoItem todo = new TodoItem("Integration Test", "Description");<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TodoItem saved = service.createTodo(todo);<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assertNotNull(saved.getId());<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assertEquals("Integration Test", saved.getTitle());<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Application Packaging</h2>
+<p>Spring Boot creates executable JAR files containing all dependencies:</p>
+<blockquote>
+# Maven<br/>
+mvn clean package<br/>
+<br/>
+# Gradle<br/>
+./gradlew clean build<br/>
+<br/>
+# Run the JAR<br/>
+java -jar target/todo-api-1.0.0.jar
+</blockquote>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cognitive Accessibility and Content Simplification</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cognitive Accessibility and Content Simplification</h1>
+
+<h2>Understanding Cognitive Disabilities</h2>
+<p>Cognitive disabilities affect how people process information, remember, pay attention, and make decisions. Over <strong>200 million people</strong> worldwide have intellectual or developmental disabilities. Cognitive accessibility benefits everyone, including:</p>
+<ul>
+    <li>People with dyslexia, ADHD, or autism spectrum disorders</li>
+    <li>Individuals with traumatic brain injuries or dementia</li>
+    <li>Non-native language speakers</li>
+    <li>People under stress or in distracting environments</li>
+    <li>Elderly users with age-related cognitive decline</li>
+</ul>
+
+<h2>Cognitive Accessibility Barriers</h2>
+<table>
+    <tr><th>Barrier</th><th>Impact</th><th>Solution</th></tr>
+    <tr><td>Complex language</td><td>Content is difficult to understand</td><td>Use plain language, short sentences</td></tr>
+    <tr><td>Dense text blocks</td><td>Overwhelming and hard to scan</td><td>Break into short paragraphs, use headings</td></tr>
+    <tr><td>Confusing navigation</td><td>Users get lost or frustrated</td><td>Clear, consistent navigation structure</td></tr>
+    <tr><td>Time pressure</td><td>Cannot complete tasks in time</td><td>Allow users to extend time limits</td></tr>
+    <tr><td>Distracting animations</td><td>Cannot focus on main content</td><td>Minimize motion, provide pause controls</td></tr>
+    <tr><td>Unclear instructions</td><td>Cannot complete forms or tasks</td><td>Provide clear, step-by-step guidance</td></tr>
+</table>
+
+<h2>AI-Powered Text Simplification</h2>
+<p>AI can automatically rewrite complex content at appropriate reading levels:</p>
+
+<div class="code-block">
+<pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+def simplify_text(text: str, reading_level: str = "8th grade") -&gt; dict:
+    '''Simplify text for cognitive accessibility.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                f"Rewrite the following text at a {reading_level} reading level. "
+                "Guidelines:\n"
+                "- Use short sentences (15-20 words maximum)\n"
+                "- Use common, everyday words\n"
+                "- Break complex ideas into simple steps\n"
+                "- Use active voice, not passive\n"
+                "- Define technical terms when necessary\n"
+                "- Keep the same meaning and key information\n"
+                "- Use bullet points for lists"
+            )},
+            {"role": "user", "content": text}
+        ]
+    )
+    
+    simplified = response.choices[0].message.content
+    
+    return {
+        "original": text,
+        "simplified": simplified,
+        "reading_level": reading_level
+    }
+
+# Example
+original = """
+The implementation of comprehensive accessibility remediation protocols 
+necessitates a multifaceted approach encompassing both automated and manual 
+evaluation methodologies to ensure compliance with WCAG 2.1 Level AA criteria.
+"""
+
+result = simplify_text(original)
+print(result['simplified'])
+
+# Output:
+# "To make your website accessible, you need to do two things:
+# 1. Use automated tools to find problems
+# 2. Have people test it manually
+# This helps you meet WCAG 2.1 Level AA standards."</code></pre>
+</div>
+
+<h2>Reading Level Assessment</h2>
+<p>AI can analyze content and determine its reading difficulty:</p>
+
+<div class="code-block">
+<pre><code>def assess_reading_level(text: str) -&gt; dict:
+    '''Assess the reading level of text content.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": (
+                "Analyze this text and provide:\n"
+                "1. Estimated reading grade level (e.g., '10th grade')\n"
+                "2. Average sentence length\n"
+                "3. Complex words that could be simplified\n"
+                "4. Overall readability score (1-10, 10 being easiest)\n"
+                "5. Specific recommendations for improvement\n\n"
+                f"Text:\n{text}\n\n"
+                "Return as JSON."
+            )
+        }]
+    )
+    
+    return json.loads(response.choices[0].message.content)</code></pre>
+</div>
+
+<h2>Content Structure and Organization</h2>
+<p>Clear structure helps users with cognitive disabilities navigate and understand content:</p>
+
+<table>
+    <tr><th>Technique</th><th>Purpose</th><th>Implementation</th></tr>
+    <tr><td><strong>Descriptive headings</strong></td><td>Help users scan and find information</td><td>Use clear, specific headings (not "Click here")</td></tr>
+    <tr><td><strong>Short paragraphs</strong></td><td>Reduce cognitive load</td><td>3-5 sentences per paragraph maximum</td></tr>
+    <tr><td><strong>Bullet points</strong></td><td>Make lists scannable</td><td>Use for any list of 3+ items</td></tr>
+    <tr><td><strong>White space</strong></td><td>Reduce visual clutter</td><td>Generous margins and line spacing</td></tr>
+    <tr><td><strong>Visual hierarchy</strong></td><td>Show importance and relationships</td><td>Size, color, and spacing indicate structure</td></tr>
+</table>
+
+<h2>AI-Generated Summaries</h2>
+<p>Provide concise summaries for long content:</p>
+
+<div class="code-block">
+<pre><code>def generate_summary(text: str, summary_type: str = "brief") -&gt; str:
+    '''Generate accessible summaries of content.'''
+    
+    prompts = {
+        "brief": "Summarize in 2-3 sentences. Use simple language.",
+        "key_points": "Extract 3-5 key points as a bullet list. Use simple language.",
+        "tldr": "Provide a one-sentence 'too long; didn't read' summary.",
+        "step_by_step": "Break down into numbered steps. Use simple language."
+    }
+    
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": prompts.get(summary_type, prompts["brief"])},
+            {"role": "user", "content": text}
+        ]
+    )
+    
+    return response.choices[0].message.content
+
+# Example
+article = """[Long article about accessibility...]"""
+
+brief_summary = generate_summary(article, "brief")
+key_points = generate_summary(article, "key_points")
+tldr = generate_summary(article, "tldr")</code></pre>
+</div>
+
+<h2>Visual Aids and Icons</h2>
+<p>Visual supports help users with cognitive disabilities understand content:</p>
+<ul>
+    <li><strong>Icons with labels:</strong> Combine symbols with text for clarity</li>
+    <li><strong>Infographics:</strong> Visual representation of complex data</li>
+    <li><strong>Progress indicators:</strong> Show where users are in multi-step processes</li>
+    <li><strong>Color coding:</strong> Use consistent colors to indicate categories or status</li>
+    <li><strong>Illustrations:</strong> Support text with relevant images</li>
+</ul>
+
+<h2>Form Simplification</h2>
+<p>AI can improve form accessibility for cognitive disabilities:</p>
+
+<div class="code-block">
+<pre><code>def improve_form_accessibility(form_html: str) -&gt; dict:
+    '''Analyze form and suggest cognitive accessibility improvements.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": (
+                "Analyze this form for cognitive accessibility. Provide:\n"
+                "1. Simplified label text for each field\n"
+                "2. Helpful placeholder examples\n"
+                "3. Clear error messages\n"
+                "4. Step-by-step instructions\n"
+                "5. Grouping suggestions for related fields\n\n"
+                f"Form HTML:\n{form_html}\n\n"
+                "Return as JSON."
+            )
+        }]
+    )
+    
+    return json.loads(response.choices[0].message.content)</code></pre>
+</div>
+
+<h2>Error Prevention and Recovery</h2>
+<p>Help users avoid and recover from errors:</p>
+<ul>
+    <li><strong>Clear instructions:</strong> Explain what's needed before users start</li>
+    <li><strong>Input validation:</strong> Check for errors as users type</li>
+    <li><strong>Helpful error messages:</strong> Explain what went wrong and how to fix it</li>
+    <li><strong>Confirmation steps:</strong> Ask users to confirm important actions</li>
+    <li><strong>Undo options:</strong> Allow users to reverse actions</li>
+</ul>
+
+<h2>Multi-Modal Content Presentation</h2>
+<p>Offer content in multiple formats to support different learning styles:</p>
+<table>
+    <tr><th>Format</th><th>Benefits</th><th>AI Implementation</th></tr>
+    <tr><td>Text</td><td>Can be read at own pace</td><td>Simplified text generation</td></tr>
+    <tr><td>Audio</td><td>Supports auditory learners</td><td>Text-to-speech conversion</td></tr>
+    <tr><td>Video</td><td>Combines visual and auditory</td><td>Auto-generate explainer videos</td></tr>
+    <tr><td>Infographics</td><td>Visual representation of concepts</td><td>AI-generated diagrams</td></tr>
+    <tr><td>Interactive</td><td>Hands-on learning</td><td>AI-powered tutorials</td></tr>
+</table>
+
+<h2>Real-World Applications</h2>
+<ul>
+    <li><strong>Government services:</strong> Simplify complex legal and administrative content</li>
+    <li><strong>Healthcare:</strong> Make medical information understandable to patients</li>
+    <li><strong>Education:</strong> Adapt learning materials to student reading levels</li>
+    <li><strong>Financial services:</strong> Simplify terms and conditions, privacy policies</li>
+    <li><strong>E-commerce:</strong> Clear product descriptions and checkout instructions</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Cognitive disabilities affect over 200 million people worldwide</li>
+    <li>AI can automatically simplify complex text to appropriate reading levels</li>
+    <li>Clear structure, short sentences, and visual aids improve comprehension</li>
+    <li>Summaries and multi-modal content support different learning styles</li>
+    <li>Cognitive accessibility improvements benefit all users, not just those with disabilities</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

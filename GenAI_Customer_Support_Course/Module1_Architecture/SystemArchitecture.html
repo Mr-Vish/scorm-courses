@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>System Architecture Overview</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>System Architecture Overview</h1>
+
+<h2>Core Components of GenAI Customer Support</h2>
+<p>A production-ready GenAI customer support system consists of five essential components working together:</p>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Key Technology</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Intent Classifier</td>
+        <td>Categorize incoming requests into predefined categories</td>
+        <td>Fine-tuned LLMs, Zero-shot classification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Knowledge Base</td>
+        <td>Store and retrieve relevant support documentation</td>
+        <td>Vector databases, RAG architecture</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Conversation Manager</td>
+        <td>Maintain context across multi-turn conversations</td>
+        <td>Session management, Memory systems</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Action Engine</td>
+        <td>Execute business operations and API calls</td>
+        <td>Function calling, Tool integration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Escalation System</td>
+        <td>Route complex issues to human agents</td>
+        <td>Confidence scoring, Rule-based triggers</td>
+    </tr>
+</table>
+
+<h2>Architecture Patterns</h2>
+<p>Modern GenAI customer support systems typically follow one of these architectural patterns:</p>
+
+<ul>
+    <li><strong>Monolithic RAG:</strong> Single LLM with retrieval augmentation - suitable for small-scale deployments</li>
+    <li><strong>Multi-Agent System:</strong> Specialized agents for different tasks (routing, answering, action execution) - recommended for enterprise scale</li>
+    <li><strong>Hybrid Approach:</strong> Combines rule-based systems with GenAI for critical paths - balances reliability and intelligence</li>
+</ul>
+
+<h2>Data Flow Architecture</h2>
+<blockquote>
+1. Customer Query → Intent Classification
+   ↓
+2. Intent Router → Determine handling strategy
+   ↓
+3. Context Retrieval → Fetch relevant knowledge
+   ↓
+4. LLM Processing → Generate response
+   ↓
+5. Confidence Check → Validate response quality
+   ↓
+6. Response Delivery or Escalation
+</blockquote>
+
+<h2>Scalability Considerations</h2>
+<ul>
+    <li><strong>Horizontal Scaling:</strong> Deploy multiple instances behind load balancers</li>
+    <li><strong>Caching Layer:</strong> Cache frequent queries and responses to reduce LLM calls</li>
+    <li><strong>Async Processing:</strong> Use message queues for non-real-time operations</li>
+    <li><strong>Rate Limiting:</strong> Protect against abuse and manage API costs</li>
+</ul>
+
+<h2>Integration Points</h2>
+<p>Your GenAI system must integrate with existing infrastructure:</p>
+<ul>
+    <li><strong>CRM Systems:</strong> Salesforce, HubSpot for customer data</li>
+    <li><strong>Ticketing Systems:</strong> Zendesk, Jira Service Management</li>
+    <li><strong>Communication Channels:</strong> Web chat, email, SMS, voice</li>
+    <li><strong>Analytics Platforms:</strong> Track metrics and user behavior</li>
+    <li><strong>Authentication:</strong> SSO, OAuth for secure access</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

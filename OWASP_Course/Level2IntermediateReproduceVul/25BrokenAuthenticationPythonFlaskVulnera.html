@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>2.5 Broken Authentication — Python (Flask) vulnerable app</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>2.5 Broken Authentication — Python (Flask) vulnerable app</h1>
+
+<p>Example of weak password storage (plain text) and predictable tokens.</p>
+
+<h3><strong><code>vuln_auth_flask/app.py</code></strong></h3>
+
+<p>from flask import Flask, request, jsonify</p>
+
+<p>import secrets</p>
+
+<p>app = Flask(__name__)</p>
+
+<p>USERS = {&#x27;admin&#x27;:&#x27;adminpass&#x27;,&#x27;alice&#x27;:&#x27;alicepass&#x27;}</p>
+
+<p>TOKENS = {}</p>
+
+<p>@app.route(&#x27;/login&#x27;, methods=[&#x27;POST&#x27;])</p>
+
+<p>def login():</p>
+
+<p>    data = request.json or {}</p>
+
+<p>    username = data.get(&#x27;username&#x27;)</p>
+
+<p>    password = data.get(&#x27;password&#x27;)</p>
+
+<p>    if username in USERS and USERS[username] == password:</p>
+
+<p>        # VULNERABLE: predictable simple token generation (for demo use secrets.token_hex to be slightly better)</p>
+
+<p>        token = secrets.token_hex(8)  # small token length =&gt; predictable</p>
+
+<p>        TOKENS[token] = username</p>
+
+<p>        return jsonify({&#x27;token&#x27;: token})</p>
+
+<p>    return jsonify({&#x27;error&#x27;:&#x27;invalid&#x27;}), 401</p>
+
+<p>@app.route(&#x27;/secure&#x27;)</p>
+
+<p>def secure():</p>
+
+<p>    auth = request.headers.get(&#x27;Authorization&#x27;,&#x27;&#x27;).replace(&#x27;Bearer &#x27;,&#x27;&#x27;)</p>
+
+<p>    if auth and auth in TOKENS:</p>
+
+<p>        return jsonify({&#x27;data&#x27;: f&#x27;secret for {TOKENS[auth]}&#x27;})</p>
+
+<p>    return jsonify({&#x27;error&#x27;:&#x27;unauth&#x27;}), 401</p>
+
+<p>if __name__ == &#x27;__main__&#x27;:</p>
+
+<p>    app.run(debug=True, port=5002)</p>
+
+<h3><strong>Exploit</strong></h3>
+
+<ul>
+    <li>Brute forcing tokens or observing weak tokens may allow takeover. Also passwords stored plaintext let DB leaks compromise accounts.
+</li>
+</ul>
+
+<p><strong>Test:</strong></p>
+
+<p>curl -X POST -H &quot;Content-Type: application/json&quot; -d &#x27;{&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;adminpass&quot;}&#x27; http://localhost:5002/login</p>
+
+<p># Use returned token:</p>
+
+<p>curl -H &quot;Authorization: Bearer &lt;token&gt;&quot; http://localhost:5002/secure</p>
+
+<p><strong>Errors &amp; fixes</strong></p>
+
+<ul>
+    <li><code>secrets.token_hex(8)</code> token space is small (16 hex chars) — easily brute forced. Use longer tokens and expiry.
+</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

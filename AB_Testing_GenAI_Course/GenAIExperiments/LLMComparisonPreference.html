@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM Comparison and User Preference Testing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM Comparison and User Preference Testing</h1>
+
+
+<h2>LLM-as-Judge Evaluation</h2>
+<p>Using a strong LLM to judge the quality of outputs from different models or prompts. This scales evaluation beyond what manual human review can achieve:</p>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+import json
+
+client = OpenAI()
+
+def llm_judge_comparison(
+    question: str,
+    response_a: str,
+    response_b: str,
+    criteria: str = "helpfulness, accuracy, and clarity",
+) -&gt; dict:
+    '''Use an LLM to judge which response is better.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Compare these two responses to the question: {question}
+
+"
+                f"Response A:
+{response_a}
+
+"
+                f"Response B:
+{response_b}
+
+"
+                f"Judge based on: {criteria}
+"
+                "Return JSON: {"winner": "A" or "B" or "tie", "
+                ""score_a": float (1-10), "score_b": float (1-10), "
+                ""reasoning": str}"
+            ),
+        }],
+    )
+    return json.loads(response.choices[0].message.content)
+
+# Run comparison across a test set
+results = []
+for test_case in test_set:
+    response_a = model_a.generate(test_case["question"])
+    response_b = model_b.generate(test_case["question"])
+    judgment = llm_judge_comparison(test_case["question"], response_a, response_b)
+    results.append(judgment)</code></pre>
+</div>
+
+<h2>Reducing Judge Bias</h2>
+<table>
+    <tr><th>Bias</th><th>Problem</th><th>Mitigation</th></tr>
+    <tr><td>Position bias</td><td>Judge prefers the first response</td><td>Randomly swap A/B positions, average both orderings</td></tr>
+    <tr><td>Verbosity bias</td><td>Judge prefers longer responses</td><td>Include "conciseness" as a judging criterion</td></tr>
+    <tr><td>Self-preference</td><td>GPT-4 judge prefers GPT-4 outputs</td><td>Use a different model family as judge</td></tr>
+    <tr><td>Anchor bias</td><td>Judge anchors on the first response read</td><td>Score each response independently before comparing</td></tr>
+</table>
+
+<h2>Statistical Analysis</h2>
+<div class="code-block">
+<pre><code>from scipy import stats
+import numpy as np
+
+def analyze_ab_results(control_scores: list, treatment_scores: list) -&gt; dict:
+    '''Analyze A/B test results for statistical significance.'''
+    control = np.array(control_scores)
+    treatment = np.array(treatment_scores)
+
+    # Two-sample t-test
+    t_stat, p_value = stats.ttest_ind(control, treatment)
+
+    # Effect size (Cohen's d)
+    pooled_std = np.sqrt((control.std()**2 + treatment.std()**2) / 2)
+    cohens_d = (treatment.mean() - control.mean()) / pooled_std
+
+    # Confidence interval for the difference
+    diff = treatment.mean() - control.mean()
+    se = np.sqrt(control.var()/len(control) + treatment.var()/len(treatment))
+    ci_low = diff - 1.96 * se
+    ci_high = diff + 1.96 * se
+
+    return {
+        "control_mean": float(control.mean()),
+        "treatment_mean": float(treatment.mean()),
+        "difference": float(diff),
+        "p_value": float(p_value),
+        "statistically_significant": p_value &lt; 0.05,
+        "cohens_d": float(cohens_d),
+        "confidence_interval": [float(ci_low), float(ci_high)],
+    }</code></pre>
+</div>
+
+<h2>User Preference Collection</h2>
+<ul>
+    <li><strong>Thumbs up/down:</strong> Simplest signal - collect on every AI response</li>
+    <li><strong>Side-by-side comparison:</strong> Show two responses, ask user to pick the better one</li>
+    <li><strong>Likert scale:</strong> Rate responses on a 1-5 scale for specific dimensions</li>
+    <li><strong>Implicit signals:</strong> Track if user copied, edited, or ignored the response</li>
+    <li><strong>Follow-up surveys:</strong> Ask targeted questions about specific aspects of the AI output</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>One variable at a time:</strong> Change only one thing (model, prompt, or config) per experiment</li>
+    <li><strong>Pre-register hypotheses:</strong> Define your metric and success criteria before running the experiment</li>
+    <li><strong>Run long enough:</strong> Wait for statistical significance - do not peek and stop early</li>
+    <li><strong>Watch for guardrail metrics:</strong> Ensure treatment does not degrade safety, cost, or latency unacceptably</li>
+    <li><strong>Document everything:</strong> Record experiment config, results, and decision for future reference</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

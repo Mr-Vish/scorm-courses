@@ -1,0 +1,266 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Deployment of MCP Servers</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production Deployment of MCP Servers</h1>
+
+<h2>Production Readiness</h2>
+
+<p>Deploying MCP servers to production requires careful planning and configuration to ensure reliability, security, and maintainability.</p>
+
+<h3>Production Requirements</h3>
+
+<ul>
+    <li><strong>Reliability:</strong> Server must handle failures gracefully</li>
+    <li><strong>Scalability:</strong> Support expected load and growth</li>
+    <li><strong>Monitoring:</strong> Visibility into server health and performance</li>
+    <li><strong>Security:</strong> Protection against threats and vulnerabilities</li>
+    <li><strong>Maintainability:</strong> Easy to update and troubleshoot</li>
+</ul>
+
+<h2>Deployment Architectures</h2>
+
+<h3>Local Deployment (stdio)</h3>
+
+<p>For stdio transport servers running on user machines:</p>
+
+<ul>
+    <li>Package server as executable or script</li>
+    <li>Provide installation instructions</li>
+    <li>Include configuration templates</li>
+    <li>Document system requirements</li>
+</ul>
+
+<h3>Remote Deployment (SSE)</h3>
+
+<p>For SSE transport servers accessible over network:</p>
+
+<table>
+    <tr>
+        <th>Deployment Option</th>
+        <th>Best For</th>
+        <th>Considerations</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Cloud VMs</td>
+        <td>Full control, custom requirements</td>
+        <td>Manual management, scaling</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Containers</td>
+        <td>Portability, consistency</td>
+        <td>Container orchestration needed</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Serverless</td>
+        <td>Variable load, cost optimization</td>
+        <td>Cold start latency, stateless design</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Platform-as-a-Service</td>
+        <td>Rapid deployment, managed infrastructure</td>
+        <td>Platform limitations, vendor lock-in</td>
+    </tr>
+</table>
+
+<h2>Configuration Management</h2>
+
+<p>Separate configuration from code for flexibility:</p>
+
+<h3>Environment Variables</h3>
+
+<blockquote>
+// Load configuration from environment
+const config = {
+  port: process.env.PORT || 3000,
+  apiKey: process.env.API_KEY,
+  databaseUrl: process.env.DATABASE_URL,
+  logLevel: process.env.LOG_LEVEL || 'info'
+};
+
+// Validate required configuration
+if (!config.apiKey) {
+  throw new Error('API_KEY environment variable required');
+}
+</blockquote>
+
+<h3>Configuration Files</h3>
+
+<blockquote>
+// config/production.json
+{
+  "server": {
+    "port": 3000,
+    "timeout": 30000
+  },
+  "security": {
+    "rateLimit": {
+      "maxRequests": 100,
+      "windowMs": 60000
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  }
+}
+</blockquote>
+
+<h2>Process Management</h2>
+
+<p>Ensure servers restart automatically on failures:</p>
+
+<h3>Using PM2 (Node.js)</h3>
+
+<blockquote>
+# Install PM2
+npm install -g pm2
+
+# Start server with PM2
+pm2 start dist/server.js --name mcp-server
+
+# Configure auto-restart
+pm2 startup
+pm2 save
+
+# Monitor server
+pm2 status
+pm2 logs mcp-server
+</blockquote>
+
+<h3>Using systemd (Linux)</h3>
+
+<blockquote>
+[Unit]
+Description=MCP Server
+After=network.target
+
+[Service]
+Type=simple
+User=mcpuser
+WorkingDirectory=/opt/mcp-server
+ExecStart=/usr/bin/node dist/server.js
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+</blockquote>
+
+<h2>Monitoring and Observability</h2>
+
+<h3>Health Checks</h3>
+
+<p>Implement health check endpoints for monitoring:</p>
+
+<blockquote>
+app.get('/health', (req, res) => {
+  const health = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  };
+  
+  res.json(health);
+});
+</blockquote>
+
+<h3>Metrics Collection</h3>
+
+<p>Track key performance indicators:</p>
+
+<ul>
+    <li><strong>Request Rate:</strong> Tools called per minute</li>
+    <li><strong>Response Time:</strong> Average tool execution time</li>
+    <li><strong>Error Rate:</strong> Failed requests percentage</li>
+    <li><strong>Resource Usage:</strong> CPU, memory, disk I/O</li>
+</ul>
+
+<h3>Logging Strategy</h3>
+
+<blockquote>
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+});
+
+// Log tool executions
+logger.info('Tool executed', {
+  tool: toolName,
+  duration: executionTime,
+  userId: userId
+});
+</blockquote>
+
+<h2>Deployment Checklist</h2>
+
+<p>Before deploying to production:</p>
+
+<ol>
+    <li>All tests passing (unit, integration, security)</li>
+    <li>Configuration externalized and validated</li>
+    <li>Security controls implemented and tested</li>
+    <li>Monitoring and alerting configured</li>
+    <li>Logging properly configured</li>
+    <li>Error handling comprehensive</li>
+    <li>Documentation complete and up-to-date</li>
+    <li>Backup and recovery procedures defined</li>
+    <li>Performance testing completed</li>
+    <li>Rollback plan prepared</li>
+</ol>
+
+<h2>Continuous Deployment</h2>
+
+<p>Automate deployment for consistency and speed:</p>
+
+<h3>CI/CD Pipeline</h3>
+
+<ol>
+    <li><strong>Build:</strong> Compile and package server</li>
+    <li><strong>Test:</strong> Run automated test suite</li>
+    <li><strong>Security Scan:</strong> Check for vulnerabilities</li>
+    <li><strong>Deploy to Staging:</strong> Test in production-like environment</li>
+    <li><strong>Deploy to Production:</strong> Roll out to production</li>
+    <li><strong>Monitor:</strong> Watch for issues post-deployment</li>
+</ol>
+
+<h2>Disaster Recovery</h2>
+
+<p>Plan for failures and have recovery procedures:</p>
+
+<ul>
+    <li><strong>Backups:</strong> Regular backups of configuration and data</li>
+    <li><strong>Rollback:</strong> Ability to quickly revert to previous version</li>
+    <li><strong>Redundancy:</strong> Multiple instances for high availability</li>
+    <li><strong>Documentation:</strong> Clear recovery procedures</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Production deployment requires careful planning and configuration</li>
+    <li>Separate configuration from code for flexibility</li>
+    <li>Implement comprehensive monitoring and logging</li>
+    <li>Use process managers to ensure automatic restarts</li>
+    <li>Automate deployment through CI/CD pipelines</li>
+    <li>Plan for failures with backup and recovery procedures</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

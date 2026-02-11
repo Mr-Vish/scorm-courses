@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Metadata and Structured Output</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Metadata and Structured Output</h1>
+<div class="container">
+<h2>Metadata and Structured Output in Claude RAG</h2>
+<p>In a professional RAG pipeline, the goal is often more than just a text answer. You might need the model to return a structured list of facts, a JSON object for a dashboard, or a set of metadata-enriched citations. Claude's ability to generate structured output and reason about metadata is a key advantage for these tasks.</p>
+
+<h3>The Role of Metadata in Retrieval</h3>
+<p>Metadata (like 'date', 'category', 'author', or 'security_level') provides crucial context that vector embeddings often miss. For example, a user might ask: "What are the latest security updates for the 2024 model?"
+<ul>
+    <li><strong>Filtering:</strong> Use the metadata to pre-filter your documents (e.g., only show documents with <code>year >= 2024</code>) before performing the vector search.</li>
+    <li><strong>Weighting:</strong> Give higher priority to more recent documents or documents from a "Gold Standard" source.</li>
+    <li><strong>In-Prompt Context:</strong> Include the metadata inside the XML tags for each document. <code>&lt;document date="2024-01-15" source="Security_HQ"&gt;</code>. This allows Claude to reason about the freshness and reliability of each source.</li>
+</ul></p>
+
+<h3>Generating Structured Output (JSON)</h3>
+<p>Claude is excellent at generating valid JSON, which is essential for integrating RAG results into other software systems. To ensure perfect JSON output every time:</p>
+<ol>
+    <li><strong>Define the Schema:</strong> Provide a clear JSON schema or a few examples of the desired output in your prompt.</li>
+    <li><strong>Use Assistant Prefilling:</strong> This is a powerful Claude-specific trick. Start Claude's response for it by providing the opening bracket: <code>{</code>. This forces Claude into a JSON-generation mode.</li>
+    <li><strong>Constraint Enforcement:</strong> Use instructions like "Respond ONLY with valid JSON. No preamble or explanation."</li>
+</ol>
+
+<h3>Metadata-Enriched Citations</h3>
+<p>Instead of simple [1] citations, ask Claude to include metadata from the XML tags.
+<blockquote>
+"For each finding, provide a citation in this JSON format: { 'claim': '...', 'source_url': '...', 'confidence_score': 1-5 }"
+</blockquote>
+This allows your application to create interactive, clickable citations for the user.</p>
+
+<h3>Handling Missing Metadata</h3>
+<p>In the real world, metadata is often messy or incomplete. You should instruct Claude how to handle this: "If a document is missing a 'date' tag, treat it as 'undated' and prioritize it lower than dated documents when answering questions about timelines."</p>
+
+<h3>The 'Self-Correction' for Structure</h3>
+<p>If you find that Claude occasionally makes a mistake in the JSON structure, you can add a "self-correction" step: "Review your JSON output. Ensure all keys are present and all types match the schema. If you find an error, provide the corrected JSON."</p>
+
+<h3>Use Case: Automated News Summary for a Dashboard</h3>
+<p>A system retrieves 10 news articles about a specific stock. It uses Claude to:
+1. Extract the main sentiment from each article (using metadata for the source's reliability).
+2. Identify the top 3 recurring themes.
+3. Output the result as a single JSON object that populates a company dashboard.
+The metadata (e.g., whether a source is a reputable financial site or a random blog) is used by Claude to weight the sentiment analysis.</p>
+
+<h3>Summary</h3>
+<p>Metadata and structured output move RAG from "chat" to "data processing." By providing Claude with rich context through metadata and enforcing strict output formats, you can build powerful, integrated AI systems that provide far more value than a simple text response.</p>
+
+</div>
+</body>
+</html>

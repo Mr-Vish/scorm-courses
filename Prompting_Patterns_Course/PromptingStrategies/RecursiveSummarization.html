@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Recursive Summarization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Recursive Summarization</h1>
+<div class="container">
+<h2>Recursive Summarization: Handling Massive Datasets</h2>
+<p>While models like Claude have very large context windows, there is still a limit to how much information you can process at once. When you need to summarize an entire library of books, thousands of customer reviews, or a decade's worth of financial reports, even 200,000 tokens isn't enough. Recursive Summarization is the pattern designed to handle these truly massive datasets.</p>
+
+<h3>The 'Divide and Conquer' Approach</h3>
+<p>Recursive summarization works by breaking a huge task into smaller, manageable chunks, and then "bubbling up" the summaries of those chunks until you reach a final, global summary. It is a hierarchical process that maintains context while reducing volume.</p>
+
+<h3>The Recursive Workflow</h3>
+<ol>
+    <li><strong>Chunking:</strong> Divide the massive document into N smaller segments (e.g., 5,000 words each). Ensure chunks are divided at logical points (like chapter ends) to preserve context.</li>
+    <li><strong>Level 1 Summarization:</strong> Summarize each individual chunk. If you have 100 chunks, you now have 100 summaries.</li>
+    <li><strong>Level 2 Summarization:</strong> Group the Level 1 summaries into new, larger chunks and summarize those. For example, you might summarize every 10 of your Level 1 summaries together.</li>
+    <li><strong>Iteration:</strong> Repeat the process, building a pyramid of summaries, until you are left with a single, final summary that captures the essence of the entire dataset.</li>
+</ol>
+
+<h3>Why Recursive Summarization is Effective</h3>
+<ul>
+    <li><strong>Scaling to Infinity:</strong> This pattern can theoretically summarize a document of any size, from a single book to the entire internet.</li>
+    <li><strong>Parallelization:</strong> Because each chunk can be summarized independently, you can run many Level 1 summarizations in parallel, significantly speeding up the process.</li>
+    <li><strong>Preserving Local Detail:</strong> By summarizing small chunks first, you are more likely to capture important details that might be lost if you tried to summarize everything in one go.</li>
+</ul>
+
+<h3>The Importance of 'Context Carrying'</h3>
+<p>A common pitfall in recursive summarization is that a chunk in the middle of a document might be hard to understand without knowing what came before it. To fix this, you can pass a "rolling summary" along with each chunk. "Here is the summary of everything so far: [Summary]. Now, summarize this next chunk in that context." This ensures that the Level 1 summaries are coherent and consistent.</p>
+
+<h3>Use Cases for Recursive Summarization</h3>
+<ul>
+    <li><strong>Legal Discovery:</strong> Summarizing thousands of emails and documents found during a legal investigation.</li>
+    <li><strong>Scientific Literature Review:</strong> Synthesizing findings from hundreds of papers on a specific topic.</li>
+    <li><strong>Customer Feedback Analysis:</strong> Summarizing a year's worth of support tickets to identify the top 5 product pain points.</li>
+    <li><strong>Podcast/Video Transcripts:</strong> Summarizing hundreds of hours of video content for a specific series.</li>
+</ul>
+
+<h3>Practical Exercise: Summarizing a Long Video Series</h3>
+<p>Imagine you have transcripts for a 20-part educational series.
+1. Summarize each individual episode (Level 1).
+2. Group episodes into themes (e.g., Episodes 1-5: Foundations, 6-10: Advanced, etc.) and summarize those themes (Level 2).
+3. Finally, summarize the three theme summaries into a one-page "Course Guide" (Level 3).</p>
+
+<h3>Limitations</h3>
+<ul>
+    <li><strong>Information Loss:</strong> With every layer of summarization, some detail is inevitably lost. The final summary will be very high-level.</li>
+    <li><strong>Cost and Latency:</strong> If not parallelized, the many API calls required can take a long time and be expensive.</li>
+    <li><strong>Complexity:</strong> Managing the chunking and the multi-level summarization requires sophisticated orchestration code.</li>
+</ul>
+
+<p>In conclusion, Recursive Summarization is an essential pattern for anyone dealing with "Big Data" and AI. It provides a structured, scalable way to extract value from even the most massive datasets.</p>
+
+</div>
+</body>
+</html>

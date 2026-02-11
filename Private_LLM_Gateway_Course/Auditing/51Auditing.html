@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 5: Auditing, Logging, and Forensic Readiness</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 5: Auditing, Logging, and Forensic Readiness</h1>
+
+<p>In a highly regulated environment, "If it's not logged, it didn't happen." A Private LLM Gateway must provide a complete, immutable audit trail of every AI interaction to meet compliance requirements and support forensic investigations in the event of a security breach.</p>
+
+<h2>5.1 What Should Be Captured?</h2>
+<p>The gateway should log a comprehensive set of metadata and content for every request:
+<ul>
+    <li><strong>Request Metadata:</strong> Timestamp, User ID, Application ID, IP address, Model requested, Model actually used (if fallback occurred).</li>
+    <li><strong>Full Prompts and Completions:</strong> The raw text sent to and received from the model (after PII redaction for the logs themselves).</li>
+    <li><strong>Token Usage:</strong> Exact number of input, output, and cached tokens.</li>
+    <li><strong>Cost and Latency:</strong> The monetary cost and the total response time.</li>
+    <li><strong>Security Events:</strong> Any triggered safety filters, PII redaction events, or blocked prompt injection attempts.</li>
+    <li><strong>Tool and Plugin Calls:</strong> Details of any external functions executed by the AI.</li>
+</ul></p>
+
+<h2>5.2 Ensuring Log Integrity</h2>
+<p>Logs are only useful if they can be trusted.
+<ul>
+    <li><strong>Centralized Logging:</strong> Shipping logs in real-time to a secure, dedicated logging platform (Splunk, Datadog, ELK Stack).</li>
+    <li><strong>Immutability:</strong> Using write-once-read-many (WORM) storage or digital signatures to ensure that logs cannot be tampered with or deleted, even by an administrator.</li>
+    <li><strong>Forensic Readiness:</strong> Structuring logs in a way that makes them easy to search and correlate during an investigation.</li>
+</ul></p>
+
+<h2>5.3 Managing Log Privacy</h2>
+<p>Paradoxically, logs can themselves become a security risk if they contain sensitive data.
+<ul>
+    <li><strong>Redaction at the Source:</strong> The gateway should redact PII from the logs *at the moment of creation*, ensuring that sensitive data is never written to disk.</li>
+    <li><strong>Encryption:</strong> Encrypting log data both in transit and at rest.</li>
+    <li><strong>Access Control for Logs:</strong> Restricting access to AI interaction logs to a small group of authorized security and compliance officers.</li>
+</ul></p>
+
+<h2>5.4 The "Explainability" Audit</h2>
+<p>Beyond security, logs are essential for understanding why an AI gave a specific answer. This is critical for "Explainable AI" (XAI) requirements in fields like finance and healthcare. The audit trail should include the system prompt and the specific context provided to the model (e.g., the documents retrieved in a RAG pipeline).</p>
+
+<h2>5.5 Compliance Reporting</h2>
+<p>The gateway should provide automated tools for generating compliance reports (e.g., for GDPR Article 30 records of processing or HIPAA audits). This significantly reduces the administrative burden on your compliance team and ensures that your organization is always "audit-ready."</p>
+
+<p>By prioritizing comprehensive auditing and logging, you turn your AI gateway into a powerful tool for governance, security, and continuous improvement.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

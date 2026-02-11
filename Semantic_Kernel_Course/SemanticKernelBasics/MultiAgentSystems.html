@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-Agent Systems with Semantic Kernel</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>The Frontier: Multi-Agent Systems (MAS)</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>While a single agent with multiple tools is powerful, it can become overwhelmed as the number of tools and the complexity of the task increase. <strong>Multi-Agent Systems (MAS)</strong> solve this by using multiple specialized agents that work together. Imagine a team of experts: one for coding, one for research, and one for project management. Semantic Kernel provides the building blocks to create and orchestrate these "AI Teams."</p>
+
+<h2>2. Why Multi-Agent?</h2>
+<ul>
+    <li><strong>Specialization:</strong> Each agent can be given a specific "Persona" and a limited set of tools, making them more accurate and reliable.</li>
+    <li><strong>Separation of Concerns:</strong> Complex logic is broken down into smaller, manageable interactions.</li>
+    <li><strong>Parallelism:</strong> Different agents can work on different parts of a problem simultaneously.</li>
+    <li><strong>Scalability:</strong> It is easier to add a new "expert" to a multi-agent system than it is to re-tune a single massive agent.</li>
+</ul>
+
+<h2>3. Core Components of MAS in Semantic Kernel</h2>
+<p>To build a multi-agent system, you need three things:</p>
+
+<h3>A. The Agents</h3>
+<p>Each agent is a separate kernel instance (or a shared kernel with different instructions). An agent is defined by its <strong>Instructions</strong> (who it is) and its <strong>Plugins</strong> (what it can do).</p>
+
+<h3>B. The Chat History (Memory)</h3>
+<p>Agents need a way to communicate. They share a "Chat History" where they can see each other's messages and responses. This is the "Meeting Room" where the collaboration happens.</p>
+
+<h3>C. The Termination Strategy</h3>
+<p>In a multi-agent system, you need a way to decide when the task is complete. A <strong>Termination Strategy</strong> might be:
+    <ul>
+        <li>A specific agent (the "Manager") says "COMPLETE."</li>
+        <li>A fixed number of turns is reached.</li>
+        <li>A specific keyword is found in the last message.</li>
+    </ul>
+</p>
+
+<h2>4. Orchestration Patterns</h2>
+<p>How do the agents decide who speaks next? There are several patterns:</p>
+
+<h3>Sequential Orchestration</h3>
+<p>Agent A performs a task, then passes the result to Agent B, then to Agent C. This is a "pipeline" approach.
+    <br /><em>Example: Researcher -> Writer -> Editor.</em>
+</p>
+
+<h3>Collaborative Orchestration (Round-Robin)</h3>
+<p>Agents take turns contributing to a group chat until they reach a consensus.
+    <br /><em>Example: A group of developers debating the best architecture for a new feature.</em>
+</p>
+
+<h3>Hierarchical Orchestration (Manager/Worker)</h3>
+<p>A "Manager" agent analyzes the goal, breaks it down into sub-tasks, and assigns them to specific "Worker" agents. The Manager then reviews the workers' outputs and asks for revisions if necessary.
+    <br /><em>Example: An AI CEO orchestrating an AI Marketing Team and an AI Product Team.</em>
+</p>
+
+<div class="code-block">
+<pre><code># Conceptual Multi-Agent Setup in Semantic Kernel
+from semantic_kernel.agents import ChatCompletionAgent
+
+# 1. Create the agents
+researcher = ChatCompletionAgent(
+    kernel=kernel,
+    instructions="You are a meticulous researcher. Find facts and provide sources.",
+    name="Researcher"
+)
+
+writer = ChatCompletionAgent(
+    kernel=kernel,
+    instructions="You are a creative writer. Use facts to write compelling blog posts.",
+    name="Writer"
+)
+
+# 2. Start a conversation
+chat_history = []
+# (Logic to pass the history between agents goes here)</code></pre>
+</div>
+
+<h2>5. Challenges of Multi-Agent Systems</h2>
+<p>Multi-agent systems introduce new complexities that you must manage:</p>
+<ul>
+    <li><strong>Looping:</strong> Agents might get stuck in an infinite loop of "Thank you!" "No, thank you!" You need strict termination conditions to prevent this.</li>
+    <li><strong>Context Inflation:</strong> As agents talk to each other, the chat history grows very quickly, which can lead to high costs and reaching the context window limit. You need aggressive summarization or history pruning.</li>
+    <li><strong>Instruction Drift:</strong> Agents might lose focus on their original role as the conversation progresses. Robust system prompts are essential.</li>
+</ul>
+
+<h2>6. Use Case: Automated Software Development</h2>
+<p>A multi-agent team could handle an entire feature request:
+    <ol>
+        <li><strong>Analyst Agent:</strong> Clarifies the user's requirements and writes a spec.</li>
+        <li><strong>Architect Agent:</strong> Designs the system and chooses the libraries.</li>
+        <li><strong>Coder Agent:</strong> Writes the implementation.</li>
+        <li><strong>Tester Agent:</strong> Writes unit tests and runs them.</li>
+        <li><strong>Reviewer Agent:</strong> Performs a code review and sends it back to the coder if there are issues.</li>
+    </ol>
+</p>
+
+<h2>Conclusion</h2>
+<p>Multi-agent systems represent the future of AI. By moving from a single "God-model" to a collaborative "Society of Agents," we can build systems that are more capable, more reliable, and more aligned with the way humans work in teams. In our next module, we'll look at how to monitor and debug these complex systems in production.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

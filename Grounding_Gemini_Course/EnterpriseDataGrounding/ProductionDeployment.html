@@ -1,0 +1,460 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Deployment and Best Practices</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production Deployment and Best Practices</h1>
+
+<h2>Production-Ready Grounding Architecture</h2>
+<p>Deploying grounded Gemini applications to production requires careful architecture design:</p>
+
+<div style="border: 2px solid #4285f4; padding: 20px; margin: 20px 0; background-color: #f8f9fa;">
+    <div style="text-align: center; margin-bottom: 15px;">
+        <strong style="font-size: 16px;">Production Grounding Architecture</strong>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="background: #e8f0fe; padding: 12px; border-radius: 5px; border-left: 4px solid #1967d2;">
+            <strong>Layer 1: API Gateway</strong><br/>
+            <span style="font-size: 14px;">Rate limiting, authentication, request validation</span>
+        </div>
+        <div style="text-align: center; font-size: 20px; color: #1967d2;">↓</div>
+        <div style="background: #e8f0fe; padding: 12px; border-radius: 5px; border-left: 4px solid #1967d2;">
+            <strong>Layer 2: Query Router</strong><br/>
+            <span style="font-size: 14px;">Classify queries, select grounding strategy</span>
+        </div>
+        <div style="text-align: center; font-size: 20px; color: #1967d2;">↓</div>
+        <div style="background: #e8f0fe; padding: 12px; border-radius: 5px; border-left: 4px solid #1967d2;">
+            <strong>Layer 3: Cache Layer</strong><br/>
+            <span style="font-size: 14px;">Check cache, return if valid</span>
+        </div>
+        <div style="text-align: center; font-size: 20px; color: #1967d2;">↓</div>
+        <div style="background: #e8f0fe; padding: 12px; border-radius: 5px; border-left: 4px solid #1967d2;">
+            <strong>Layer 4: Grounding Service</strong><br/>
+            <span style="font-size: 14px;">Execute grounded query with appropriate sources</span>
+        </div>
+        <div style="text-align: center; font-size: 20px; color: #1967d2;">↓</div>
+        <div style="background: #e8f0fe; padding: 12px; border-radius: 5px; border-left: 4px solid #1967d2;">
+            <strong>Layer 5: Quality Validation</strong><br/>
+            <span style="font-size: 14px;">Check grounding score, validate sources</span>
+        </div>
+        <div style="text-align: center; font-size: 20px; color: #1967d2;">↓</div>
+        <div style="background: #e8f0fe; padding: 12px; border-radius: 5px; border-left: 4px solid #1967d2;">
+            <strong>Layer 6: Logging & Monitoring</strong><br/>
+            <span style="font-size: 14px;">Log metrics, update dashboards, trigger alerts</span>
+        </div>
+        <div style="text-align: center; font-size: 20px; color: #1967d2;">↓</div>
+        <div style="background: #e8f0fe; padding: 12px; border-radius: 5px; border-left: 4px solid #34a853;">
+            <strong>Response to Client</strong><br/>
+            <span style="font-size: 14px;">Return grounded response with metadata</span>
+        </div>
+    </div>
+</div>
+
+<h2>Implementing a Production Grounding Service</h2>
+<blockquote>
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
+from typing import Optional, List
+import redis
+import json
+from datetime import datetime, timedelta
+import logging
+
+app = FastAPI()
+
+# Initialize Redis for caching
+cache = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+class GroundingRequest(BaseModel):
+    query: str
+    user_id: str
+    clearance_level: str = 'internal'
+    use_cache: bool = True
+    grounding_strategy: Optional[str] = 'auto'  # auto, enterprise, search, hybrid
+
+class GroundingResponse(BaseModel):
+    query: str
+    response: str
+    grounding_score: float
+    sources: List[dict]
+    strategy_used: str
+    cache_hit: bool
+    latency_ms: float
+
+class ProductionGroundingService:
+    """
+    Production-ready grounding service with caching, monitoring, and error handling.
+    """
+    def __init__(self, project_id, data_store_id):
+        import vertexai
+        from vertexai.preview import generative_models
+        from vertexai.preview.generative_models import Tool, grounding
+        
+        vertexai.init(project=project_id, location="us-central1")
+        
+        self.data_store_path = f"projects/{project_id}/locations/global/collections/default_collection/dataStores/{data_store_id}"
+        
+        # Initialize tools
+        self.enterprise_tool = Tool.from_retrieval(
+            grounding.Retrieval(
+                grounding.VertexAISearch(datastore=self.data_store_path)
+            )
+        )
+        self.search_tool = Tool.from_google_search_retrieval(
+            grounding.GoogleSearchRetrieval()
+        )
+        
+        self.logger = logging.getLogger(__name__)
+    
+    def _get_cache_key(self, query, strategy):
+        """Generate cache key."""
+        import hashlib
+        key_string = f"{query}:{strategy}"
+        return f"grounding:{hashlib.md5(key_string.encode()).hexdigest()}"
+    
+    def _get_from_cache(self, cache_key, ttl_minutes=30):
+        """Retrieve from cache if valid."""
+        try:
+            cached = cache.get(cache_key)
+            if cached:
+                data = json.loads(cached)
+                cached_time = datetime.fromisoformat(data['timestamp'])
+                if datetime.now() - cached_time < timedelta(minutes=ttl_minutes):
+                    return data
+        except Exception as e:
+            self.logger.warning(f"Cache retrieval error: {e}")
+        return None
+    
+    def _save_to_cache(self, cache_key, data):
+        """Save to cache."""
+        try:
+            data['timestamp'] = datetime.now().isoformat()
+            cache.setex(cache_key, 3600, json.dumps(data))  # 1 hour expiry
+        except Exception as e:
+            self.logger.warning(f"Cache save error: {e}")
+    
+    def _select_strategy(self, query, requested_strategy):
+        """Select grounding strategy."""
+        if requested_strategy != 'auto':
+            return requested_strategy
+        
+        query_lower = query.lower()
+        internal_keywords = ['our company', 'our policy', 'internal', 'employee']
+        external_keywords = ['latest', 'current', 'news', 'market']
+        
+        has_internal = any(kw in query_lower for kw in internal_keywords)
+        has_external = any(kw in query_lower for kw in external_keywords)
+        
+        if has_internal and not has_external:
+            return 'enterprise'
+        elif has_external and not has_internal:
+            return 'search'
+        else:
+            return 'hybrid'
+    
+    def generate_grounded_response(self, request: GroundingRequest) -> GroundingResponse:
+        """
+        Generate grounded response with full production features.
+        """
+        import time
+        from vertexai.preview import generative_models
+        
+        start_time = time.time()
+        
+        # Determine strategy
+        strategy = self._select_strategy(request.query, request.grounding_strategy)
+        
+        # Check cache
+        cache_key = self._get_cache_key(request.query, strategy)
+        if request.use_cache:
+            cached = self._get_from_cache(cache_key)
+            if cached:
+                self.logger.info(f"Cache hit for query: {request.query[:50]}")
+                cached['cache_hit'] = True
+                cached['latency_ms'] = (time.time() - start_time) * 1000
+                return GroundingResponse(**cached)
+        
+        # Select tools based on strategy
+        if strategy == 'enterprise':
+            tools = [self.enterprise_tool]
+        elif strategy == 'search':
+            tools = [self.search_tool]
+        else:  # hybrid
+            tools = [self.enterprise_tool, self.search_tool]
+        
+        # Generate response
+        try:
+            model = generative_models.GenerativeModel(
+                "gemini-1.5-pro",
+                tools=tools
+            )
+            
+            response = model.generate_content(request.query)
+            
+            # Extract metadata
+            metadata = response.candidates[0].grounding_metadata
+            grounding_score = 0.0
+            sources = []
+            
+            if metadata:
+                if metadata.grounding_support:
+                    grounding_score = metadata.grounding_support.grounding_score
+                
+                if metadata.grounding_chunks:
+                    for chunk in metadata.grounding_chunks:
+                        if hasattr(chunk, 'web'):
+                            sources.append({
+                                'title': chunk.web.title,
+                                'url': chunk.web.uri,
+                                'type': 'web'
+                            })
+                        elif hasattr(chunk, 'retrieved_context'):
+                            sources.append({
+                                'title': chunk.retrieved_context.title,
+                                'type': 'enterprise'
+                            })
+            
+            # Validate quality
+            if grounding_score < 0.5:
+                self.logger.warning(f"Low grounding score: {grounding_score:.2f}")
+            
+            latency_ms = (time.time() - start_time) * 1000
+            
+            result = {
+                'query': request.query,
+                'response': response.text,
+                'grounding_score': grounding_score,
+                'sources': sources,
+                'strategy_used': strategy,
+                'cache_hit': False,
+                'latency_ms': latency_ms
+            }
+            
+            # Cache result
+            if request.use_cache:
+                self._save_to_cache(cache_key, result)
+            
+            # Log metrics
+            self.logger.info({
+                'query_length': len(request.query),
+                'strategy': strategy,
+                'grounding_score': grounding_score,
+                'source_count': len(sources),
+                'latency_ms': latency_ms
+            })
+            
+            return GroundingResponse(**result)
+            
+        except Exception as e:
+            self.logger.error(f"Grounding error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+# Initialize service
+grounding_service = ProductionGroundingService(
+    project_id="YOUR_PROJECT_ID",
+    data_store_id="company-knowledge-base"
+)
+
+@app.post("/ground", response_model=GroundingResponse)
+async def ground_query(request: GroundingRequest):
+    """
+    API endpoint for grounded queries.
+    """
+    return grounding_service.generate_grounded_response(request)
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+</blockquote>
+
+<h2>Monitoring and Alerting</h2>
+<p>Implement comprehensive monitoring for production systems:</p>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Alert Threshold</th>
+        <th>Action</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Grounding Success Rate</td>
+        <td>&lt; 95%</td>
+        <td>Investigate failures, check data store health</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Average Grounding Score</td>
+        <td>&lt; 0.6</td>
+        <td>Review query patterns, optimize data store</td>
+    </tr>
+    <tr>
+        <td class="rowheader">P95 Latency</td>
+        <td>&gt; 2000ms</td>
+        <td>Optimize queries, increase cache hit rate</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cache Hit Rate</td>
+        <td>&lt; 40%</td>
+        <td>Adjust TTL, identify cacheable patterns</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>&gt; 1%</td>
+        <td>Check API quotas, investigate error patterns</td>
+    </tr>
+</table>
+
+<h2>Cost Optimization Strategies</h2>
+<ul>
+    <li><strong>Aggressive Caching:</strong> Cache responses for 30-60 minutes for stable content</li>
+    <li><strong>Query Deduplication:</strong> Detect and merge similar queries</li>
+    <li><strong>Batch Processing:</strong> Process non-urgent queries in batches</li>
+    <li><strong>Model Selection:</strong> Use Gemini Flash for simple queries, Pro for complex ones</li>
+    <li><strong>Result Limiting:</strong> Limit max_results to reduce retrieval costs</li>
+    <li><strong>Smart Routing:</strong> Only use grounding when necessary</li>
+</ul>
+
+<h2>Security Best Practices</h2>
+<blockquote>
+<strong>Authentication & Authorization:</strong>
+<ul>
+    <li>Implement OAuth 2.0 or API key authentication</li>
+    <li>Use Google Cloud IAM for service-to-service auth</li>
+    <li>Enforce role-based access control (RBAC)</li>
+    <li>Validate user permissions before grounding queries</li>
+</ul>
+
+<strong>Data Protection:</strong>
+<ul>
+    <li>Encrypt data in transit (TLS 1.3)</li>
+    <li>Encrypt sensitive data at rest</li>
+    <li>Implement data loss prevention (DLP) scanning</li>
+    <li>Redact PII from logs and responses</li>
+</ul>
+
+<strong>Audit & Compliance:</strong>
+<ul>
+    <li>Log all queries with user context</li>
+    <li>Track data access for compliance reporting</li>
+    <li>Implement data retention policies</li>
+    <li>Regular security audits and penetration testing</li>
+</ul>
+</blockquote>
+
+<h2>Disaster Recovery and Failover</h2>
+<blockquote>
+class ResilientGroundingService:
+    """
+    Grounding service with failover and retry logic.
+    """
+    def __init__(self, primary_config, fallback_config):
+        self.primary = self._init_service(primary_config)
+        self.fallback = self._init_service(fallback_config)
+        self.circuit_breaker_failures = 0
+        self.circuit_breaker_threshold = 5
+    
+    def generate_with_failover(self, query, max_retries=2):
+        """
+        Generate response with automatic failover.
+        """
+        # Try primary service
+        for attempt in range(max_retries):
+            try:
+                if self.circuit_breaker_failures < self.circuit_breaker_threshold:
+                    response = self.primary.generate(query)
+                    self.circuit_breaker_failures = 0  # Reset on success
+                    return response
+            except Exception as e:
+                self.circuit_breaker_failures += 1
+                logging.warning(f"Primary service failed (attempt {attempt + 1}): {e}")
+        
+        # Fallback to secondary service
+        try:
+            logging.info("Failing over to secondary service")
+            return self.fallback.generate(query)
+        except Exception as e:
+            logging.error(f"Both services failed: {e}")
+            raise
+</blockquote>
+
+<h2>Testing Strategy</h2>
+<p>Comprehensive testing for production grounding systems:</p>
+
+<table>
+    <tr>
+        <th>Test Type</th>
+        <th>Focus</th>
+        <th>Frequency</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Unit Tests</td>
+        <td>Individual components, caching, routing logic</td>
+        <td>Every commit</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Integration Tests</td>
+        <td>End-to-end grounding flow, API integration</td>
+        <td>Daily</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Quality Tests</td>
+        <td>Grounding accuracy, source relevance</td>
+        <td>Weekly</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Load Tests</td>
+        <td>Performance under high traffic</td>
+        <td>Before releases</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Security Tests</td>
+        <td>Access control, data leakage</td>
+        <td>Monthly</td>
+    </tr>
+</table>
+
+<h2>Deployment Checklist</h2>
+<blockquote>
+<strong>Pre-Deployment:</strong>
+<ul>
+    <li>✓ Data stores indexed and tested</li>
+    <li>✓ Access controls configured</li>
+    <li>✓ Caching layer operational</li>
+    <li>✓ Monitoring dashboards created</li>
+    <li>✓ Alert rules configured</li>
+    <li>✓ Load testing completed</li>
+    <li>✓ Security review passed</li>
+    <li>✓ Disaster recovery plan documented</li>
+</ul>
+
+<strong>Post-Deployment:</strong>
+<ul>
+    <li>✓ Monitor error rates and latency</li>
+    <li>✓ Validate grounding quality</li>
+    <li>✓ Check cache hit rates</li>
+    <li>✓ Review user feedback</li>
+    <li>✓ Optimize based on usage patterns</li>
+</ul>
+</blockquote>
+
+<h2>Continuous Improvement</h2>
+<ul>
+    <li><strong>A/B Testing:</strong> Test different grounding strategies and prompts</li>
+    <li><strong>User Feedback:</strong> Collect and analyze user satisfaction ratings</li>
+    <li><strong>Quality Metrics:</strong> Track grounding scores and source relevance over time</li>
+    <li><strong>Cost Analysis:</strong> Monitor and optimize API usage costs</li>
+    <li><strong>Performance Tuning:</strong> Continuously optimize latency and throughput</li>
+    <li><strong>Data Store Updates:</strong> Regularly refresh and expand enterprise data</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

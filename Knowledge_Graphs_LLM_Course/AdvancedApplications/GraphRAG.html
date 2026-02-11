@@ -1,0 +1,349 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Graph RAG Implementation</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Graph RAG Implementation</h1>
+
+<h2>What is Graph RAG?</h2>
+<p>Graph RAG (Retrieval-Augmented Generation) combines knowledge graph traversal with LLM generation to provide more accurate, contextual, and connected answers than traditional vector-only RAG systems. It leverages the structured relationships in knowledge graphs to retrieve relevant context for LLM prompts.</p>
+
+<h2>Graph RAG vs Vector RAG</h2>
+<table>
+    <tr><th>Aspect</th><th>Vector RAG</th><th>Graph RAG</th></tr>
+    <tr>
+        <td class="rowheader">Retrieval Method</td>
+        <td>Semantic similarity search</td>
+        <td>Graph traversal and pattern matching</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Best For</td>
+        <td>Finding similar content</td>
+        <td>Multi-hop relational queries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Example Query</td>
+        <td>"What is our return policy?"</td>
+        <td>"Which teams work on products used by our top customers?"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Quality</td>
+        <td>Similar text chunks</td>
+        <td>Structured relationships and facts</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Setup Complexity</td>
+        <td>Lower (embed and store)</td>
+        <td>Higher (extract and build graph)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Reasoning Capability</td>
+        <td>Limited to semantic similarity</td>
+        <td>Supports multi-hop logical reasoning</td>
+    </tr>
+</table>
+
+<h2>Basic Graph RAG Implementation</h2>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+from neo4j import GraphDatabase
+
+class GraphRAG:
+    def __init__(self, neo4j_uri, neo4j_user, neo4j_password, openai_api_key):
+        self.graph_driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+        self.llm_client = OpenAI(api_key=openai_api_key)
+    
+    def query(self, question: str, max_hops: int = 2) -> str:
+        """Answer question using knowledge graph context."""
+        
+        # Step 1: Extract entities from question
+        entities = self.extract_entities_from_question(question)
+        
+        # Step 2: Retrieve graph context
+        graph_context = self.retrieve_graph_context(entities, max_hops)
+        
+        # Step 3: Generate answer with LLM
+        answer = self.generate_answer(question, graph_context)
+        
+        return answer
+    
+    def extract_entities_from_question(self, question: str) -> list[str]:
+        """Extract entity mentions from the question."""
+        response = self.llm_client.chat.completions.create(
+            model="gpt-4o-mini",
+            response_format={"type": "json_object"},
+            messages=[{
+                "role": "user",
+                "content": f"""Extract entity names mentioned in this question.
+                
+Question: {question}
+
+Return JSON: {{"entities": [str]}}"""
+            }],
+            temperature=0.0
+        )
+        
+        result = json.loads(response.choices[0].message.content)
+        return result.get("entities", [])
+    
+    def retrieve_graph_context(self, entities: list[str], max_hops: int) -> str:
+        """Retrieve relevant subgraph around entities."""
+        context_triples = []
+        
+        with self.graph_driver.session() as session:
+            for entity in entities:
+                # Find entity and its neighborhood
+                result = session.run(f"""
+                    MATCH (n {{name: $name}})-[r*1..{max_hops}]-(m)
+                    RETURN n.name as source, 
+                           type(r[0]) as relation, 
+                           m.name as target,
+                           labels(m) as targetType
+                    LIMIT 20
+                """, name=entity)
+                
+                for record in result:
+                    triple = f"{record['source']} --[{record['relation']}]--> {record['target']} ({record['targetType'][0]})"
+                    context_triples.append(triple)
+        
+        return "\n".join(context_triples)
+    
+    def generate_answer(self, question: str, graph_context: str) -> str:
+        """Generate answer using graph context."""
+        response = self.llm_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": """You are a helpful assistant that answers questions using knowledge graph information.
+                
+Use the provided graph context to answer accurately. Cite specific relationships when relevant.
+If the context doesn't contain enough information, say so."""},
+                {"role": "user", "content": f"""Knowledge Graph Context:
+{graph_context}
+
+Question: {question}
+
+Answer:"""}
+            ],
+            temperature=0.3
+        )
+        
+        return response.choices[0].message.content
+
+# Usage
+graph_rag = GraphRAG(
+    neo4j_uri="bolt://localhost:7687",
+    neo4j_user="neo4j",
+    neo4j_password="password",
+    openai_api_key="your-api-key"
+)
+
+answer = graph_rag.query("Who founded Apple and what products did they create?")
+print(answer)
+</code></pre>
+</div>
+
+<h2>Advanced Graph RAG with Hybrid Retrieval</h2>
+<p>Combine graph traversal with vector similarity for comprehensive retrieval:</p>
+<div class="code-block">
+<pre><code>class HybridGraphRAG(GraphRAG):
+    def __init__(self, neo4j_uri, neo4j_user, neo4j_password, openai_api_key):
+        super().__init__(neo4j_uri, neo4j_user, neo4j_password, openai_api_key)
+    
+    def query(self, question: str, max_hops: int = 2, top_k_vector: int = 5) -> str:
+        """Answer using both graph and vector retrieval."""
+        
+        # Graph-based retrieval
+        entities = self.extract_entities_from_question(question)
+        graph_context = self.retrieve_graph_context(entities, max_hops)
+        
+        # Vector-based retrieval
+        question_embedding = self.get_embedding(question)
+        vector_context = self.retrieve_similar_entities(question_embedding, top_k_vector)
+        
+        # Combine contexts
+        combined_context = f"""Graph Relationships:
+{graph_context}
+
+Similar Entities:
+{vector_context}"""
+        
+        # Generate answer
+        answer = self.generate_answer(question, combined_context)
+        
+        return answer
+    
+    def get_embedding(self, text: str) -> list[float]:
+        """Get text embedding from OpenAI."""
+        response = self.llm_client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text
+        )
+        return response.data[0].embedding
+    
+    def retrieve_similar_entities(self, query_embedding: list[float], top_k: int) -> str:
+        """Find entities with similar embeddings."""
+        with self.graph_driver.session() as session:
+            # Assuming entities have embedding property
+            result = session.run("""
+                MATCH (n)
+                WHERE n.embedding IS NOT NULL
+                RETURN n.name, n.description, n.embedding
+                LIMIT 100
+            """)
+            
+            # Calculate cosine similarity
+            similarities = []
+            for record in result:
+                entity_embedding = record["n.embedding"]
+                similarity = self.cosine_similarity(query_embedding, entity_embedding)
+                similarities.append((record["n.name"], record["n.description"], similarity))
+            
+            # Sort and take top k
+            similarities.sort(key=lambda x: x[2], reverse=True)
+            top_entities = similarities[:top_k]
+            
+            # Format as context
+            context_lines = [f"{name}: {desc}" for name, desc, _ in top_entities]
+            return "\n".join(context_lines)
+    
+    def cosine_similarity(self, vec1: list[float], vec2: list[float]) -> float:
+        """Calculate cosine similarity between two vectors."""
+        import numpy as np
+        return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+</code></pre>
+</div>
+
+<h2>Query Decomposition for Complex Questions</h2>
+<div class="code-block">
+<pre><code>def query_with_decomposition(self, complex_question: str) -> str:
+    """Break down complex questions into sub-queries."""
+    
+    # Step 1: Decompose question
+    decomposition_response = self.llm_client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": f"""Break down this complex question into simpler sub-questions that can be answered using a knowledge graph.
+
+Question: {complex_question}
+
+Return JSON: {{"sub_questions": [str]}}"""
+        }]
+    )
+    
+    sub_questions = json.loads(decomposition_response.choices[0].message.content)["sub_questions"]
+    
+    # Step 2: Answer each sub-question
+    sub_answers = []
+    for sub_q in sub_questions:
+        answer = self.query(sub_q)
+        sub_answers.append(f"Q: {sub_q}\nA: {answer}")
+    
+    # Step 3: Synthesize final answer
+    synthesis_response = self.llm_client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "Synthesize a comprehensive answer from the sub-question answers."},
+            {"role": "user", "content": f"""Original Question: {complex_question}
+
+Sub-question Answers:
+{chr(10).join(sub_answers)}
+
+Provide a comprehensive answer to the original question:"""}
+        ]
+    )
+    
+    return synthesis_response.choices[0].message.content
+</code></pre>
+</div>
+
+<h2>Caching and Performance Optimization</h2>
+<div class="code-block">
+<pre><code>from functools import lru_cache
+import hashlib
+
+class CachedGraphRAG(GraphRAG):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.context_cache = {}
+    
+    def retrieve_graph_context(self, entities: list[str], max_hops: int) -> str:
+        """Retrieve with caching."""
+        # Create cache key
+        cache_key = hashlib.md5(f"{sorted(entities)}_{max_hops}".encode()).hexdigest()
+        
+        # Check cache
+        if cache_key in self.context_cache:
+            return self.context_cache[cache_key]
+        
+        # Retrieve and cache
+        context = super().retrieve_graph_context(entities, max_hops)
+        self.context_cache[cache_key] = context
+        
+        return context
+    
+    @lru_cache(maxsize=1000)
+    def extract_entities_from_question(self, question: str) -> tuple:
+        """Cache entity extraction results."""
+        entities = super().extract_entities_from_question(question)
+        return tuple(entities)  # Convert to tuple for caching
+</code></pre>
+</div>
+
+<h2>Evaluation Metrics</h2>
+<div class="code-block">
+<pre><code>def evaluate_graph_rag(test_cases: list[dict]) -> dict:
+    """Evaluate Graph RAG performance."""
+    
+    metrics = {
+        "accuracy": 0,
+        "avg_response_time": 0,
+        "context_relevance": 0
+    }
+    
+    response_times = []
+    
+    for test_case in test_cases:
+        question = test_case["question"]
+        expected_answer = test_case["expected_answer"]
+        
+        # Measure response time
+        start_time = time.time()
+        answer = graph_rag.query(question)
+        response_time = time.time() - start_time
+        response_times.append(response_time)
+        
+        # Evaluate answer quality
+        is_correct = evaluate_answer_correctness(answer, expected_answer)
+        if is_correct:
+            metrics["accuracy"] += 1
+    
+    metrics["accuracy"] /= len(test_cases)
+    metrics["avg_response_time"] = sum(response_times) / len(response_times)
+    
+    return metrics
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Hybrid Approach:</strong> Combine graph and vector retrieval for comprehensive coverage</li>
+    <li><strong>Context Pruning:</strong> Limit retrieved context to most relevant information to stay within token limits</li>
+    <li><strong>Entity Linking:</strong> Accurately map question entities to graph entities</li>
+    <li><strong>Caching:</strong> Cache frequently accessed subgraphs and entity extractions</li>
+    <li><strong>Monitoring:</strong> Track query performance and answer quality metrics</li>
+    <li><strong>Fallback Strategy:</strong> Have a backup retrieval method when graph context is insufficient</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

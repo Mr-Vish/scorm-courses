@@ -1,0 +1,398 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Layouts and Data Visualization</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Layouts and Data Visualization</h1>
+
+<h2>Layout Components</h2>
+<p>Streamlit provides powerful layout components for creating sophisticated dashboard interfaces.</p>
+
+<h2>Columns for Side-by-Side Content</h2>
+<blockquote>
+import streamlit as st
+
+st.title("Multi-Column Layout")
+
+# Create three columns
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.header("Column 1")
+    st.write("Content for first column")
+    st.button("Button 1")
+
+with col2:
+    st.header("Column 2")
+    st.write("Content for second column")
+    st.slider("Slider", 0, 100, 50)
+
+with col3:
+    st.header("Column 3")
+    st.write("Content for third column")
+    st.checkbox("Checkbox")
+
+# Columns with different widths
+col_left, col_right = st.columns([2, 1])
+
+with col_left:
+    st.write("This column is twice as wide")
+
+with col_right:
+    st.write("Narrower column")
+</blockquote>
+
+<h2>Tabs for Organized Content</h2>
+<blockquote>
+import streamlit as st
+from openai import OpenAI
+
+st.title("GenAI Toolkit")
+
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+tab1, tab2, tab3 = st.tabs(["Chat", "Image Generation", "Analytics"])
+
+with tab1:
+    st.header("Chat Interface")
+    
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+    
+    if prompt := st.chat_input("Ask anything"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        with st.chat_message("assistant"):
+            stream = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=st.session_state.messages,
+                stream=True
+            )
+            response = st.write_stream(stream)
+        
+        st.session_state.messages.append({"role": "assistant", "content": response})
+
+with tab2:
+    st.header("Image Generation")
+    
+    image_prompt = st.text_area("Describe the image you want to generate")
+    
+    if st.button("Generate Image"):
+        with st.spinner("Generating image..."):
+            response = client.images.generate(
+                model="dall-e-3",
+                prompt=image_prompt,
+                size="1024x1024",
+                quality="standard",
+                n=1
+            )
+            st.image(response.data[0].url, caption=image_prompt)
+
+with tab3:
+    st.header("Usage Analytics")
+    
+    if "messages" in st.session_state:
+        st.metric("Total Messages", len(st.session_state.messages))
+        st.metric("User Messages", len([m for m in st.session_state.messages if m["role"] == "user"]))
+    else:
+        st.info("No chat history yet")
+</blockquote>
+
+<h2>Sidebar for Controls</h2>
+<blockquote>
+import streamlit as st
+
+# Sidebar content
+with st.sidebar:
+    st.title("Settings")
+    
+    st.header("Model Configuration")
+    model = st.selectbox(
+        "Select Model",
+        ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]
+    )
+    
+    temperature = st.slider("Temperature", 0.0, 2.0, 0.7, 0.1)
+    max_tokens = st.slider("Max Tokens", 100, 4000, 1000, 100)
+    
+    st.divider()
+    
+    st.header("Advanced Options")
+    top_p = st.slider("Top P", 0.0, 1.0, 1.0, 0.05)
+    frequency_penalty = st.slider("Frequency Penalty", 0.0, 2.0, 0.0, 0.1)
+    
+    st.divider()
+    
+    if st.button("Clear Chat History"):
+        st.session_state.messages = []
+        st.rerun()
+
+# Main content
+st.title("Main Content Area")
+st.write(f"Using model: {model}")
+st.write(f"Temperature: {temperature}")
+</blockquote>
+
+<h2>Expanders for Collapsible Content</h2>
+<blockquote>
+import streamlit as st
+
+st.title("Document Q&A")
+
+with st.expander("How to use this app"):
+    st.write("""
+    1. Upload a PDF document using the file uploader
+    2. Wait for the document to be processed
+    3. Ask questions about the document in the chat
+    4. Get AI-powered answers based on the document content
+    """)
+
+with st.expander("Advanced Settings", expanded=False):
+    chunk_size = st.number_input("Chunk Size", 500, 2000, 1000)
+    chunk_overlap = st.number_input("Chunk Overlap", 0, 500, 200)
+    top_k = st.slider("Number of chunks to retrieve", 1, 10, 3)
+
+with st.expander("View Document Metadata"):
+    if "document_metadata" in st.session_state:
+        st.json(st.session_state.document_metadata)
+    else:
+        st.info("No document loaded")
+</blockquote>
+
+<h2>Containers for Dynamic Content</h2>
+<blockquote>
+import streamlit as st
+import time
+
+st.title("Progress Tracking")
+
+# Create a container
+status_container = st.container()
+progress_container = st.container()
+
+if st.button("Start Processing"):
+    with status_container:
+        status = st.empty()
+        
+    with progress_container:
+        progress_bar = st.progress(0)
+        
+    for i in range(100):
+        status.write(f"Processing step {i+1}/100")
+        progress_bar.progress(i + 1)
+        time.sleep(0.05)
+    
+    status.success("Processing complete!")
+</blockquote>
+
+<h2>Data Visualization with Charts</h2>
+<blockquote>
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+st.title("GenAI Usage Dashboard")
+
+# Sample data
+data = {
+    "Date": pd.date_range("2024-01-01", periods=30),
+    "API Calls": [100, 120, 115, 130, 125, 140, 135, 150, 145, 160,
+                  155, 170, 165, 180, 175, 190, 185, 200, 195, 210,
+                  205, 220, 215, 230, 225, 240, 235, 250, 245, 260],
+    "Tokens Used": [50000, 60000, 57500, 65000, 62500, 70000, 67500, 75000,
+                    72500, 80000, 77500, 85000, 82500, 90000, 87500, 95000,
+                    92500, 100000, 97500, 105000, 102500, 110000, 107500,
+                    115000, 112500, 120000, 117500, 125000, 122500, 130000]
+}
+
+df = pd.DataFrame(data)
+
+# Line chart
+st.header("API Usage Over Time")
+fig = px.line(df, x="Date", y="API Calls", title="Daily API Calls")
+st.plotly_chart(fig, use_container_width=True)
+
+# Area chart
+st.header("Token Consumption")
+fig = px.area(df, x="Date", y="Tokens Used", title="Cumulative Token Usage")
+st.plotly_chart(fig, use_container_width=True)
+
+# Metrics in columns
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        "Total API Calls",
+        f"{df['API Calls'].sum():,}",
+        delta=f"+{df['API Calls'].iloc[-1] - df['API Calls'].iloc[-2]}"
+    )
+
+with col2:
+    st.metric(
+        "Total Tokens",
+        f"{df['Tokens Used'].sum():,}",
+        delta=f"+{df['Tokens Used'].iloc[-1] - df['Tokens Used'].iloc[-2]}"
+    )
+
+with col3:
+    avg_tokens = df['Tokens Used'].mean()
+    st.metric(
+        "Avg Tokens/Day",
+        f"{avg_tokens:,.0f}"
+    )
+</blockquote>
+
+<h2>Interactive Data Tables</h2>
+<blockquote>
+import streamlit as st
+import pandas as pd
+
+st.title("Conversation History")
+
+# Sample conversation data
+conversations = pd.DataFrame({
+    "Timestamp": ["2024-01-15 10:30", "2024-01-15 11:45", "2024-01-15 14:20"],
+    "User": ["Alice", "Bob", "Charlie"],
+    "Model": ["gpt-4o", "gpt-4o-mini", "gpt-4o"],
+    "Tokens": [1250, 850, 1500],
+    "Cost": [0.025, 0.008, 0.030]
+})
+
+# Display as interactive dataframe
+st.dataframe(
+    conversations,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "Timestamp": st.column_config.DatetimeColumn("Time", format="DD/MM/YYYY HH:mm"),
+        "Tokens": st.column_config.NumberColumn("Tokens", format="%d"),
+        "Cost": st.column_config.NumberColumn("Cost ($)", format="$%.3f")
+    }
+)
+
+# Editable data editor
+st.header("Edit Configuration")
+config_df = pd.DataFrame({
+    "Model": ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+    "Max Tokens": [4000, 2000, 4000],
+    "Temperature": [0.7, 0.7, 0.9],
+    "Enabled": [True, True, False]
+})
+
+edited_df = st.data_editor(
+    config_df,
+    use_container_width=True,
+    hide_index=True,
+    num_rows="dynamic"
+)
+
+if st.button("Save Configuration"):
+    st.success("Configuration saved!")
+    st.write(edited_df)
+</blockquote>
+
+<h2>Custom CSS Styling</h2>
+<blockquote>
+import streamlit as st
+
+# Inject custom CSS
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 3rem;
+        color: #FF4B4B;
+        text-align: center;
+        padding: 2rem 0;
+    }
+    
+    .info-box {
+        background-color: #f0f2f6;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        border-left: 5px solid #FF4B4B;
+    }
+    
+    .stButton>button {
+        width: 100%;
+        background-color: #FF4B4B;
+        color: white;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown('<h1 class="main-header">Styled Dashboard</h1>', unsafe_allow_html=True)
+
+st.markdown("""
+<div class="info-box">
+    <h3>Important Information</h3>
+    <p>This is a custom-styled information box.</p>
+</div>
+""", unsafe_allow_html=True)
+</blockquote>
+
+<h2>File Upload and Processing</h2>
+<blockquote>
+import streamlit as st
+import pandas as pd
+from PIL import Image
+
+st.title("Multi-Format File Processor")
+
+file_type = st.radio("Select file type", ["Image", "CSV", "PDF", "Text"])
+
+if file_type == "Image":
+    uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+    if uploaded_file:
+        image = Image.open(uploaded_file)
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+        st.write(f"Image size: {image.size}")
+
+elif file_type == "CSV":
+    uploaded_file = st.file_uploader("Upload a CSV", type=["csv"])
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file)
+        st.dataframe(df)
+        st.write(f"Shape: {df.shape}")
+
+elif file_type == "PDF":
+    uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"])
+    if uploaded_file:
+        st.success(f"Uploaded: {uploaded_file.name}")
+        st.write(f"Size: {uploaded_file.size} bytes")
+
+elif file_type == "Text":
+    uploaded_file = st.file_uploader("Upload a text file", type=["txt"])
+    if uploaded_file:
+        content = uploaded_file.read().decode("utf-8")
+        st.text_area("File Content", content, height=300)
+</blockquote>
+
+<h2>Layout Best Practices</h2>
+<ul>
+    <li><strong>Use Sidebar for Controls:</strong> Keep configuration options in the sidebar</li>
+    <li><strong>Organize with Tabs:</strong> Group related functionality in tabs</li>
+    <li><strong>Leverage Columns:</strong> Display related information side-by-side</li>
+    <li><strong>Collapse Advanced Options:</strong> Use expanders for less frequently used settings</li>
+    <li><strong>Show Progress:</strong> Use progress bars and status messages for long operations</li>
+    <li><strong>Responsive Design:</strong> Test layouts on different screen sizes</li>
+    <li><strong>Consistent Spacing:</strong> Use st.divider() to separate sections</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

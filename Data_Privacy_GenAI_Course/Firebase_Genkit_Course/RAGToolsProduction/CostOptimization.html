@@ -1,0 +1,400 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cost Optimization and Performance Tuning</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cost Optimization and Performance Tuning</h1>
+
+<h2>Understanding AI Costs</h2>
+<p>AI model costs are primarily driven by token usage. Optimizing token consumption while maintaining quality is essential for sustainable production deployments.</p>
+
+<h2>Token Pricing Overview</h2>
+<table>
+    <tr>
+        <th>Model</th>
+        <th>Input (per 1M tokens)</th>
+        <th>Output (per 1M tokens)</th>
+        <th>Context Window</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Gemini 1.5 Flash</td>
+        <td>$0.075</td>
+        <td>$0.30</td>
+        <td>1M tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Gemini 1.5 Pro</td>
+        <td>$1.25</td>
+        <td>$5.00</td>
+        <td>2M tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GPT-4 Turbo</td>
+        <td>$10.00</td>
+        <td>$30.00</td>
+        <td>128K tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GPT-3.5 Turbo</td>
+        <td>$0.50</td>
+        <td>$1.50</td>
+        <td>16K tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude 3 Haiku</td>
+        <td>$0.25</td>
+        <td>$1.25</td>
+        <td>200K tokens</td>
+    </tr>
+</table>
+
+<h2>Cost Tracking</h2>
+<div class="code-block">
+<pre><code>class CostTracker {
+  private costs: Map<string, number> = new Map();
+  
+  trackUsage(model: string, inputTokens: number, outputTokens: number) {
+    const rates = {
+      'gemini-1.5-flash': { input: 0.000000075, output: 0.0000003 },
+      'gpt-4-turbo': { input: 0.00001, output: 0.00003 },
+      'gpt-3.5-turbo': { input: 0.0000005, output: 0.0000015 }
+    };
+    
+    const rate = rates[model] || rates['gemini-1.5-flash'];
+    const cost = (inputTokens * rate.input) + (outputTokens * rate.output);
+    
+    const currentCost = this.costs.get(model) || 0;
+    this.costs.set(model, currentCost + cost);
+    
+    return cost;
+  }
+  
+  getTotalCost(): number {
+    return Array.from(this.costs.values()).reduce((a, b) => a + b, 0);
+  }
+  
+  getCostByModel(): Record<string, number> {
+    return Object.fromEntries(this.costs);
+  }
+}
+
+const costTracker = new CostTracker();
+
+const costAwareFlow = ai.defineFlow({
+  name: 'costAware',
+  inputSchema: z.object({ query: z.string() }),
+  outputSchema: z.object({ 
+    response: z.string(),
+    cost: z.number()
+  })
+}, async (input) => {
+  const { output, usage } = await ai.generate({
+    model: gemini15Flash,
+    prompt: input.query,
+    output: { schema: z.object({ response: z.string() }) },
+    returnUsage: true
+  });
+  
+  const cost = costTracker.trackUsage(
+    'gemini-1.5-flash',
+    usage.inputTokens,
+    usage.outputTokens
+  );
+  
+  return {
+    response: output.response,
+    cost
+  };
+});
+</code></pre>
+</div>
+
+<h2>Caching Strategies</h2>
+
+<h3>Response Caching</h3>
+<div class="code-block">
+<pre><code>import Redis from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+const cachedFlow = ai.defineFlow({
+  name: 'cachedFlow',
+  inputSchema: z.object({ query: z.string() }),
+  outputSchema: z.object({ response: z.string(), cached: z.boolean() })
+}, async (input) => {
+  const cacheKey = `query:${Buffer.from(input.query).toString('base64')}`;
+  
+  // Check cache
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    logger.info('Cache hit', { query: input.query });
+    return {
+      response: cached,
+      cached: true
+    };
+  }
+  
+  // Generate if not cached
+  const { output } = await ai.generate({
+    prompt: input.query,
+    output: { schema: z.object({ response: z.string() }) }
+  });
+  
+  // Cache for 24 hours
+  await redis.setex(cacheKey, 86400, output.response);
+  
+  return {
+    response: output.response,
+    cached: false
+  };
+});
+</code></pre>
+</div>
+
+<h3>Embedding Caching</h3>
+<div class="code-block">
+<pre><code>const embeddingCache = new Map<string, number[]>();
+
+async function getCachedEmbedding(text: string): Promise<number[]> {
+  if (embeddingCache.has(text)) {
+    return embeddingCache.get(text)!;
+  }
+  
+  const embedding = await embed({
+    model: 'text-embedding-004',
+    content: text
+  });
+  
+  embeddingCache.set(text, embedding);
+  return embedding;
+}
+</code></pre>
+</div>
+
+<h2>Prompt Optimization</h2>
+
+<h3>Reduce Input Tokens</h3>
+<div class="code-block">
+<pre><code>// ❌ Inefficient: Sending full document
+const inefficientPrompt = `Summarize this document:
+
+${fullDocument} // 10,000 tokens
+
+Provide a brief summary.`;
+
+// ✅ Efficient: Pre-process and send only relevant parts
+const relevantSections = extractRelevantSections(fullDocument, query);
+const efficientPrompt = `Summarize these key sections:
+
+${relevantSections} // 500 tokens
+
+Provide a brief summary.`;
+</code></pre>
+</div>
+
+<h3>Limit Output Tokens</h3>
+<div class="code-block">
+<pre><code>const { output } = await ai.generate({
+  prompt: 'Explain quantum computing',
+  config: {
+    maxOutputTokens: 150, // Limit response length
+    temperature: 0.3 // Lower temperature for conciseness
+  },
+  output: { schema: z.object({ explanation: z.string() }) }
+});
+</code></pre>
+</div>
+
+<h2>Model Selection Strategy</h2>
+<div class="code-block">
+<pre><code>function selectModel(taskComplexity: 'simple' | 'moderate' | 'complex') {
+  const modelMap = {
+    simple: gemini15Flash, // Cheapest, fastest
+    moderate: gpt35Turbo, // Balanced
+    complex: gpt4Turbo // Most capable, expensive
+  };
+  
+  return modelMap[taskComplexity];
+}
+
+const adaptiveFlow = ai.defineFlow({
+  name: 'adaptive',
+  inputSchema: z.object({
+    query: z.string(),
+    complexity: z.enum(['simple', 'moderate', 'complex'])
+  }),
+  outputSchema: z.object({ response: z.string() })
+}, async (input) => {
+  const model = selectModel(input.complexity);
+  
+  const { output } = await ai.generate({
+    model,
+    prompt: input.query,
+    output: { schema: z.object({ response: z.string() }) }
+  });
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Batch Processing</h2>
+<div class="code-block">
+<pre><code>async function batchProcess(queries: string[]) {
+  // Process multiple queries in a single call
+  const batchPrompt = queries
+    .map((q, i) => `Query ${i + 1}: ${q}`)
+    .join('\n\n');
+  
+  const { output } = await ai.generate({
+    prompt: `Answer each query concisely:\n\n${batchPrompt}`,
+    output: {
+      schema: z.object({
+        answers: z.array(z.object({
+          queryNumber: z.number(),
+          answer: z.string()
+        }))
+      })
+    }
+  });
+  
+  return output.answers;
+}
+
+// More cost-effective than individual calls
+const results = await batchProcess([
+  'What is AI?',
+  'What is ML?',
+  'What is DL?'
+]);
+</code></pre>
+</div>
+
+<h2>Performance Optimization</h2>
+
+<h3>Parallel Execution</h3>
+<div class="code-block">
+<pre><code>const parallelFlow = ai.defineFlow({
+  name: 'parallel',
+  inputSchema: z.object({ queries: z.array(z.string()) }),
+  outputSchema: z.object({ results: z.array(z.string()) })
+}, async (input) => {
+  // Execute multiple AI calls in parallel
+  const promises = input.queries.map(query =>
+    ai.generate({
+      prompt: query,
+      output: { schema: z.object({ result: z.string() }) }
+    })
+  );
+  
+  const outputs = await Promise.all(promises);
+  
+  return {
+    results: outputs.map(o => o.output.result)
+  };
+});
+</code></pre>
+</div>
+
+<h3>Streaming for Long Responses</h3>
+<div class="code-block">
+<pre><code>const streamingFlow = ai.defineFlow({
+  name: 'streaming',
+  inputSchema: z.object({ prompt: z.string() }),
+  outputSchema: z.object({ text: z.string() }),
+  streamSchema: z.object({ chunk: z.string() })
+}, async (input, { streamingCallback }) => {
+  const { stream } = await ai.generateStream({
+    prompt: input.prompt
+  });
+  
+  let fullText = '';
+  for await (const chunk of stream) {
+    fullText += chunk.text;
+    streamingCallback({ chunk: chunk.text });
+  }
+  
+  return { text: fullText };
+});
+</code></pre>
+</div>
+
+<h2>Budget Controls</h2>
+<div class="code-block">
+<pre><code>class BudgetManager {
+  private dailyBudget: number;
+  private currentSpend: number = 0;
+  private resetDate: Date;
+  
+  constructor(dailyBudget: number) {
+    this.dailyBudget = dailyBudget;
+    this.resetDate = new Date();
+    this.resetDate.setHours(24, 0, 0, 0);
+  }
+  
+  checkBudget(estimatedCost: number): boolean {
+    this.resetIfNeeded();
+    return (this.currentSpend + estimatedCost) <= this.dailyBudget;
+  }
+  
+  recordSpend(cost: number) {
+    this.currentSpend += cost;
+  }
+  
+  private resetIfNeeded() {
+    if (new Date() >= this.resetDate) {
+      this.currentSpend = 0;
+      this.resetDate.setDate(this.resetDate.getDate() + 1);
+    }
+  }
+}
+
+const budgetManager = new BudgetManager(10.00); // $10/day
+
+const budgetControlledFlow = ai.defineFlow({
+  name: 'budgetControlled',
+  inputSchema: z.object({ query: z.string() }),
+  outputSchema: z.object({ response: z.string() })
+}, async (input) => {
+  const estimatedCost = estimateTokenCost(input.query);
+  
+  if (!budgetManager.checkBudget(estimatedCost)) {
+    throw new Error('Daily budget exceeded');
+  }
+  
+  const { output, usage } = await ai.generate({
+    prompt: input.query,
+    output: { schema: z.object({ response: z.string() }) },
+    returnUsage: true
+  });
+  
+  const actualCost = calculateCost(usage);
+  budgetManager.recordSpend(actualCost);
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Track All Costs:</strong> Monitor token usage across all models</li>
+    <li><strong>Cache Aggressively:</strong> Cache responses, embeddings, and computations</li>
+    <li><strong>Choose Appropriate Models:</strong> Use cheaper models for simple tasks</li>
+    <li><strong>Optimize Prompts:</strong> Reduce unnecessary tokens in prompts</li>
+    <li><strong>Set Token Limits:</strong> Prevent unexpectedly long responses</li>
+    <li><strong>Batch When Possible:</strong> Process multiple items in single calls</li>
+    <li><strong>Implement Budgets:</strong> Set spending limits to prevent overruns</li>
+    <li><strong>Monitor Trends:</strong> Track cost patterns and optimize high-cost operations</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

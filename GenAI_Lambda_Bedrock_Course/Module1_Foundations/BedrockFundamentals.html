@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>AWS Bedrock Fundamentals</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AWS Bedrock Fundamentals</h1>
+
+<h2>What is AWS Bedrock?</h2>
+<p>AWS Bedrock is a fully managed service that provides access to foundation models (FMs) from leading AI companies through a single API. It eliminates the need to manage infrastructure, train models, or handle model deployment.</p>
+
+<h3>Key Features</h3>
+<ul>
+    <li><strong>Multiple Models:</strong> Access Claude (Anthropic), Llama (Meta), Titan (Amazon), Jurassic (AI21), Command (Cohere)</li>
+    <li><strong>Serverless:</strong> No infrastructure to manage, automatic scaling</li>
+    <li><strong>Private:</strong> Data never leaves your AWS account, no model training on your data</li>
+    <li><strong>Customization:</strong> Fine-tune models with your data, create custom models</li>
+    <li><strong>Enterprise-Ready:</strong> VPC support, encryption, compliance certifications</li>
+</ul>
+
+<h2>Available Models</h2>
+<table>
+    <tr><th>Model Family</th><th>Provider</th><th>Best For</th><th>Context Window</th><th>Cost Tier</th></tr>
+    <tr><td>Claude 3 Opus</td><td>Anthropic</td><td>Complex reasoning, analysis</td><td>200K tokens</td><td>Premium</td></tr>
+    <tr><td>Claude 3 Sonnet</td><td>Anthropic</td><td>Balanced performance/cost</td><td>200K tokens</td><td>Standard</td></tr>
+    <tr><td>Claude 3 Haiku</td><td>Anthropic</td><td>Fast, simple tasks</td><td>200K tokens</td><td>Economy</td></tr>
+    <tr><td>Llama 3 70B</td><td>Meta</td><td>Open-source, customizable</td><td>8K tokens</td><td>Standard</td></tr>
+    <tr><td>Titan Text</td><td>Amazon</td><td>Summarization, search</td><td>32K tokens</td><td>Economy</td></tr>
+    <tr><td>Jurassic-2 Ultra</td><td>AI21</td><td>Multilingual, long-form</td><td>8K tokens</td><td>Standard</td></tr>
+</table>
+
+<h2>Bedrock API Patterns</h2>
+
+<h3>1. Synchronous Invocation (invoke_model)</h3>
+<div class="code-block">
+<pre><code>import boto3, json
+
+bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+
+response = bedrock.invoke_model(
+    modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+    body=json.dumps({
+        'anthropic_version': 'bedrock-2023-05-31',
+        'max_tokens': 1024,
+        'temperature': 0.7,
+        'messages': [
+            {
+                'role': 'user',
+                'content': 'Explain quantum computing in simple terms'
+            }
+        ]
+    })
+)
+
+result = json.loads(response['body'].read())
+ai_response = result['content'][0]['text']
+print(ai_response)</code></pre>
+</div>
+
+<h3>2. Streaming Invocation (invoke_model_with_response_stream)</h3>
+<div class="code-block">
+<pre><code>response = bedrock.invoke_model_with_response_stream(
+    modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+    body=json.dumps({
+        'anthropic_version': 'bedrock-2023-05-31',
+        'max_tokens': 1024,
+        'messages': [{'role': 'user', 'content': 'Write a story'}]
+    })
+)
+
+# Process streaming response
+for event in response['body']:
+    chunk = json.loads(event['chunk']['bytes'])
+    if chunk['type'] == 'content_block_delta':
+        text = chunk['delta']['text']
+        print(text, end='', flush=True)</code></pre>
+</div>
+
+<h2>Pricing Model</h2>
+<p>Bedrock charges based on input and output tokens:</p>
+
+<table>
+    <tr><th>Model</th><th>Input (per 1K tokens)</th><th>Output (per 1K tokens)</th><th>Example Cost (1M tokens)</th></tr>
+    <tr><td>Claude 3 Haiku</td><td>$0.00025</td><td>$0.00125</td><td>$250 input / $1,250 output</td></tr>
+    <tr><td>Claude 3 Sonnet</td><td>$0.003</td><td>$0.015</td><td>$3,000 input / $15,000 output</td></tr>
+    <tr><td>Claude 3 Opus</td><td>$0.015</td><td>$0.075</td><td>$15,000 input / $75,000 output</td></tr>
+    <tr><td>Llama 3 70B</td><td>$0.00099</td><td>$0.00099</td><td>$990 input / $990 output</td></tr>
+    <tr><td>Titan Text Lite</td><td>$0.0003</td><td>$0.0004</td><td>$300 input / $400 output</td></tr>
+</table>
+
+<p><strong>Cost Calculation Example:</strong> A chatbot processing 1M requests/month with avg 500 input tokens and 200 output tokens using Claude 3 Sonnet:</p>
+<ul>
+    <li>Input: 1M × 0.5K × $0.003 = $1,500</li>
+    <li>Output: 1M × 0.2K × $0.015 = $3,000</li>
+    <li><strong>Total: $4,500/month</strong></li>
+</ul>
+
+<h2>Prompt Engineering for Bedrock</h2>
+
+<h3>System Prompts</h3>
+<div class="code-block">
+<pre><code>{
+    'anthropic_version': 'bedrock-2023-05-31',
+    'max_tokens': 1024,
+    'system': 'You are a helpful customer support agent for TechCorp. Be concise, professional, and always verify information before providing answers.',
+    'messages': [
+        {'role': 'user', 'content': 'How do I reset my password?'}
+    ]
+}</code></pre>
+</div>
+
+<h3>Few-Shot Examples</h3>
+<div class="code-block">
+<pre><code>'messages': [
+    {'role': 'user', 'content': 'Classify: "I love this product!"'},
+    {'role': 'assistant', 'content': 'Sentiment: Positive'},
+    {'role': 'user', 'content': 'Classify: "Terrible experience"'},
+    {'role': 'assistant', 'content': 'Sentiment: Negative'},
+    {'role': 'user', 'content': 'Classify: "The delivery was fast"'}
+]</code></pre>
+</div>
+
+<h3>Temperature and Top-P</h3>
+<table>
+    <tr><th>Parameter</th><th>Range</th><th>Effect</th><th>Use Case</th></tr>
+    <tr><td>temperature</td><td>0.0 - 1.0</td><td>Controls randomness</td><td>0.0 for factual, 0.7-0.9 for creative</td></tr>
+    <tr><td>top_p</td><td>0.0 - 1.0</td><td>Nucleus sampling</td><td>0.9 for balanced, 0.5 for focused</td></tr>
+    <tr><td>top_k</td><td>1 - 500</td><td>Limits token choices</td><td>40-50 for most tasks</td></tr>
+    <tr><td>max_tokens</td><td>1 - 4096</td><td>Response length limit</td><td>512 for chat, 2048 for long-form</td></tr>
+</table>
+
+<h2>Model Selection Guide</h2>
+
+<h3>When to Use Each Model</h3>
+<table>
+    <tr><th>Scenario</th><th>Recommended Model</th><th>Rationale</th></tr>
+    <tr><td>Simple Q&A, classification</td><td>Claude 3 Haiku</td><td>Fast, cost-effective, sufficient accuracy</td></tr>
+    <tr><td>Customer support chatbot</td><td>Claude 3 Sonnet</td><td>Balanced performance, good reasoning</td></tr>
+    <tr><td>Complex analysis, coding</td><td>Claude 3 Opus</td><td>Best reasoning, handles complexity</td></tr>
+    <tr><td>High-volume, cost-sensitive</td><td>Llama 3 70B or Titan</td><td>Lower cost, good performance</td></tr>
+    <tr><td>Multilingual support</td><td>Jurassic-2 or Claude 3</td><td>Strong multilingual capabilities</td></tr>
+</table>
+
+<h2>IAM Permissions</h2>
+<div class="code-block">
+<pre><code>{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "bedrock:InvokeModel",
+                "bedrock:InvokeModelWithResponseStream"
+            ],
+            "Resource": [
+                "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0"
+            ]
+        }
+    ]
+}</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Model Selection:</strong> Start with Haiku, upgrade to Sonnet/Opus only if needed</li>
+    <li><strong>Token Limits:</strong> Set max_tokens to prevent runaway costs</li>
+    <li><strong>Error Handling:</strong> Implement retries with exponential backoff for throttling</li>
+    <li><strong>Prompt Optimization:</strong> Shorter, clearer prompts reduce costs and latency</li>
+    <li><strong>Caching:</strong> Cache identical requests to avoid redundant API calls</li>
+    <li><strong>Monitoring:</strong> Track token usage and costs per request</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

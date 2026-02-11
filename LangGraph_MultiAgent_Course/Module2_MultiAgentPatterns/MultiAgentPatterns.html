@@ -1,0 +1,355 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-Agent Design Patterns and Architectures</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Multi-Agent Design Patterns and Architectures</h1>
+
+<h2>Module Overview</h2>
+<p>This module explores the powerful concept of multi-agent systems within LangGraph, where multiple specialized AI agents collaborate to solve complex problems. You will learn about different multi-agent architectural patterns, understand when to apply each pattern, and gain insight into the coordination mechanisms that enable effective agent collaboration.</p>
+
+<h2>The Multi-Agent Paradigm</h2>
+
+<h3>Why Multiple Agents?</h3>
+
+<p>While a single, general-purpose AI agent can handle many tasks, complex real-world problems often benefit from multiple specialized agents working together. This approach mirrors how human organizations function—specialists collaborate, each contributing their expertise.</p>
+
+<p><strong>Advantages of Multi-Agent Systems:</strong></p>
+
+<ul>
+    <li><strong>Specialization:</strong> Each agent can be optimized for specific tasks, using specialized prompts, tools, or even different models</li>
+    <li><strong>Modularity:</strong> Agents can be developed, tested, and updated independently</li>
+    <li><strong>Scalability:</strong> Add new capabilities by adding new agents without modifying existing ones</li>
+    <li><strong>Parallel Processing:</strong> Multiple agents can work simultaneously on different aspects of a problem</li>
+    <li><strong>Separation of Concerns:</strong> Each agent focuses on one responsibility, improving maintainability</li>
+    <li><strong>Diverse Perspectives:</strong> Different agents can approach problems from different angles, improving robustness</li>
+</ul>
+
+<p><strong>Challenges of Multi-Agent Systems:</strong></p>
+
+<ul>
+    <li><strong>Coordination Complexity:</strong> Managing communication and handoffs between agents</li>
+    <li><strong>State Management:</strong> Ensuring all agents have necessary context</li>
+    <li><strong>Conflict Resolution:</strong> Handling disagreements between agents</li>
+    <li><strong>Debugging Difficulty:</strong> Tracing issues across multiple agents</li>
+    <li><strong>Increased Cost:</strong> More agents mean more LLM calls</li>
+</ul>
+
+<h2>Core Multi-Agent Patterns</h2>
+
+<h3>Pattern 1: Supervisor (Router) Pattern</h3>
+
+<p><strong>Architecture:</strong> One supervisor agent routes requests to specialized worker agents based on request type or complexity.</p>
+
+<p><strong>Structure:</strong></p>
+<ul>
+    <li><strong>Supervisor Agent:</strong> Analyzes incoming requests and determines which specialist to route to</li>
+    <li><strong>Specialist Agents:</strong> Multiple agents, each expert in a specific domain</li>
+    <li><strong>Flow:</strong> User → Supervisor → Selected Specialist → Response</li>
+</ul>
+
+<p><strong>How It Works:</strong></p>
+<ol>
+    <li>User submits a request</li>
+    <li>Supervisor agent analyzes the request to understand intent and requirements</li>
+    <li>Supervisor selects the most appropriate specialist agent</li>
+    <li>Request is routed to selected specialist</li>
+    <li>Specialist processes request and generates response</li>
+    <li>Response may go back through supervisor for final formatting or directly to user</li>
+</ol>
+
+<p><strong>Use Cases:</strong></p>
+<ul>
+    <li><strong>Customer Service:</strong> Route to billing, technical support, or account management specialists</li>
+    <li><strong>Content Generation:</strong> Route to blog writer, social media specialist, or technical documentation expert</li>
+    <li><strong>Data Analysis:</strong> Route to financial analyst, marketing analyst, or operations analyst</li>
+    <li><strong>Code Assistance:</strong> Route to Python expert, JavaScript expert, or database specialist</li>
+</ul>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Clear separation of responsibilities</li>
+    <li>Easy to add new specialists without affecting others</li>
+    <li>Specialists can use domain-specific prompts and tools</li>
+    <li>Efficient—only one specialist processes each request</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>Supervisor must accurately classify requests</li>
+    <li>Difficult to handle requests requiring multiple specialists</li>
+    <li>Single point of failure if supervisor makes wrong routing decision</li>
+</ul>
+
+<p><strong>Design Considerations:</strong></p>
+<ul>
+    <li>Supervisor should have clear routing criteria</li>
+    <li>Include fallback for ambiguous requests</li>
+    <li>Consider confidence scores in routing decisions</li>
+    <li>Log routing decisions for monitoring and improvement</li>
+</ul>
+
+<h3>Pattern 2: Sequential Pipeline Pattern</h3>
+
+<p><strong>Architecture:</strong> Agents process requests sequentially, each adding value in a specific stage of a workflow.</p>
+
+<p><strong>Structure:</strong></p>
+<ul>
+    <li><strong>Stage Agents:</strong> Each agent represents one stage in a multi-stage process</li>
+    <li><strong>Flow:</strong> Agent 1 → Agent 2 → Agent 3 → ... → Final Output</li>
+    <li><strong>State:</strong> Accumulates outputs from each stage</li>
+</ul>
+
+<p><strong>How It Works:</strong></p>
+<ol>
+    <li>First agent receives initial input and produces intermediate output</li>
+    <li>Second agent receives first agent's output and adds its contribution</li>
+    <li>Process continues through all stages</li>
+    <li>Final agent produces the complete result</li>
+</ol>
+
+<p><strong>Use Cases:</strong></p>
+<ul>
+    <li><strong>Content Creation:</strong> Research Agent → Outline Agent → Draft Agent → Edit Agent → Polish Agent</li>
+    <li><strong>Data Processing:</strong> Extract Agent → Transform Agent → Validate Agent → Load Agent</li>
+    <li><strong>Decision Making:</strong> Gather Facts Agent → Analyze Options Agent → Evaluate Risks Agent → Recommend Agent</li>
+    <li><strong>Software Development:</strong> Requirements Agent → Design Agent → Implementation Agent → Review Agent</li>
+</ul>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Clear, linear flow easy to understand</li>
+    <li>Each stage can be optimized independently</li>
+    <li>Easy to test each stage in isolation</li>
+    <li>Natural fit for processes with distinct phases</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>Errors in early stages propagate through pipeline</li>
+    <li>No flexibility for conditional branching</li>
+    <li>All stages execute even if some are unnecessary</li>
+    <li>Sequential execution can be slow</li>
+</ul>
+
+<p><strong>Design Considerations:</strong></p>
+<ul>
+    <li>Each agent should have clear input/output contracts</li>
+    <li>Consider adding quality checks between stages</li>
+    <li>Implement error handling to prevent cascade failures</li>
+    <li>Document what each stage contributes</li>
+</ul>
+
+<h3>Pattern 3: Debate (Adversarial) Pattern</h3>
+
+<p><strong>Architecture:</strong> Multiple agents argue different positions or perspectives, with a final agent synthesizing the best conclusion.</p>
+
+<p><strong>Structure:</strong></p>
+<ul>
+    <li><strong>Debater Agents:</strong> Each takes a different stance or perspective</li>
+    <li><strong>Moderator/Judge Agent:</strong> Evaluates arguments and synthesizes conclusion</li>
+    <li><strong>Flow:</strong> Problem → Multiple Debaters (parallel or sequential) → Judge → Decision</li>
+</ul>
+
+<p><strong>How It Works:</strong></p>
+<ol>
+    <li>Problem or question is presented</li>
+    <li>Multiple agents generate arguments from different perspectives</li>
+    <li>Agents may respond to each other's arguments (multi-round debate)</li>
+    <li>Judge agent evaluates all arguments</li>
+    <li>Judge synthesizes best conclusion or decision</li>
+</ol>
+
+<p><strong>Use Cases:</strong></p>
+<ul>
+    <li><strong>Decision Analysis:</strong> Optimistic agent vs. Pessimistic agent vs. Realistic agent</li>
+    <li><strong>Risk Assessment:</strong> Risk-averse agent vs. Risk-tolerant agent</li>
+    <li><strong>Strategic Planning:</strong> Short-term focus vs. Long-term focus</li>
+    <li><strong>Product Design:</strong> User-focused vs. Technical-focused vs. Business-focused perspectives</li>
+</ul>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Explores multiple perspectives thoroughly</li>
+    <li>Reduces bias by considering opposing views</li>
+    <li>Improves decision quality through critical examination</li>
+    <li>Identifies potential issues from different angles</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>More expensive (multiple LLM calls for same problem)</li>
+    <li>Can be time-consuming</li>
+    <li>Judge must effectively synthesize conflicting views</li>
+    <li>May produce overly cautious or compromised decisions</li>
+</ul>
+
+<p><strong>Design Considerations:</strong></p>
+<ul>
+    <li>Clearly define each agent's perspective or role</li>
+    <li>Decide on single-round vs. multi-round debate</li>
+    <li>Judge should have clear evaluation criteria</li>
+    <li>Consider weighting different perspectives based on context</li>
+</ul>
+
+<h3>Pattern 4: Collaborative Swarm Pattern</h3>
+
+<p><strong>Architecture:</strong> Agents dynamically hand off tasks to each other based on current context and capabilities, without a central coordinator.</p>
+
+<p><strong>Structure:</strong></p>
+<ul>
+    <li><strong>Peer Agents:</strong> Multiple agents with different capabilities</li>
+    <li><strong>Dynamic Routing:</strong> Each agent decides which agent should handle next step</li>
+    <li><strong>Flow:</strong> Agent A → Agent B → Agent C → Agent A (dynamic, context-driven)</li>
+</ul>
+
+<p><strong>How It Works:</strong></p>
+<ol>
+    <li>Initial agent receives task</li>
+    <li>Agent performs its part and evaluates what's needed next</li>
+    <li>Agent hands off to most appropriate peer for next step</li>
+    <li>Process continues with dynamic routing until task complete</li>
+    <li>Any agent can declare task complete</li>
+</ol>
+
+<p><strong>Use Cases:</strong></p>
+<ul>
+    <li><strong>Complex Problem Solving:</strong> Agents collaborate fluidly based on evolving needs</li>
+    <li><strong>Research Tasks:</strong> Agents hand off as they discover new information needs</li>
+    <li><strong>Creative Projects:</strong> Agents contribute different creative elements dynamically</li>
+    <li><strong>Adaptive Workflows:</strong> Path through agents depends on intermediate results</li>
+</ul>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Highly flexible and adaptive</li>
+    <li>No single point of failure</li>
+    <li>Agents can be added or removed easily</li>
+    <li>Handles complex, unpredictable workflows</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>Difficult to predict execution path</li>
+    <li>Complex to debug and monitor</li>
+    <li>Risk of inefficient routing</li>
+    <li>Requires sophisticated handoff logic</li>
+</ul>
+
+<p><strong>Design Considerations:</strong></p>
+<ul>
+    <li>Each agent must understand capabilities of other agents</li>
+    <li>Include termination conditions to prevent endless handoffs</li>
+    <li>Implement loop detection</li>
+    <li>Comprehensive logging essential for debugging</li>
+</ul>
+
+<h3>Pattern 5: Hierarchical Team Pattern</h3>
+
+<p><strong>Architecture:</strong> Agents organized in hierarchy with managers coordinating teams of worker agents.</p>
+
+<p><strong>Structure:</strong></p>
+<ul>
+    <li><strong>Manager Agents:</strong> Coordinate and delegate to subordinate agents</li>
+    <li><strong>Worker Agents:</strong> Execute specific tasks</li>
+    <li><strong>Multiple Levels:</strong> Can have multiple management layers</li>
+</ul>
+
+<p><strong>How It Works:</strong></p>
+<ol>
+    <li>Top-level manager receives complex task</li>
+    <li>Manager breaks task into subtasks</li>
+    <li>Manager delegates subtasks to subordinate agents (managers or workers)</li>
+    <li>Subordinates complete their tasks</li>
+    <li>Manager aggregates results and produces final output</li>
+</ol>
+
+<p><strong>Use Cases:</strong></p>
+<ul>
+    <li><strong>Large Projects:</strong> Project manager coordinates multiple specialized teams</li>
+    <li><strong>Complex Analysis:</strong> Analysis manager coordinates data gathering, processing, and reporting teams</li>
+    <li><strong>Enterprise Workflows:</strong> Department managers coordinate within their domains</li>
+</ul>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Scales to very complex tasks</li>
+    <li>Clear responsibility hierarchy</li>
+    <li>Managers can optimize resource allocation</li>
+    <li>Mirrors familiar organizational structures</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>Can be over-engineered for simple tasks</li>
+    <li>Communication overhead between layers</li>
+    <li>Manager agents must be sophisticated</li>
+    <li>Risk of misalignment between layers</li>
+</ul>
+
+<h2>Choosing the Right Pattern</h2>
+
+<p>Selecting the appropriate multi-agent pattern depends on your specific requirements:</p>
+
+<table>
+    <tr>
+        <th>Pattern</th>
+        <th>Best For</th>
+        <th>Complexity</th>
+        <th>Cost</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Supervisor</td>
+        <td>Clear categorization of requests</td>
+        <td>Low</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Sequential Pipeline</td>
+        <td>Fixed multi-stage processes</td>
+        <td>Low</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Debate</td>
+        <td>Critical decisions needing multiple perspectives</td>
+        <td>Medium</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Collaborative Swarm</td>
+        <td>Dynamic, unpredictable workflows</td>
+        <td>High</td>
+        <td>Variable</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hierarchical Team</td>
+        <td>Very complex, decomposable tasks</td>
+        <td>High</td>
+        <td>High</td>
+    </tr>
+</table>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Multi-agent systems enable specialization, modularity, and parallel processing</li>
+    <li>Supervisor pattern routes requests to appropriate specialists based on classification</li>
+    <li>Sequential pipeline pattern processes requests through fixed stages</li>
+    <li>Debate pattern explores multiple perspectives before reaching conclusions</li>
+    <li>Collaborative swarm pattern enables dynamic, context-driven agent collaboration</li>
+    <li>Hierarchical team pattern organizes agents in management layers for complex tasks</li>
+    <li>Pattern selection depends on task characteristics, complexity tolerance, and cost constraints</li>
+    <li>All patterns involve trade-offs between flexibility, complexity, and cost</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

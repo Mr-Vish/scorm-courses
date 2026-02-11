@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Method: Post-Training Quantization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Method: Post-Training Quantization</h1>
+<div class="container">
+<h2>Post-Training Quantization (PTQ)</h2>
+<p>Post-Training Quantization (PTQ) is the most common and accessible method for reducing model size. As the name suggests, PTQ is performed *after* the model has already been fully trained. It involves converting the weights from high-precision floating-point (like FP16) to lower-precision formats (like INT8 or INT4) without needing to re-train the entire model.</p>
+
+<h3>The Core Idea of PTQ</h3>
+<p>Imagine you have a set of values ranging from -1.0 to 1.0. In FP16, there are thousands of possible steps between those two numbers. In 8-bit quantization, you only have 256 possible steps. PTQ is the process of mapping the thousands of high-precision values to the 256 nearest integer "bins."</p>
+
+<h3>Key Concepts in PTQ</h3>
+<ul>
+    <li><strong>Scaling Factor:</strong> To map floating-point values to integers, we use a scaling factor. If our max value is 1.0 and we use 8 bits (0-255), our scaling factor might be 1/255.</li>
+    <li><strong>Zero Point:</strong> If the distribution of weights is not centered around zero, we use a "zero point" to shift the integer range so it matches the floating-point range.</li>
+    <li><strong>Calibration:</strong> To find the best scaling factors and zero points, we often run a small "calibration" dataset through the model. This helps us understand the typical range of values in each layer's activations.</li>
+</ul>
+
+<h3>Types of PTQ</h3>
+<ol>
+    <li><strong>Weight-Only Quantization:</strong> Only the model's static weights are quantized. The activations (the data flowing through the model during inference) remain in FP16. This is easy to do and provides good memory savings with minimal quality loss.</li>
+    <li><strong>Weight-Activation Quantization:</strong> Both weights and activations are quantized. This is much harder because activations change with every input. However, it allows for much faster mathematical operations on specialized hardware (like INT8 Tensor Cores).</li>
+</ol>
+
+<h3>The Impact on Model Quality</h3>
+<p>Quantization is a "lossy" process. By reducing the precision of the weights, you are inevitably introducing some noise into the model's calculations. For many models, the drop in quality at 8-bit is almost unnoticeable. At 4-bit, there is a slight but measurable drop in performance. Below 4-bit (e.g., 2-bit), the model's intelligence often degrades significantly.</p>
+
+<h3>Why Use PTQ?</h3>
+<ul>
+    <li><strong>Speed:</strong> It can be done in minutes or hours, rather than the days or weeks required for training.</li>
+    <li><strong>Simplicity:</strong> You don't need the original training data or a massive compute cluster.</li>
+    <li><strong>Availability:</strong> Most popular LLMs (Llama, Mistral, Falcon) have high-quality PTQ versions available on platforms like Hugging Face.</li>
+</ul>
+
+<h3>Advanced PTQ Techniques: SmoothQuant and Outlier Suppression</h3>
+<p>One of the biggest challenges in PTQ is "outliers"—a small number of activation values that are much larger than the others. These outliers make it hard to choose a good scaling factor. Techniques like <strong>SmoothQuant</strong> work by migrating the difficulty of quantizing activations over to the weights, leading to much better accuracy for INT8 models.</p>
+
+<h3>Practical Exercise: Quantization Tooling</h3>
+<p>Research the "AutoGPTQ" or "BitsAndBytes" libraries. How many lines of code does it take to load a model in 4-bit quantization using these tools? (Hint: It's usually just one or two parameters in the <code>from_pretrained</code> function).</p>
+
+<h3>Summary</h3>
+<p>PTQ is the "workhorse" of the quantization world. It's what allows a 70B model to run on a single workstation and what enables AI to be deployed on mobile and edge devices. While it involves a small sacrifice in precision, the benefits in terms of memory and speed are often overwhelming.</p>
+
+</div>
+</body>
+</html>

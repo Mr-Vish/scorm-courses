@@ -1,0 +1,502 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Extensions and Integrations</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Extensions and Integrations</h1>
+
+<h2>Vertex AI Extensions Overview</h2>
+<p>Extensions are pre-built or custom integrations that expand agent capabilities beyond basic LLM interactions. They provide standardized interfaces to external services, APIs, and Google Cloud products.</p>
+
+<h2>Pre-Built Extensions</h2>
+<table>
+<tr>
+<th>Extension</th>
+<th>Capability</th>
+<th>Use Cases</th>
+</tr>
+<tr>
+<td class="rowheader">Code Interpreter</td>
+<td>Execute Python code, data analysis</td>
+<td>Calculations, chart generation, data processing</td>
+</tr>
+<tr>
+<td class="rowheader">Vertex AI Search</td>
+<td>Search enterprise data stores</td>
+<td>Document retrieval, knowledge base queries</td>
+</tr>
+<tr>
+<td class="rowheader">Google Workspace</td>
+<td>Access Docs, Sheets, Gmail, Calendar</td>
+<td>Document creation, email sending, scheduling</td>
+</tr>
+<tr>
+<td class="rowheader">BigQuery</td>
+<td>Query structured data</td>
+<td>Analytics, reporting, data exploration</td>
+</tr>
+<tr>
+<td class="rowheader">Cloud Functions</td>
+<td>Execute serverless functions</td>
+<td>Custom business logic, integrations</td>
+</tr>
+</table>
+
+<h2>Code Interpreter Extension</h2>
+
+<h3>Enabling Code Interpreter</h3>
+<blockquote>
+from vertexai.preview.generative_models import GenerativeModel, Tool
+from vertexai.preview import generative_models
+
+# Create tool for code execution
+code_interpreter_tool = Tool.from_code_execution()
+
+# Create model with code interpreter
+model = GenerativeModel(
+    model_name="gemini-1.5-pro",
+    tools=[code_interpreter_tool]
+)
+
+# Use code interpreter
+response = model.generate_content(
+    "Calculate the compound interest on $10,000 at 5% annual rate for 10 years"
+)
+
+print(response.text)
+# Agent will write and execute Python code to calculate the result
+</blockquote>
+
+<h3>Data Analysis with Code Interpreter</h3>
+<blockquote>
+# Agent can analyze data and create visualizations
+prompt = """
+Analyze this sales data and create a bar chart:
+Q1: $125,000
+Q2: $150,000
+Q3: $135,000
+Q4: $180,000
+
+Calculate the year-over-year growth rate and identify the best performing quarter.
+"""
+
+response = model.generate_content(prompt)
+
+# Agent will:
+# 1. Parse the data
+# 2. Calculate growth rates
+# 3. Generate matplotlib chart
+# 4. Provide analysis
+</blockquote>
+
+<h2>Google Workspace Extension</h2>
+
+<h3>Gmail Integration</h3>
+<blockquote>
+from google.cloud import aiplatform
+
+# Create Gmail extension
+gmail_extension = aiplatform.Extension.create(
+    display_name="Gmail Integration",
+    manifest={
+        "name": "gmail",
+        "description": "Send and read emails",
+        "api_spec": {
+            "open_api_gcs_uri": "gs://vertex-ai-extensions/gmail/openapi.yaml"
+        },
+        "auth_config": {
+            "auth_type": "GOOGLE_SERVICE_ACCOUNT_AUTH",
+            "google_service_account_config": {
+                "service_account": "agent-sa@project.iam.gserviceaccount.com"
+            }
+        }
+    }
+)
+
+# Use in agent
+def send_email(to: str, subject: str, body: str) -> dict:
+    """Send email via Gmail."""
+    return gmail_extension.execute(
+        operation_id="send_message",
+        operation_params={
+            "to": to,
+            "subject": subject,
+            "body": body
+        }
+    )
+
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[send_email]
+)
+</blockquote>
+
+<h3>Google Sheets Integration</h3>
+<blockquote>
+def read_sheet(spreadsheet_id: str, range_name: str) -> List[List[str]]:
+    """Read data from Google Sheets."""
+    from googleapiclient.discovery import build
+    
+    service = build('sheets', 'v4')
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id,
+        range=range_name
+    ).execute()
+    
+    return result.get('values', [])
+
+def write_sheet(spreadsheet_id: str, range_name: str, values: List[List[str]]) -> dict:
+    """Write data to Google Sheets."""
+    from googleapiclient.discovery import build
+    
+    service = build('sheets', 'v4')
+    body = {'values': values}
+    
+    result = service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range=range_name,
+        valueInputOption='RAW',
+        body=body
+    ).execute()
+    
+    return {"updated_cells": result.get('updatedCells')}
+
+# Agent with Sheets access
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[read_sheet, write_sheet],
+    system_instruction="You can read and write Google Sheets to help with data management tasks."
+)
+</blockquote>
+
+<h2>Custom Extensions with OpenAPI</h2>
+
+<h3>Defining OpenAPI Specification</h3>
+<blockquote>
+# openapi_spec.yaml
+openapi: 3.0.0
+info:
+  title: Inventory API
+  version: 1.0.0
+  description: API for managing product inventory
+
+servers:
+  - url: https://api.example.com/v1
+
+paths:
+  /inventory/{product_id}:
+    get:
+      summary: Get product inventory
+      operationId: getInventory
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product_id:
+                    type: string
+                  quantity:
+                    type: integer
+                  location:
+                    type: string
+  
+  /inventory/{product_id}/update:
+    post:
+      summary: Update inventory quantity
+      operationId: updateInventory
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                operation:
+                  type: string
+                  enum: [add, subtract, set]
+      responses:
+        '200':
+          description: Inventory updated
+</blockquote>
+
+<h3>Creating Custom Extension</h3>
+<blockquote>
+from google.cloud import aiplatform
+
+# Upload OpenAPI spec to Cloud Storage
+# gsutil cp openapi_spec.yaml gs://my-bucket/specs/
+
+# Create custom extension
+inventory_extension = aiplatform.Extension.create(
+    display_name="Inventory Management API",
+    description="Manage product inventory",
+    manifest={
+        "api_spec": {
+            "open_api_gcs_uri": "gs://my-bucket/specs/openapi_spec.yaml"
+        },
+        "auth_config": {
+            "auth_type": "API_KEY_CONFIG",
+            "api_key_config": {
+                "name": "x-api-key",
+                "api_key_secret": "projects/my-project/secrets/inventory-api-key/versions/latest",
+                "http_element_location": "HTTP_IN_HEADER"
+            }
+        }
+    }
+)
+
+print(f"Extension created: {inventory_extension.resource_name}")
+</blockquote>
+
+<h3>Using Custom Extension in Agent</h3>
+<blockquote>
+# Create agent with custom extension
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[inventory_extension],
+    system_instruction="""You are an inventory management assistant.
+    You can check product inventory levels and update quantities.
+    Always confirm inventory changes with the user before executing."""
+)
+
+# Query agent
+response = agent.query(
+    input="How many units of product SKU-12345 do we have in stock?"
+)
+
+# Agent will:
+# 1. Call getInventory operation with product_id="SKU-12345"
+# 2. Receive inventory data
+# 3. Format response for user
+</blockquote>
+
+<h2>BigQuery Extension</h2>
+<blockquote>
+from google.cloud import bigquery
+
+def query_bigquery_safe(query: str) -> List[dict]:
+    """Execute BigQuery query with safety checks.
+    
+    Args:
+        query: SQL query to execute
+        
+    Returns:
+        Query results
+    """
+    # Validate query is read-only
+    query_upper = query.strip().upper()
+    if not query_upper.startswith("SELECT"):
+        return {"error": "Only SELECT queries allowed"}
+    
+    # Check for dangerous operations
+    dangerous_keywords = ["DELETE", "DROP", "TRUNCATE", "UPDATE", "INSERT"]
+    if any(keyword in query_upper for keyword in dangerous_keywords):
+        return {"error": "Dangerous operation detected"}
+    
+    client = bigquery.Client()
+    
+    try:
+        # Set query timeout and max results
+        job_config = bigquery.QueryJobConfig(
+            maximum_bytes_billed=10**9,  # 1 GB limit
+            use_query_cache=True
+        )
+        
+        query_job = client.query(query, job_config=job_config)
+        results = query_job.result(max_results=1000)
+        
+        return [dict(row) for row in results]
+        
+    except Exception as e:
+        return {"error": f"Query failed: {str(e)}"}
+
+# Agent with BigQuery access
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[query_bigquery_safe],
+    system_instruction="""You have access to BigQuery for data analysis.
+    Available tables:
+    - sales_data: order_id, product_id, quantity, revenue, date
+    - customers: customer_id, name, email, signup_date
+    - products: product_id, name, category, price
+    
+    Always use proper SQL syntax and limit results appropriately."""
+)
+</blockquote>
+
+<h2>Cloud Functions Extension</h2>
+<blockquote>
+# Deploy Cloud Function
+from google.cloud import functions_v2
+
+def deploy_agent_function():
+    """Deploy Cloud Function for agent to call."""
+    
+    function_code = '''
+def process_refund(request):
+    """Process customer refund."""
+    import json
+    
+    data = request.get_json()
+    order_id = data.get('order_id')
+    amount = data.get('amount')
+    
+    # Process refund logic
+    result = {
+        "order_id": order_id,
+        "refund_amount": amount,
+        "status": "processed",
+        "transaction_id": "TXN-" + order_id
+    }
+    
+    return json.dumps(result)
+'''
+    
+    # Deploy function
+    client = functions_v2.FunctionServiceClient()
+    
+    function = functions_v2.Function(
+        name="process_refund",
+        description="Process customer refunds",
+        build_config=functions_v2.BuildConfig(
+            runtime="python311",
+            entry_point="process_refund"
+        )
+    )
+    
+    operation = client.create_function(
+        parent=f"projects/{project_id}/locations/us-central1",
+        function=function
+    )
+    
+    return operation.result()
+
+# Call Cloud Function from agent
+def call_refund_function(order_id: str, amount: float) -> dict:
+    """Call Cloud Function to process refund."""
+    import requests
+    
+    function_url = "https://us-central1-project.cloudfunctions.net/process_refund"
+    
+    response = requests.post(
+        function_url,
+        json={"order_id": order_id, "amount": amount},
+        headers={"Authorization": f"Bearer {get_id_token()}"}
+    )
+    
+    return response.json()
+</blockquote>
+
+<h2>Extension Authentication Patterns</h2>
+<table>
+<tr>
+<th>Auth Type</th>
+<th>Use Case</th>
+<th>Configuration</th>
+</tr>
+<tr>
+<td class="rowheader">API Key</td>
+<td>Third-party APIs</td>
+<td>Store in Secret Manager</td>
+</tr>
+<tr>
+<td class="rowheader">OAuth 2.0</td>
+<td>User-specific access</td>
+<td>Token exchange flow</td>
+</tr>
+<tr>
+<td class="rowheader">Service Account</td>
+<td>Google Cloud services</td>
+<td>IAM service account</td>
+</tr>
+<tr>
+<td class="rowheader">mTLS</td>
+<td>High-security APIs</td>
+<td>Certificate-based auth</td>
+</tr>
+</table>
+
+<h2>Extension Error Handling</h2>
+<blockquote>
+def robust_extension_call(extension, operation, params):
+    """Call extension with comprehensive error handling."""
+    
+    try:
+        result = extension.execute(
+            operation_id=operation,
+            operation_params=params,
+            timeout=30
+        )
+        
+        if "error" in result:
+            return {
+                "success": False,
+                "error": result["error"],
+                "suggestion": "Check parameters and try again"
+            }
+        
+        return {
+            "success": True,
+            "data": result
+        }
+        
+    except TimeoutError:
+        return {
+            "success": False,
+            "error": "Extension call timed out",
+            "suggestion": "Try again or use alternative method"
+        }
+        
+    except PermissionError:
+        return {
+            "success": False,
+            "error": "Insufficient permissions",
+            "suggestion": "Check IAM roles and permissions"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Unexpected error: {str(e)}",
+            "suggestion": "Contact support if issue persists"
+        }
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Security:</strong> Store credentials in Secret Manager, never in code</li>
+<li><strong>Rate Limiting:</strong> Implement rate limiting to prevent API abuse</li>
+<li><strong>Timeouts:</strong> Set appropriate timeouts for extension calls</li>
+<li><strong>Error Handling:</strong> Provide clear error messages to guide agent recovery</li>
+<li><strong>Validation:</strong> Validate all inputs before calling extensions</li>
+<li><strong>Monitoring:</strong> Track extension usage, errors, and performance</li>
+<li><strong>Documentation:</strong> Maintain clear documentation of extension capabilities</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

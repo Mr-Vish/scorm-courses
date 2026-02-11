@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Output Filtering and Monitoring</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Output Filtering and Monitoring</h1>
+
+
+<h2>Output Validation</h2>
+<ul>
+    <li><strong>Content classifiers:</strong> Run a second, smaller model to classify outputs for policy violations</li>
+    <li><strong>Regex filters:</strong> Block outputs containing system prompt fragments, PII patterns, or known attack responses</li>
+    <li><strong>Structured output enforcement:</strong> Force JSON schema compliance to prevent free-text injection responses</li>
+</ul>
+
+<h2>Monitoring and Alerting</h2>
+<table>
+    <tr><th>Signal</th><th>What to Monitor</th><th>Action</th></tr>
+    <tr><td>Anomalous inputs</td><td>Keywords like "ignore", "system prompt", "jailbreak"</td><td>Flag for review, rate limit</td></tr>
+    <tr><td>Output anomalies</td><td>Sudden topic shifts, system prompt leakage</td><td>Block response, alert team</td></tr>
+    <tr><td>Tool misuse</td><td>Unexpected API calls or database queries</td><td>Require human approval</td></tr>
+    <tr><td>Rate patterns</td><td>Rapid sequential probing attempts</td><td>Temporary ban, CAPTCHA</td></tr>
+</table>
+
+<h2>Architectural Defenses</h2>
+<ul>
+    <li><strong>Least privilege:</strong> Only give the LLM access to tools it absolutely needs</li>
+    <li><strong>Human-in-the-loop:</strong> Require approval for high-impact actions</li>
+    <li><strong>Separate trust domains:</strong> Don't mix user data and system instructions in the same context</li>
+    <li><strong>Sandboxing:</strong> Run LLM-generated code in isolated environments</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

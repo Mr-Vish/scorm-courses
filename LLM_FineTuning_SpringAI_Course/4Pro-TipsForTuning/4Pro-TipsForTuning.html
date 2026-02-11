@@ -1,0 +1,411 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pro-Tips for Tuning - Advanced Techniques</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pro-Tips for Tuning - Advanced Techniques</h1>
+
+<h2>Critical Rules for Parameter Tuning</h2>
+
+<h3>Rule 1: Don't Adjust Temperature and Top-P Simultaneously</h3>
+<p>This is one of the most important guidelines from AI providers like OpenAI and Anthropic.</p>
+
+<h4>Why This Matters</h4>
+<ul>
+    <li>Both parameters control randomness but in different ways</li>
+    <li>Adjusting both creates unpredictable interactions</li>
+    <li>Results become difficult to reproduce and debug</li>
+    <li>Makes it impossible to understand which parameter caused specific behaviors</li>
+</ul>
+
+<h4>Recommended Approach</h4>
+<ul>
+    <li><strong>Option 1:</strong> Adjust Temperature, keep Top-P at 1.0 (default)</li>
+    <li><strong>Option 2:</strong> Keep Temperature at default, adjust Top-P</li>
+    <li><strong>Never:</strong> Adjust both away from their defaults simultaneously</li>
+</ul>
+
+<div class="code-block">
+<pre><code>// GOOD: Adjust temperature only
+OpenAiChatOptions.builder()
+    .withTemperature(0.8f)
+    .withTopP(1.0f)  // Keep at default
+    .build()
+
+// GOOD: Adjust Top-P only
+OpenAiChatOptions.builder()
+    .withTemperature(1.0f)  // Keep at default
+    .withTopP(0.9f)
+    .build()
+
+// BAD: Adjusting both
+OpenAiChatOptions.builder()
+    .withTemperature(0.8f)  // Don't do this
+    .withTopP(0.9f)         // together
+    .build()
+</code></pre>
+</div>
+
+<h3>Rule 2: Use Temperature 0.0 for Structured Output</h3>
+<p>When using Spring AI's BeanOutputConverter or any structured data extraction, always use Temperature 0.0.</p>
+
+<h4>Why This Is Critical</h4>
+<ul>
+    <li>Even slight randomness can break JSON structure</li>
+    <li>Hallucinated keys will cause parsing failures</li>
+    <li>Inconsistent field names break downstream processing</li>
+    <li>Production systems require deterministic behavior</li>
+</ul>
+
+<div class="code-block">
+<pre><code>import org.springframework.ai.converter.BeanOutputConverter;
+
+public class StructuredDataService {
+    
+    private final ChatClient chatClient;
+
+    public ContactInfo extractContact(String text) {
+        var outputConverter = new BeanOutputConverter&lt;&gt;(ContactInfo.class);
+        
+        String prompt = """
+                Extract contact information from: %s
+                
+                %s
+                """.formatted(text, outputConverter.getFormat());
+
+        String response = chatClient.prompt()
+                .user(prompt)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.0f)  // Critical for JSON
+                        .build())
+                .call()
+                .content();
+
+        return outputConverter.convert(response);
+    }
+}
+
+record ContactInfo(String name, String email, String phone) {}
+</code></pre>
+</div>
+
+<h3>Rule 3: Frequency vs. Presence Penalty - Know the Difference</h3>
+
+<h4>Use Frequency Penalty When:</h4>
+<ul>
+    <li>Model repeats specific words or phrases (e.g., "it is important to note")</li>
+    <li>Same technical terms appear excessively</li>
+    <li>Phrasing becomes monotonous</li>
+</ul>
+
+<h4>Use Presence Penalty When:</h4>
+<ul>
+    <li>Model keeps returning to the same concept or theme</li>
+    <li>Discussion lacks breadth across topics</li>
+    <li>Need to encourage exploring different angles</li>
+</ul>
+
+<h4>Practical Example</h4>
+<div class="code-block">
+<pre><code>// Problem: Repeating "very important" throughout response
+// Solution: Frequency Penalty
+OpenAiChatOptions.builder()
+    .withTemperature(0.7f)
+    .withFrequencyPenalty(0.5f)  // Penalizes word repetition
+    .build()
+
+// Problem: Keeps discussing only security, ignoring performance
+// Solution: Presence Penalty
+OpenAiChatOptions.builder()
+    .withTemperature(0.7f)
+    .withPresencePenalty(0.4f)  // Encourages topic diversity
+    .build()
+</code></pre>
+</div>
+
+<h2>Advanced Production Techniques</h2>
+
+<h3>Technique 1: Implement Parameter Logging</h3>
+<p>Track which parameters are used for each request to analyze effectiveness.</p>
+
+<div class="code-block">
+<pre><code>import org.springframework.ai.chat.client.advisor.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ParameterLoggingAdvisor implements CallAroundAdvisor {
+    
+    private static final Logger log = LoggerFactory.getLogger(ParameterLoggingAdvisor.class);
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest advisedRequest, CallAroundAdvisorChain chain) {
+        var options = advisedRequest.chatOptions();
+        
+        log.info("LLM Request Parameters: temperature={}, maxTokens={}, model={}",
+                options.getTemperature(),
+                options.getMaxTokens(),
+                options.getModel());
+        
+        long startTime = System.currentTimeMillis();
+        AdvisedResponse response = chain.nextAroundCall(advisedRequest);
+        long duration = System.currentTimeMillis() - startTime;
+        
+        log.info("LLM Response: duration={}ms, tokensUsed={}",
+                duration,
+                response.metadata().getUsage().getTotalTokens());
+        
+        return response;
+    }
+
+    @Override
+    public String getName() {
+        return "ParameterLoggingAdvisor";
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+}
+</code></pre>
+</div>
+
+<h3>Technique 2: Dynamic Parameter Selection Based on Input</h3>
+<p>Analyze the input to automatically select appropriate parameters.</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class SmartParameterService {
+
+    public OpenAiChatOptions selectParameters(String input) {
+        // Detect if input looks like a request for structured data
+        if (containsStructuredDataKeywords(input)) {
+            return OpenAiChatOptions.builder()
+                    .withTemperature(0.0f)
+                    .withMaxTokens(500)
+                    .build();
+        }
+        
+        // Detect if input is creative/brainstorming
+        if (containsCreativeKeywords(input)) {
+            return OpenAiChatOptions.builder()
+                    .withTemperature(1.0f)
+                    .withFrequencyPenalty(0.5f)
+                    .withPresencePenalty(0.3f)
+                    .withMaxTokens(800)
+                    .build();
+        }
+        
+        // Default: balanced parameters
+        return OpenAiChatOptions.builder()
+                .withTemperature(0.7f)
+                .withMaxTokens(500)
+                .build();
+    }
+
+    private boolean containsStructuredDataKeywords(String input) {
+        return input.toLowerCase().matches(".*(json|extract|parse|structure).*");
+    }
+
+    private boolean containsCreativeKeywords(String input) {
+        return input.toLowerCase().matches(".*(creative|brainstorm|imagine|story).*");
+    }
+}
+</code></pre>
+</div>
+
+<h3>Technique 3: A/B Testing Parameters</h3>
+<p>Systematically test different parameter combinations to find optimal settings.</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class ABTestingService {
+
+    private final ChatClient chatClient;
+    private final Random random = new Random();
+
+    public String chatWithABTest(String message, String userId) {
+        // Assign users to test groups
+        boolean useVariantA = Math.abs(userId.hashCode()) % 2 == 0;
+        
+        OpenAiChatOptions options = useVariantA
+                ? getVariantA()  // Control group
+                : getVariantB(); // Test group
+        
+        String response = chatClient.prompt()
+                .user(message)
+                .options(options)
+                .call()
+                .content();
+        
+        // Log for analysis
+        logABTestResult(userId, useVariantA ? "A" : "B", message, response);
+        
+        return response;
+    }
+
+    private OpenAiChatOptions getVariantA() {
+        return OpenAiChatOptions.builder()
+                .withTemperature(0.7f)
+                .withMaxTokens(500)
+                .build();
+    }
+
+    private OpenAiChatOptions getVariantB() {
+        return OpenAiChatOptions.builder()
+                .withTemperature(0.8f)
+                .withFrequencyPenalty(0.3f)
+                .withMaxTokens(500)
+                .build();
+    }
+
+    private void logABTestResult(String userId, String variant, String input, String output) {
+        // Log to analytics system for later analysis
+    }
+}
+</code></pre>
+</div>
+
+<h3>Technique 4: Fallback Strategies</h3>
+<p>Implement fallback parameters when primary settings fail.</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class ResilientChatService {
+
+    private final ChatClient chatClient;
+
+    public String chatWithFallback(String message) {
+        try {
+            // Try with optimal parameters
+            return attemptChat(message, getPrimaryOptions());
+        } catch (Exception e) {
+            log.warn("Primary parameters failed, trying fallback", e);
+            try {
+                // Fallback to more conservative parameters
+                return attemptChat(message, getFallbackOptions());
+            } catch (Exception e2) {
+                log.error("Fallback also failed", e2);
+                return "I apologize, but I'm unable to process your request.";
+            }
+        }
+    }
+
+    private String attemptChat(String message, OpenAiChatOptions options) {
+        return chatClient.prompt()
+                .user(message)
+                .options(options)
+                .call()
+                .content();
+    }
+
+    private OpenAiChatOptions getPrimaryOptions() {
+        return OpenAiChatOptions.builder()
+                .withTemperature(0.8f)
+                .withMaxTokens(1000)
+                .build();
+    }
+
+    private OpenAiChatOptions getFallbackOptions() {
+        return OpenAiChatOptions.builder()
+                .withTemperature(0.5f)
+                .withMaxTokens(500)
+                .build();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Common Pitfalls and How to Avoid Them</h2>
+
+<h3>Pitfall 1: Over-Tuning on Small Datasets</h3>
+<p><strong>Problem:</strong> Optimizing parameters based on a handful of examples leads to overfitting.</p>
+<p><strong>Solution:</strong> Test with diverse, representative inputs. Maintain a test suite of at least 50-100 examples.</p>
+
+<h3>Pitfall 2: Ignoring Cost Implications</h3>
+<p><strong>Problem:</strong> Setting Max Tokens too high wastes money on unnecessary verbosity.</p>
+<p><strong>Solution:</strong> Monitor actual token usage and adjust Max Tokens to match real needs.</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class CostAwareService {
+
+    private final ChatClient chatClient;
+
+    public String chat(String message) {
+        var response = chatClient.prompt()
+                .user(message)
+                .options(OpenAiChatOptions.builder()
+                        .withTemperature(0.7f)
+                        .withMaxTokens(500)  // Reasonable limit
+                        .build())
+                .call()
+                .chatResponse();
+        
+        // Log actual usage
+        var usage = response.getMetadata().getUsage();
+        log.info("Tokens used: {} / {} max", 
+                usage.getTotalTokens(), 500);
+        
+        return response.getResult().getOutput().getContent();
+    }
+}
+</code></pre>
+</div>
+
+<h3>Pitfall 3: Not Handling Model Updates</h3>
+<p><strong>Problem:</strong> Model providers update models, changing how parameters affect output.</p>
+<p><strong>Solution:</strong> Version your parameter configurations and test when models update.</p>
+
+<div class="code-block">
+<pre><code>@Configuration
+public class ModelVersionConfig {
+
+    @Value("${llm.model.version:gpt-4}")
+    private String modelVersion;
+
+    @Bean
+    public OpenAiChatOptions defaultOptions() {
+        // Parameters tuned for specific model version
+        return switch (modelVersion) {
+            case "gpt-4" -> OpenAiChatOptions.builder()
+                    .withModel("gpt-4")
+                    .withTemperature(0.7f)
+                    .build();
+            case "gpt-4-turbo" -> OpenAiChatOptions.builder()
+                    .withModel("gpt-4-turbo")
+                    .withTemperature(0.6f)  // Adjusted for turbo
+                    .build();
+            default -> throw new IllegalArgumentException("Unknown model: " + modelVersion);
+        };
+    }
+}
+</code></pre>
+</div>
+
+<h3>Pitfall 4: Forgetting About Latency</h3>
+<p><strong>Problem:</strong> High Max Tokens increases response time, degrading user experience.</p>
+<p><strong>Solution:</strong> Balance completeness with responsiveness. Consider streaming for long responses.</p>
+
+<h2>Production Checklist</h2>
+<ul>
+    <li>✓ Parameters documented with rationale</li>
+    <li>✓ Tested with diverse, representative inputs</li>
+    <li>✓ Logging implemented for parameter tracking</li>
+    <li>✓ Cost monitoring in place</li>
+    <li>✓ Error handling and fallbacks configured</li>
+    <li>✓ A/B testing framework ready (if applicable)</li>
+    <li>✓ Model version tracked and documented</li>
+    <li>✓ Performance metrics defined and monitored</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

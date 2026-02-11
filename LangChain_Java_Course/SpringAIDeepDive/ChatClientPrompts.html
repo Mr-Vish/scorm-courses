@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>ChatClient and Prompt Engineering</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>ChatClient and Prompt Engineering</h1>
+
+<h2>The ChatClient API</h2>
+<p><strong>ChatClient</strong> is Spring AI's fluent API for building conversational applications. It provides a clean, builder-style interface for constructing prompts and managing conversations.</p>
+
+<h2>Creating a ChatClient</h2>
+<div class="code-block">
+<pre><code>@RestController
+public class ChatController {
+    
+    private final ChatClient chatClient;
+    
+    public ChatController(ChatClient.Builder builder) {
+        this.chatClient = builder
+            .defaultSystem("You are a helpful Java programming assistant")
+            .build();
+    }
+    
+    @PostMapping("/chat")
+    public String chat(@RequestBody String message) {
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Prompt Templates</h2>
+<p>Use templates for dynamic prompt construction:</p>
+
+<div class="code-block">
+<pre><code>@Service
+public class TranslationService {
+    
+    private final ChatClient chatClient;
+    
+    public TranslationService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+    
+    public String translate(String text, String targetLanguage) {
+        return chatClient.prompt()
+            .user(u -&gt; u.text("""
+                Translate the following text to {language}:
+                {text}
+                """)
+                .param("language", targetLanguage)
+                .param("text", text))
+            .call()
+            .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Structured Outputs</h2>
+<p>Parse responses into Java objects:</p>
+
+<div class="code-block">
+<pre><code>public record MovieReview(
+    String title,
+    int rating,
+    String summary,
+    List&lt;String&gt; pros,
+    List&lt;String&gt; cons
+) {}
+
+@Service
+public class ReviewService {
+    
+    private final ChatClient chatClient;
+    
+    public ReviewService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+    
+    public MovieReview analyzeReview(String reviewText) {
+        return chatClient.prompt()
+            .user("Analyze this movie review: " + reviewText)
+            .call()
+            .entity(MovieReview.class);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Streaming Responses</h2>
+<div class="code-block">
+<pre><code>@GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public Flux&lt;String&gt; streamChat(@RequestParam String message) {
+    return chatClient.prompt()
+        .user(message)
+        .stream()
+        .content();
+}
+</code></pre>
+</div>
+
+<h2>Function Calling</h2>
+<div class="code-block">
+<pre><code>@Component
+public class WeatherService {
+    
+    @Tool(description = "Get current weather for a city")
+    public String getWeather(String city) {
+        return "Weather in " + city + ": Sunny, 22°C";
+    }
+}
+
+@RestController
+public class WeatherController {
+    
+    private final ChatClient chatClient;
+    
+    public WeatherController(ChatClient.Builder builder, WeatherService weatherService) {
+        this.chatClient = builder
+            .defaultFunctions("getWeather")
+            .build();
+    }
+    
+    @PostMapping("/weather-chat")
+    public String chat(@RequestBody String message) {
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Conversation Memory</h2>
+<div class="code-block">
+<pre><code>@Service
+public class ConversationalService {
+    
+    private final ChatClient chatClient;
+    private final Map&lt;String, List&lt;Message&gt;&gt; conversations = new ConcurrentHashMap&lt;&gt;();
+    
+    public ConversationalService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+    
+    public String chat(String sessionId, String userMessage) {
+        List&lt;Message&gt; history = conversations.computeIfAbsent(
+            sessionId, 
+            k -&gt; new ArrayList&lt;&gt;()
+        );
+        
+        history.add(new UserMessage(userMessage));
+        
+        String response = chatClient.prompt()
+            .messages(history)
+            .call()
+            .content();
+        
+        history.add(new AssistantMessage(response));
+        
+        return response;
+    }
+}
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Reuse ChatClient:</strong> Create once and reuse across requests</li>
+    <li><strong>Set System Messages:</strong> Define AI behavior upfront</li>
+    <li><strong>Use Templates:</strong> Parameterize prompts for flexibility</li>
+    <li><strong>Handle Errors:</strong> Implement retry logic and fallbacks</li>
+    <li><strong>Stream When Possible:</strong> Improve user experience with streaming</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

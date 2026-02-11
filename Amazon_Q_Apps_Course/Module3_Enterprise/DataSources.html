@@ -1,0 +1,274 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Data Sources and Enterprise Integration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+
+
+</head>
+<body>
+<h1>Module 3: Enterprise Integration and Governance</h1>
+<h2>Data Sources and Enterprise Integration</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will:</p>
+<ul>
+<li>Understand how Q Apps integrates with enterprise data sources</li>
+<li>Learn governance and security frameworks for organizational deployment</li>
+<li>Master sharing and publishing strategies for Q App libraries</li>
+<li>Recognize the advantages and limitations of the Q Apps platform</li>
+</ul>
+
+<h2>Understanding Data Source Integration</h2>
+<p>Amazon Q Apps' power derives from its ability to access and process information from diverse enterprise data sources. Unlike standalone applications that require custom integrations, Q Apps inherits all data connections configured in the parent Amazon Q Business environment. This architectural approach provides significant advantages in terms of security, governance, and ease of use.</p>
+
+<h2>Supported Data Source Categories</h2>
+
+<h3>Document Repositories</h3>
+<p>Q Apps can access structured and unstructured documents from various storage systems:</p>
+
+<h3>Amazon S3 Buckets</h3>
+<p><strong>Supported Content:</strong> PDFs, Word documents, Excel spreadsheets, PowerPoint presentations, text files, HTML files</p>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Policy and procedure documentation</li>
+<li>Product specifications and technical documentation</li>
+<li>Training materials and knowledge base articles</li>
+<li>Historical reports and analysis documents</li>
+</ul>
+<p><strong>Configuration Considerations:</strong></p>
+<ul>
+<li>Bucket structure and folder organization affect search effectiveness</li>
+<li>Metadata tagging improves content discoverability</li>
+<li>Access controls at the bucket level are inherited by Q Apps</li>
+</ul>
+
+<h3>Microsoft SharePoint</h3>
+<p><strong>Supported Content:</strong> SharePoint sites, document libraries, lists, pages</p>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Departmental knowledge repositories</li>
+<li>Project documentation and collaboration spaces</li>
+<li>Corporate communications and announcements</li>
+<li>Workflow-related documents and forms</li>
+</ul>
+<p><strong>Configuration Considerations:</strong></p>
+<ul>
+<li>Site permissions determine user access through Q Apps</li>
+<li>Document versioning is respected in queries</li>
+<li>Metadata columns can be leveraged for filtering</li>
+</ul>
+
+<h3>Confluence</h3>
+<p><strong>Supported Content:</strong> Confluence spaces, pages, attachments, comments</p>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Technical documentation and runbooks</li>
+<li>Product requirements and specifications</li>
+<li>Team wikis and knowledge bases</li>
+<li>Meeting notes and decision logs</li>
+</ul>
+<p><strong>Configuration Considerations:</strong></p>
+<ul>
+<li>Space permissions control access</li>
+<li>Page hierarchy affects context understanding</li>
+<li>Labels and tags improve search relevance</li>
+</ul>
+
+<h2>Enterprise Application Integrations</h2>
+
+<h3>Salesforce</h3>
+<p><strong>Accessible Data:</strong> Knowledge articles, case histories, account information, opportunity data</p>
+<p><strong>Q Apps Use Cases:</strong></p>
+<ul>
+<li>Customer history lookup for support agents</li>
+<li>Competitive intelligence gathering from opportunity notes</li>
+<li>Best practice retrieval from knowledge base</li>
+<li>Account research for sales preparation</li>
+</ul>
+
+<h3>ServiceNow</h3>
+<p><strong>Accessible Data:</strong> Knowledge base articles, incident records, change requests, service catalog</p>
+<p><strong>Q Apps Use Cases:</strong></p>
+<ul>
+<li>Troubleshooting guide generation</li>
+<li>Incident pattern analysis</li>
+<li>Change impact assessment</li>
+<li>Service request automation</li>
+</ul>
+
+<h3>Jira</h3>
+<p><strong>Accessible Data:</strong> Project documentation, issue descriptions, comments, attachments</p>
+<p><strong>Q Apps Use Cases:</strong></p>
+<ul>
+<li>Project status summarization</li>
+<li>Technical debt analysis</li>
+<li>Sprint retrospective preparation</li>
+<li>Bug pattern identification</li>
+</ul>
+
+<h2>Data Access and Security Model</h2>
+
+<h3>Inheritance-Based Access Control</h3>
+<p>Q Apps implements a security model where data access permissions are inherited from source systems:</p>
+
+<h3>User-Level Permissions</h3>
+<p><strong>Principle:</strong> Users can only access data through Q Apps that they could access directly in source systems.</p>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li>Q Business authenticates users against corporate identity systems (Active Directory, Okta, etc.)</li>
+<li>When a Q App queries data, the query executes with the user's credentials</li>
+<li>Source system permissions are evaluated in real-time</li>
+<li>Results are filtered based on user access rights</li>
+</ul>
+<p><strong>Example Scenario:</strong></p>
+<blockquote>
+A Q App searches for contract documents. User A has access to all contracts, while User B only has access to contracts for their region. When both users run the same Q App with the same inputs, User A sees all relevant contracts while User B sees only regional contracts.
+</blockquote>
+
+<h3>Data Source Scoping</h3>
+<p>Q Apps can be configured to query specific data sources rather than all available sources:</p>
+<ul>
+<li><strong>All Sources:</strong> Query across all connected repositories (default)</li>
+<li><strong>Specific Sources:</strong> Limit queries to designated repositories</li>
+<li><strong>Source Categories:</strong> Query only certain types of sources (e.g., only document repositories, not databases)</li>
+</ul>
+
+<h3>Sensitive Data Handling</h3>
+<p>Organizations can implement additional controls for sensitive data:</p>
+<ul>
+<li><strong>Data Classification Tags:</strong> Mark sensitive documents with classification levels</li>
+<li><strong>Query Filtering:</strong> Automatically exclude highly sensitive data from Q Apps queries</li>
+<li><strong>Audit Logging:</strong> Track all data access through Q Apps for compliance</li>
+<li><strong>Redaction Rules:</strong> Automatically redact specific data types (SSN, credit cards) from results</li>
+</ul>
+
+<h2>Query Behavior and Data Retrieval</h2>
+
+<h3>How Q Apps Queries Work</h3>
+<p>When a Q App executes a query card:</p>
+<ol>
+<li><strong>Query Formulation:</strong> The app constructs a query by inserting user inputs into the query template</li>
+<li><strong>Authentication:</strong> The query is executed with the current user's credentials</li>
+<li><strong>Source Search:</strong> Q Business searches configured data sources using semantic search</li>
+<li><strong>Permission Filtering:</strong> Results are filtered based on user access rights</li>
+<li><strong>Relevance Ranking:</strong> Results are ranked by relevance to the query</li>
+<li><strong>Context Assembly:</strong> Top results are assembled as context for response generation</li>
+<li><strong>Response Generation:</strong> The AI generates a response based on retrieved context</li>
+<li><strong>Citation Inclusion:</strong> Source documents are cited in the response</li>
+</ol>
+
+<h3>Semantic Search Capabilities</h3>
+<p>Q Apps uses semantic search rather than keyword matching:</p>
+<ul>
+<li><strong>Concept Understanding:</strong> Understands the meaning of queries, not just keywords</li>
+<li><strong>Synonym Recognition:</strong> Recognizes related terms and concepts</li>
+<li><strong>Context Awareness:</strong> Considers document context and relationships</li>
+<li><strong>Multi-Language Support:</strong> Can search across documents in different languages</li>
+</ul>
+
+<h3>Real-Time vs. Indexed Data</h3>
+<p><strong>Indexing Process:</strong></p>
+<ul>
+<li>Data sources are crawled and indexed on a schedule (hourly, daily, or custom)</li>
+<li>New or modified documents are detected and re-indexed</li>
+<li>Deleted documents are removed from the index</li>
+</ul>
+<p><strong>Implications for Q Apps:</strong></p>
+<ul>
+<li>Q Apps query the index, not live source systems</li>
+<li>Very recent changes may not appear immediately</li>
+<li>Index freshness depends on crawl schedule configuration</li>
+<li>Critical use cases may require more frequent indexing</li>
+</ul>
+
+<h2>Data Source Configuration Best Practices</h2>
+
+<h3>Organizing Data for Q Apps Success</h3>
+
+<h3>1. Logical Repository Structure</h3>
+<p><strong>Recommendation:</strong> Organize documents by topic, department, or function rather than by date or arbitrary folders.</p>
+<p><strong>Rationale:</strong> Semantic search works better when related content is grouped together.</p>
+
+<h3>2. Comprehensive Metadata</h3>
+<p><strong>Recommendation:</strong> Add descriptive metadata to documents including title, description, author, department, and topic tags.</p>
+<p><strong>Rationale:</strong> Metadata improves search relevance and enables filtering.</p>
+
+<h3>3. Document Quality Standards</h3>
+<p><strong>Recommendation:</strong> Establish standards for document completeness, accuracy, and currency.</p>
+<p><strong>Rationale:</strong> Q Apps can only provide quality results if source documents are high quality.</p>
+
+<h3>4. Access Control Hygiene</h3>
+<p><strong>Recommendation:</strong> Regularly review and update access permissions on source systems.</p>
+<p><strong>Rationale:</strong> Incorrect permissions lead to either over-sharing or under-sharing through Q Apps.</p>
+
+<h3>5. Deprecation and Archival</h3>
+<p><strong>Recommendation:</strong> Remove or archive outdated documents rather than leaving them in active repositories.</p>
+<p><strong>Rationale:</strong> Outdated content can lead to incorrect or confusing Q Apps results.</p>
+
+<h2>Troubleshooting Data Access Issues</h2>
+
+<h3>Common Issues and Solutions</h3>
+
+<h3>Issue: Q App Returns No Results</h3>
+<p><strong>Possible Causes:</strong></p>
+<ul>
+<li>User lacks permissions to relevant documents</li>
+<li>Query is too specific or uses incorrect terminology</li>
+<li>Relevant documents haven't been indexed yet</li>
+<li>Data source connection is misconfigured</li>
+</ul>
+<p><strong>Troubleshooting Steps:</strong></p>
+<ul>
+<li>Verify user has direct access to expected documents in source system</li>
+<li>Test with broader query terms</li>
+<li>Check data source sync status and last crawl time</li>
+<li>Review Q Business data source configuration</li>
+</ul>
+
+<h3>Issue: Q App Returns Irrelevant Results</h3>
+<p><strong>Possible Causes:</strong></p>
+<ul>
+<li>Query is too broad or ambiguous</li>
+<li>Source documents lack clear structure or metadata</li>
+<li>Multiple documents use similar terminology for different concepts</li>
+</ul>
+<p><strong>Troubleshooting Steps:</strong></p>
+<ul>
+<li>Refine query with more specific terms and context</li>
+<li>Limit query to specific data sources</li>
+<li>Improve source document metadata and organization</li>
+<li>Use query scoping techniques to narrow results</li>
+</ul>
+
+<h3>Issue: Q App Results Are Outdated</h3>
+<p><strong>Possible Causes:</strong></p>
+<ul>
+<li>Data source crawl schedule is too infrequent</li>
+<li>Recent document changes haven't been indexed</li>
+<li>Caching is serving old results</li>
+</ul>
+<p><strong>Troubleshooting Steps:</strong></p>
+<ul>
+<li>Check last successful crawl timestamp</li>
+<li>Trigger manual data source sync if available</li>
+<li>Adjust crawl frequency for time-sensitive sources</li>
+<li>Verify document modification dates in source system</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Q Apps inherits data source connections from Q Business, supporting document repositories and enterprise applications</li>
+<li>Security model ensures users only access data they're authorized to view in source systems</li>
+<li>Semantic search enables concept-based retrieval rather than keyword matching</li>
+<li>Data source organization, metadata, and quality directly impact Q Apps effectiveness</li>
+<li>Understanding query behavior and indexing helps troubleshoot data access issues</li>
+<li>Best practices for data organization improve Q Apps results across the organization</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

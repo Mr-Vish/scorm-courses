@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding GenAI Cost Fundamentals</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: Understanding GenAI Costs</h1>
+<h2>GenAI Cost Fundamentals and Pricing Models</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will learn to:</p>
+<ul>
+<li>Understand the fundamental differences between GenAI costs and traditional cloud computing costs</li>
+<li>Analyze token-based pricing models across AWS GenAI services</li>
+<li>Identify hidden cost drivers in GenAI applications</li>
+<li>Calculate and estimate GenAI workload costs accurately</li>
+<li>Recognize cost patterns across different use cases and deployment scenarios</li>
+</ul>
+
+<h2>The GenAI Cost Paradigm Shift</h2>
+<p>Traditional cloud computing costs follow a relatively predictable pattern: compute instances, storage volumes, network transfer, and managed services. Organizations have developed mature practices for estimating and optimizing these costs over the past two decades. However, Generative AI introduces a fundamentally different cost structure that requires new mental models and optimization strategies.</p>
+
+<p>In GenAI workloads, the primary cost driver is <strong>inference</strong> - the process of generating outputs from trained models. Unlike traditional applications where you pay for infrastructure regardless of utilization, GenAI services typically charge based on actual usage measured in tokens. This consumption-based model means costs scale directly with application activity, making cost optimization both more critical and more achievable.</p>
+
+<h3>Key Differences from Traditional Cloud Costs</h3>
+<table>
+<tr>
+<th>Aspect</th>
+<th>Traditional Cloud</th>
+<th>GenAI Workloads</th>
+</tr>
+<tr>
+<td class="rowheader">Primary Cost Driver</td>
+<td>Compute instance hours</td>
+<td>Token consumption (input + output)</td>
+</tr>
+<tr>
+<td class="rowheader">Cost Predictability</td>
+<td>High (fixed instance costs)</td>
+<td>Variable (depends on usage patterns)</td>
+</tr>
+<tr>
+<td class="rowheader">Optimization Focus</td>
+<td>Right-sizing, reserved capacity</td>
+<td>Token efficiency, model selection, caching</td>
+</tr>
+<tr>
+<td class="rowheader">Idle Cost</td>
+<td>Significant (running instances)</td>
+<td>Minimal (pay per request)</td>
+</tr>
+<tr>
+<td class="rowheader">Scaling Impact</td>
+<td>Linear with infrastructure</td>
+<td>Linear with token volume</td>
+</tr>
+</table>
+
+<h2>Token-Based Pricing Explained</h2>
+<p>The foundation of GenAI pricing is the <strong>token</strong> - a unit of text processing that represents approximately 4 characters or 0.75 words in English. When you send a request to a language model, both your input (prompt) and the model's output (completion) are measured in tokens. Understanding token consumption is essential for cost management.</p>
+
+<h3>Token Calculation Fundamentals</h3>
+<p>Tokens are not simply words or characters. The tokenization process breaks text into subword units based on the model's vocabulary. For example:</p>
+<ul>
+<li>"Hello world" = approximately 2 tokens</li>
+<li>"Artificial Intelligence" = approximately 3-4 tokens</li>
+<li>"Cost optimization strategies" = approximately 4-5 tokens</li>
+<li>Special characters, code, and non-English text may consume more tokens</li>
+</ul>
+
+<p>Most AWS GenAI services provide token counting utilities or APIs to help you estimate consumption before making requests. Accurate token estimation is crucial for cost forecasting and budget management.</p>
+
+<h2>AWS Bedrock Pricing Models</h2>
+<p>AWS Bedrock offers access to multiple foundation models, each with distinct pricing structures. Understanding these differences enables informed model selection based on cost-performance requirements.</p>
+
+<h3>Anthropic Claude Models</h3>
+<table>
+<tr>
+<th>Model</th>
+<th>Input Cost (per 1M tokens)</th>
+<th>Output Cost (per 1M tokens)</th>
+<th>Use Case</th>
+</tr>
+<tr>
+<td class="rowheader">Claude 3.5 Sonnet</td>
+<td>$3.00</td>
+<td>$15.00</td>
+<td>Balanced performance for most applications</td>
+</tr>
+<tr>
+<td class="rowheader">Claude 3.5 Haiku</td>
+<td>$0.80</td>
+<td>$4.00</td>
+<td>Fast, cost-effective for simple tasks</td>
+</tr>
+<tr>
+<td class="rowheader">Claude 3 Opus</td>
+<td>$15.00</td>
+<td>$75.00</td>
+<td>Complex reasoning, highest quality</td>
+</tr>
+</table>
+
+<h3>Amazon Titan Models</h3>
+<table>
+<tr>
+<th>Model</th>
+<th>Input Cost (per 1M tokens)</th>
+<th>Output Cost (per 1M tokens)</th>
+<th>Characteristics</th>
+</tr>
+<tr>
+<td class="rowheader">Titan Text Express</td>
+<td>$0.20</td>
+<td>$0.60</td>
+<td>Most cost-effective, suitable for high-volume applications</td>
+</tr>
+<tr>
+<td class="rowheader">Titan Text Lite</td>
+<td>$0.15</td>
+<td>$0.20</td>
+<td>Ultra-low cost for simple text tasks</td>
+</tr>
+<tr>
+<td class="rowheader">Titan Embeddings</td>
+<td>$0.10</td>
+<td>N/A</td>
+<td>Vector generation for RAG applications</td>
+</tr>
+</table>
+
+<h3>Critical Pricing Observations</h3>
+<ul>
+<li><strong>Output tokens cost significantly more than input tokens</strong> - typically 3-5x higher. This asymmetry makes output length optimization crucial.</li>
+<li><strong>Model capability correlates with cost</strong> - more sophisticated models like Claude Opus cost 10-20x more than simpler models.</li>
+<li><strong>Price differences are substantial</strong> - choosing Titan Express over Claude Opus can reduce costs by 98% for suitable use cases.</li>
+</ul>
+
+<h2>Hidden Cost Drivers</h2>
+<p>Beyond the obvious per-token charges, several hidden factors can dramatically impact GenAI costs. Recognizing these drivers is essential for accurate budgeting and optimization.</p>
+
+<h3>System Prompts and Instructions</h3>
+<p>Many GenAI applications use system prompts to provide context, instructions, or personality to the model. These prompts are sent with <strong>every single request</strong>, consuming input tokens repeatedly. A 500-token system prompt sent 1 million times consumes 500 million tokens - potentially costing hundreds or thousands of dollars.</p>
+
+<p><strong>Cost Impact Example:</strong> A customer service chatbot with a 400-token system prompt handling 100,000 conversations daily:</p>
+<ul>
+<li>Daily system prompt tokens: 40 million</li>
+<li>Monthly system prompt tokens: 1.2 billion</li>
+<li>Monthly cost (Claude Sonnet): $3,600 just for system prompts</li>
+</ul>
+
+<h3>Conversation History</h3>
+<p>Maintaining context in multi-turn conversations requires sending previous messages with each new request. As conversations grow, token consumption increases exponentially. A 10-turn conversation might send 5,000+ tokens of history with each subsequent message.</p>
+
+<h3>Retrieval-Augmented Generation (RAG) Context</h3>
+<p>RAG applications retrieve relevant documents and include them in prompts. Each retrieved document adds to input token count. Retrieving 5 documents of 500 tokens each adds 2,500 tokens per request - potentially doubling or tripling costs compared to non-RAG implementations.</p>
+
+<h3>Retry Logic and Error Handling</h3>
+<p>Failed requests, timeouts, and retries still consume tokens and incur costs. Applications with aggressive retry logic or poor error handling can waste significant resources on failed attempts.</p>
+
+<h3>Extended Thinking and Chain-of-Thought</h3>
+<p>Some models support "thinking" or reasoning steps that generate intermediate tokens before the final answer. These thinking tokens are billed at output rates, potentially adding 50-200% to response costs for complex reasoning tasks.</p>
+
+<h2>Cost Estimation Framework</h2>
+<p>Accurate cost estimation requires understanding your application's token consumption patterns. Use this framework to project GenAI costs:</p>
+
+<h3>Basic Cost Formula</h3>
+<blockquote>
+Monthly Cost = (Daily Requests × Average Input Tokens × Input Price) + (Daily Requests × Average Output Tokens × Output Price) × 30 days
+</blockquote>
+
+<h3>Comprehensive Cost Estimation</h3>
+<p>For production applications, include all token sources:</p>
+<ul>
+<li><strong>Base prompt tokens:</strong> User query or input</li>
+<li><strong>System prompt tokens:</strong> Instructions sent with every request</li>
+<li><strong>Context tokens:</strong> Conversation history, RAG documents, examples</li>
+<li><strong>Output tokens:</strong> Model-generated response</li>
+<li><strong>Overhead tokens:</strong> Retries, error handling, validation</li>
+</ul>
+
+<h3>Real-World Estimation Example</h3>
+<p>Consider a document summarization service using Claude 3.5 Sonnet:</p>
+<ul>
+<li>Daily requests: 10,000</li>
+<li>Average document size: 3,000 tokens</li>
+<li>System prompt: 200 tokens</li>
+<li>Average summary output: 300 tokens</li>
+<li>Retry rate: 5% (adds 5% to all costs)</li>
+</ul>
+
+<p><strong>Calculation:</strong></p>
+<ul>
+<li>Input tokens per request: 3,200 (document + system prompt)</li>
+<li>Output tokens per request: 300</li>
+<li>Daily input tokens: 32 million</li>
+<li>Daily output tokens: 3 million</li>
+<li>Monthly input cost: 32M × 30 × $3.00 / 1M = $2,880</li>
+<li>Monthly output cost: 3M × 30 × $15.00 / 1M = $1,350</li>
+<li>Retry overhead (5%): $212</li>
+<li><strong>Total monthly cost: $4,442</strong></li>
+</ul>
+
+<h2>Cost Patterns Across Use Cases</h2>
+<p>Different GenAI applications exhibit distinct cost patterns. Understanding these patterns helps set realistic budgets and identify optimization opportunities.</p>
+
+<h3>High-Volume, Low-Complexity Use Cases</h3>
+<p>Examples: Content classification, sentiment analysis, simple Q&A</p>
+<ul>
+<li>Characteristics: Many requests, short inputs/outputs, simple reasoning</li>
+<li>Cost profile: Input-dominated, benefits from cheaper models</li>
+<li>Optimization focus: Model selection, caching, batch processing</li>
+</ul>
+
+<h3>Low-Volume, High-Complexity Use Cases</h3>
+<p>Examples: Legal document analysis, complex code generation, research synthesis</p>
+<ul>
+<li>Characteristics: Fewer requests, large inputs, long outputs, deep reasoning</li>
+<li>Cost profile: Output-dominated, requires capable models</li>
+<li>Optimization focus: Output length control, prompt efficiency, result caching</li>
+</ul>
+
+<h3>Conversational Applications</h3>
+<p>Examples: Chatbots, virtual assistants, customer support</p>
+<ul>
+<li>Characteristics: Multi-turn interactions, growing context, variable complexity</li>
+<li>Cost profile: Context accumulation drives costs over conversation length</li>
+<li>Optimization focus: History summarization, context pruning, session management</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>GenAI costs are fundamentally different from traditional cloud costs, driven by token consumption rather than infrastructure</li>
+<li>Token-based pricing varies significantly across models, with output tokens costing 3-5x more than input tokens</li>
+<li>Hidden cost drivers like system prompts, conversation history, and RAG context can dominate total costs</li>
+<li>Accurate cost estimation requires understanding all token sources and usage patterns</li>
+<li>Different use cases have distinct cost profiles requiring tailored optimization strategies</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

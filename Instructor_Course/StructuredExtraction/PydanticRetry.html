@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pydantic Models and Retry Logic</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pydantic Models and Retry Logic</h1>
+
+<h2>Introduction to Instructor</h2>
+<p>Instructor is a lightweight Python library that transforms how developers interact with Large Language Models. Instead of parsing unstructured text responses, Instructor patches LLM clients to return validated, structured data using Pydantic models. This approach eliminates brittle string parsing and provides automatic validation with intelligent retry mechanisms.</p>
+
+<h2>Why Instructor?</h2>
+<p>Traditional LLM integration requires manual parsing of text responses, which is error-prone and difficult to maintain. Instructor solves this by:</p>
+<ul>
+    <li><strong>Type Safety:</strong> Define schemas once, get validated objects automatically</li>
+    <li><strong>Automatic Validation:</strong> Pydantic validates all fields with custom rules</li>
+    <li><strong>Intelligent Retries:</strong> Failed validations are sent back to the LLM for correction</li>
+    <li><strong>Provider Agnostic:</strong> Works with OpenAI, Anthropic, Google, Mistral, and more</li>
+</ul>
+
+<h2>Installation and Setup</h2>
+<div class="code-block">
+<pre><code># Install Instructor with OpenAI support
+pip install instructor openai
+
+# For Anthropic Claude
+pip install instructor anthropic
+
+# For multiple providers
+pip install instructor openai anthropic google-generativeai</code></pre>
+</div>
+
+<h2>Basic Usage</h2>
+<div class="code-block">
+<pre><code>import instructor
+from openai import OpenAI
+from pydantic import BaseModel, Field
+
+# Patch the OpenAI client
+client = instructor.from_openai(OpenAI())
+
+# Define your output schema
+class ContactInfo(BaseModel):
+    name: str = Field(description="Full name of the person")
+    email: str = Field(description="Email address")
+    phone: str = Field(description="Phone number")
+    company: str = Field(description="Company name")
+
+# Extract structured data
+contact = client.chat.completions.create(
+    model="gpt-4o-mini",
+    response_model=ContactInfo,
+    messages=[{
+        "role": "user",
+        "content": "John Smith from Acme Corp called. Reach him at john@acme.com or 555-0123."
+    }],
+)
+
+print(contact.name)    # "John Smith"
+print(contact.email)   # "john@acme.com"
+print(contact.company) # "Acme Corp"</code></pre>
+</div>
+
+<h2>Validation with Pydantic</h2>
+<div class="code-block">
+<pre><code>from pydantic import BaseModel, Field, field_validator
+
+class Invoice(BaseModel):
+    vendor: str
+    amount: float = Field(gt=0, description="Invoice amount in USD")
+    currency: str = Field(default="USD", pattern="^[A-Z]{3}$")
+    items: list[str] = Field(min_length=1)
+
+    @field_validator("vendor")
+    @classmethod
+    def vendor_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Vendor name cannot be empty")
+        return v.strip()
+
+# Instructor enforces all Pydantic validations
+invoice = client.chat.completions.create(
+    model="gpt-4o-mini",
+    response_model=Invoice,
+    messages=[{"role": "user", "content": invoice_text}],
+)</code></pre>
+</div>
+
+<h2>Automatic Retries</h2>
+<table>
+    <tr><th>Feature</th><th>Description</th><th>Default</th></tr>
+    <tr><td>max_retries</td><td>Number of retry attempts on validation failure</td><td>1</td></tr>
+    <tr><td>Validation feedback</td><td>Error messages are sent back to the LLM for correction</td><td>Enabled</td></tr>
+    <tr><td>Retry modes</td><td>Simple retry or retry with context enrichment</td><td>Simple</td></tr>
+</table>
+
+<div class="code-block">
+<pre><code># Enable retries with validation feedback
+contact = client.chat.completions.create(
+    model="gpt-4o-mini",
+    response_model=ContactInfo,
+    max_retries=3,  # Retry up to 3 times on validation failure
+    messages=[{"role": "user", "content": messy_text}],
+)
+# If the first attempt fails validation, Instructor sends the error
+# back to the LLM so it can fix its response</code></pre>
+</div>
+
+<h2>Supported Providers</h2>
+<table>
+    <tr><th>Provider</th><th>Function</th><th>Models</th><th>Streaming Support</th></tr>
+    <tr><td>OpenAI</td><td><code>instructor.from_openai()</code></td><td>GPT-4, GPT-3.5, GPT-4o</td><td>Yes</td></tr>
+    <tr><td>Anthropic</td><td><code>instructor.from_anthropic()</code></td><td>Claude 3 (Opus, Sonnet, Haiku)</td><td>Yes</td></tr>
+    <tr><td>Google</td><td><code>instructor.from_gemini()</code></td><td>Gemini Pro, Gemini Ultra</td><td>Yes</td></tr>
+    <tr><td>Mistral</td><td><code>instructor.from_mistral()</code></td><td>Mistral Large, Medium, Small</td><td>Yes</td></tr>
+    <tr><td>LiteLLM</td><td><code>instructor.from_litellm()</code></td><td>Any model via proxy</td><td>Yes</td></tr>
+</table>
+
+<h2>Real-World Use Cases</h2>
+<ul>
+    <li><strong>Data Extraction:</strong> Extract structured information from documents, emails, or web pages</li>
+    <li><strong>Form Filling:</strong> Automatically populate forms from natural language input</li>
+    <li><strong>Entity Recognition:</strong> Identify and classify entities with custom schemas</li>
+    <li><strong>Content Moderation:</strong> Classify and tag content with validated categories</li>
+    <li><strong>API Integration:</strong> Transform natural language into API calls with validated parameters</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

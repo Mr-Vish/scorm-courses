@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Retrieval Optimization and Re-ranking</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Retrieval Optimization and Re-ranking</h1>
+
+
+<h2>Improving Retrieval Quality</h2>
+<p>Basic vector similarity search is often insufficient. Use these techniques to improve retrieval:</p>
+
+<h3>Hybrid Search</h3>
+<p>Combine vector similarity with keyword search (BM25) for better results:</p>
+<div class="code-block">
+<pre><code># Hybrid search: vector + keyword
+vector_results = vector_store.similarity_search(query_embedding, k=10)
+keyword_results = bm25_index.search(query, k=10)
+
+# Reciprocal Rank Fusion to merge results
+combined = reciprocal_rank_fusion(vector_results, keyword_results)
+top_results = combined[:5]</code></pre>
+</div>
+
+<h3>Query Transformation</h3>
+<p>Rewrite queries for better retrieval using Claude:</p>
+<div class="code-block">
+<pre><code># Use Claude to generate multiple search queries
+response = claude.messages.create(
+    model="claude-sonnet-4-20250514",
+    messages=[{
+        "role": "user",
+        "content": f"Generate 3 different search queries to find information about: {user_query}"
+    }]
+)
+# Search with each generated query and merge results</code></pre>
+</div>
+
+<h3>Re-ranking</h3>
+<p>After initial retrieval, use a cross-encoder or Claude to re-rank results by relevance:</p>
+<ul>
+    <li><strong>Cohere Rerank:</strong> Fast, purpose-built re-ranking model</li>
+    <li><strong>Claude Re-ranking:</strong> Use Claude to score relevance of each chunk</li>
+    <li><strong>Cross-encoder models:</strong> ms-marco-MiniLM for self-hosted re-ranking</li>
+</ul>
+
+<h2>Context Window Management</h2>
+<p>Claude supports up to 200K tokens of context. Strategies for optimal use:</p>
+<ul>
+    <li>Place most relevant chunks first (primacy bias)</li>
+    <li>Include 5-10 chunks for most queries (balance coverage vs noise)</li>
+    <li>Use summarization for very long retrieved documents</li>
+    <li>Track token usage to stay within budget</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

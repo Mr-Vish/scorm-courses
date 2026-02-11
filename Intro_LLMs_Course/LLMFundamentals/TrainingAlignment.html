@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Training, Fine-Tuning, and Alignment</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Training, Fine-Tuning, and Alignment</h1>
+
+<h2>The Three Stages of LLM Development</h2>
+<p>Creating a production-ready LLM involves three distinct stages, each serving a specific purpose in transforming raw neural networks into helpful, safe, and aligned AI assistants.</p>
+
+<table>
+    <tr><th>Stage</th><th>Purpose</th><th>Data Required</th><th>Duration</th></tr>
+    <tr>
+        <td class="rowheader">1. Pre-training</td>
+        <td>Learn language patterns, facts, and reasoning from massive text corpora</td>
+        <td>Trillions of tokens from web, books, code</td>
+        <td>Weeks to months on thousands of GPUs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">2. Supervised Fine-Tuning (SFT)</td>
+        <td>Learn to follow instructions and respond helpfully</td>
+        <td>Tens of thousands of instruction-response pairs</td>
+        <td>Days to weeks</td>
+    </tr>
+    <tr>
+        <td class="rowheader">3. Alignment (RLHF/RLAIF)</td>
+        <td>Align with human values: helpful, harmless, honest</td>
+        <td>Human or AI feedback on model outputs</td>
+        <td>Days to weeks</td>
+    </tr>
+</table>
+
+<h2>Stage 1: Pre-Training</h2>
+<p>Pre-training is the foundational stage where the model learns the structure and patterns of language by predicting the next token in sequences from massive datasets. The resulting base model can complete text but doesn't follow instructions well.</p>
+
+<h3>Pre-Training Data Scale</h3>
+<table>
+    <tr><th>Model</th><th>Training Tokens</th><th>Data Sources</th><th>Training Cost (Est.)</th></tr>
+    <tr>
+        <td class="rowheader">Llama 3 (70B)</td>
+        <td>15 trillion</td>
+        <td>Web, books, code, Wikipedia</td>
+        <td>$10-20 million</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GPT-4</td>
+        <td>~13 trillion (est.)</td>
+        <td>Web, books, code, licensed data</td>
+        <td>$100+ million (est.)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Gemini Ultra</td>
+        <td>Not disclosed</td>
+        <td>Web, books, code, multimodal data</td>
+        <td>$100+ million (est.)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Claude 3</td>
+        <td>Not disclosed</td>
+        <td>Web, books, code, filtered for safety</td>
+        <td>$50-100 million (est.)</td>
+    </tr>
+</table>
+
+<h3>Pre-Training Example</h3>
+<blockquote>
+<pre>
+# Input sequence during pre-training:
+"The capital of France is [MASK]"
+
+# Model learns to predict:
+"Paris" (with high probability)
+
+# This process repeats trillions of times across diverse text,
+# teaching the model grammar, facts, reasoning, and more
+</pre>
+</blockquote>
+
+<h2>Stage 2: Supervised Fine-Tuning (SFT)</h2>
+<p>SFT transforms the base model into an instruction-following assistant by training on curated examples of instructions and high-quality responses. This stage is crucial for making the model useful in real applications.</p>
+
+<h3>SFT Training Example</h3>
+<blockquote>
+<pre>
+# Instruction-Response Pair:
+Instruction: "Write a Python function to calculate factorial"
+
+Response: "Here's a Python function to calculate factorial:
+
+def factorial(n):
+    if n == 0 or n == 1:
+        return 1
+    return n * factorial(n - 1)
+
+# Example usage:
+print(factorial(5))  # Output: 120
+
+This recursive function handles the base case (0 or 1) 
+and recursively multiplies n by factorial(n-1)."
+
+# The model learns to respond helpfully to instructions
+</pre>
+</blockquote>
+
+<h2>Stage 3: Alignment (RLHF/RLAIF)</h2>
+<p>Alignment ensures the model behaves according to human values and preferences. Two main approaches exist:</p>
+
+<ul>
+    <li><strong>RLHF (Reinforcement Learning from Human Feedback):</strong> Humans rate model outputs, and the model learns to maximize human preference scores</li>
+    <li><strong>RLAIF (Reinforcement Learning from AI Feedback):</strong> Another AI system provides feedback, reducing the need for human labelers</li>
+</ul>
+
+<h3>RLHF Process</h3>
+<table>
+    <tr><th>Step</th><th>Description</th><th>Example</th></tr>
+    <tr>
+        <td class="rowheader">1. Generate Responses</td>
+        <td>Model generates multiple responses to the same prompt</td>
+        <td>4-8 different responses to "Explain quantum computing"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">2. Human Ranking</td>
+        <td>Humans rank responses by quality, helpfulness, safety</td>
+        <td>Response A &gt; Response C &gt; Response B &gt; Response D</td>
+    </tr>
+    <tr>
+        <td class="rowheader">3. Train Reward Model</td>
+        <td>Learn to predict human preferences</td>
+        <td>Reward model scores responses 0.0 to 1.0</td>
+    </tr>
+    <tr>
+        <td class="rowheader">4. Optimize Policy</td>
+        <td>Use reinforcement learning to maximize reward</td>
+        <td>Model learns to generate higher-scoring responses</td>
+    </tr>
+</table>
+
+<h2>Choosing the Right Approach</h2>
+<p>For most developers, you won't train LLMs from scratch. Instead, you'll choose between these approaches:</p>
+
+<table>
+    <tr><th>Approach</th><th>When to Use</th><th>Cost</th><th>Time to Deploy</th></tr>
+    <tr>
+        <td class="rowheader">Prompt Engineering</td>
+        <td>Most tasks - start here first</td>
+        <td>Free (API cost only)</td>
+        <td>Minutes to hours</td>
+    </tr>
+    <tr>
+        <td class="rowheader">RAG (Retrieval Augmented Generation)</td>
+        <td>Need access to specific/current data not in training</td>
+        <td>Moderate (embeddings + vector DB)</td>
+        <td>Days to weeks</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Fine-Tuning</td>
+        <td>Need consistent output format or domain-specific behavior</td>
+        <td>High (GPU compute + data prep)</td>
+        <td>Weeks to months</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Pre-Training</td>
+        <td>Building proprietary model with unique capabilities</td>
+        <td>Very High (millions of dollars)</td>
+        <td>Months to years</td>
+    </tr>
+</table>
+
+<h2>Model Families and Their Characteristics</h2>
+
+<h3>Anthropic Claude</h3>
+<ul>
+    <li><strong>Models:</strong> Claude 3 Opus/Sonnet/Haiku, Claude 3.5 Sonnet</li>
+    <li><strong>Strengths:</strong> Strong reasoning, safety, long context (200K tokens), excellent for coding</li>
+    <li><strong>Use Cases:</strong> Complex analysis, code generation, document processing</li>
+</ul>
+
+<h3>OpenAI GPT</h3>
+<ul>
+    <li><strong>Models:</strong> GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo</li>
+    <li><strong>Strengths:</strong> Wide ecosystem, function calling, vision capabilities, broad knowledge</li>
+    <li><strong>Use Cases:</strong> General-purpose applications, chatbots, content generation</li>
+</ul>
+
+<h3>Google Gemini</h3>
+<ul>
+    <li><strong>Models:</strong> Gemini 1.5 Pro/Flash, Gemini Nano</li>
+    <li><strong>Strengths:</strong> Multimodal native (text, images, video, audio), extremely long context (1M tokens)</li>
+    <li><strong>Use Cases:</strong> Multimodal applications, video analysis, long document processing</li>
+</ul>
+
+<h3>Meta Llama</h3>
+<ul>
+    <li><strong>Models:</strong> Llama 3 8B/70B/405B</li>
+    <li><strong>Strengths:</strong> Open-source, self-hostable, customizable, no API costs</li>
+    <li><strong>Use Cases:</strong> On-premise deployments, custom fine-tuning, research</li>
+</ul>
+
+<h3>Mistral</h3>
+<ul>
+    <li><strong>Models:</strong> Mistral 7B, Mixtral 8x7B, Mixtral 8x22B</li>
+    <li><strong>Strengths:</strong> Efficient open-source models, good performance-to-size ratio</li>
+    <li><strong>Use Cases:</strong> Resource-constrained environments, edge deployment</li>
+</ul>
+
+<h2>Fine-Tuning Example Use Case</h2>
+<blockquote>
+<pre>
+# Scenario: Customer support for a SaaS product
+
+# Without Fine-Tuning:
+Prompt: "User says: 'I can't log in.' Respond as support agent."
+Response: Generic troubleshooting steps
+
+# With Fine-Tuning on 1000+ support conversations:
+Prompt: "User says: 'I can't log in.'"
+Response: "I'd be happy to help! Let me check a few things:
+1. Are you seeing error code E401 or E403?
+2. Did you recently change your password?
+3. Try clearing cache: Settings &gt; Privacy &gt; Clear Data
+If issue persists, I'll escalate to our auth team."
+
+# Fine-tuned model learns company-specific responses and procedures
+</pre>
+</blockquote>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>LLM development involves three stages: pre-training, supervised fine-tuning, and alignment</li>
+    <li>Pre-training is expensive and time-consuming; most developers use pre-trained models</li>
+    <li>Start with prompt engineering before considering fine-tuning or RAG</li>
+    <li>Different model families have different strengths - choose based on your use case</li>
+    <li>Open-source models (Llama, Mistral) offer flexibility but require infrastructure</li>
+    <li>Closed-source models (GPT, Claude, Gemini) offer convenience and cutting-edge performance</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

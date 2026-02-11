@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Claude 3.5: Artifacts and Computer Use</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Claude 3.5: Artifacts and Computer Use</h1>
+<div class="container">
+<h2>Claude 3.5: Artifacts and Computer Use</h2>
+<p>Claude 3.5 Sonnet introduced groundbreaking features that push the boundaries of how we interact with AI. Two of the most significant are Artifacts and Computer Use. These features move Claude from being a simple chatbot to a collaborative workspace and an active agent capable of operating a computer.</p>
+
+<h3>Understanding Artifacts</h3>
+<p>Artifacts are a UI feature in the Claude web interface (and available for integration in custom apps) that allows Claude to generate and display content in a dedicated side-window. Instead of cluttering the chat with long blocks of code, diagrams, or documents, Claude creates an "Artifact" that you can view, edit, and interact with separately.</p>
+
+<h4>Types of Artifacts</h4>
+<p>Claude can create several types of Artifacts:</p>
+<ul>
+    <li><strong>Code Snippets:</strong> Scripts in various languages that you can copy or download.</li>
+    <li><strong>Websites/UIs:</strong> Claude can write HTML, CSS, and React code and show you a live preview of the resulting webpage.</li>
+    <li><strong>Diagrams:</strong> Using Mermaid.js, Claude can generate flowcharts, sequence diagrams, and mind maps.</li>
+    <li><strong>Documents:</strong> Long-form text, Markdown reports, or even legal drafts.</li>
+</ul>
+
+<h4>The Power of Iteration</h4>
+<p>Artifacts are designed for collaboration. You can ask Claude to "Make the header blue" or "Add a search bar to that React component," and Claude will update the Artifact in real-time. This creates a tight feedback loop for design and development tasks.</p>
+
+<h3>Computer Use (Public Beta)</h3>
+<p>Computer Use is an experimental capability where Claude can actually use a computer the way a human does: looking at a screen, moving a cursor, clicking buttons, and typing text. This is achieved by giving Claude access to a set of "computer tools" and providing it with screenshots of the desktop.</p>
+
+<h4>How Computer Use Works</h4>
+<ol>
+    <li><strong>Screenshots:</strong> The application takes a screenshot of the current screen and sends it to Claude.</li>
+    <li><strong>Reasoning:</strong> Claude analyzes the screenshot, identifies UI elements, and decides on the next action to achieve a goal.</li>
+    <li><strong>Action:</strong> Claude emits a tool call (e.g., <code>mouse_move</code>, <code>key_tap</code>, <code>left_click</code>).</li>
+    <li><strong>Execution:</strong> The application executes the action on the host machine.</li>
+    <li><strong>Observation:</strong> A new screenshot is taken, and the cycle repeats until the task is complete.</li>
+</ol>
+
+<h4>Use Cases for Computer Use</h4>
+<p>Computer Use is ideal for tasks that require interacting with legacy software without APIs, performing multi-step workflows across different applications, or automated testing of software interfaces.</p>
+<ul>
+    <li><strong>Data Entry:</strong> Moving data from a spreadsheet into a web form.</li>
+    <li><strong>Research:</strong> Browsing the web, finding information, and compiling it into a local document.</li>
+    <li><strong>Software Testing:</strong> Verifying that a new feature works correctly by actually clicking through the UI.</li>
+</ul>
+
+<h3>Safety and Security in Computer Use</h3>
+<p>Because Computer Use involves an AI controlling a real machine, safety is of the utmost importance. Anthropic has implemented several guardrails:</p>
+<ul>
+    <li><strong>Human-in-the-Loop:</strong> It is highly recommended to have a human oversee Claude's actions, especially for sensitive tasks.</li>
+    <li><strong>Sandboxing:</strong> Run Computer Use in a dedicated, isolated environment (like a Docker container or a virtual machine) to prevent accidental damage to your main system.</li>
+    <li><strong>Restricted Access:</strong> Limit the software and websites Claude can access.</li>
+</ul>
+
+<h3>Practical Exercise: Designing a Landing Page with Artifacts</h3>
+<p>Try asking Claude: "Design a modern landing page for a fictional AI coffee shop called 'CyberBrew'. Use Tailwind CSS and make it look premium." Claude will create an Artifact showing the code and a live preview. You can then refine it: "Add a section for customer testimonials" or "Change the primary color to deep purple."</p>
+
+<h3>The Future of AI Agents</h3>
+<p>Artifacts and Computer Use represent a shift towards "Agentic AI"—models that don't just talk, but actually *do* things. As these capabilities mature, we can expect AI to become an even more integral part of our professional workflows, handling the "drudge work" and allowing humans to focus on higher-level strategy and creativity.</p>
+
+<p>In summary, Claude 3.5's new features provide a glimpse into the future of human-AI collaboration. Whether it's the interactive workspace of Artifacts or the active agency of Computer Use, these tools offer powerful new ways to get work done.</p>
+
+</div>
+</body>
+</html>

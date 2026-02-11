@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 2: Proxy Architecture and Deployment</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Architecting and Deploying the Proxy Layer</h1>
+
+<p>The core of a Private LLM Gateway is the proxy layer. This module explores the technical architectures for building a robust, high-performance proxy and the various deployment models suitable for enterprise environments.</p>
+
+<h2>2.1 The Request-Response Lifecycle</h2>
+<p>A secure gateway must intercept and process both the incoming request from the user and the outgoing response from the AI provider:
+<ol>
+    <li><strong>Request Interception:</strong> The gateway receives the request (often in OpenAI-compatible format).</li>
+    <li><strong>Authentication/Authorization:</strong> Verifying the user's identity and checking if they have permission to use the requested model.</li>
+    <li><strong>Input Sanitization:</strong> Scanning the prompt for PII, malicious instructions (prompt injection), or prohibited content.</li>
+    <li><strong>Transformation:</strong> Modifying the request (e.g., adding organization-specific system instructions) before forwarding it.</li>
+    <li><strong>Upstream Dispatch:</strong> Forwarding the request to the external AI provider (OpenAI, Anthropic, etc.).</li>
+    <li><strong>Response Capture:</strong> Receiving the model's response.</li>
+    <li><strong>Output Sanitization:</strong> Scanning the completion for sensitive data or harmful content.</li>
+    <li><strong>Telemetry and Billing:</strong> Recording the token counts, cost, and latency.</li>
+    <li><strong>Delivery:</strong> Returning the sanitized response to the user.</li>
+</ol></p>
+
+<h2>2.2 Technology Stack Choices</h2>
+<ul>
+    <li><strong>Language:</strong> Python is the most popular choice due to its rich ecosystem of AI libraries (LiteLLM, LangChain). Go or Rust are excellent choices for high-performance, low-latency gateways.</li>
+    <li><strong>Framework:</strong> FastAPI or Flask for Python; Gin or Echo for Go.</li>
+    <li><strong>State Management:</strong> Redis for real-time rate limiting and caching; PostgreSQL for persistent keys and logs.</li>
+</ul>
+
+<h2>2.3 Deployment Models</h2>
+<ol>
+    <li><strong>Single-Region Deployment:</strong> Simplest to manage, suitable for organizations with a localized user base.</li>
+    <li><strong>Multi-Region Deployment:</strong> Essential for global enterprises to reduce latency and comply with local data residency laws (e.g., EU data must stay in the EU).</li>
+    <li><strong>Sidecar Pattern:</strong> Deploying a small gateway proxy alongside every application container. This provides the lowest latency but is more complex to manage centrally.</li>
+    <li><strong>Centralized Gateway (Hub-and-Spoke):</strong> All applications across the VPC route through a single, highly-available gateway cluster. This is the most common enterprise pattern.</li>
+</ol>
+
+<h2>2.4 High Availability and Scaling</h2>
+<p>To ensure 24/7 availability, the gateway should be deployed in a clustered environment (like Kubernetes) across multiple availability zones.
+<ul>
+    <li><strong>Load Balancing:</strong> Using an L7 load balancer to distribute traffic and handle SSL termination.</li>
+    <li><strong>Horizontal Auto-scaling:</strong> Automatically adding more proxy instances as traffic increases.</li>
+    <li><strong>Health Checks:</strong> Constantly monitoring the health of both the proxy instances and the upstream AI providers.</li>
+</ul></p>
+
+<p>By building on a solid architectural foundation, you can ensure that your Private LLM Gateway is not only secure but also scalable and resilient enough to support your entire organization's AI needs.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Metrics Design and Data Collection</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Metrics Design and Data Collection</h1>
+
+<h2>Designing Effective Metrics</h2>
+<p>Not all metrics are equally valuable. Effective GenAI metrics must be <strong>actionable</strong>, <strong>measurable</strong>, and <strong>aligned with business objectives</strong>. Collecting too many metrics creates noise; collecting too few leaves you blind to critical issues.</p>
+
+<h2>The SMART Metrics Framework</h2>
+<p>Apply the SMART criteria to your GenAI metrics:</p>
+<ul>
+    <li><strong>Specific:</strong> Clearly defined and unambiguous (e.g., "P95 latency for chat completions" not "system speed")</li>
+    <li><strong>Measurable:</strong> Quantifiable with concrete numbers</li>
+    <li><strong>Actionable:</strong> Changes in the metric should trigger specific responses</li>
+    <li><strong>Relevant:</strong> Directly tied to user experience or business outcomes</li>
+    <li><strong>Time-bound:</strong> Tracked over consistent time periods for comparison</li>
+</ul>
+
+<h2>Essential Metrics by Category</h2>
+
+<h3>Performance Metrics</h3>
+<table>
+    <tr><th>Metric</th><th>Definition</th><th>Target Range</th><th>Action Threshold</th></tr>
+    <tr>
+        <td class="rowheader">Time to First Token (TTFT)</td>
+        <td>Time from request to first response token</td>
+        <td>&lt; 500ms</td>
+        <td>Alert if P95 &gt; 1000ms</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Total Response Time</td>
+        <td>Complete request-to-response duration</td>
+        <td>&lt; 3 seconds</td>
+        <td>Alert if P95 &gt; 5 seconds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Tokens per Second</td>
+        <td>Output generation speed</td>
+        <td>&gt; 50 tokens/sec</td>
+        <td>Investigate if &lt; 30 tokens/sec</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Request Success Rate</td>
+        <td>Percentage of requests completed without errors</td>
+        <td>&gt; 99%</td>
+        <td>Alert if &lt; 98%</td>
+    </tr>
+</table>
+
+<h3>Cost Metrics</h3>
+<table>
+    <tr><th>Metric</th><th>Definition</th><th>Why Track It</th></tr>
+    <tr>
+        <td class="rowheader">Cost per Request</td>
+        <td>Average cost for a single API call</td>
+        <td>Identify expensive operations and optimize prompts</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost per User per Day</td>
+        <td>Daily spend attributed to each user</td>
+        <td>Detect power users and potential abuse</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost per Feature</td>
+        <td>Spend broken down by application feature</td>
+        <td>Prioritize optimization efforts on high-cost features</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Input/Output Token Ratio</td>
+        <td>Ratio of input tokens to output tokens</td>
+        <td>Understand prompt efficiency and output verbosity</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Daily/Monthly Burn Rate</td>
+        <td>Total spend over time period</td>
+        <td>Budget forecasting and cost trend analysis</td>
+    </tr>
+</table>
+
+<h3>Quality Metrics</h3>
+<table>
+    <tr><th>Metric</th><th>Measurement Method</th><th>Interpretation</th></tr>
+    <tr>
+        <td class="rowheader">User Satisfaction Score</td>
+        <td>Thumbs up/down, 1-5 star ratings</td>
+        <td>Direct user feedback on output quality</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Task Success Rate</td>
+        <td>Percentage of requests achieving user goal</td>
+        <td>Measures functional effectiveness</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hallucination Rate</td>
+        <td>Automated detection or human review</td>
+        <td>Tracks factual accuracy issues</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Relevance Score</td>
+        <td>LLM-as-judge or embedding similarity</td>
+        <td>Measures response appropriateness</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Refusal Rate</td>
+        <td>Percentage of requests model refuses</td>
+        <td>Identifies overly restrictive safety settings</td>
+    </tr>
+</table>
+
+<h2>Data Collection Strategies</h2>
+
+<h3>Sampling vs. Full Collection</h3>
+<p>Collecting every data point for every request can be expensive and overwhelming. Consider these strategies:</p>
+
+<h4>Full Collection (100%)</h4>
+<p><strong>Use for:</strong></p>
+<ul>
+    <li>Critical metrics (cost, latency, error rates)</li>
+    <li>Low-volume applications (&lt; 1000 requests/day)</li>
+    <li>Compliance-required audit trails</li>
+</ul>
+
+<h4>Sampling (1-10%)</h4>
+<p><strong>Use for:</strong></p>
+<ul>
+    <li>Detailed traces with full request/response bodies</li>
+    <li>Quality evaluation (human review is expensive)</li>
+    <li>High-volume applications (&gt; 100K requests/day)</li>
+</ul>
+
+<h4>Adaptive Sampling</h4>
+<p><strong>Strategy:</strong> Sample more aggressively during normal operation, capture everything during incidents</p>
+<ul>
+    <li>Normal: 1% sampling</li>
+    <li>Elevated error rate: 10% sampling</li>
+    <li>Active incident: 100% sampling</li>
+</ul>
+
+<h3>What to Log vs. What to Trace</h3>
+
+<h4>Always Log:</h4>
+<ul>
+    <li>Request metadata (timestamp, user ID, model, parameters)</li>
+    <li>Token counts (input, output, total)</li>
+    <li>Latency measurements</li>
+    <li>Error messages and codes</li>
+    <li>Guardrail trigger events</li>
+</ul>
+
+<h4>Selectively Log:</h4>
+<ul>
+    <li>Sanitized user inputs (remove PII)</li>
+    <li>Model outputs (consider storage costs)</li>
+    <li>Tool invocation results</li>
+    <li>Retrieval context (can be large)</li>
+</ul>
+
+<h4>Never Log:</h4>
+<ul>
+    <li>API keys or credentials</li>
+    <li>Full user messages containing PII (unless required for compliance)</li>
+    <li>Sensitive business data from tool results</li>
+    <li>Complete conversation histories (use references instead)</li>
+</ul>
+
+<h2>Metric Aggregation and Visualization</h2>
+
+<h3>Time-Series Aggregation</h3>
+<p>Raw metrics must be aggregated for meaningful analysis:</p>
+<ul>
+    <li><strong>Average:</strong> Good for cost metrics, misleading for latency</li>
+    <li><strong>Percentiles (P50, P95, P99):</strong> Essential for latency and performance</li>
+    <li><strong>Sum:</strong> Useful for total costs and request counts</li>
+    <li><strong>Rate:</strong> Requests per second, errors per minute</li>
+</ul>
+
+<h3>Dimensional Breakdown</h3>
+<p>Slice metrics by relevant dimensions to identify patterns:</p>
+<ul>
+    <li><strong>By Model:</strong> Compare GPT-4 vs. Claude vs. Gemini performance and cost</li>
+    <li><strong>By User Segment:</strong> Free vs. paid users, geographic regions</li>
+    <li><strong>By Feature:</strong> Chat vs. summarization vs. code generation</li>
+    <li><strong>By Time:</strong> Hourly, daily, weekly trends</li>
+</ul>
+
+<h2>Real-World Metric Examples</h2>
+
+<h3>Example 1: E-commerce AI Assistant</h3>
+<div class="code-block">
+<pre><code># Key Metrics Dashboard
+- Conversion Rate: 12.3% (users who purchase after AI interaction)
+- Average Session Cost: $0.08
+- Customer Satisfaction: 4.2/5.0
+- Product Recommendation Accuracy: 78%
+- Response Time P95: 2.1 seconds
+
+# Cost Breakdown
+- Product Search: $1,200/day (60% of total)
+- Customer Support: $600/day (30% of total)
+- Order Tracking: $200/day (10% of total)
+</code></pre>
+</div>
+
+<h3>Example 2: Code Generation Tool</h3>
+<div class="code-block">
+<pre><code># Key Metrics Dashboard
+- Code Acceptance Rate: 65% (code accepted without modification)
+- Average Tokens per Request: 2,400 (1,200 input + 1,200 output)
+- Cost per Accepted Code Block: $0.15
+- Syntax Error Rate: 3.2%
+- Security Issue Detection: 12 vulnerabilities prevented/day
+
+# Performance Metrics
+- TTFT: 450ms (P95)
+- Total Generation Time: 3.8s (P95)
+- Timeout Rate: 0.5%
+</code></pre>
+</div>
+
+<h2>Metric Evolution Over Time</h2>
+<p>Your metrics strategy should evolve as your application matures:</p>
+
+<h3>Early Stage (MVP)</h3>
+<ul>
+    <li>Focus: Basic functionality and cost control</li>
+    <li>Metrics: Total cost, error rate, basic latency</li>
+</ul>
+
+<h3>Growth Stage</h3>
+<ul>
+    <li>Focus: Quality improvement and user satisfaction</li>
+    <li>Metrics: Add user ratings, task success rate, detailed cost breakdown</li>
+</ul>
+
+<h3>Scale Stage</h3>
+<ul>
+    <li>Focus: Optimization and efficiency</li>
+    <li>Metrics: Add cache hit rates, model comparison, A/B test results</li>
+</ul>
+
+<h3>Mature Stage</h3>
+<ul>
+    <li>Focus: Business impact and ROI</li>
+    <li>Metrics: Revenue per AI interaction, customer lifetime value impact, cost-to-value ratio</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to Vertex AI</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>Introduction to Vertex AI</h1>
+
+<h2>What Is Vertex AI?</h2>
+<p>
+Vertex AI is Google Cloud’s unified machine learning and generative AI platform designed to
+support the entire AI lifecycle, from experimentation and model selection to deployment,
+scaling, governance, and monitoring. It brings together foundation models, traditional
+machine learning workflows, MLOps tooling, and enterprise-grade security into a single,
+integrated environment.
+</p>
+
+<p>
+Unlike earlier cloud ML offerings that required stitching together multiple services,
+Vertex AI provides a cohesive abstraction that simplifies how teams build, deploy, and
+operate AI systems. It supports both classical machine learning use cases and modern
+large language model–based applications.
+</p>
+
+<p>
+At its core, Vertex AI is designed to help organizations move from prototype to production
+without changing platforms. What starts as an experiment in a notebook or studio interface
+can evolve into a production-grade system with managed infrastructure, observability, and
+access controls.
+</p>
+
+<h2>Why Vertex AI Exists</h2>
+<p>
+As AI adoption matured, organizations encountered several recurring challenges:
+</p>
+
+<ul>
+    <li>Fragmented tooling across training, deployment, and monitoring</li>
+    <li>Difficulty operationalizing experimental models</li>
+    <li>Lack of governance, auditability, and access control</li>
+    <li>Scaling issues when moving beyond prototypes</li>
+    <li>Security and compliance gaps for enterprise workloads</li>
+</ul>
+
+<p>
+Vertex AI was created to address these challenges by providing a single platform that
+supports experimentation, production deployment, and long-term operations.
+</p>
+
+<h2>Unified Platform Philosophy</h2>
+<p>
+Vertex AI’s defining characteristic is unification. Rather than treating generative AI,
+classical ML, and MLOps as separate concerns, Vertex AI integrates them under one control
+plane.
+</p>
+
+<p>
+This unification enables:
+</p>
+
+<ul>
+    <li>Consistent identity and access management across AI workflows</li>
+    <li>Shared infrastructure for training and inference</li>
+    <li>Centralized monitoring and logging</li>
+    <li>Standardized deployment patterns</li>
+</ul>
+
+<p>
+For organizations operating at scale, this reduces operational overhead and cognitive load
+for both data scientists and platform engineers.
+</p>
+
+<h2>Key Components of Vertex AI</h2>
+
+<h3>Model Garden</h3>
+<p>
+The Model Garden provides access to a curated catalog of foundation models and open models.
+These include Google’s proprietary models as well as third-party and open-source models.
+</p>
+
+<p>
+Available model families include:
+</p>
+
+<ul>
+    <li>Gemini models for multimodal reasoning and generation</li>
+    <li>PaLM-based text and code models</li>
+    <li>Open-source models such as Llama and Mistral</li>
+    <li>Partner models such as Claude</li>
+</ul>
+
+<p>
+Model Garden allows teams to evaluate, deploy, and fine-tune models without managing
+low-level infrastructure.
+</p>
+
+<h3>Vertex AI Studio</h3>
+<p>
+Vertex AI Studio is a web-based interface for experimenting with prompts, evaluating model
+responses, and iterating quickly. It is designed for rapid prototyping and collaboration
+between engineers, product teams, and domain experts.
+</p>
+
+<p>
+Key capabilities include:
+</p>
+
+<ul>
+    <li>Prompt design and versioning</li>
+    <li>Parameter tuning</li>
+    <li>Response evaluation</li>
+    <li>Multimodal input testing</li>
+</ul>
+
+<p>
+Studio acts as a bridge between ideation and production by allowing validated prompts to be
+exported into applications.
+</p>
+
+<h3>Vertex AI Agent Builder</h3>
+<p>
+Agent Builder enables the creation of conversational agents and AI-powered search
+experiences. It abstracts common patterns such as retrieval, dialogue state management,
+and tool calling.
+</p>
+
+<p>
+Typical use cases include:
+</p>
+
+<ul>
+    <li>Customer support chatbots</li>
+    <li>Internal knowledge assistants</li>
+    <li>Document and website search</li>
+    <li>Task-oriented conversational agents</li>
+</ul>
+
+<p>
+Agent Builder integrates tightly with Google Search, data connectors, and vector search
+capabilities.
+</p>
+
+<h3>Vertex AI Pipelines</h3>
+<p>
+Vertex AI Pipelines provides workflow orchestration for machine learning systems. It allows
+teams to define repeatable, auditable pipelines for data processing, training, evaluation,
+and deployment.
+</p>
+
+<p>
+Pipelines support:
+</p>
+
+<ul>
+    <li>Versioned components</li>
+    <li>Reproducible executions</li>
+    <li>Automated retraining</li>
+    <li>CI/CD integration</li>
+</ul>
+
+<p>
+This is especially important for regulated industries where traceability and repeatability
+are required.
+</p>
+
+<h3>Vertex AI Endpoints</h3>
+<p>
+Endpoints provide managed infrastructure for serving models in production. They support
+auto-scaling, traffic splitting, versioning, and monitoring.
+</p>
+
+<p>
+Endpoints abstract away server management while allowing fine-grained control over latency,
+availability, and cost.
+</p>
+
+<h2>Vertex AI vs Google AI Studio</h2>
+<p>
+Although Vertex AI and Google AI Studio share underlying models, they serve different
+purposes.
+</p>
+
+<table>
+    <tr><th>Feature</th><th>Google AI Studio</th><th>Vertex AI</th></tr>
+    <tr><td>Authentication</td><td>API key</td><td>IAM and service accounts</td></tr>
+    <tr><td>Security controls</td><td>Minimal</td><td>VPC-SC, CMEK, IAM</td></tr>
+    <tr><td>Auditability</td><td>Limited</td><td>Audit logs and monitoring</td></tr>
+    <tr><td>Deployment</td><td>Not supported</td><td>Managed endpoints</td></tr>
+    <tr><td>Best use case</td><td>Experimentation</td><td>Production AI systems</td></tr>
+</table>
+
+<p>
+In practice, Google AI Studio is ideal for individual experimentation, while Vertex AI is
+designed for organizational adoption.
+</p>
+
+<h2>Security and Governance</h2>
+<p>
+Vertex AI inherits Google Cloud’s enterprise-grade security model. This includes identity
+management, network isolation, encryption, and auditing.
+</p>
+
+<p>
+Key governance features include:
+</p>
+
+<ul>
+    <li>IAM-based access control</li>
+    <li>Private service endpoints</li>
+    <li>Customer-managed encryption keys</li>
+    <li>Detailed audit logs</li>
+</ul>
+
+<p>
+These features make Vertex AI suitable for highly regulated environments.
+</p>
+
+<h2>Operational Considerations</h2>
+<p>
+Running AI workloads in production introduces operational challenges that Vertex AI is
+designed to address.
+</p>
+
+<ul>
+    <li>Scaling inference under variable load</li>
+    <li>Managing model versions</li>
+    <li>Monitoring performance and drift</li>
+    <li>Controlling cost</li>
+</ul>
+
+<p>
+By providing managed services, Vertex AI reduces the burden on platform teams.
+</p>
+
+<h2>When to Use Vertex AI</h2>
+<p>
+Vertex AI is best suited for:
+</p>
+
+<ul>
+    <li>Mid-to-large organizations</li>
+    <li>Production AI workloads</li>
+    <li>Teams requiring governance and compliance</li>
+    <li>Applications with scaling and reliability needs</li>
+</ul>
+
+<p>
+For small prototypes or personal projects, lighter-weight tools may be sufficient.
+</p>
+
+<h2>Additional Readings</h2>
+<ul>
+    <li>
+        <a href="https://cloud.google.com/vertex-ai/docs/start/introduction-unified-platform" target="_blank">
+        Google Cloud – Vertex AI Overview
+        </a>
+    </li>
+    <li>
+        <a href="https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-vertex-ai" target="_blank">
+        Google Cloud – MLOps with Vertex AI
+        </a>
+    </li>
+    <li>
+        <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-vertex-ai" target="_blank">
+        Google Cloud Blog – Introducing Vertex AI
+        </a>
+    </li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

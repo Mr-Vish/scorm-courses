@@ -1,0 +1,314 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Image Watermarking Fundamentals</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Image Watermarking and Content Provenance</h1>
+<h2>Part 1: Image Watermarking Fundamentals</h2>
+
+<h2>Module Objectives</h2>
+<p>In this module, you will:</p>
+<ul>
+    <li>Understand the unique challenges and opportunities of image watermarking</li>
+    <li>Learn about spatial and frequency-domain watermarking techniques</li>
+    <li>Explore diffusion model-specific watermarking approaches</li>
+    <li>Understand content provenance standards like C2PA</li>
+    <li>Evaluate best practices for deploying watermarking in production systems</li>
+</ul>
+
+<h2>Why Image Watermarking Differs from Text</h2>
+<p>Image watermarking presents fundamentally different challenges and opportunities compared to text:</p>
+
+<h3>Advantages of Image Watermarking</h3>
+<ul>
+    <li><strong>Continuous Domain:</strong> Pixel values are continuous, allowing subtle modifications imperceptible to humans</li>
+    <li><strong>High Dimensionality:</strong> Images contain millions of pixels, providing vast embedding space</li>
+    <li><strong>Perceptual Tolerance:</strong> Human vision has limited sensitivity to certain frequency changes</li>
+    <li><strong>Redundancy:</strong> Natural images have statistical redundancy that can hide watermarks</li>
+    <li><strong>Established Techniques:</strong> Decades of research in traditional image watermarking</li>
+</ul>
+
+<h3>Unique Challenges</h3>
+<ul>
+    <li><strong>Compression:</strong> JPEG and other lossy compression can destroy watermarks</li>
+    <li><strong>Geometric Transformations:</strong> Cropping, rotation, scaling affect watermark detection</li>
+    <li><strong>Social Media Processing:</strong> Platforms apply filters, compression, and format conversion</li>
+    <li><strong>Screenshots:</strong> Capturing and re-saving images can degrade watermarks</li>
+    <li><strong>Print-Scan Cycle:</strong> Physical reproduction and digitization pose extreme challenges</li>
+</ul>
+
+<h2>Image Generation Process (Diffusion Models)</h2>
+<p>Understanding how modern AI generates images is essential for watermarking:</p>
+
+<h3>Diffusion Model Architecture</h3>
+<ol>
+    <li><strong>Text Encoding:</strong> User prompt is converted to embeddings</li>
+    <li><strong>Noise Initialization:</strong> Start with random Gaussian noise</li>
+    <li><strong>Iterative Denoising:</strong> Gradually remove noise over 20-50 steps, guided by text embeddings</li>
+    <li><strong>Latent Space:</strong> Process occurs in compressed latent representation (e.g., 64×64 for 512×512 image)</li>
+    <li><strong>Decoder (VAE):</strong> Convert latent representation to final pixel image</li>
+</ol>
+
+<h3>Watermarking Intervention Points</h3>
+<table>
+    <tr>
+        <th>Intervention Point</th>
+        <th>Method</th>
+        <th>Advantages</th>
+        <th>Disadvantages</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Initial Noise</td>
+        <td>Embed watermark in starting noise pattern</td>
+        <td>Survives entire generation process, robust</td>
+        <td>May affect image quality, complex detection</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Denoising Steps</td>
+        <td>Modify intermediate latent representations</td>
+        <td>Fine-grained control, adaptive strength</td>
+        <td>Computationally expensive, affects generation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Decoder Network</td>
+        <td>Fine-tune decoder to embed watermarks</td>
+        <td>No generation overhead, imperceptible</td>
+        <td>Requires model retraining, fixed watermark</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Post-Processing</td>
+        <td>Add watermark to final pixel image</td>
+        <td>Works with any model, flexible</td>
+        <td>Less robust, may be visible</td>
+    </tr>
+</table>
+
+<h2>Spatial Domain Watermarking</h2>
+<p>Spatial domain techniques modify pixel values directly:</p>
+
+<h3>Least Significant Bit (LSB) Embedding</h3>
+<p>The simplest spatial domain approach:</p>
+
+<h4>How It Works</h4>
+<ul>
+    <li>Each pixel color channel (R, G, B) is represented by 8 bits (0-255)</li>
+    <li>The least significant bit has minimal visual impact</li>
+    <li>Replace LSBs with watermark bits</li>
+    <li>Detection extracts and verifies these bits</li>
+</ul>
+
+<h4>Characteristics</h4>
+<ul>
+    <li><strong>Imperceptibility:</strong> Excellent (changes of ±1 are invisible)</li>
+    <li><strong>Capacity:</strong> High (can embed 3 bits per pixel)</li>
+    <li><strong>Robustness:</strong> Very poor (destroyed by compression, filtering)</li>
+    <li><strong>Use Case:</strong> Fragile watermarks for tamper detection</li>
+</ul>
+
+<h3>Spread Spectrum Watermarking</h3>
+<p>A more robust spatial domain approach:</p>
+
+<h4>Concept</h4>
+<ul>
+    <li>Watermark signal is spread across many pixels</li>
+    <li>Each pixel receives a small portion of the watermark</li>
+    <li>Uses pseudo-random sequences for spreading</li>
+    <li>Detection correlates image with watermark pattern</li>
+</ul>
+
+<h4>Advantages</h4>
+<ul>
+    <li>More robust than LSB to compression and noise</li>
+    <li>Watermark is distributed, not localized</li>
+    <li>Can survive moderate image modifications</li>
+    <li>Adjustable strength-imperceptibility trade-off</li>
+</ul>
+
+<h2>Frequency Domain Watermarking</h2>
+<p>Frequency domain techniques are generally more robust than spatial methods:</p>
+
+<h3>Discrete Cosine Transform (DCT) Watermarking</h3>
+<p>DCT is the basis of JPEG compression, making DCT watermarks naturally robust:</p>
+
+<h4>Process</h4>
+<ol>
+    <li>Divide image into 8×8 blocks</li>
+    <li>Apply DCT to each block (converts to frequency coefficients)</li>
+    <li>Modify mid-frequency coefficients to embed watermark</li>
+    <li>Apply inverse DCT to reconstruct image</li>
+</ol>
+
+<h4>Why Mid-Frequencies?</h4>
+<ul>
+    <li><strong>Low Frequencies:</strong> Contain most visual information; modifications are noticeable</li>
+    <li><strong>Mid Frequencies:</strong> Balance between imperceptibility and robustness</li>
+    <li><strong>High Frequencies:</strong> Easily removed by compression and filtering</li>
+</ul>
+
+<h4>JPEG Robustness</h4>
+<p>Since JPEG uses DCT, watermarks embedded in DCT coefficients survive JPEG compression better than spatial watermarks.</p>
+
+<h3>Discrete Wavelet Transform (DWT) Watermarking</h3>
+<p>DWT provides multi-resolution analysis:</p>
+
+<h4>Advantages Over DCT</h4>
+<ul>
+    <li>Better matches human visual system characteristics</li>
+    <li>Provides spatial and frequency localization</li>
+    <li>More robust to geometric attacks</li>
+    <li>Used in JPEG2000 compression</li>
+</ul>
+
+<h4>Multi-Level Embedding</h4>
+<ul>
+    <li>DWT decomposes image into multiple scales (levels)</li>
+    <li>Watermark can be embedded at different scales</li>
+    <li>Coarser scales: more robust, less capacity</li>
+    <li>Finer scales: more capacity, less robust</li>
+</ul>
+
+<h2>Diffusion Model-Specific Watermarking</h2>
+
+<h3>Tree-Ring Watermarking</h3>
+<p>A novel approach specifically designed for diffusion models:</p>
+
+<h4>Core Concept</h4>
+<ul>
+    <li>Embeds watermark in the initial noise pattern</li>
+    <li>Creates a "tree-ring" pattern in Fourier space</li>
+    <li>Pattern persists through the denoising process</li>
+    <li>Detectable in the final generated image</li>
+</ul>
+
+<h4>Technical Details</h4>
+<ul>
+    <li>Modifies specific frequency components of initial noise</li>
+    <li>Uses a secret key to determine which frequencies to modify</li>
+    <li>The diffusion process preserves these frequency patterns</li>
+    <li>Detection analyzes Fourier transform of the image</li>
+</ul>
+
+<h4>Advantages</h4>
+<ul>
+    <li>Highly robust to image modifications</li>
+    <li>Survives cropping, compression, and filtering</li>
+    <li>Imperceptible in spatial domain</li>
+    <li>No modification to model architecture required</li>
+</ul>
+
+<h4>Limitations</h4>
+<ul>
+    <li>Specific to diffusion models</li>
+    <li>May affect generation diversity slightly</li>
+    <li>Detection requires Fourier analysis</li>
+    <li>Relatively new, limited production deployment</li>
+</ul>
+
+<h3>Stable Signature (Meta/Stability AI)</h3>
+<p>A practical watermarking solution for Stable Diffusion:</p>
+
+<h4>Architecture</h4>
+<ul>
+    <li>Fine-tunes the VAE decoder to embed watermarks</li>
+    <li>Watermark is added during latent-to-pixel conversion</li>
+    <li>Requires training a watermark encoder and decoder</li>
+    <li>Open-source implementation available</li>
+</ul>
+
+<h4>Training Process</h4>
+<ol>
+    <li>Train encoder network to embed watermark in images</li>
+    <li>Train decoder network to extract watermark</li>
+    <li>Fine-tune VAE decoder to automatically apply encoder</li>
+    <li>Optimize for imperceptibility and robustness</li>
+</ol>
+
+<h4>Deployment Characteristics</h4>
+<ul>
+    <li>No runtime overhead (watermarking is built into decoder)</li>
+    <li>Survives JPEG compression (quality 75+)</li>
+    <li>Robust to social media processing</li>
+    <li>Minimal visual impact (PSNR &gt; 40 dB)</li>
+</ul>
+
+<h3>SynthID for Images (Google DeepMind)</h3>
+<p>Google's watermarking solution for Imagen:</p>
+
+<h4>Key Features</h4>
+<ul>
+    <li>Embeds watermark directly in pixel values</li>
+    <li>Trained to be robust to common transformations</li>
+    <li>Works even on screenshots and re-photographs</li>
+    <li>Provides confidence scores for detection</li>
+</ul>
+
+<h4>Robustness Testing</h4>
+<p>SynthID has been tested against:</p>
+<ul>
+    <li>JPEG compression (various quality levels)</li>
+    <li>Brightness and contrast adjustments</li>
+    <li>Cropping (up to 50% of image)</li>
+    <li>Adding noise and blur</li>
+    <li>Color space conversions</li>
+    <li>Screenshots and re-encoding</li>
+</ul>
+
+<h2>Perceptual Quality Metrics</h2>
+<p>Evaluating watermark imperceptibility requires specialized metrics:</p>
+
+<h3>Objective Metrics</h3>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Description</th>
+        <th>Typical Values</th>
+    </tr>
+    <tr>
+        <td class="rowheader">PSNR (Peak Signal-to-Noise Ratio)</td>
+        <td>Measures pixel-level difference</td>
+        <td>&gt;40 dB: imperceptible<br/>30-40 dB: acceptable<br/>&lt;30 dB: noticeable</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SSIM (Structural Similarity Index)</td>
+        <td>Measures structural similarity</td>
+        <td>&gt;0.95: excellent<br/>0.90-0.95: good<br/>&lt;0.90: degraded</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LPIPS (Learned Perceptual Image Patch Similarity)</td>
+        <td>Uses neural networks to measure perceptual distance</td>
+        <td>&lt;0.05: imperceptible<br/>0.05-0.10: acceptable<br/>&gt;0.10: noticeable</td>
+    </tr>
+</table>
+
+<h3>Subjective Evaluation</h3>
+<p>Human evaluation remains the gold standard:</p>
+
+<ul>
+    <li><strong>A/B Testing:</strong> Users compare watermarked vs. original images</li>
+    <li><strong>Mean Opinion Score (MOS):</strong> Raters score image quality on a scale (1-5)</li>
+    <li><strong>Just Noticeable Difference (JND):</strong> Determine threshold where watermark becomes visible</li>
+    <li><strong>Task Performance:</strong> Measure if watermarks affect image usability for intended tasks</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Image watermarking benefits from continuous pixel values and high dimensionality</li>
+    <li>Frequency domain methods (DCT, DWT) are more robust than spatial domain techniques</li>
+    <li>Diffusion models enable novel watermarking approaches like Tree-Ring and Stable Signature</li>
+    <li>Watermarks can be embedded in initial noise, during denoising, or in the decoder network</li>
+    <li>Perceptual quality metrics (PSNR, SSIM, LPIPS) quantify watermark imperceptibility</li>
+    <li>Robustness to compression, cropping, and social media processing is critical for practical deployment</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

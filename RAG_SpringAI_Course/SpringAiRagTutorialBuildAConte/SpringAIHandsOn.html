@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on: Spring AI RAG System</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on: Spring AI RAG System</h1>
+<div class="container">
+<h2>Hands-on: Building a Complete RAG System with Spring AI</h2>
+<p>In this final comprehensive exercise, you will apply everything you've learned to build a production-grade RAG system for a "Company Policy Knowledge Base." Your application will allow employees to ask questions about HR policies, security guidelines, and travel procedures in natural language.</p>
+
+<h3>Step 1: Project Setup</h3>
+<p>Initialize a new Spring Boot project with the following dependencies:
+<ul>
+    <li><code>spring-ai-anthropic-spring-boot-starter</code></li>
+    <li><code>spring-ai-pgvector-store-spring-boot-starter</code></li>
+    <li><code>spring-boot-starter-web</code></li>
+    <li><code>spring-boot-starter-actuator</code></li>
+</ul>
+Configure your API keys and database connection in <code>application.properties</code>.</p>
+
+<h3>Step 2: The Ingestion Pipeline</h3>
+<p>Implement a <code>PolicyIngestionService</code> that:
+1. Reads all PDF files from a <code>src/main/resources/policies</code> folder using <strong>TikaDocumentReader</strong>.
+2. Uses a <strong>TokenTextSplitter</strong> to chunk the documents (500 tokens with 50-token overlap).
+3. Adds a <strong>MetadataEnricher</strong> to tag each document with its filename and a 'last_updated' timestamp.
+4. Loads the final documents into the <strong>PGVectorStore</strong>.</p>
+
+<h3>Step 3: The Chat Controller</h3>
+<p>Create a <code>PolicyChatController</code> with a <code>/policy-chat</code> endpoint.
+1. Use the <strong>ChatClient.Builder</strong> to create a client.
+2. Add a <strong>QuestionAnswerAdvisor</strong> configured with your <code>VectorStore</code>.
+3. Add a <strong>MessageChatMemoryAdvisor</strong> to enable conversation history.
+4. Set a default system prompt: "You are an HR assistant. Answer questions based ONLY on the provided policy documents. Cite the policy name in your response."</p>
+
+<h3>Step 4: Advanced Logic with Advisors</h3>
+<p>Enhance your controller by adding a custom <strong>LoggingAdvisor</strong> that records every question and response to a database table. This will help you identify which policies are most frequently asked about and where the AI might be struggling.</p>
+
+<h3>Step 5: Evaluation</h3>
+<p>Create a set of 5 test questions (e.g., "What is the maternity leave policy?", "How do I report a security incident?"). Write a JUnit test that uses the <strong>Spring AI Evaluator</strong> to verify that the answers are "Faithful" to the documents and "Relevant" to the questions.</p>
+
+<h3>The Final Challenge: Metadata Filtering</h3>
+<p>Modify your <code>/policy-chat</code> endpoint to accept an optional <code>department</code> parameter. Use this parameter to create a <strong>Metadata Filter</strong> in your <code>SearchRequest</code>, ensuring that an employee in the "Engineering" department only sees policies relevant to them.</p>
+
+<h3>Reflect and Iterate</h3>
+<p>Run your application and ask it a few tricky questions. Does it correctly identify when a question is NOT covered by the policies? How does adding the <code>department</code> filter change the results? Use the insights from your logging advisor to further refine your system prompt and chunking strategy.</p>
+
+<p>Congratulations! You have built a fully functional, enterprise-ready RAG system using Spring AI. You have mastered the ETL process, vector storage, conversational AI, and rigorous evaluation.</p>
+
+</div>
+</body>
+</html>

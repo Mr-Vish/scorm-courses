@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Model Customization and Fine-Tuning Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Model Customization and Fine-Tuning Strategies</h1>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand when and why to customize foundation models</li>
+    <li>Learn about different customization approaches and their trade-offs</li>
+    <li>Master the fine-tuning process in Amazon Bedrock</li>
+    <li>Apply best practices for model customization</li>
+</ul>
+
+<h3>Understanding Model Customization</h3>
+
+<p>While foundation models possess broad capabilities out-of-the-box, certain use cases benefit from <strong>customization</strong>—adapting models to specific domains, tasks, or organizational requirements. Customization can improve performance on specialized tasks, align outputs with brand voice, or optimize for specific formats and structures. However, customization introduces complexity and costs, making it essential to understand when it provides sufficient value to justify the investment.</p>
+
+<p>Amazon Bedrock supports model customization through fine-tuning, allowing organizations to adapt select foundation models using their own data while maintaining the managed service benefits. This approach provides a middle ground between using generic pre-trained models and training models from scratch.</p>
+
+<h3>When to Consider Customization</h3>
+
+<h4>Good Candidates for Customization</h4>
+<ul>
+    <li><strong>Domain-Specific Terminology:</strong> Medical, legal, or technical fields with specialized vocabulary</li>
+    <li><strong>Consistent Output Formatting:</strong> Specific JSON schemas, report structures, or response templates</li>
+    <li><strong>Brand Voice Alignment:</strong> Matching organizational tone, style, and communication patterns</li>
+    <li><strong>Task-Specific Optimization:</strong> Improving performance on narrow, well-defined tasks</li>
+    <li><strong>Efficiency Gains:</strong> Reducing prompt length by embedding instructions in the model</li>
+</ul>
+
+<h4>When Customization May Not Be Necessary</h4>
+<ul>
+    <li><strong>General-Purpose Tasks:</strong> Pre-trained models already excel at common tasks</li>
+    <li><strong>Rapidly Changing Requirements:</strong> Frequent updates make fine-tuning impractical</li>
+    <li><strong>Limited Training Data:</strong> Insufficient high-quality examples for effective fine-tuning</li>
+    <li><strong>RAG Sufficiency:</strong> Knowledge Bases can address many domain-specific needs</li>
+    <li><strong>Prompt Engineering Success:</strong> Well-crafted prompts achieve desired results</li>
+</ul>
+
+<h3>Customization Approaches Comparison</h3>
+
+<table>
+    <tr>
+        <th>Approach</th>
+        <th>Complexity</th>
+        <th>Cost</th>
+        <th>Flexibility</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompt Engineering</td>
+        <td>Low</td>
+        <td>Very Low</td>
+        <td>High (easy to modify)</td>
+        <td>Most use cases, rapid iteration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">RAG (Knowledge Bases)</td>
+        <td>Medium</td>
+        <td>Low-Medium</td>
+        <td>High (update data sources)</td>
+        <td>Domain knowledge, current information</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Fine-Tuning</td>
+        <td>High</td>
+        <td>High</td>
+        <td>Low (requires retraining)</td>
+        <td>Specialized tasks, consistent formatting</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Continued Pre-Training</td>
+        <td>Very High</td>
+        <td>Very High</td>
+        <td>Low</td>
+        <td>Deep domain adaptation, large datasets</td>
+    </tr>
+</table>
+
+<h3>Fine-Tuning in Amazon Bedrock</h3>
+
+<h4>Supported Models</h4>
+<p>Bedrock currently supports fine-tuning for select models:</p>
+<ul>
+    <li>Amazon Titan Text models</li>
+    <li>Cohere Command models</li>
+    <li>Meta Llama models (select versions)</li>
+</ul>
+
+<p>Note: Model availability for fine-tuning evolves; check current documentation for latest options.</p>
+
+<h4>Fine-Tuning Process Overview</h4>
+
+<ol>
+    <li><strong>Data Preparation:</strong> Collect and format training examples</li>
+    <li><strong>Data Upload:</strong> Store training data in Amazon S3</li>
+    <li><strong>Job Configuration:</strong> Specify hyperparameters and training settings</li>
+    <li><strong>Training Execution:</strong> Bedrock trains the customized model</li>
+    <li><strong>Evaluation:</strong> Test customized model performance</li>
+    <li><strong>Deployment:</strong> Use customized model through standard Bedrock APIs</li>
+</ol>
+
+<h3>Training Data Preparation</h3>
+
+<h4>Data Format</h4>
+<p>Training data typically follows a prompt-completion format in JSONL (JSON Lines):</p>
+
+<blockquote>
+{"prompt": "Classify the sentiment: The product quality exceeded expectations.", "completion": "Positive"}
+{"prompt": "Classify the sentiment: Shipping was delayed and customer service was unhelpful.", "completion": "Negative"}
+{"prompt": "Classify the sentiment: The item works as described.", "completion": "Neutral"}
+</blockquote>
+
+<h4>Data Quality Requirements</h4>
+
+<ul>
+    <li><strong>Quantity:</strong> Minimum 32 examples; 200-1000+ recommended for best results</li>
+    <li><strong>Quality:</strong> Accurate, consistent, representative of target task</li>
+    <li><strong>Diversity:</strong> Cover various scenarios, edge cases, and input variations</li>
+    <li><strong>Balance:</strong> Roughly equal representation of different output types</li>
+    <li><strong>Consistency:</strong> Uniform formatting and style across examples</li>
+</ul>
+
+<h4>Example: Customer Service Response Fine-Tuning</h4>
+
+<blockquote>
+{"prompt": "Customer: My order hasn't arrived yet. Order #12345.", "completion": "I apologize for the delay. Let me check the status of order #12345 for you. According to our tracking system, your order is currently in transit and expected to arrive within 2 business days. I'll send you a tracking link via email. Is there anything else I can help you with?"}
+
+{"prompt": "Customer: I received the wrong item.", "completion": "I sincerely apologize for this error. To resolve this quickly, I'll arrange for the correct item to be shipped to you immediately at no additional cost. You can keep or return the incorrect item at your convenience. I'm also applying a 15% discount to your next purchase as an apology. May I have your order number to process this?"}
+
+{"prompt": "Customer: How do I reset my password?", "completion": "I'd be happy to help you reset your password. Please follow these steps: 1) Go to the login page and click 'Forgot Password', 2) Enter your email address, 3) Check your email for a reset link (it may take a few minutes), 4) Click the link and create a new password. If you don't receive the email within 10 minutes, please let me know and I'll assist further."}
+</blockquote>
+
+<h3>Hyperparameter Configuration</h3>
+
+<h4>Key Hyperparameters</h4>
+
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Purpose</th>
+        <th>Typical Range</th>
+        <th>Guidance</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Epochs</td>
+        <td>Number of training passes through dataset</td>
+        <td>1-10</td>
+        <td>Start with 3-5; more epochs for larger datasets</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batch Size</td>
+        <td>Examples processed simultaneously</td>
+        <td>4-32</td>
+        <td>Larger batches for more stable training</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Learning Rate</td>
+        <td>Step size for model updates</td>
+        <td>1e-5 to 1e-4</td>
+        <td>Lower rates for subtle adjustments</td>
+    </tr>
+</table>
+
+<h4>Training Job Configuration Example</h4>
+
+<blockquote>
+{
+  "modelId": "amazon.titan-text-express-v1",
+  "trainingDataConfig": {
+    "s3Uri": "s3://my-bucket/training-data/customer-service.jsonl"
+  },
+  "validationDataConfig": {
+    "s3Uri": "s3://my-bucket/validation-data/customer-service-val.jsonl"
+  },
+  "hyperParameters": {
+    "epochCount": "3",
+    "batchSize": "8",
+    "learningRate": "0.00001"
+  },
+  "outputDataConfig": {
+    "s3Uri": "s3://my-bucket/fine-tuned-models/"
+  }
+}
+</blockquote>
+
+<h3>Evaluation and Validation</h3>
+
+<h4>Validation Dataset</h4>
+<p>Reserve 10-20% of data for validation to assess model performance on unseen examples. This helps detect overfitting and guides hyperparameter tuning.</p>
+
+<h4>Evaluation Metrics</h4>
+<ul>
+    <li><strong>Accuracy:</strong> Percentage of correct predictions (for classification tasks)</li>
+    <li><strong>Perplexity:</strong> How well the model predicts the validation data (lower is better)</li>
+    <li><strong>Task-Specific Metrics:</strong> F1 score, BLEU score, or custom metrics relevant to your use case</li>
+</ul>
+
+<h4>Qualitative Evaluation</h4>
+<p>Beyond metrics, manually review outputs:</p>
+<ul>
+    <li>Does the model follow desired formatting?</li>
+    <li>Is the tone and style appropriate?</li>
+    <li>Are responses accurate and helpful?</li>
+    <li>Does the model handle edge cases well?</li>
+</ul>
+
+<h3>Deployment and Usage</h3>
+
+<p>Once training completes, the customized model receives a unique model ID and can be invoked like any Bedrock model:</p>
+
+<blockquote>
+response = bedrock_runtime.invoke_model(
+    modelId='arn:aws:bedrock:us-east-1:123456789012:provisioned-model/custom-model-id',
+    body=json.dumps({
+        "inputText": "Customer: I want to return my purchase.",
+        "textGenerationConfig": {
+            "maxTokenCount": 200,
+            "temperature": 0.7
+        }
+    })
+)
+</blockquote>
+
+<h3>Cost Considerations</h3>
+
+<h4>Training Costs</h4>
+<ul>
+    <li>Charged based on training time and model size</li>
+    <li>Typical training job: $50-$500 depending on dataset size and epochs</li>
+    <li>Experimentation with hyperparameters increases costs</li>
+</ul>
+
+<h4>Inference Costs</h4>
+<ul>
+    <li>Customized models may have different pricing than base models</li>
+    <li>Provisioned throughput may be required for some customized models</li>
+    <li>Consider cost-benefit analysis: does improved performance justify higher costs?</li>
+</ul>
+
+<h3>Best Practices</h3>
+
+<h4>Start Simple</h4>
+<ul>
+    <li>Exhaust prompt engineering and RAG approaches before fine-tuning</li>
+    <li>Begin with small-scale experiments to validate approach</li>
+    <li>Use default hyperparameters initially, then optimize if needed</li>
+</ul>
+
+<h4>Data Quality Over Quantity</h4>
+<ul>
+    <li>100 high-quality examples often outperform 1000 mediocre ones</li>
+    <li>Invest time in data cleaning and consistency</li>
+    <li>Regularly audit training data for errors and biases</li>
+</ul>
+
+<h4>Iterative Improvement</h4>
+<ul>
+    <li>Fine-tuning is iterative; expect multiple training runs</li>
+    <li>Analyze failures to identify data gaps</li>
+    <li>Continuously collect new examples from production usage</li>
+    <li>Retrain periodically as requirements evolve</li>
+</ul>
+
+<h4>Version Control</h4>
+<ul>
+    <li>Maintain versioned training datasets</li>
+    <li>Document hyperparameters and training configurations</li>
+    <li>Track model performance across versions</li>
+    <li>Enable rollback to previous versions if needed</li>
+</ul>
+
+<h3>Alternatives to Fine-Tuning</h3>
+
+<h4>Prompt Engineering with Examples</h4>
+<p>Few-shot learning in prompts can achieve similar results without training:</p>
+<blockquote>
+Classify customer sentiment as Positive, Negative, or Neutral.
+
+Examples:
+Input: "Great product, fast shipping!"
+Output: Positive
+
+Input: "Item arrived damaged."
+Output: Negative
+
+Now classify:
+Input: "The product works as expected."
+Output:
+</blockquote>
+
+<h4>Retrieval-Augmented Generation</h4>
+<p>For domain knowledge, RAG often provides better flexibility and maintainability than fine-tuning.</p>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Model customization should be considered only after exhausting prompt engineering and RAG approaches</li>
+    <li>Fine-tuning is best suited for specialized tasks, consistent formatting, and brand voice alignment</li>
+    <li>High-quality training data is more important than quantity; aim for 200-1000 diverse, accurate examples</li>
+    <li>Bedrock supports fine-tuning for select models with managed training infrastructure</li>
+    <li>Evaluation should combine quantitative metrics with qualitative review of outputs</li>
+    <li>Fine-tuning introduces costs and complexity; ensure the benefits justify the investment</li>
+    <li>Maintain version control and iterate based on production feedback</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

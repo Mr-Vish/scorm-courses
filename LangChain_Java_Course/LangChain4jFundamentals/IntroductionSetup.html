@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LangChain4j Introduction and Setup</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LangChain4j Introduction and Setup</h1>
+
+<h2>What is LangChain4j?</h2>
+<p><strong>LangChain4j</strong> is a Java implementation of the popular LangChain framework, designed specifically for building applications powered by Large Language Models (LLMs). It provides a comprehensive set of abstractions and utilities that simplify the integration of AI capabilities into Java applications.</p>
+
+<h2>Core Philosophy</h2>
+<p>LangChain4j follows these key principles:</p>
+<ul>
+    <li><strong>Framework Agnostic:</strong> Works with any Java framework (Spring Boot, Quarkus, Micronaut, or plain Java)</li>
+    <li><strong>Model Flexibility:</strong> Supports multiple LLM providers through unified interfaces</li>
+    <li><strong>Developer Experience:</strong> Intuitive APIs with strong typing and compile-time safety</li>
+    <li><strong>Production Ready:</strong> Built-in retry logic, error handling, and observability features</li>
+</ul>
+
+<h2>Supported LLM Providers</h2>
+<p>LangChain4j integrates with a wide range of LLM providers:</p>
+
+<table>
+    <tr>
+        <th>Provider</th>
+        <th>Models</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">OpenAI</td>
+        <td>GPT-4, GPT-3.5-turbo, GPT-4-turbo</td>
+        <td>General purpose, high quality responses</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Anthropic</td>
+        <td>Claude 3 (Opus, Sonnet, Haiku)</td>
+        <td>Long context, analysis, coding</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Azure OpenAI</td>
+        <td>GPT-4, GPT-3.5 (Azure hosted)</td>
+        <td>Enterprise deployments, compliance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Ollama</td>
+        <td>Llama 2, Mistral, CodeLlama</td>
+        <td>Local deployment, privacy, offline</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Google Vertex AI</td>
+        <td>PaLM 2, Gemini</td>
+        <td>Google Cloud integration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hugging Face</td>
+        <td>Various open-source models</td>
+        <td>Custom models, experimentation</td>
+    </tr>
+</table>
+
+<h2>Project Setup with Maven</h2>
+<p>Add the LangChain4j dependencies to your <strong>pom.xml</strong>:</p>
+
+<div class="code-block">
+<pre><code>&lt;properties&gt;
+    &lt;langchain4j.version&gt;0.27.1&lt;/langchain4j.version&gt;
+&lt;/properties&gt;
+
+&lt;dependencies&gt;
+    &lt;!-- Core LangChain4j library --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;dev.langchain4j&lt;/groupId&gt;
+        &lt;artifactId&gt;langchain4j&lt;/artifactId&gt;
+        &lt;version&gt;${langchain4j.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- OpenAI integration --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;dev.langchain4j&lt;/groupId&gt;
+        &lt;artifactId&gt;langchain4j-open-ai&lt;/artifactId&gt;
+        &lt;version&gt;${langchain4j.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- Spring Boot integration (optional) --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;dev.langchain4j&lt;/groupId&gt;
+        &lt;artifactId&gt;langchain4j-spring-boot-starter&lt;/artifactId&gt;
+        &lt;version&gt;${langchain4j.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+</code></pre>
+</div>
+
+<h2>Project Setup with Gradle</h2>
+<p>For Gradle projects, add to your <strong>build.gradle</strong>:</p>
+
+<div class="code-block">
+<pre><code>dependencies {
+    implementation 'dev.langchain4j:langchain4j:0.27.1'
+    implementation 'dev.langchain4j:langchain4j-open-ai:0.27.1'
+    
+    // Optional: Spring Boot integration
+    implementation 'dev.langchain4j:langchain4j-spring-boot-starter:0.27.1'
+}
+</code></pre>
+</div>
+
+<h2>Basic Configuration</h2>
+<p>Configure your LLM provider credentials in <strong>application.properties</strong> or <strong>application.yml</strong>:</p>
+
+<blockquote>
+# OpenAI Configuration
+langchain4j.open-ai.chat-model.api-key=${OPENAI_API_KEY}
+langchain4j.open-ai.chat-model.model-name=gpt-4
+langchain4j.open-ai.chat-model.temperature=0.7
+langchain4j.open-ai.chat-model.max-tokens=1000
+
+# Anthropic Configuration (alternative)
+langchain4j.anthropic.chat-model.api-key=${ANTHROPIC_API_KEY}
+langchain4j.anthropic.chat-model.model-name=claude-3-sonnet-20240229
+</blockquote>
+
+<h2>Your First LangChain4j Application</h2>
+<p>Here's a simple example to get started:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+
+public class HelloLangChain4j {
+    
+    public static void main(String[] args) {
+        // Create a chat model
+        ChatLanguageModel model = OpenAiChatModel.builder()
+            .apiKey(System.getenv("OPENAI_API_KEY"))
+            .modelName("gpt-4")
+            .temperature(0.7)
+            .build();
+        
+        // Send a message and get response
+        String response = model.generate("Explain LangChain4j in one sentence");
+        
+        System.out.println(response);
+        // Output: LangChain4j is a Java framework that simplifies 
+        // building applications powered by Large Language Models.
+    }
+}
+</code></pre>
+</div>
+
+<h2>Key Components Overview</h2>
+<p>LangChain4j provides several core components:</p>
+
+<ul>
+    <li><strong>ChatLanguageModel:</strong> Interface for interacting with LLMs</li>
+    <li><strong>AI Services:</strong> High-level abstraction for creating AI-powered services</li>
+    <li><strong>Memory:</strong> Conversation history management</li>
+    <li><strong>Tools:</strong> Function calling capabilities for external integrations</li>
+    <li><strong>Document Loaders:</strong> Import data from various sources</li>
+    <li><strong>Embedding Models:</strong> Convert text to vector representations</li>
+    <li><strong>Vector Stores:</strong> Store and retrieve embeddings for semantic search</li>
+</ul>
+
+<h2>Environment Variables Best Practices</h2>
+<p>Never hardcode API keys in your source code. Use environment variables:</p>
+
+<blockquote>
+# Linux/macOS
+export OPENAI_API_KEY="sk-..."
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Windows
+set OPENAI_API_KEY=sk-...
+set ANTHROPIC_API_KEY=sk-ant-...
+
+# Or use .env file with Spring Boot
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+</blockquote>
+
+<h2>Local Development with Ollama</h2>
+<p>For development without API costs, use Ollama for local LLM hosting:</p>
+
+<div class="code-block">
+<pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;dev.langchain4j&lt;/groupId&gt;
+    &lt;artifactId&gt;langchain4j-ollama&lt;/artifactId&gt;
+    &lt;version&gt;0.27.1&lt;/version&gt;
+&lt;/dependency&gt;
+
+// Java code
+ChatLanguageModel model = OllamaChatModel.builder()
+    .baseUrl("http://localhost:11434")
+    .modelName("llama2")
+    .temperature(0.7)
+    .build();
+</code></pre>
+</div>
+
+<h2>Next Steps</h2>
+<p>Now that you have LangChain4j set up, you're ready to build more sophisticated applications. In the next section, we'll explore chat models and conversation management in depth.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

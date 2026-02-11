@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Chunking Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Chunking Strategies</h1>
+<div class="container">
+<h2>Advanced Chunking Strategies for Claude</h2>
+<p>In traditional RAG, chunking is often a simple matter of splitting text every 500 words. However, to get the best performance from Claude, you should adopt more sophisticated chunking strategies that preserve the semantic integrity and hierarchy of your data.</p>
+
+<h3>The Goal of Chunking</h3>
+<p>The goal is to create chunks that are "self-contained." A chunk should contain enough information to be understandable by the LLM without needing to see the entire document. If a chunk is too small, it loses context. If it's too large, it might contain too much irrelevant "noise."</p>
+
+<h3>Strategy 1: Semantic Chunking</h3>
+<p>Instead of splitting by word count, split by "meaning." Use an LLM or a specialized model to identify logical break points in the text:
+<ul>
+    <li><strong>Paragraph-Based:</strong> Never split in the middle of a paragraph.</li>
+    <li><strong>Section-Based:</strong> Use headers (H1, H2, H3) to define chunk boundaries.</li>
+    <li><strong>Thematic-Based:</strong> Use a model to identify when the topic of the text shifts and create a new chunk there.</li>
+</ul></p>
+
+<h3>Strategy 2: Recursive Character Text Splitting</h3>
+<p>This is a popular method where you try to split by the "largest" possible delimiter first (like a double newline), then a single newline, then a space, and so on. This ensures that you maintain the structure of the document as much as possible while still staying within your desired chunk size.</p>
+
+<h3>Strategy 3: The 'Sliding Window' with Overlap</h3>
+<p>To ensure that context isn't lost at the boundaries of a chunk, include a small "overlap" (e.g., 10-20%) from the previous chunk. This ensures that if a sentence is split, the model still sees the full thought in at least one of the chunks.</p>
+
+<h3>Strategy 4: Context Enrichment (Augmented Chunking)</h3>
+<p>This is a powerful technique where you "add" information to each chunk before indexing it:
+<ul>
+    <li><strong>Global Context:</strong> Prepend the document's title and a 1-sentence summary to every single chunk.</li>
+    <li><strong>Metadata:</strong> Include tags for author, date, and category within the chunk itself.</li>
+    <li><strong>Summarized Context:</strong> For long documents, include a summary of the *preceding* 1,000 words at the beginning of each chunk.</li>
+</ul>
+This ensures that when Claude sees a chunk, it knows exactly where it came from and what the overall context is.</p>
+
+<h3>Strategy 5: Multi-Vector Indexing (Parent-Child)</h3>
+<p>Store two versions of each document:
+1. <strong>Small 'Summary' Chunks (Child):</strong> Used for initial vector search to find relevant sections quickly.
+2. <strong>Large 'Context' Blocks (Parent):</strong> The actual text that is sent to Claude once a "Child" chunk is found.
+This gives you the speed of small-chunk search with the reasoning power of large-block context.</p>
+
+<h3>Chunking for Different Data Types</h3>
+<ul>
+    <li><strong>Code:</strong> Chunk by function or class, not by line count.</li>
+    <li><strong>Legal Docs:</strong> Chunk by clause or section number.</li>
+    <li><strong>CSV/Data:</strong> Chunk by row or group of related rows.</li>
+</ul>
+
+<h3>Practical Exercise: Chunking a Technical Manual</h3>
+<p>Take a 20-page user manual.
+1. Try chunking it using a simple "500-word limit."
+2. Try chunking it using "Section-based splitting" with a "100-word overlap."
+Compare the two. Which one results in chunks that are more readable and understandable on their own?</p>
+
+<h3>Summary</h3>
+<p>Chunking is the foundation of RAG. By moving beyond simple word counts and adopting semantic, context-aware strategies, you can ensure that Claude always receives high-quality, coherent information, leading to more accurate and reliable answers.</p>
+
+</div>
+</body>
+</html>

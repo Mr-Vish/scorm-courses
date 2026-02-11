@@ -1,0 +1,306 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-Agent Collaboration and Advanced Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Multi-Agent Collaboration and Advanced Patterns</h1>
+
+<h2>Module Objectives</h2>
+<p>In this section, you will:</p>
+<ul>
+    <li>Understand multi-agent architectures and collaboration patterns</li>
+    <li>Learn to implement supervisor-subordinate agent systems</li>
+    <li>Explore advanced capabilities like guardrails and session management</li>
+    <li>Understand production deployment patterns and best practices</li>
+</ul>
+
+<h2>Multi-Agent Architectures</h2>
+<p>As agent applications grow in complexity, single-agent architectures can become difficult to manage. Multi-agent systems distribute responsibilities across specialized agents, each focused on specific domains or capabilities.</p>
+
+<h3>Benefits of Multi-Agent Systems</h3>
+<ul>
+    <li><strong>Specialization:</strong> Each agent can be optimized for its specific domain with tailored instructions, action groups, and knowledge bases</li>
+    <li><strong>Maintainability:</strong> Changes to one domain don't require modifying other agents</li>
+    <li><strong>Scalability:</strong> Individual agents can be scaled independently based on load</li>
+    <li><strong>Model Optimization:</strong> Use different foundation models for different agents based on requirements</li>
+    <li><strong>Testing:</strong> Easier to test and validate specialized agents in isolation</li>
+</ul>
+
+<h3>Supervisor-Subordinate Pattern</h3>
+<p>The most common multi-agent pattern involves a supervisor agent that routes requests to specialized subordinate agents.</p>
+
+<p><strong>Supervisor Agent Responsibilities:</strong></p>
+<ul>
+    <li>Analyze incoming requests to determine intent and domain</li>
+    <li>Route requests to appropriate subordinate agent</li>
+    <li>Aggregate responses from multiple subordinates if needed</li>
+    <li>Handle cross-domain requests requiring multiple specialists</li>
+    <li>Provide fallback handling when subordinates cannot fulfill requests</li>
+</ul>
+
+<p><strong>Subordinate Agent Characteristics:</strong></p>
+<ul>
+    <li>Deep expertise in specific domain (billing, technical support, product info)</li>
+    <li>Domain-specific action groups and knowledge bases</li>
+    <li>Optimized instructions for their specialty</li>
+    <li>May use different foundation models based on complexity</li>
+</ul>
+
+<h3>Implementation Approach</h3>
+<p>Supervisor agents use action groups to invoke subordinate agents:</p>
+
+<div class="code-block">
+<pre><code># Supervisor Agent Instructions
+"You are a customer service supervisor. Analyze customer requests and route 
+to the appropriate specialist agent:
+
+- Billing Agent: For subscription, payment, refund, and invoice questions
+- Technical Agent: For troubleshooting, configuration, and integration issues
+- Product Agent: For feature questions, comparisons, and recommendations
+
+If a request spans multiple domains, consult relevant agents and synthesize 
+their responses into a cohesive answer."
+
+# Supervisor Action Group (OpenAPI)
+paths:
+  /agents/billing:
+    post:
+      summary: Consult billing specialist agent
+      operationId: consultBillingAgent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                query:
+                  type: string
+                  description: Customer's billing-related question
+                
+  /agents/technical:
+    post:
+      summary: Consult technical support agent
+      operationId: consultTechnicalAgent
+      # Similar structure</code></pre>
+</div>
+
+<p><strong>Lambda Function for Agent Invocation:</strong></p>
+<div class="code-block">
+<pre><code>import boto3
+
+bedrock_agent_runtime = boto3.client('bedrock-agent-runtime')
+
+def lambda_handler(event, context):
+    operation = event['apiPath']
+    parameters = {p['name']: p['value'] for p in event['parameters']}
+    
+    # Map operation to subordinate agent
+    agent_map = {
+        '/agents/billing': 'BILLING_AGENT_ID',
+        '/agents/technical': 'TECHNICAL_AGENT_ID',
+        '/agents/product': 'PRODUCT_AGENT_ID'
+    }
+    
+    subordinate_agent_id = agent_map.get(operation)
+    query = parameters.get('query')
+    
+    # Invoke subordinate agent
+    response = bedrock_agent_runtime.invoke_agent(
+        agentId=subordinate_agent_id,
+        agentAliasId='PROD',
+        sessionId=f"supervisor-{event['sessionId']}",
+        inputText=query
+    )
+    
+    # Collect response
+    result = ""
+    for event in response['completion']:
+        if 'chunk' in event:
+            result += event['chunk']['bytes'].decode('utf-8')
+    
+    return {
+        'messageVersion': '1.0',
+        'response': {
+            'actionGroup': event['actionGroup'],
+            'apiPath': event['apiPath'],
+            'httpMethod': 'POST',
+            'httpStatusCode': 200,
+            'responseBody': {
+                'application/json': {
+                    'body': json.dumps({'response': result})
+                }
+            }
+        }
+    }</code></pre>
+</div>
+
+<h2>Guardrails for Responsible AI</h2>
+<p>Guardrails provide content filtering and safety controls to ensure agents behave responsibly and within defined boundaries.</p>
+
+<h3>Guardrail Capabilities</h3>
+
+<h4>1. Content Filters</h4>
+<p>Block or flag harmful content across categories:</p>
+<ul>
+    <li><strong>Hate Speech:</strong> Discriminatory or offensive content</li>
+    <li><strong>Violence:</strong> Graphic or threatening content</li>
+    <li><strong>Sexual Content:</strong> Inappropriate or explicit material</li>
+    <li><strong>Misconduct:</strong> Illegal activities or harmful advice</li>
+</ul>
+
+<p>Configure filter strength (NONE, LOW, MEDIUM, HIGH) for each category based on use case requirements.</p>
+
+<h4>2. Denied Topics</h4>
+<p>Prevent discussion of specific subjects:</p>
+<div class="code-block">
+<pre><code>Denied Topics:
+- "Investment advice or financial recommendations"
+- "Medical diagnosis or treatment recommendations"
+- "Legal advice or interpretation of laws"
+- "Political opinions or endorsements"</code></pre>
+</div>
+
+<h4>3. Word Filters</h4>
+<p>Block or redact specific terms, phrases, or patterns:</p>
+<ul>
+    <li>Profanity and offensive language</li>
+    <li>Competitor names or products</li>
+    <li>Sensitive internal terminology</li>
+    <li>Regulated terms requiring compliance review</li>
+</ul>
+
+<h4>4. PII Redaction</h4>
+<p>Automatically detect and mask personally identifiable information:</p>
+<ul>
+    <li>Social Security Numbers</li>
+    <li>Credit card numbers</li>
+    <li>Email addresses</li>
+    <li>Phone numbers</li>
+    <li>Physical addresses</li>
+    <li>Names (when configured)</li>
+</ul>
+
+<h4>5. Contextual Grounding</h4>
+<p>Ensure responses are grounded in provided knowledge or context:</p>
+<ul>
+    <li>Detect when agent generates information not present in knowledge base</li>
+    <li>Flag responses that contradict source material</li>
+    <li>Require citations for factual claims</li>
+</ul>
+
+<h3>Guardrail Configuration</h3>
+<p>Guardrails are created separately and then associated with agents:</p>
+
+<ol>
+    <li><strong>Create Guardrail:</strong> Define filters, denied topics, word lists, and PII settings</li>
+    <li><strong>Test Guardrail:</strong> Validate behavior with sample inputs</li>
+    <li><strong>Associate with Agent:</strong> Link guardrail to one or more agents</li>
+    <li><strong>Configure Application:</strong> Decide whether to apply to input, output, or both</li>
+</ol>
+
+<p><strong>Input vs. Output Guardrails:</strong></p>
+<table>
+    <tr>
+        <th>Application Point</th>
+        <th>Purpose</th>
+        <th>Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Input Guardrails</td>
+        <td>Filter user requests before processing</td>
+        <td>Block inappropriate queries, protect against prompt injection</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Output Guardrails</td>
+        <td>Filter agent responses before delivery</td>
+        <td>Ensure appropriate responses, redact PII, enforce grounding</td>
+    </tr>
+</table>
+
+<h2>Advanced Session Management</h2>
+
+<h3>Session Attributes</h3>
+<p>Session attributes provide persistent context across conversation turns:</p>
+
+<div class="code-block">
+<pre><code>session_attributes = {
+    'customerId': 'CUST12345',
+    'accountTier': 'Enterprise',
+    'preferredLanguage': 'en',
+    'recentIssues': ['billing_dispute', 'feature_request'],
+    'assignedCSM': 'jane.smith@company.com'
+}</code></pre>
+</div>
+
+<p>Agents can reference session attributes in their reasoning and tailor responses accordingly.</p>
+
+<h3>Prompt Session Attributes</h3>
+<p>Prompt session attributes provide dynamic, per-turn context:</p>
+
+<div class="code-block">
+<pre><code>prompt_session_attributes = {
+    'currentPage': '/dashboard/billing',
+    'timeOfDay': 'evening',
+    'deviceType': 'mobile',
+    'urgencyLevel': 'high'
+}</code></pre>
+</div>
+
+<p>Use prompt session attributes for context that changes frequently or is specific to individual requests.</p>
+
+<h3>Session State Management</h3>
+<p>Best practices for session management:</p>
+<ul>
+    <li><strong>Initialize Thoughtfully:</strong> Set relevant attributes at session start</li>
+    <li><strong>Update Strategically:</strong> Modify attributes as context changes</li>
+    <li><strong>Clean Up:</strong> Remove sensitive data when no longer needed</li>
+    <li><strong>Monitor Size:</strong> Keep attribute data concise to avoid context window issues</li>
+</ul>
+
+<h2>Streaming Responses</h2>
+<p>For improved user experience, agents can stream responses as they're generated rather than waiting for complete responses.</p>
+
+<p><strong>Benefits of Streaming:</strong></p>
+<ul>
+    <li>Reduced perceived latency</li>
+    <li>Better user engagement</li>
+    <li>Ability to cancel long-running requests</li>
+    <li>Progressive disclosure of information</li>
+</ul>
+
+<p><strong>Implementation:</strong></p>
+<div class="code-block">
+<pre><code>response = bedrock_agent_runtime.invoke_agent(
+    agentId='AGENT_ID',
+    agentAliasId='PROD',
+    sessionId='session-123',
+    inputText='Explain our refund policy',
+    enableTrace=False
+)
+
+# Process streaming response
+for event in response['completion']:
+    if 'chunk' in event:
+        chunk_text = event['chunk']['bytes'].decode('utf-8')
+        # Send chunk to client immediately
+        yield chunk_text</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Multi-agent systems distribute responsibilities across specialized agents for better maintainability and scalability</li>
+    <li>Supervisor-subordinate pattern enables routing to domain-specific agents</li>
+    <li>Guardrails provide content filtering, denied topics, PII redaction, and contextual grounding</li>
+    <li>Session attributes enable persistent context, while prompt session attributes provide per-turn context</li>
+    <li>Streaming responses improve user experience by reducing perceived latency</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

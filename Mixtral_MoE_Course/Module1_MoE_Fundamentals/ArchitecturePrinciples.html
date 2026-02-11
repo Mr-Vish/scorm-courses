@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding Mixture-of-Experts Architecture</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: MoE Architecture Fundamentals</h1>
+<h2>Understanding Mixture-of-Experts Architecture</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will:</p>
+<ul>
+    <li>Understand the fundamental principles of Mixture-of-Experts architecture</li>
+    <li>Learn how MoE differs from traditional dense neural networks</li>
+    <li>Explore the concept of sparse activation and conditional computation</li>
+    <li>Examine the historical evolution and modern applications of MoE</li>
+</ul>
+
+<h2>The Challenge of Scaling Neural Networks</h2>
+<p>Traditional neural networks face a fundamental scaling challenge. As we increase model capacity by adding more parameters, we achieve better performance but at a steep cost:</p>
+
+<ul>
+    <li><strong>Computational Cost:</strong> Every parameter must be activated for every input, leading to linear scaling of computation with model size</li>
+    <li><strong>Memory Requirements:</strong> All parameters must be loaded into memory during inference</li>
+    <li><strong>Inference Latency:</strong> Larger models take proportionally longer to process each input</li>
+    <li><strong>Energy Consumption:</strong> More computations mean higher power requirements and operational costs</li>
+</ul>
+
+<p>This creates a critical trade-off: organizations must choose between model quality and operational feasibility. A 70B parameter model may perform better than a 13B model, but it requires 5x more memory, 5x more computation, and produces results 5x slower. For many real-world applications, this trade-off is unacceptable.</p>
+
+<h2>The Core Insight of Mixture-of-Experts</h2>
+<p>Mixture-of-Experts architecture is built on a powerful insight: <strong>not all inputs require the same computational resources</strong>. Different types of inputs benefit from different types of processing. Consider these examples:</p>
+
+<ul>
+    <li>A question about Python programming might benefit from an "expert" specialized in code and technical documentation</li>
+    <li>A question about French literature might benefit from an expert specialized in language and humanities</li>
+    <li>A mathematical problem might benefit from an expert specialized in logical reasoning and numerical computation</li>
+</ul>
+
+<p>Rather than forcing every input through the same massive network, MoE architectures route each input to a small subset of specialized sub-networks called <strong>experts</strong>. This enables the model to have a very large total capacity while keeping the computation per input manageable.</p>
+
+<h2>Key Architectural Components</h2>
+
+<h3>1. Expert Networks</h3>
+<p>An MoE layer contains multiple parallel neural networks called experts. Each expert is typically a feedforward network (FFN) with the same architecture but different learned parameters. In Mixtral 8x7B, each layer contains 8 expert networks, each with approximately 7 billion parameters.</p>
+
+<p><strong>Expert Specialization:</strong> During training, experts naturally develop specializations. Research has shown that experts tend to specialize along several dimensions:</p>
+<ul>
+    <li><strong>Domain Knowledge:</strong> Some experts become better at science, others at code, others at creative writing</li>
+    <li><strong>Linguistic Patterns:</strong> Experts may specialize in different languages or grammatical structures</li>
+    <li><strong>Token Types:</strong> Some experts activate more frequently for rare words, numbers, or punctuation</li>
+    <li><strong>Reasoning Types:</strong> Different experts may handle factual recall versus logical reasoning</li>
+</ul>
+
+<h3>2. Router Network (Gating Function)</h3>
+<p>The router is a small neural network that examines each input token and decides which experts should process it. The router's job is critical: it must quickly determine which experts are most relevant for the current input.</p>
+
+<p><strong>Router Operation:</strong></p>
+<ol>
+    <li>The router receives the hidden state representation of a token</li>
+    <li>It computes a score for each available expert</li>
+    <li>It selects the top-K experts with the highest scores (typically K=2)</li>
+    <li>It normalizes the scores to create weights that sum to 1</li>
+    <li>These weights determine how much each selected expert contributes to the final output</li>
+</ol>
+
+<h3>3. Sparse Activation</h3>
+<p>The defining characteristic of MoE is <strong>sparse activation</strong>: only a small subset of experts process each input. In Mixtral 8x7B, only 2 out of 8 experts are active for each token. This means:</p>
+
+<ul>
+    <li>75% of the expert parameters are inactive for any given token</li>
+    <li>Computation scales with the number of active experts, not total experts</li>
+    <li>The model can have 8x more parameters than a dense model with similar computational cost</li>
+</ul>
+
+<h2>Mathematical Formulation</h2>
+<p>For a given input token with hidden state <strong>x</strong>, the MoE layer output <strong>y</strong> is computed as:</p>
+
+<blockquote>
+<strong>Router Computation:</strong>
+G(x) = Softmax(TopK(x · W_gate, k))
+
+<strong>Expert Selection:</strong>
+Select top-k experts based on G(x) scores
+
+<strong>Output Combination:</strong>
+y = Σ G(x)_i · Expert_i(x)  for i in top-k experts
+
+Where:
+- W_gate is the router's learned weight matrix
+- TopK selects the k highest-scoring experts
+- G(x)_i is the normalized weight for expert i
+- Expert_i(x) is the output of expert i processing input x
+</blockquote>
+
+<h2>Comparison: Dense vs. Mixture-of-Experts</h2>
+
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Dense Model</th>
+        <th>MoE Model</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Parameter Activation</td>
+        <td>All parameters active for every input</td>
+        <td>Only subset of parameters active per input</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Computation per Token</td>
+        <td>Fixed, proportional to model size</td>
+        <td>Fixed, proportional to active expert size</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Capacity</td>
+        <td>Limited by computational budget</td>
+        <td>Can be much larger for same compute</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Specialization</td>
+        <td>Single network handles all inputs</td>
+        <td>Different experts specialize in different patterns</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Memory Efficiency</td>
+        <td>All parameters must fit in memory</td>
+        <td>All parameters must fit, but can use techniques like expert offloading</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Training Complexity</td>
+        <td>Straightforward</td>
+        <td>Requires load balancing and routing optimization</td>
+    </tr>
+</table>
+
+<h2>Historical Context and Evolution</h2>
+
+<h3>Early MoE Research (1991-2010)</h3>
+<p>The concept of Mixture-of-Experts dates back to 1991 when Jacobs et al. introduced the idea of combining multiple specialized models. Early MoE systems were used for:</p>
+<ul>
+    <li>Classification tasks with distinct input regions</li>
+    <li>Time series prediction with different regimes</li>
+    <li>Ensemble learning with specialized sub-models</li>
+</ul>
+
+<h3>Modern Deep Learning Era (2017-Present)</h3>
+<p>MoE gained renewed interest with the rise of large-scale deep learning:</p>
+<ul>
+    <li><strong>2017:</strong> Google's "Outrageously Large Neural Networks" paper demonstrated MoE for language modeling at scale</li>
+    <li><strong>2021:</strong> Switch Transformers showed that MoE could scale to trillion-parameter models</li>
+    <li><strong>2022:</strong> GLaM demonstrated competitive performance with GPT-3 using 1/3 the energy</li>
+    <li><strong>2023:</strong> Mixtral 8x7B brought high-quality open-source MoE models to the community</li>
+</ul>
+
+<h2>Why MoE Matters Now</h2>
+
+<p>Several factors have made MoE architectures particularly relevant today:</p>
+
+<ul>
+    <li><strong>Scaling Laws:</strong> Research shows that model performance continues to improve with scale, but dense models become prohibitively expensive</li>
+    <li><strong>Inference Costs:</strong> As AI moves to production, inference costs dominate training costs. MoE reduces inference costs dramatically</li>
+    <li><strong>Environmental Concerns:</strong> MoE models require less energy per inference, reducing carbon footprint</li>
+    <li><strong>Democratization:</strong> MoE makes powerful models accessible to organizations without massive infrastructure</li>
+    <li><strong>Hardware Evolution:</strong> Modern GPUs and TPUs are well-suited to the parallel expert computation in MoE</li>
+</ul>
+
+<h2>Real-World Impact</h2>
+
+<p>Organizations deploying MoE models report significant benefits:</p>
+
+<ul>
+    <li><strong>Cost Reduction:</strong> 5-10x lower inference costs compared to equivalent dense models</li>
+    <li><strong>Improved Latency:</strong> Faster response times enable better user experiences</li>
+    <li><strong>Higher Throughput:</strong> More requests can be processed with the same hardware</li>
+    <li><strong>Better Performance:</strong> MoE models often outperform dense models of similar computational cost</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>MoE architecture enables models to have large capacity while maintaining computational efficiency through sparse activation</li>
+    <li>Router networks intelligently select which experts should process each input</li>
+    <li>Experts naturally develop specializations during training, handling different types of inputs more effectively</li>
+    <li>MoE represents a fundamental shift from "bigger is better" to "smarter routing is better"</li>
+    <li>The architecture addresses critical challenges in scaling AI: cost, latency, and environmental impact</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

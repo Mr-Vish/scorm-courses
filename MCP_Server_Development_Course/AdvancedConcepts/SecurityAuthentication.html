@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Security and Authentication in MCP Servers</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Security and Authentication in MCP Servers</h1>
+
+<h2>Module Objectives</h2>
+<p>By the end of this module, you will be able to:</p>
+<ul>
+    <li>Implement authentication and authorization in MCP servers</li>
+    <li>Apply security best practices to protect sensitive data</li>
+    <li>Configure secure production deployments</li>
+    <li>Optimize server performance for high-throughput scenarios</li>
+    <li>Monitor and maintain MCP servers in production environments</li>
+</ul>
+
+<h2>Security Fundamentals</h2>
+
+<p>Security is paramount when building MCP servers that access organizational data and systems. A comprehensive security strategy addresses authentication, authorization, data protection, and audit logging.</p>
+
+<h3>Security Principles</h3>
+
+<ul>
+    <li><strong>Least Privilege:</strong> Grant minimum necessary permissions</li>
+    <li><strong>Defense in Depth:</strong> Multiple layers of security controls</li>
+    <li><strong>Fail Secure:</strong> Default to denying access on errors</li>
+    <li><strong>Audit Everything:</strong> Log all security-relevant events</li>
+    <li><strong>Validate All Inputs:</strong> Never trust client-provided data</li>
+</ul>
+
+<h2>Authentication Strategies</h2>
+
+<p>Authentication verifies the identity of clients connecting to your MCP server.</p>
+
+<h3>stdio Transport Authentication</h3>
+
+<p>For stdio transport, authentication relies on operating system security:</p>
+
+<ul>
+    <li><strong>Process Isolation:</strong> Server runs with host's permissions</li>
+    <li><strong>File System Permissions:</strong> Restrict access to server executable</li>
+    <li><strong>Environment Variables:</strong> Pass credentials securely</li>
+    <li><strong>User Context:</strong> Server inherits user's access rights</li>
+</ul>
+
+<h3>SSE Transport Authentication</h3>
+
+<p>SSE transport requires explicit authentication mechanisms:</p>
+
+<table>
+    <tr>
+        <th>Method</th>
+        <th>Use Case</th>
+        <th>Implementation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">API Keys</td>
+        <td>Simple service-to-service auth</td>
+        <td>Bearer token in Authorization header</td>
+    </tr>
+    <tr>
+        <td class="rowheader">OAuth 2.0</td>
+        <td>User-delegated access</td>
+        <td>OAuth flow with access tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">JWT</td>
+        <td>Stateless authentication</td>
+        <td>Signed JSON Web Tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">mTLS</td>
+        <td>High-security environments</td>
+        <td>Mutual TLS certificate validation</td>
+    </tr>
+</table>
+
+<h3>API Key Authentication Example</h3>
+
+<blockquote>
+const API_KEY = process.env.MCP_API_KEY;
+
+app.use((req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing authorization' });
+  }
+  
+  const token = authHeader.substring(7);
+  if (token !== API_KEY) {
+    return res.status(403).json({ error: 'Invalid API key' });
+  }
+  
+  next();
+});
+</blockquote>
+
+<h2>Authorization and Access Control</h2>
+
+<p>Authorization determines what authenticated clients can do.</p>
+
+<h3>Role-Based Access Control (RBAC)</h3>
+
+<p>Define roles with specific permissions:</p>
+
+<blockquote>
+const roles = {
+  admin: ['read', 'write', 'delete', 'manage'],
+  developer: ['read', 'write'],
+  viewer: ['read']
+};
+
+function checkPermission(userRole, requiredPermission) {
+  return roles[userRole]?.includes(requiredPermission);
+}
+</blockquote>
+
+<h3>Tool-Level Authorization</h3>
+
+<p>Restrict access to specific tools based on user permissions:</p>
+
+<blockquote>
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const toolName = request.params.name;
+  const userRole = request.context.userRole;
+  
+  if (toolName === 'delete_data' && !checkPermission(userRole, 'delete')) {
+    throw new Error('Insufficient permissions for this tool');
+  }
+  
+  // Execute tool
+});
+</blockquote>
+
+<h2>Data Protection</h2>
+
+<h3>Encryption</h3>
+
+<ul>
+    <li><strong>In Transit:</strong> Use HTTPS/TLS for SSE transport</li>
+    <li><strong>At Rest:</strong> Encrypt sensitive data in storage</li>
+    <li><strong>In Memory:</strong> Clear sensitive data after use</li>
+</ul>
+
+<h3>Sensitive Data Handling</h3>
+
+<blockquote>
+// Never log sensitive data
+console.error(`Processing request for user: ${userId}`);
+// NOT: console.error(`API key: ${apiKey}`);
+
+// Redact sensitive fields in responses
+function redactSensitive(data) {
+  return {
+    ...data,
+    password: '[REDACTED]',
+    apiKey: '[REDACTED]'
+  };
+}
+</blockquote>
+
+<h2>Input Validation and Sanitization</h2>
+
+<p>Validate all inputs to prevent injection attacks and data corruption:</p>
+
+<blockquote>
+function validateToolInput(toolName, arguments) {
+  if (toolName === 'query_database') {
+    // Prevent SQL injection
+    if (!/^[a-zA-Z0-9_\s]+$/.test(arguments.tableName)) {
+      throw new Error('Invalid table name');
+    }
+    
+    // Limit query complexity
+    if (arguments.limit > 1000) {
+      throw new Error('Limit too high');
+    }
+  }
+}
+</blockquote>
+
+<h2>Rate Limiting</h2>
+
+<p>Protect against abuse and denial-of-service attacks:</p>
+
+<blockquote>
+const rateLimiter = new Map();
+
+function checkRateLimit(clientId, maxRequests = 100, windowMs = 60000) {
+  const now = Date.now();
+  const clientData = rateLimiter.get(clientId) || { count: 0, resetTime: now + windowMs };
+  
+  if (now > clientData.resetTime) {
+    clientData.count = 0;
+    clientData.resetTime = now + windowMs;
+  }
+  
+  clientData.count++;
+  rateLimiter.set(clientId, clientData);
+  
+  if (clientData.count > maxRequests) {
+    throw new Error('Rate limit exceeded');
+  }
+}
+</blockquote>
+
+<h2>Audit Logging</h2>
+
+<p>Log all security-relevant events for compliance and forensics:</p>
+
+<blockquote>
+function auditLog(event, userId, details) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    event: event,
+    userId: userId,
+    details: details,
+    ipAddress: request.ip
+  };
+  
+  // Write to secure audit log
+  auditLogger.info(JSON.stringify(logEntry));
+}
+
+// Log authentication attempts
+auditLog('AUTH_SUCCESS', userId, { method: 'api_key' });
+
+// Log tool executions
+auditLog('TOOL_EXECUTED', userId, { tool: toolName, args: redactSensitive(args) });
+</blockquote>
+
+<h2>Security Best Practices</h2>
+
+<ul>
+    <li>Never hardcode credentials in source code</li>
+    <li>Use environment variables for sensitive configuration</li>
+    <li>Implement proper error handling without leaking information</li>
+    <li>Keep dependencies updated to patch vulnerabilities</li>
+    <li>Use HTTPS for all SSE transport connections</li>
+    <li>Implement request timeouts to prevent resource exhaustion</li>
+    <li>Validate and sanitize all user inputs</li>
+    <li>Log security events for monitoring and compliance</li>
+    <li>Follow principle of least privilege for all operations</li>
+    <li>Regularly review and update security controls</li>
+</ul>
+
+<h2>Security Checklist</h2>
+
+<p>Before deploying to production:</p>
+
+<ol>
+    <li>Authentication implemented and tested</li>
+    <li>Authorization controls in place for all tools</li>
+    <li>Input validation on all parameters</li>
+    <li>Rate limiting configured</li>
+    <li>Audit logging enabled</li>
+    <li>HTTPS/TLS configured for SSE transport</li>
+    <li>Sensitive data properly handled and redacted</li>
+    <li>Error messages don't leak sensitive information</li>
+    <li>Dependencies scanned for vulnerabilities</li>
+    <li>Security testing completed</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Security must be built into MCP servers from the start</li>
+    <li>Authentication verifies identity, authorization controls access</li>
+    <li>Input validation prevents injection attacks and data corruption</li>
+    <li>Rate limiting protects against abuse and DoS attacks</li>
+    <li>Audit logging provides visibility and compliance</li>
+    <li>Multiple layers of security controls provide defense in depth</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

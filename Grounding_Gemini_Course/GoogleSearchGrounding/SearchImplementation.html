@@ -1,0 +1,394 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Google Search Grounding Implementation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Google Search Grounding Implementation</h1>
+
+<h2>What is Google Search Grounding?</h2>
+<p>Google Search grounding connects Gemini to Google's real-time search index, enabling the model to access current information from billions of web pages. This transforms Gemini from a static knowledge base into a dynamic system that can answer questions about recent events, current prices, latest news, and any information available on the public web.</p>
+
+<blockquote>
+<strong>Key Advantage:</strong> Google Search grounding provides access to information published after the model's training cutoff date, ensuring responses reflect the current state of the world.
+</blockquote>
+
+<h2>Basic Google Search Grounding</h2>
+<p>Enabling Google Search grounding requires adding the google_search tool to your configuration:</p>
+
+<blockquote>
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+# Enable Google Search grounding
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents='What are the latest developments in quantum computing?',
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+
+print(response.text)
+
+# Access grounding metadata
+candidate = response.candidates[0]
+if candidate.grounding_metadata:
+    metadata = candidate.grounding_metadata
+    
+    # Grounding score
+    if metadata.grounding_support:
+        print(f"\nGrounding Score: {metadata.grounding_support.grounding_score:.2f}")
+    
+    # Sources used
+    print(f"\nSources ({len(metadata.grounding_chunks)}):")
+    for i, chunk in enumerate(metadata.grounding_chunks, 1):
+        print(f"{i}. {chunk.web.title}")
+        print(f"   {chunk.web.uri}\n")
+</blockquote>
+
+<h2>When to Use Google Search Grounding</h2>
+<p>Google Search grounding is ideal for specific categories of queries:</p>
+
+<table>
+    <tr>
+        <th>Category</th>
+        <th>Examples</th>
+        <th>Why Grounding Helps</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Current Events</td>
+        <td>Election results, breaking news, recent announcements</td>
+        <td>Training data is outdated for recent events</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Real-Time Data</td>
+        <td>Stock prices, weather, sports scores, exchange rates</td>
+        <td>Requires up-to-the-minute accuracy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Product Information</td>
+        <td>Latest iPhone features, car specifications, software versions</td>
+        <td>Products update frequently</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Scientific Research</td>
+        <td>Recent studies, new discoveries, latest findings</td>
+        <td>Science advances rapidly</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Regulations & Laws</td>
+        <td>New legislation, policy changes, legal updates</td>
+        <td>Laws change and vary by jurisdiction</td>
+    </tr>
+</table>
+
+<h2>Configuring Search Behavior</h2>
+<p>You can customize how Google Search grounding operates:</p>
+
+<blockquote>
+from google.genai import types
+
+# Basic configuration
+config = types.GenerateContentConfig(
+    tools=[types.Tool(google_search=types.GoogleSearch())]
+)
+
+# The model will automatically determine:
+# - Whether to perform a search
+# - What search query to use
+# - How many results to retrieve
+# - Which results are most relevant
+</blockquote>
+
+<h2>Understanding Search Entry Points</h2>
+<p>The search_entry_point in metadata shows what query Gemini used to search:</p>
+
+<blockquote>
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents='Compare the battery life of the latest flagship smartphones',
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+
+metadata = response.candidates[0].grounding_metadata
+
+# See what search query was used
+if metadata and metadata.search_entry_point:
+    print("Search Query Used:")
+    print(metadata.search_entry_point.rendered_content)
+    # Output might be: "latest flagship smartphone battery life comparison 2024"
+
+# This helps you understand:
+# - How the model interpreted your query
+# - What information it searched for
+# - Whether the search was appropriate
+</blockquote>
+
+<h2>Handling Search Results</h2>
+<p>Gemini processes search results intelligently:</p>
+
+<table>
+    <tr>
+        <th>Step</th>
+        <th>Process</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td class="rowheader">1. Query Formulation</td>
+        <td>Converts user query into effective search terms</td>
+        <td>Optimize search relevance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">2. Result Retrieval</td>
+        <td>Fetches top search results from Google</td>
+        <td>Gather candidate sources</td>
+    </tr>
+    <tr>
+        <td class="rowheader">3. Relevance Filtering</td>
+        <td>Identifies most relevant results for the query</td>
+        <td>Focus on useful information</td>
+    </tr>
+    <tr>
+        <td class="rowheader">4. Content Extraction</td>
+        <td>Extracts key information from selected pages</td>
+        <td>Build context for response</td>
+    </tr>
+    <tr>
+        <td class="rowheader">5. Synthesis</td>
+        <td>Combines information into coherent response</td>
+        <td>Generate grounded answer</td>
+    </tr>
+</table>
+
+<h2>Practical Example: News Aggregation</h2>
+<blockquote>
+def get_latest_news(topic, max_sources=5):
+    """
+    Get latest news on a topic with source attribution.
+    """
+    client = genai.Client()
+    
+    prompt = f"What are the latest news and developments about {topic}? Provide a summary with key points."
+    
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(google_search=types.GoogleSearch())]
+        )
+    )
+    
+    # Extract response and metadata
+    news_summary = response.text
+    metadata = response.candidates[0].grounding_metadata
+    
+    # Compile sources
+    sources = []
+    if metadata and metadata.grounding_chunks:
+        for chunk in metadata.grounding_chunks[:max_sources]:
+            sources.append({
+                'title': chunk.web.title,
+                'url': chunk.web.uri
+            })
+    
+    return {
+        'topic': topic,
+        'summary': news_summary,
+        'sources': sources,
+        'grounding_score': metadata.grounding_support.grounding_score if metadata and metadata.grounding_support else 0.0
+    }
+
+
+# Usage
+news = get_latest_news("artificial intelligence regulation")
+
+print(f"Topic: {news['topic']}")
+print(f"Grounding Score: {news['grounding_score']:.2f}\n")
+print("Summary:")
+print(news['summary'])
+print(f"\nSources ({len(news['sources'])}):")
+for i, source in enumerate(news['sources'], 1):
+    print(f"{i}. {source['title']}")
+    print(f"   {source['url']}\n")
+</blockquote>
+
+<h2>Practical Example: Product Comparison</h2>
+<blockquote>
+def compare_products(product_a, product_b, criteria):
+    """
+    Compare two products based on specific criteria using current information.
+    """
+    client = genai.Client()
+    
+    prompt = f"""
+    Compare {product_a} and {product_b} based on the following criteria:
+    {', '.join(criteria)}
+    
+    Provide a detailed comparison with current specifications and pricing.
+    """
+    
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(google_search=types.GoogleSearch())]
+        )
+    )
+    
+    metadata = response.candidates[0].grounding_metadata
+    
+    # Extract sources by domain
+    sources_by_domain = {}
+    if metadata and metadata.grounding_chunks:
+        for chunk in metadata.grounding_chunks:
+            # Extract domain from URL
+            from urllib.parse import urlparse
+            domain = urlparse(chunk.web.uri).netloc
+            
+            if domain not in sources_by_domain:
+                sources_by_domain[domain] = []
+            
+            sources_by_domain[domain].append({
+                'title': chunk.web.title,
+                'url': chunk.web.uri
+            })
+    
+    return {
+        'comparison': response.text,
+        'sources_by_domain': sources_by_domain,
+        'total_sources': len(metadata.grounding_chunks) if metadata else 0
+    }
+
+
+# Usage
+comparison = compare_products(
+    "iPhone 15 Pro",
+    "Samsung Galaxy S24 Ultra",
+    ["camera quality", "battery life", "price", "performance"]
+)
+
+print(comparison['comparison'])
+print(f"\n\nSources used from {len(comparison['sources_by_domain'])} domains:")
+for domain, sources in comparison['sources_by_domain'].items():
+    print(f"\n{domain}:")
+    for source in sources:
+        print(f"  - {source['title']}")
+</blockquote>
+
+<h2>Latency Considerations</h2>
+<p>Google Search grounding adds latency to requests. Typical performance:</p>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Typical Latency</th>
+        <th>Optimization Strategy</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Simple query, few results</td>
+        <td>200-400ms</td>
+        <td>No optimization needed</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Complex query, many results</td>
+        <td>500-800ms</td>
+        <td>Consider caching for repeated queries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Multiple searches in sequence</td>
+        <td>1000ms+</td>
+        <td>Batch queries when possible</td>
+    </tr>
+</table>
+
+<blockquote>
+<strong>Performance Tip:</strong> For frequently asked questions, implement a caching layer with appropriate TTL (Time To Live). For example, cache weather queries for 30 minutes, stock prices for 5 minutes, and general knowledge for 24 hours.
+</blockquote>
+
+<h2>Error Handling for Search Grounding</h2>
+<blockquote>
+def grounded_search_with_fallback(query):
+    """
+    Perform grounded search with comprehensive error handling.
+    """
+    client = genai.Client()
+    
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=query,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
+        
+        metadata = response.candidates[0].grounding_metadata
+        
+        # Check if search was successful
+        if not metadata or not metadata.grounding_chunks:
+            return {
+                'success': False,
+                'error': 'No search results found',
+                'fallback_response': 'I could not find current information on this topic.'
+            }
+        
+        # Check grounding quality
+        score = metadata.grounding_support.grounding_score if metadata.grounding_support else 0.0
+        if score < 0.5:
+            return {
+                'success': True,
+                'warning': f'Low grounding score: {score:.2f}',
+                'response': response.text,
+                'metadata': metadata
+            }
+        
+        return {
+            'success': True,
+            'response': response.text,
+            'metadata': metadata
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'fallback_response': 'An error occurred while searching for information.'
+        }
+
+
+# Usage
+result = grounded_search_with_fallback("What is the current Bitcoin price?")
+
+if result['success']:
+    print(result['response'])
+    if 'warning' in result:
+        print(f"\nWarning: {result['warning']}")
+else:
+    print(f"Error: {result['error']}")
+    print(result['fallback_response'])
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Be Specific:</strong> More specific queries yield better search results and higher grounding scores</li>
+    <li><strong>Monitor Latency:</strong> Track search latency and implement caching for frequently asked questions</li>
+    <li><strong>Verify Sources:</strong> Always check the quality and relevance of grounding sources</li>
+    <li><strong>Handle Failures:</strong> Implement fallback strategies when search fails or returns poor results</li>
+    <li><strong>Cache Appropriately:</strong> Cache responses with TTL based on information volatility</li>
+    <li><strong>Log Metadata:</strong> Store grounding metadata for auditing and quality analysis</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

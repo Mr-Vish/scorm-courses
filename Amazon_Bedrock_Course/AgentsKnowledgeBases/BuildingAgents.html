@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building Bedrock Agents</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building Bedrock Agents</h1>
+
+
+<h2>What Are Bedrock Agents?</h2>
+<p>Bedrock Agents are <strong>autonomous AI workflows</strong> that can plan, execute multi-step tasks, and interact with external systems through action groups. They combine an LLM with tools and knowledge bases.</p>
+
+<h2>Agent Architecture</h2>
+<ul>
+    <li><strong>Foundation Model:</strong> The LLM brain that reasons and plans</li>
+    <li><strong>Instructions:</strong> System prompt defining the agent's role</li>
+    <li><strong>Action Groups:</strong> Lambda functions the agent can invoke</li>
+    <li><strong>Knowledge Bases:</strong> RAG-enabled document stores for grounding</li>
+    <li><strong>Guardrails:</strong> Safety filters and content policies</li>
+</ul>
+
+<h2>Creating an Action Group</h2>
+<p>Action groups connect your agent to external APIs via Lambda functions:</p>
+<div class="code-block">
+<pre><code># Lambda function for a "lookup_order" action
+def lambda_handler(event, context):
+    action = event["actionGroup"]
+    api_path = event["apiPath"]
+    parameters = event["parameters"]
+
+    order_id = next(p["value"] for p in parameters if p["name"] == "orderId")
+
+    # Query your database
+    order = db.get_order(order_id)
+
+    return {
+        "actionGroup": action,
+        "apiPath": api_path,
+        "response": {
+            "body": json.dumps(order)
+        }
+    }</code></pre>
+</div>
+
+<h2>Agent Invocation Flow</h2>
+<p>When a user sends a query, the agent: (1) Analyzes the request, (2) Decides which actions to take, (3) Calls action groups or knowledge bases, (4) Synthesizes results into a response.</p>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

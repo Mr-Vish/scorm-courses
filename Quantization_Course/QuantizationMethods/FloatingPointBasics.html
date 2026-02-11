@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Basics: Floating Point Formats</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Basics: Floating Point Formats</h1>
+<div class="container">
+<h2>Understanding Floating Point Representation</h2>
+<p>Before diving into quantization, it's essential to understand how Large Language Models normally store their weights. Most modern AI models are trained using floating-point numbers. These numbers allow for a wide range of values and high precision, which is crucial for the complex mathematical operations performed during training.</p>
+
+<h3>What is a Floating Point Number?</h3>
+<p>A floating-point number is a digital representation of a real number. It typically consists of three parts:
+<ol>
+    <li><strong>Sign Bit:</strong> Determines if the number is positive or negative.</li>
+    <li><strong>Exponent:</strong> Determines the scale or magnitude of the number.</li>
+    <li><strong>Fraction (or Mantissa):</strong> Determines the precision or significant digits of the number.</li>
+</ol>
+The "point" can "float" depending on the exponent, allowing the same number of bits to represent very large or very small values.</p>
+
+<h3>Common Floating Point Formats in AI</h3>
+<ul>
+    <li><strong>FP32 (Full Precision / Single Precision):</strong> Uses 32 bits per number. This was the standard for years. It offers high precision but requires significant memory (4 bytes per parameter). A 7B parameter model in FP32 would require 28GB of VRAM just to load.</li>
+    <li><strong>FP16 (Half Precision):</strong> Uses 16 bits per number. It significantly reduces memory usage (2 bytes per parameter) while maintaining enough precision for most inference tasks. A 7B model in FP16 fits in 14GB of VRAM.</li>
+    <li><strong>BF16 (Brain Floating Point 16):</strong> Also uses 16 bits but allocates more bits to the exponent and fewer to the fraction compared to FP16. This makes it more stable during training as it can represent the same range of values as FP32, even though it has less precision.</li>
+</ul>
+
+<h3>The Memory Bottleneck</h3>
+<p>The primary reason we need quantization is the memory bottleneck. Modern GPUs have limited VRAM (Video RAM). To run massive models with 70B, 100B, or 400B parameters on consumer-grade or even enterprise-grade hardware, we must find ways to represent those weights using fewer bits.</p>
+
+<h3>Bits, Bytes, and VRAM Calculation</h3>
+<p>To calculate the memory required to load a model:
+<code>Memory (GB) = (Number of Parameters in Billions * Number of Bits per Parameter) / 8</code>
+- For a 70B model in FP16: (70 * 16) / 8 = 140GB.
+- For a 70B model in 4-bit quantization: (70 * 4) / 8 = 35GB.
+This reduction is what makes running large models on a single GPU possible.</p>
+
+<h3>Precision vs. Range</h3>
+<p>When choosing a format, there is always a tradeoff. FP16 offers more precision (more bits for the fraction) but a smaller range than BF16. In deep learning, having a large range (to prevent values from "overflowing" or "underflowing") is often more important than having high precision for the individual weights.</p>
+
+<h3>The Move Toward Quantization</h3>
+<p>While FP16 and BF16 are "half-precision," quantization goes even further, moving from floating-point numbers to integers (like INT8 or INT4). This transition is where the real memory savings—and the real technical challenges—begin.</p>
+
+<h3>Practical Exercise: VRAM Requirement Estimation</h3>
+<p>Calculate the VRAM needed to load the following models:
+1. A 13B parameter model in FP32.
+2. A 30B parameter model in FP16.
+3. A 400B parameter model (like Llama 3.1) in 8-bit quantization.
+Which of these would fit on a high-end consumer GPU with 24GB of VRAM?</p>
+
+<h3>Summary</h3>
+<p>Floating-point formats are the foundation of model weights, but their memory requirements are prohibitive for large-scale deployment. Understanding the balance between sign, exponent, and fraction is key to appreciating why quantization is such a powerful and necessary technique in the world of modern AI.</p>
+
+</div>
+</body>
+</html>

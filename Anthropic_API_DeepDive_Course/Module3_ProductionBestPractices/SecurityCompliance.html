@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Security and Compliance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Security and Compliance</h1>
+
+<h2>Learning Objectives</h2>
+<ul>
+    <li>Master API key security and credential management</li>
+    <li>Understand data privacy and compliance requirements</li>
+    <li>Implement secure deployment patterns</li>
+    <li>Learn audit logging and security monitoring strategies</li>
+</ul>
+
+<h2>API Key Security</h2>
+<p>API keys are the primary authentication mechanism and must be protected with enterprise-grade security practices.</p>
+
+<h3>Key Storage Best Practices</h3>
+
+<h4>Never Hardcode Keys</h4>
+<ul>
+    <li>Never embed API keys in source code</li>
+    <li>Exclude configuration files from version control</li>
+    <li>Use .gitignore to prevent accidental commits</li>
+    <li>Scan repositories for exposed credentials</li>
+</ul>
+
+<h4>Environment Variables</h4>
+<ul>
+    <li>Store keys in environment variables</li>
+    <li>Use platform-specific secret management</li>
+    <li>Separate keys per environment (dev, staging, prod)</li>
+    <li>Document environment variable requirements</li>
+</ul>
+
+<h4>Secret Management Systems</h4>
+<ul>
+    <li><strong>AWS Secrets Manager:</strong> Encrypted storage with rotation</li>
+    <li><strong>Azure Key Vault:</strong> Centralized secret management</li>
+    <li><strong>HashiCorp Vault:</strong> Dynamic secret generation</li>
+    <li><strong>Google Secret Manager:</strong> Cloud-native secret storage</li>
+</ul>
+
+<h3>Key Rotation Strategy</h3>
+<ul>
+    <li><strong>Regular Rotation:</strong> Rotate keys every 90 days minimum</li>
+    <li><strong>Incident Response:</strong> Immediate rotation if compromise suspected</li>
+    <li><strong>Zero-Downtime:</strong> Implement graceful key transitions</li>
+    <li><strong>Audit Trail:</strong> Log all key rotation events</li>
+</ul>
+
+<h3>Access Control</h3>
+<ul>
+    <li>Limit key access to necessary personnel only</li>
+    <li>Use separate keys for different applications</li>
+    <li>Implement role-based access control (RBAC)</li>
+    <li>Require multi-factor authentication for key access</li>
+</ul>
+
+<h2>Data Privacy and Protection</h2>
+<p>Protecting user data and maintaining privacy is both ethical and legally required.</p>
+
+<h3>Data Classification</h3>
+<table>
+    <tr>
+        <th>Data Type</th>
+        <th>Examples</th>
+        <th>Protection Level</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Public</td>
+        <td>Marketing content, public documentation</td>
+        <td>Standard</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Internal</td>
+        <td>Business data, analytics</td>
+        <td>Encrypted in transit</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Confidential</td>
+        <td>Customer data, financial information</td>
+        <td>Encrypted at rest and in transit</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Restricted</td>
+        <td>PII, PHI, payment data</td>
+        <td>Maximum protection, compliance required</td>
+    </tr>
+</table>
+
+<h3>Personally Identifiable Information (PII)</h3>
+<p>Special handling required for PII:</p>
+<ul>
+    <li><strong>Minimize Collection:</strong> Only collect necessary PII</li>
+    <li><strong>Anonymization:</strong> Remove or mask PII before API submission</li>
+    <li><strong>Encryption:</strong> Encrypt PII in transit and at rest</li>
+    <li><strong>Retention Limits:</strong> Delete PII when no longer needed</li>
+    <li><strong>User Rights:</strong> Support data access and deletion requests</li>
+</ul>
+
+<h3>Data Residency</h3>
+<ul>
+    <li>Understand where data is processed and stored</li>
+    <li>Comply with regional data sovereignty requirements</li>
+    <li>Document data flows for compliance audits</li>
+    <li>Implement data localization where required</li>
+</ul>
+
+<h2>Compliance Frameworks</h2>
+
+<h3>GDPR (General Data Protection Regulation)</h3>
+<p>EU data protection requirements:</p>
+<ul>
+    <li><strong>Lawful Basis:</strong> Establish legal basis for processing</li>
+    <li><strong>Consent:</strong> Obtain explicit user consent</li>
+    <li><strong>Right to Access:</strong> Provide data access to users</li>
+    <li><strong>Right to Erasure:</strong> Delete data upon request</li>
+    <li><strong>Data Portability:</strong> Enable data export</li>
+    <li><strong>Breach Notification:</strong> Report breaches within 72 hours</li>
+</ul>
+
+<h3>CCPA (California Consumer Privacy Act)</h3>
+<p>California privacy requirements:</p>
+<ul>
+    <li>Disclose data collection practices</li>
+    <li>Allow users to opt-out of data sales</li>
+    <li>Provide data access and deletion rights</li>
+    <li>Maintain reasonable security measures</li>
+</ul>
+
+<h3>HIPAA (Health Insurance Portability and Accountability Act)</h3>
+<p>Healthcare data requirements:</p>
+<ul>
+    <li>Protected Health Information (PHI) safeguards</li>
+    <li>Business Associate Agreements (BAA)</li>
+    <li>Encryption and access controls</li>
+    <li>Audit logging and monitoring</li>
+</ul>
+
+<h3>SOC 2 (Service Organization Control 2)</h3>
+<p>Security and availability controls:</p>
+<ul>
+    <li>Security policies and procedures</li>
+    <li>Access control mechanisms</li>
+    <li>Change management processes</li>
+    <li>Monitoring and incident response</li>
+</ul>
+
+<h2>Secure Deployment Patterns</h2>
+
+<h3>Network Security</h3>
+<ul>
+    <li><strong>TLS/SSL:</strong> Always use HTTPS for API communication</li>
+    <li><strong>Certificate Validation:</strong> Verify server certificates</li>
+    <li><strong>Firewall Rules:</strong> Restrict outbound API access</li>
+    <li><strong>VPN/Private Networks:</strong> Use secure network channels</li>
+</ul>
+
+<h3>Application Security</h3>
+<ul>
+    <li><strong>Input Validation:</strong> Sanitize all user inputs</li>
+    <li><strong>Output Encoding:</strong> Prevent injection attacks</li>
+    <li><strong>Error Handling:</strong> Don't expose sensitive information in errors</li>
+    <li><strong>Dependency Management:</strong> Keep libraries updated</li>
+</ul>
+
+<h3>Infrastructure Security</h3>
+<ul>
+    <li><strong>Least Privilege:</strong> Minimal permissions for services</li>
+    <li><strong>Network Segmentation:</strong> Isolate API integration components</li>
+    <li><strong>Security Groups:</strong> Restrict network access</li>
+    <li><strong>Patch Management:</strong> Regular security updates</li>
+</ul>
+
+<h2>Audit Logging</h2>
+<p>Comprehensive logging supports security monitoring and compliance.</p>
+
+<h3>What to Log</h3>
+<ul>
+    <li><strong>Authentication Events:</strong> API key usage, failures</li>
+    <li><strong>API Requests:</strong> Timestamp, user, endpoint, parameters</li>
+    <li><strong>Data Access:</strong> What data was accessed, by whom</li>
+    <li><strong>Configuration Changes:</strong> System modifications</li>
+    <li><strong>Security Events:</strong> Failed auth, rate limits, anomalies</li>
+</ul>
+
+<h3>Log Security</h3>
+<ul>
+    <li><strong>Encryption:</strong> Encrypt logs at rest and in transit</li>
+    <li><strong>Integrity:</strong> Prevent log tampering</li>
+    <li><strong>Retention:</strong> Maintain logs per compliance requirements</li>
+    <li><strong>Access Control:</strong> Restrict log access</li>
+</ul>
+
+<h3>Log Analysis</h3>
+<ul>
+    <li>Implement automated log analysis</li>
+    <li>Detect anomalous patterns</li>
+    <li>Generate security alerts</li>
+    <li>Support forensic investigations</li>
+</ul>
+
+<h2>Incident Response</h2>
+
+<h3>Incident Response Plan</h3>
+<ol>
+    <li><strong>Detection:</strong> Identify security incidents</li>
+    <li><strong>Containment:</strong> Limit incident scope</li>
+    <li><strong>Investigation:</strong> Determine root cause</li>
+    <li><strong>Remediation:</strong> Fix vulnerabilities</li>
+    <li><strong>Recovery:</strong> Restore normal operations</li>
+    <li><strong>Post-Incident:</strong> Document lessons learned</li>
+</ol>
+
+<h3>Common Incidents</h3>
+<ul>
+    <li><strong>Key Compromise:</strong> Rotate keys immediately, audit usage</li>
+    <li><strong>Data Breach:</strong> Assess scope, notify affected parties</li>
+    <li><strong>Unauthorized Access:</strong> Revoke access, investigate source</li>
+    <li><strong>Service Abuse:</strong> Block malicious actors, strengthen controls</li>
+</ul>
+
+<h2>Security Monitoring</h2>
+
+<h3>Real-Time Monitoring</h3>
+<ul>
+    <li>Monitor API usage patterns</li>
+    <li>Detect anomalous behavior</li>
+    <li>Track failed authentication attempts</li>
+    <li>Alert on suspicious activities</li>
+</ul>
+
+<h3>Security Metrics</h3>
+<ul>
+    <li><strong>Authentication Failures:</strong> Failed API key attempts</li>
+    <li><strong>Unusual Patterns:</strong> Abnormal request volumes or timing</li>
+    <li><strong>Geographic Anomalies:</strong> Requests from unexpected locations</li>
+    <li><strong>Data Exfiltration:</strong> Large data transfers</li>
+</ul>
+
+<h2>Third-Party Risk Management</h2>
+
+<h3>Vendor Assessment</h3>
+<ul>
+    <li>Evaluate Anthropic's security certifications</li>
+    <li>Review data processing agreements</li>
+    <li>Understand shared responsibility model</li>
+    <li>Assess vendor incident response capabilities</li>
+</ul>
+
+<h3>Data Processing Agreements</h3>
+<ul>
+    <li>Define data handling responsibilities</li>
+    <li>Specify security requirements</li>
+    <li>Establish breach notification procedures</li>
+    <li>Document data retention and deletion</li>
+</ul>
+
+<h2>Security Best Practices Checklist</h2>
+<ul>
+    <li>✓ Store API keys in secure secret management systems</li>
+    <li>✓ Rotate keys regularly (minimum every 90 days)</li>
+    <li>✓ Use HTTPS for all API communications</li>
+    <li>✓ Implement comprehensive audit logging</li>
+    <li>✓ Encrypt sensitive data at rest and in transit</li>
+    <li>✓ Minimize PII collection and processing</li>
+    <li>✓ Comply with applicable regulations (GDPR, CCPA, HIPAA)</li>
+    <li>✓ Monitor for security anomalies</li>
+    <li>✓ Maintain incident response plan</li>
+    <li>✓ Conduct regular security assessments</li>
+    <li>✓ Train team on security practices</li>
+    <li>✓ Document security policies and procedures</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>API key security is critical - use secret management systems and rotate regularly</li>
+    <li>Data privacy requires classification, encryption, and compliance with regulations</li>
+    <li>Multiple compliance frameworks may apply (GDPR, CCPA, HIPAA, SOC 2)</li>
+    <li>Secure deployment requires network, application, and infrastructure security</li>
+    <li>Comprehensive audit logging supports security monitoring and compliance</li>
+    <li>Incident response plans enable rapid reaction to security events</li>
+    <li>Continuous monitoring detects and prevents security threats</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

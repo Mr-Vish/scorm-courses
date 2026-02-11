@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Bias Reporting and Documenting Limitations</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Bias Reporting and Documenting Limitations</h1>
+
+
+<h2>Documenting Bias</h2>
+<p>Every AI model has biases inherited from training data, architecture choices, and evaluation methods. Transparent reporting of known biases helps users make informed decisions and mitigate harm:</p>
+
+<h2>Types of Bias to Report</h2>
+<table>
+    <tr><th>Bias Type</th><th>Description</th><th>Detection Method</th></tr>
+    <tr><td>Demographic bias</td><td>Different performance across gender, race, age groups</td><td>Disaggregated evaluation by demographic</td></tr>
+    <tr><td>Representation bias</td><td>Training data over/under-represents certain groups</td><td>Training data demographic analysis</td></tr>
+    <tr><td>Language bias</td><td>Better performance on certain dialects or registers</td><td>Test with dialectal variations</td></tr>
+    <tr><td>Geographic bias</td><td>Knowledge skewed toward certain regions</td><td>Geography-specific test sets</td></tr>
+    <tr><td>Temporal bias</td><td>Knowledge limited to training data cutoff</td><td>Test with recent events</td></tr>
+</table>
+
+<h2>Disaggregated Evaluation</h2>
+<div class="code-block">
+<pre><code>import pandas as pd
+
+def disaggregated_evaluation(model, test_data):
+    '''Evaluate model performance broken down by demographic groups.'''
+    results = []
+    for _, row in test_data.iterrows():
+        prediction = model.predict(row["text"])
+        results.append({
+            "correct": prediction == row["label"],
+            "gender": row.get("gender", "unknown"),
+            "age_group": row.get("age_group", "unknown"),
+            "language": row.get("language", "en"),
+        })
+
+    df = pd.DataFrame(results)
+
+    # Report accuracy by demographic group
+    print("Accuracy by gender:")
+    print(df.groupby("gender")["correct"].mean())
+
+    print("
+Accuracy by age group:")
+    print(df.groupby("age_group")["correct"].mean())
+
+    # Flag groups with accuracy below threshold
+    threshold = 0.85
+    for group_col in ["gender", "age_group", "language"]:
+        group_acc = df.groupby(group_col)["correct"].mean()
+        underperforming = group_acc[group_acc &lt; threshold]
+        if not underperforming.empty:
+            print(f"
+WARNING: Below {threshold} accuracy for {group_col}:")
+            print(underperforming)</code></pre>
+</div>
+
+<h2>Limitations Documentation Best Practices</h2>
+<ul>
+    <li><strong>Be specific:</strong> "Accuracy drops to 72% on medical terminology" is better than "May not work well on specialized text"</li>
+    <li><strong>Quantify when possible:</strong> Include numbers, not just qualitative descriptions</li>
+    <li><strong>Include failure examples:</strong> Show concrete examples of when the model fails</li>
+    <li><strong>State assumptions:</strong> Document what inputs the model expects and how it may fail with unexpected inputs</li>
+    <li><strong>Update regularly:</strong> Revisit limitations as new issues are discovered in production</li>
+</ul>
+
+<h2>AI Transparency Reports</h2>
+<p>Beyond individual model cards, organizations should publish periodic AI transparency reports covering:</p>
+<table>
+    <tr><th>Section</th><th>Content</th></tr>
+    <tr><td>AI inventory</td><td>List of all AI systems in production with risk tiers</td></tr>
+    <tr><td>Usage statistics</td><td>Volume of AI interactions, user adoption, cost</td></tr>
+    <tr><td>Incident summary</td><td>AI-related incidents, their impact, and resolution</td></tr>
+    <tr><td>Fairness metrics</td><td>Disaggregated performance across demographic groups</td></tr>
+    <tr><td>Governance actions</td><td>Policy changes, review outcomes, audit findings</td></tr>
+    <tr><td>Improvement roadmap</td><td>Planned actions to address known limitations</td></tr>
+</table>
+
+<h2>Industry Examples</h2>
+<ul>
+    <li><strong>Anthropic:</strong> Publishes model cards with detailed safety evaluations for each Claude version</li>
+    <li><strong>Google:</strong> Provides model cards for Gemini models with benchmark results and known limitations</li>
+    <li><strong>Meta:</strong> Releases system cards for Llama models including extensive red team testing results</li>
+    <li><strong>Microsoft:</strong> Publishes responsible AI transparency notes for Azure AI services</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

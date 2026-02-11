@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Creating and Configuring Guardrails</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Creating and Configuring Guardrails</h1>
+
+<h2>Guardrail Lifecycle Management</h2>
+<p>Amazon Bedrock Guardrails follow a structured lifecycle from initial creation through configuration, testing, deployment, monitoring, and iterative refinement. Understanding this lifecycle is essential for implementing effective content governance that evolves with organizational needs and emerging threats.</p>
+
+<p>Guardrails are versioned resources, allowing organizations to maintain multiple configurations simultaneously, test changes in non-production environments, and roll back to previous versions if issues arise. This versioning capability supports safe, controlled evolution of content policies.</p>
+
+<h2>Guardrail Creation Process</h2>
+<p>Creating a guardrail involves defining its fundamental properties and initial configuration. This process establishes the guardrail's identity and purpose within your organization's AI governance framework.</p>
+
+<h3>Essential Guardrail Properties</h3>
+<p>Every guardrail requires several foundational properties:</p>
+
+<p><strong>Name:</strong> A unique identifier for the guardrail within your AWS account and region. Names should be descriptive and indicate the guardrail's purpose or target application (e.g., "CustomerServiceChatbotGuardrail", "InternalResearchToolGuardrail"). Naming conventions become particularly important as organizations scale to multiple guardrails for different applications or user contexts.</p>
+
+<p><strong>Description:</strong> A human-readable explanation of the guardrail's purpose, target application, and policy rationale. Comprehensive descriptions facilitate team collaboration, compliance documentation, and future maintenance. Descriptions should document the business context, risk considerations, and any special configuration decisions.</p>
+
+<p><strong>Blocked Input Messaging:</strong> The message displayed to users when their input is blocked by the guardrail. This message should be informative yet generic enough not to reveal specific filtering logic (which could help adversaries craft bypass attempts). Effective blocked messages acknowledge the issue without being accusatory, as legitimate users may trigger filters unintentionally.</p>
+
+<p><strong>Blocked Output Messaging:</strong> The message displayed when a model's response is blocked. This situation is often more challenging to communicate, as users provided acceptable input but the system cannot fulfill their request due to the model's response. Messages should maintain user trust while protecting them from harmful content.</p>
+
+<h3>Initial Configuration Decisions</h3>
+<p>During creation, organizations must make strategic decisions about initial guardrail configuration:</p>
+
+<p><strong>Risk Tolerance Assessment:</strong> Determine the organization's tolerance for false positives (blocking legitimate content) versus false negatives (allowing policy violations). High-risk applications (public-facing, serving minors, regulated industries) typically favor false positives. Internal tools may accept more false negatives to maximize functionality.</p>
+
+<p><strong>Baseline Filter Strengths:</strong> Establish starting filter strength levels for each content category. A common conservative approach is to begin with HIGH strength across all categories, then selectively reduce strength based on observed false positive rates and application requirements.</p>
+
+<p><strong>Component Selection:</strong> Decide which guardrail components to enable initially. Not all applications require all components. For example, an internal research tool might not need PII filtering, while a customer-facing chatbot absolutely requires it.</p>
+
+<h2>Content Policy Configuration</h2>
+<p>Content policy configuration defines how the guardrail evaluates and responds to the five primary harmful content categories.</p>
+
+<h3>Per-Category Configuration</h3>
+<p>Each content category (hate, violence, sexual, misconduct, prompt attacks) is configured independently with two parameters:</p>
+
+<p><strong>Input Strength:</strong> The filter sensitivity level (NONE, LOW, MEDIUM, HIGH) applied to user inputs. This controls how aggressively the guardrail screens incoming prompts for policy violations.</p>
+
+<p><strong>Output Strength:</strong> The filter sensitivity level applied to model responses. This controls how aggressively the guardrail screens generated content before displaying it to users.</p>
+
+<h3>Configuration Patterns</h3>
+<p>Several common configuration patterns address different risk profiles:</p>
+
+<p><strong>Symmetric High Protection:</strong> HIGH strength for both inputs and outputs across all categories. This pattern provides maximum protection for high-risk applications (public-facing, serving vulnerable populations, regulated industries). Accepts higher false positive rates in exchange for comprehensive safety.</p>
+
+<p><strong>Input-Focused Protection:</strong> HIGH input strength with MEDIUM output strength. This pattern assumes that preventing malicious inputs is the primary concern, while allowing models more flexibility in responses. Appropriate when the model itself is trusted and the primary risk comes from adversarial users.</p>
+
+<p><strong>Output-Focused Protection:</strong> MEDIUM input strength with HIGH output strength. This pattern allows users to discuss sensitive topics (for legitimate purposes like reporting abuse or seeking help) while ensuring responses remain appropriate. Useful for support services and educational applications.</p>
+
+<p><strong>Balanced Protection:</strong> MEDIUM strength for both inputs and outputs. This pattern balances protection with functionality, accepting some risk in exchange for reduced false positives. Appropriate for internal tools, professional users, or applications with additional safeguards.</p>
+
+<h3>Category-Specific Considerations</h3>
+<p>Different categories may warrant different strength levels based on application context:</p>
+
+<p><strong>Hate and Sexual Content:</strong> Typically configured at HIGH strength regardless of application, as the reputational and legal risks of allowing such content are severe.</p>
+
+<p><strong>Violence:</strong> May be configured at MEDIUM for applications that legitimately discuss violence (news, history, medical education) while remaining HIGH for general-purpose applications.</p>
+
+<p><strong>Misconduct:</strong> Strength depends on application domain. Legal research tools may use MEDIUM to allow discussion of illegal activities in educational context, while customer-facing applications should use HIGH.</p>
+
+<p><strong>Prompt Attacks:</strong> Typically HIGH for inputs (where attacks originate) and NONE for outputs (which are not attack vectors themselves).</p>
+
+<h2>Denied Topics Configuration</h2>
+<p>Denied topics configuration involves defining organization-specific content restrictions that extend beyond standard harmful content categories.</p>
+
+<h3>Identifying Topics to Deny</h3>
+<p>Organizations should systematically identify topics requiring restriction through stakeholder consultation:</p>
+
+<ul>
+    <li><strong>Legal and Compliance Teams:</strong> Identify topics that create legal risk or regulatory concerns</li>
+    <li><strong>Business Leadership:</strong> Define competitive intelligence and proprietary information boundaries</li>
+    <li><strong>Product Management:</strong> Determine out-of-scope topics that exceed the application's intended purpose</li>
+    <li><strong>Communications Teams:</strong> Identify controversial or brand-sensitive topics to avoid</li>
+</ul>
+
+<h3>Writing Effective Topic Definitions</h3>
+<p>Topic definitions should be comprehensive yet precise. Effective definitions include:</p>
+
+<ul>
+    <li><strong>Clear Scope:</strong> Explicitly state what is and is not included in the topic</li>
+    <li><strong>Contextual Examples:</strong> Provide examples of content that should be caught</li>
+    <li><strong>Boundary Cases:</strong> Address edge cases and related but acceptable topics</li>
+    <li><strong>Natural Language:</strong> Write in clear, natural language rather than keyword lists</li>
+</ul>
+
+<p>For example, a denied topic for competitor discussions might be defined as: "Discussions that compare our products, services, features, pricing, or performance to those of competing companies. This includes requests for information about competitor offerings, comparisons of our solutions to alternatives, or questions about why users should choose us over competitors. This does not include general industry discussions or mentions of competitors in neutral contexts."</p>
+
+<h3>Topic Configuration Limits</h3>
+<p>Be aware of service limits on the number of denied topics per guardrail. Organizations with extensive topic restrictions may need to prioritize the most critical topics or consolidate related topics into broader definitions.</p>
+
+<h2>Word Filter Configuration</h2>
+<p>Word filter configuration involves selecting managed profanity lists and defining custom word lists for organization-specific blocking requirements.</p>
+
+<h3>Managed Profanity Lists</h3>
+<p>Amazon Bedrock provides curated profanity lists that can be enabled with a simple configuration flag. These lists cover common offensive terms across multiple languages and are maintained by AWS. Enabling managed profanity filtering is recommended for most applications as a baseline protection layer.</p>
+
+<h3>Custom Word Lists</h3>
+<p>Custom word lists address organization-specific blocking requirements. When creating custom lists:</p>
+
+<ul>
+    <li><strong>Be Specific:</strong> Include exact terms to block, considering variations (plurals, verb forms)</li>
+    <li><strong>Consider Context:</strong> Remember that word filters cannot understand context, so blocked words will be filtered in all contexts</li>
+    <li><strong>Test Thoroughly:</strong> Verify that blocked words don't create unintended false positives</li>
+    <li><strong>Document Rationale:</strong> Maintain documentation explaining why each term is blocked</li>
+</ul>
+
+<h3>Word Filter Limitations</h3>
+<p>Word filters are vulnerable to simple evasion techniques (character substitution, spacing, homoglyphs). They should complement, not replace, semantic content filters. Use word filters for high-priority terms requiring absolute blocking, not as the primary content moderation mechanism.</p>
+
+<h2>Sensitive Information Policy Configuration</h2>
+<p>Sensitive information policy configuration defines which PII types to detect and what actions to take when they are found.</p>
+
+<h3>PII Type Selection</h3>
+<p>Organizations should enable detection for PII types relevant to their regulatory obligations and privacy policies. Common configurations include:</p>
+
+<p><strong>Financial Services:</strong> Detect SSN, credit cards, bank accounts, driver's licenses with BLOCK action</p>
+
+<p><strong>Healthcare:</strong> Detect SSN, medical record numbers, health insurance numbers with BLOCK action; email and phone with ANONYMIZE action</p>
+
+<p><strong>General Business:</strong> Detect SSN and credit cards with BLOCK action; email, phone, and addresses with ANONYMIZE action</p>
+
+<h3>Action Selection Strategy</h3>
+<p>Choosing between BLOCK, ANONYMIZE, and REDACT actions requires balancing privacy protection with functionality:</p>
+
+<p><strong>BLOCK:</strong> Use for highly sensitive PII where any exposure is unacceptable (SSN, credit cards, medical records). Blocking prevents the interaction entirely, which may frustrate users but provides maximum protection.</p>
+
+<p><strong>ANONYMIZE:</strong> Use when the presence of contact information is relevant but specific values are not needed (email, phone, addresses in customer service contexts). Anonymization allows the interaction to proceed while protecting privacy.</p>
+
+<p><strong>REDACT:</strong> Use when the sensitive information is tangential and can be removed without impacting the interaction's value.</p>
+
+<h3>Regional Considerations</h3>
+<p>PII types and regulatory requirements vary by region. Organizations operating globally should configure PII detection to address the most stringent applicable regulations. For example, GDPR in Europe has broader PII definitions than some other jurisdictions.</p>
+
+<h2>Configuration Best Practices</h2>
+<p>Effective guardrail configuration follows several key principles:</p>
+
+<h3>Start Conservative, Iterate Based on Data</h3>
+<p>Begin with stricter configurations (HIGH filter strengths, comprehensive PII blocking) and selectively relax based on observed false positive rates and user feedback. This approach minimizes risk during initial deployment while allowing optimization over time.</p>
+
+<h3>Document Configuration Decisions</h3>
+<p>Maintain comprehensive documentation explaining why each configuration choice was made, including risk assessments, stakeholder input, and regulatory considerations. This documentation supports compliance audits, team transitions, and future configuration reviews.</p>
+
+<h3>Align with Organizational Policies</h3>
+<p>Guardrail configurations should directly reflect documented organizational policies on content, privacy, and AI ethics. Ensure alignment between written policies and technical configurations to avoid gaps or contradictions.</p>
+
+<h3>Consider User Experience</h3>
+<p>While safety is paramount, consider the user experience impact of guardrail interventions. Frequent false positives frustrate users and may drive them to seek unprotected alternatives. Balance protection with usability.</p>
+
+<h3>Plan for Evolution</h3>
+<p>Content risks, organizational policies, and regulatory requirements evolve over time. Design guardrail configurations with evolution in mind, using versioning to manage changes safely and maintaining flexibility to adapt to emerging threats.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Guardrail creation requires defining name, description, and blocked messaging for user communication</li>
+    <li>Content policy configuration sets filter strengths independently for inputs and outputs across five categories</li>
+    <li>Common configuration patterns (symmetric, input-focused, output-focused) address different risk profiles</li>
+    <li>Denied topics extend protection to organization-specific content restrictions through natural language definitions</li>
+    <li>Word filters provide deterministic blocking for high-priority terms but should complement semantic filters</li>
+    <li>PII configuration balances privacy protection with functionality through action selection (block, anonymize, redact)</li>
+    <li>Best practices emphasize starting conservative, documenting decisions, and iterating based on real-world data</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

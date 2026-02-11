@@ -1,0 +1,385 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Vector Search Architecture and Workflow</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+    <style>
+        .workflow-diagram {
+            background: linear-gradient(135deg, #ffffff 0%, #fef7f0 100%);
+            border: 2px solid #F16F00;
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 20px 40px rgba(241, 111, 0, 0.1);
+        }
+        
+        .workflow-step {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-left: 4px solid #F16F00;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .workflow-step:hover {
+            transform: translateX(8px);
+            border-left-color: #e91e63;
+            box-shadow: 0 8px 25px rgba(241, 111, 0, 0.15);
+        }
+        
+        .workflow-step-number {
+            position: absolute;
+            left: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #F16F00 0%, #e91e63 100%);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(241, 111, 0, 0.3);
+        }
+        
+        .workflow-step h3 {
+            color: #F16F00;
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+        
+        .workflow-step p {
+            margin: 0;
+            color: #4a5568;
+        }
+        
+        .workflow-arrow {
+            text-align: center;
+            color: #F16F00;
+            font-size: 2rem;
+            margin: 0.5rem 0;
+            font-weight: 300;
+        }
+        
+        .architecture-box {
+            background: white;
+            border: 2px solid #F16F00;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 8px 25px rgba(241, 111, 0, 0.1);
+        }
+        
+        .architecture-box h4 {
+            color: #F16F00;
+            margin: 0 0 1rem 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .component-card {
+            background: linear-gradient(135deg, #ffffff 0%, #fef7f0 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .component-card:hover {
+            border-color: #F16F00;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(241, 111, 0, 0.15);
+        }
+        
+        .component-card h4 {
+            color: #F16F00;
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+        }
+        
+        .component-card p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+<h1>Vector Search Architecture and Workflow</h1>
+
+<h2>End-to-End Vector Search Pipeline</h2>
+<p>Understanding the complete workflow from data ingestion to query results is essential for building production systems. This section visualizes the architecture and data flow.</p>
+
+<div class="workflow-diagram">
+    <h3 style="text-align: center; color: #F16F00; margin-bottom: 2rem;">Vector Search Workflow</h3>
+    
+    <div class="workflow-step">
+        <div class="workflow-step-number">1</div>
+        <h3>Data Preparation</h3>
+        <p>Collect and preprocess your source data (documents, images, products). Clean text, extract relevant fields, and prepare for embedding generation.</p>
+    </div>
+    
+    <div class="workflow-arrow">&#8595;</div>
+    
+    <div class="workflow-step">
+        <div class="workflow-step-number">2</div>
+        <h3>Embedding Generation</h3>
+        <p>Use embedding models (text-embedding-004, multimodalembedding) to convert data into vector representations. Process in batches for efficiency.</p>
+    </div>
+    
+    <div class="workflow-arrow">&#8595;</div>
+    
+    <div class="workflow-step">
+        <div class="workflow-step-number">3</div>
+        <h3>Index Creation</h3>
+        <p>Build a vector index using ScaNN algorithm. Configure parameters for optimal recall-latency balance. Store in Cloud Storage.</p>
+    </div>
+    
+    <div class="workflow-arrow">&#8595;</div>
+    
+    <div class="workflow-step">
+        <div class="workflow-step-number">4</div>
+        <h3>Index Deployment</h3>
+        <p>Deploy index to an endpoint with specified machine types and replica counts. Enable auto-scaling for production workloads.</p>
+    </div>
+    
+    <div class="workflow-arrow">&#8595;</div>
+    
+    <div class="workflow-step">
+        <div class="workflow-step-number">5</div>
+        <h3>Query Processing</h3>
+        <p>Convert user queries to embeddings, search the index for nearest neighbors, and return ranked results with metadata.</p>
+    </div>
+    
+    <div class="workflow-arrow">&#8595;</div>
+    
+    <div class="workflow-step">
+        <div class="workflow-step-number">6</div>
+        <h3>Application Integration</h3>
+        <p>Use search results in your application: RAG systems, recommendations, semantic search, or content discovery.</p>
+    </div>
+</div>
+
+<h2>Vertex AI Vector Search Components</h2>
+
+<div class="component-grid">
+    <div class="component-card">
+        <h4>Embedding Model</h4>
+        <p>Converts text/images to vectors. Hosted on Vertex AI or external (OpenAI, Cohere).</p>
+    </div>
+    
+    <div class="component-card">
+        <h4>Vector Index</h4>
+        <p>ScaNN-based data structure storing embeddings with metadata for fast retrieval.</p>
+    </div>
+    
+    <div class="component-card">
+        <h4>Index Endpoint</h4>
+        <p>Deployed service that receives queries and returns nearest neighbors.</p>
+    </div>
+    
+    <div class="component-card">
+        <h4>Cloud Storage</h4>
+        <p>Stores embedding files in JSONL or Avro format for index building.</p>
+    </div>
+    
+    <div class="component-card">
+        <h4>Metadata Store</h4>
+        <p>Optional database (Firestore, BigQuery) for full document content and filtering.</p>
+    </div>
+    
+    <div class="component-card">
+        <h4>Monitoring</h4>
+        <p>Cloud Monitoring tracks latency, QPS, error rates, and resource utilization.</p>
+    </div>
+</div>
+
+<h2>Data Flow Architecture</h2>
+
+<div class="architecture-box">
+    <h4>Indexing Phase (Offline)</h4>
+    <blockquote>
+    <strong>Source Data</strong> → <strong>Embedding Model</strong> → <strong>Vector Files (GCS)</strong> → <strong>Index Builder</strong> → <strong>Deployed Index</strong>
+    </blockquote>
+    <p>This phase runs periodically (daily, weekly) to update the index with new data.</p>
+</div>
+
+<div class="architecture-box">
+    <h4>Query Phase (Online)</h4>
+    <blockquote>
+    <strong>User Query</strong> → <strong>Embedding Model</strong> → <strong>Query Vector</strong> → <strong>Index Endpoint</strong> → <strong>Nearest Neighbors</strong> → <strong>Metadata Enrichment</strong> → <strong>Results</strong>
+    </blockquote>
+    <p>This phase runs in real-time with sub-10ms latency requirements.</p>
+</div>
+
+<h2>Embedding File Format</h2>
+<p>Vertex AI Vector Search requires embeddings in specific formats stored in Cloud Storage:</p>
+
+<h3>JSONL Format (Recommended)</h3>
+<div class="code-block">
+<pre><code>// Each line is a JSON object with id, embedding, and optional metadata
+{"id": "doc_001", "embedding": [0.123, -0.456, 0.789, ...], "restricts": [{"namespace": "category", "allow": ["tech"]}]}
+{"id": "doc_002", "embedding": [0.234, -0.567, 0.890, ...], "restricts": [{"namespace": "category", "allow": ["finance"]}]}
+{"id": "doc_003", "embedding": [0.345, -0.678, 0.901, ...], "restricts": [{"namespace": "category", "allow": ["tech"]}]}
+</code></pre>
+</div>
+
+<h3>Avro Format (For Large Scale)</h3>
+<div class="code-block">
+<pre><code>// Avro schema for embeddings
+{
+  "type": "record",
+  "name": "Embedding",
+  "fields": [
+    {"name": "id", "type": "string"},
+    {"name": "embedding", "type": {"type": "array", "items": "float"}},
+    {"name": "restricts", "type": ["null", {"type": "array", "items": "string"}], "default": null}
+  ]
+}
+</code></pre>
+</div>
+
+<h2>Scaling Considerations</h2>
+<table>
+    <tr>
+        <th>Scale</th>
+        <th>Vectors</th>
+        <th>Storage</th>
+        <th>Index Build Time</th>
+        <th>Recommended Setup</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Small</td>
+        <td>&lt;1M</td>
+        <td>&lt;3 GB</td>
+        <td>10-30 minutes</td>
+        <td>Single replica, e2-standard-16</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Medium</td>
+        <td>1M-10M</td>
+        <td>3-30 GB</td>
+        <td>1-3 hours</td>
+        <td>2-3 replicas, e2-highmem-16</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Large</td>
+        <td>10M-100M</td>
+        <td>30-300 GB</td>
+        <td>3-8 hours</td>
+        <td>3-5 replicas, n1-standard-32</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Very Large</td>
+        <td>&gt;100M</td>
+        <td>&gt;300 GB</td>
+        <td>8-24 hours</td>
+        <td>5+ replicas, custom machine types</td>
+    </tr>
+</table>
+
+<h2>High Availability Architecture</h2>
+<p>For production systems requiring 99.9%+ uptime:</p>
+
+<ul>
+    <li><strong>Multi-region deployment:</strong> Deploy index endpoints in multiple regions for geographic redundancy</li>
+    <li><strong>Auto-scaling:</strong> Configure min/max replicas to handle traffic spikes automatically</li>
+    <li><strong>Health checks:</strong> Implement endpoint health monitoring with automatic failover</li>
+    <li><strong>Blue-green deployments:</strong> Deploy new index versions without downtime</li>
+    <li><strong>Caching layer:</strong> Add Redis/Memorystore for frequently accessed queries</li>
+</ul>
+
+<h2>Complete Implementation Example</h2>
+<div class="code-block">
+<pre><code>from google.cloud import aiplatform
+from vertexai.language_models import TextEmbeddingModel
+import json
+
+# Step 1: Generate embeddings
+model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+documents = load_documents()  # Your data source
+
+embeddings_data = []
+for doc in documents:
+    emb = model.get_embeddings([doc['text']])[0].values
+    embeddings_data.append({
+        "id": doc['id'],
+        "embedding": emb,
+        "restricts": [{"namespace": "category", "allow": [doc['category']]}]
+    })
+
+# Step 2: Save to Cloud Storage
+with open('embeddings.jsonl', 'w') as f:
+    for item in embeddings_data:
+        f.write(json.dumps(item) + '\n')
+
+# Upload to GCS
+# gsutil cp embeddings.jsonl gs://my-bucket/embeddings/
+
+# Step 3: Create index
+aiplatform.init(project="my-project", location="us-central1")
+
+index = aiplatform.MatchingEngineIndex.create_tree_ah_index(
+    display_name="docs-index",
+    contents_delta_uri="gs://my-bucket/embeddings/",
+    dimensions=768,
+    approximate_neighbors_count=150,
+    distance_measure_type="DOT_PRODUCT_DISTANCE"
+)
+
+# Step 4: Deploy index
+endpoint = aiplatform.MatchingEngineIndexEndpoint.create(
+    display_name="docs-endpoint",
+    public_endpoint_enabled=True
+)
+
+endpoint.deploy_index(
+    index=index,
+    deployed_index_id="docs_v1",
+    machine_type="e2-standard-16",
+    min_replica_count=2,
+    max_replica_count=10
+)
+
+# Step 5: Query
+query_emb = model.get_embeddings(["How to deploy models?"])[0].values
+results = endpoint.find_neighbors(
+    deployed_index_id="docs_v1",
+    queries=[query_emb],
+    num_neighbors=10
+)
+
+print(f"Found {len(results[0])} similar documents")
+</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Vector search involves six main phases: data preparation, embedding generation, index creation, deployment, querying, and application integration</li>
+<li>Vertex AI Vector Search uses Cloud Storage for embedding files and supports JSONL and Avro formats</li>
+<li>Production architectures require multi-region deployment, auto-scaling, and health monitoring for high availability</li>
+<li>Index build time scales with dataset size, ranging from minutes for small datasets to hours for billions of vectors</li>
+<li>Proper architecture planning ensures scalability from thousands to billions of vectors</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

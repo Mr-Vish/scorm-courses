@@ -1,0 +1,320 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>AI Output Evaluation and Quality Metrics</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AI Output Evaluation and Quality Metrics</h1>
+
+<h2>Why Evaluate AI Outputs?</h2>
+<p>Evaluating AI-generated content is essential for maintaining quality, detecting issues, and improving system performance. Genkit provides built-in evaluators and supports custom evaluation metrics.</p>
+
+<h2>Built-in Evaluators</h2>
+
+<h3>Faithfulness Evaluator</h3>
+<p>Measures how accurately the AI response reflects the source material:</p>
+<div class="code-block">
+<pre><code>import { faithfulnessEvaluator } from '@genkit-ai/evaluators';
+
+const result = await faithfulnessEvaluator({
+  context: 'The capital of France is Paris.',
+  output: 'Paris is the capital of France.',
+  input: 'What is the capital of France?'
+});
+
+// result.score: 0.0 to 1.0 (higher is better)
+// result.reasoning: Explanation of the score
+</code></pre>
+</div>
+
+<h3>Answer Relevance Evaluator</h3>
+<div class="code-block">
+<pre><code>import { answerRelevanceEvaluator } from '@genkit-ai/evaluators';
+
+const result = await answerRelevanceEvaluator({
+  input: 'How do I reset my password?',
+  output: 'Click the "Forgot Password" link on the login page.',
+  context: 'Password reset instructions...'
+});
+
+// Evaluates if the answer addresses the question
+</code></pre>
+</div>
+
+<h3>Maliciousness Detector</h3>
+<div class="code-block">
+<pre><code>import { maliciousnessEvaluator } from '@genkit-ai/evaluators';
+
+const result = await maliciousnessEvaluator({
+  output: 'Here is how to create a secure password...'
+});
+
+// Detects harmful, biased, or inappropriate content
+</code></pre>
+</div>
+
+<h2>Custom Evaluators</h2>
+<div class="code-block">
+<pre><code>import { defineEvaluator } from '@genkit-ai/core';
+
+const lengthEvaluator = defineEvaluator({
+  name: 'responseLength',
+  displayName: 'Response Length Check',
+  definition: 'Evaluates if response length is appropriate'
+}, async (datapoint) => {
+  const wordCount = datapoint.output.split(' ').length;
+  const isAppropriate = wordCount >= 50 && wordCount <= 200;
+  
+  return {
+    score: isAppropriate ? 1.0 : 0.0,
+    details: {
+      wordCount,
+      expected: '50-200 words',
+      passed: isAppropriate
+    }
+  };
+});
+
+const toneEvaluator = defineEvaluator({
+  name: 'professionalTone',
+  displayName: 'Professional Tone Check'
+}, async (datapoint) => {
+  const { output } = await ai.generate({
+    prompt: `Evaluate if this text maintains a professional tone:
+
+"${datapoint.output}"
+
+Rate from 0.0 (unprofessional) to 1.0 (highly professional).`,
+    output: {
+      schema: z.object({
+        score: z.number().min(0).max(1),
+        reasoning: z.string()
+      })
+    }
+  });
+  
+  return {
+    score: output.score,
+    details: { reasoning: output.reasoning }
+  };
+});
+</code></pre>
+</div>
+
+<h2>Running Evaluations</h2>
+
+<h3>Single Evaluation</h3>
+<div class="code-block">
+<pre><code>const evaluatedFlow = ai.defineFlow({
+  name: 'evaluatedFlow',
+  inputSchema: z.object({ question: z.string() }),
+  outputSchema: z.object({
+    answer: z.string(),
+    quality: z.object({
+      faithfulness: z.number(),
+      relevance: z.number()
+    })
+  })
+}, async (input) => {
+  const { output } = await ai.generate({
+    prompt: input.question,
+    output: { schema: z.object({ answer: z.string() }) }
+  });
+  
+  // Evaluate the output
+  const faithfulness = await faithfulnessEvaluator({
+    input: input.question,
+    output: output.answer,
+    context: 'Retrieved context...'
+  });
+  
+  const relevance = await answerRelevanceEvaluator({
+    input: input.question,
+    output: output.answer
+  });
+  
+  return {
+    answer: output.answer,
+    quality: {
+      faithfulness: faithfulness.score,
+      relevance: relevance.score
+    }
+  };
+});
+</code></pre>
+</div>
+
+<h3>Batch Evaluation</h3>
+<div class="code-block">
+<pre><code>import { evaluate } from '@genkit-ai/evaluator';
+
+const testDataset = [
+  {
+    input: 'What is AI?',
+    expectedOutput: 'Artificial Intelligence is...',
+    context: 'AI definition...'
+  },
+  {
+    input: 'How does ML work?',
+    expectedOutput: 'Machine Learning works by...',
+    context: 'ML explanation...'
+  }
+];
+
+const evaluationResults = await evaluate({
+  flow: myFlow,
+  dataset: testDataset,
+  evaluators: [
+    faithfulnessEvaluator,
+    answerRelevanceEvaluator,
+    lengthEvaluator
+  ]
+});
+
+// Results include scores for each evaluator across all test cases
+console.log(evaluationResults.summary);
+</code></pre>
+</div>
+
+<h2>A/B Testing Flows</h2>
+<div class="code-block">
+<pre><code>async function compareFlows(
+  flowA: Flow,
+  flowB: Flow,
+  testCases: Array<{input: any}>
+) {
+  const results = {
+    flowA: { scores: [], avgScore: 0 },
+    flowB: { scores: [], avgScore: 0 }
+  };
+  
+  for (const testCase of testCases) {
+    // Run both flows
+    const resultA = await flowA(testCase.input);
+    const resultB = await flowB(testCase.input);
+    
+    // Evaluate both
+    const evalA = await faithfulnessEvaluator({
+      input: testCase.input,
+      output: resultA.output
+    });
+    
+    const evalB = await faithfulnessEvaluator({
+      input: testCase.input,
+      output: resultB.output
+    });
+    
+    results.flowA.scores.push(evalA.score);
+    results.flowB.scores.push(evalB.score);
+  }
+  
+  results.flowA.avgScore = 
+    results.flowA.scores.reduce((a, b) => a + b, 0) / results.flowA.scores.length;
+  results.flowB.avgScore = 
+    results.flowB.scores.reduce((a, b) => a + b, 0) / results.flowB.scores.length;
+  
+  return results;
+}
+</code></pre>
+</div>
+
+<h2>Monitoring in Production</h2>
+<div class="code-block">
+<pre><code>const monitoredFlow = ai.defineFlow({
+  name: 'monitoredFlow',
+  inputSchema: z.object({ query: z.string() }),
+  outputSchema: z.object({ response: z.string() })
+}, async (input) => {
+  const startTime = Date.now();
+  
+  const { output, usage } = await ai.generate({
+    prompt: input.query,
+    output: { schema: z.object({ response: z.string() }) },
+    returnUsage: true
+  });
+  
+  const latency = Date.now() - startTime;
+  
+  // Log metrics
+  logger.info('Flow execution metrics', {
+    flowName: 'monitoredFlow',
+    latency,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    cost: (usage.inputTokens * 0.00001) + (usage.outputTokens * 0.00003)
+  });
+  
+  // Async evaluation (don't block response)
+  setImmediate(async () => {
+    const quality = await faithfulnessEvaluator({
+      input: input.query,
+      output: output.response
+    });
+    
+    if (quality.score < 0.7) {
+      logger.warn('Low quality output detected', {
+        score: quality.score,
+        input: input.query
+      });
+    }
+  });
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Quality Metrics Dashboard</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Description</th>
+        <th>Target</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Faithfulness</td>
+        <td>Accuracy to source material</td>
+        <td>&gt; 0.8</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Relevance</td>
+        <td>Addresses user query</td>
+        <td>&gt; 0.85</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Latency</td>
+        <td>Response time</td>
+        <td>&lt; 3 seconds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Token Efficiency</td>
+        <td>Tokens per response</td>
+        <td>&lt; 500</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>Failed requests</td>
+        <td>&lt; 1%</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Evaluate Continuously:</strong> Run evaluations on production traffic samples</li>
+    <li><strong>Use Multiple Metrics:</strong> No single metric captures all quality aspects</li>
+    <li><strong>Set Thresholds:</strong> Define acceptable quality levels</li>
+    <li><strong>Track Trends:</strong> Monitor metrics over time to detect degradation</li>
+    <li><strong>Automate Testing:</strong> Include evaluations in CI/CD pipelines</li>
+    <li><strong>Human Review:</strong> Combine automated metrics with human evaluation</li>
+    <li><strong>Log Edge Cases:</strong> Capture and analyze low-scoring outputs</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

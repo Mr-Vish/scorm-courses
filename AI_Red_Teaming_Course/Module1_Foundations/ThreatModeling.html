@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>^<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <title>Threat Modeling and Risk Assessment for AI Systems</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Threat Modeling and Risk Assessment for AI Systems</h1>
+
+<h2>Introduction to AI Threat Modeling</h2>
+<p>Threat modeling is a structured approach to identifying, quantifying, and prioritizing potential security threats to a system. For AI systems, threat modeling must account for unique attack surfaces and failure modes that don't exist in traditional software. This section explores frameworks and methodologies specifically adapted for generative AI risk assessment.</p>
+
+<p>Traditional threat modeling frameworks like STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege) provide a foundation, but AI systems require additional considerations around model behavior, training data integrity, and emergent risks. Organizations must adopt hybrid approaches that combine established security frameworks with AI-specific threat taxonomies.</p>
+
+<h2>The AI Attack Surface</h2>
+<p>Understanding the complete attack surface is essential for comprehensive threat modeling. AI systems present multiple layers where adversaries can intervene:</p>
+
+<h3>1. Training Phase Attack Surface</h3>
+<p>Attacks targeting the model before deployment:</p>
+<ul>
+<li><strong>Data Poisoning:</strong> Injecting malicious examples into training data to influence model behavior</li>
+<li><strong>Backdoor Insertion:</strong> Embedding hidden triggers that activate specific behaviors when encountered</li>
+<li><strong>Model Theft:</strong> Stealing model weights or architecture through unauthorized access</li>
+<li><strong>Supply Chain Attacks:</strong> Compromising pre-trained models, datasets, or training infrastructure</li>
+</ul>
+
+<h3>2. Inference Phase Attack Surface</h3>
+<p>Attacks targeting deployed models during operation:</p>
+<ul>
+<li><strong>Prompt Injection:</strong> Malicious instructions in user inputs or external data sources</li>
+<li><strong>Adversarial Examples:</strong> Carefully crafted inputs designed to cause misclassification</li>
+<li><strong>Model Inversion:</strong> Extracting training data or sensitive information through queries</li>
+<li><strong>Membership Inference:</strong> Determining whether specific data was used in training</li>
+<li><strong>Jailbreaking:</strong> Bypassing safety filters and content policies</li>
+</ul>
+
+<h3>3. Integration Layer Attack Surface</h3>
+<p>Attacks targeting the systems surrounding the AI model:</p>
+<ul>
+<li><strong>API Exploitation:</strong> Abusing rate limits, authentication, or access controls</li>
+<li><strong>Context Manipulation:</strong> Injecting malicious content into retrieval-augmented generation (RAG) sources</li>
+<li><strong>Plugin/Tool Abuse:</strong> Exploiting AI agents' ability to call external functions</li>
+<li><strong>Logging and Monitoring Evasion:</strong> Crafting attacks that avoid detection systems</li>
+</ul>
+
+<h2>Threat Modeling Frameworks for AI</h2>
+
+<h3>ATLAS Framework (Adversarial Threat Landscape for AI Systems)</h3>
+<p>Developed by MITRE, ATLAS provides a knowledge base of adversary tactics and techniques specific to machine learning systems. The framework organizes threats into categories:</p>
+
+<table>
+<tr>
+<th>Tactic</th>
+<th>Description</th>
+<th>Example Techniques</th>
+</tr>
+<tr>
+<td><strong>Reconnaissance</strong></td>
+<td>Gathering information about the target AI system</td>
+<td>Model architecture discovery, training data inference, capability probing</td>
+</tr>
+<tr>
+<td><strong>Resource Development</strong></td>
+<td>Establishing resources to support attacks</td>
+<td>Adversarial example generation, attack dataset creation</td>
+</tr>
+<tr>
+<td><strong>Initial Access</strong></td>
+<td>Gaining entry to the AI system</td>
+<td>API abuse, prompt injection, supply chain compromise</td>
+</tr>
+<tr>
+<td><strong>Execution</strong></td>
+<td>Running malicious code or triggering harmful behaviors</td>
+<td>Backdoor activation, jailbreak execution</td>
+</tr>
+<tr>
+<td><strong>Persistence</strong></td>
+<td>Maintaining access or influence over time</td>
+<td>Continuous data poisoning, model backdoors</td>
+</tr>
+<tr>
+<td><strong>Defense Evasion</strong></td>
+<td>Avoiding detection by security measures</td>
+<td>Obfuscation, encoding, multi-turn attacks</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>Achieving adversarial objectives</td>
+<td>Harmful content generation, data exfiltration, service disruption</td>
+</tr>
+</table>
+
+<h3>OWASP Top 10 for LLM Applications</h3>
+<p>The Open Web Application Security Project (OWASP) has developed a top 10 list of critical vulnerabilities specific to LLM applications:</p>
+
+<ol>
+<li><strong>LLM01: Prompt Injection</strong> - Manipulating LLM behavior through crafted inputs</li>
+<li><strong>LLM02: Insecure Output Handling</strong> - Insufficient validation of LLM outputs before downstream use</li>
+<li><strong>LLM03: Training Data Poisoning</strong> - Tampering with training data to introduce vulnerabilities</li>
+<li><strong>LLM04: Model Denial of Service</strong> - Resource exhaustion through expensive queries</li>
+<li><strong>LLM05: Supply Chain Vulnerabilities</strong> - Compromised components, datasets, or pre-trained models</li>
+<li><strong>LLM06: Sensitive Information Disclosure</strong> - Leaking confidential data through model outputs</li>
+<li><strong>LLM07: Insecure Plugin Design</strong> - Vulnerabilities in LLM extensions and integrations</li>
+<li><strong>LLM08: Excessive Agency</strong> - Granting LLMs too much autonomy or permissions</li>
+<li><strong>LLM09: Overreliance</strong> - Trusting LLM outputs without verification</li>
+<li><strong>LLM10: Model Theft</strong> - Unauthorized access to proprietary models</li>
+</ol>
+
+<h2>Risk Assessment Methodology</h2>
+<p>Once threats are identified, they must be assessed for likelihood and impact to prioritize mitigation efforts.</p>
+
+<h3>Likelihood Assessment</h3>
+<p>Factors influencing the probability of successful exploitation:</p>
+<ul>
+<li><strong>Attack Complexity:</strong> Technical skill and resources required (low, medium, high)</li>
+<li><strong>Attack Vector:</strong> How accessible is the attack surface (network, local, physical)</li>
+<li><strong>Privileges Required:</strong> What level of access is needed (none, low, high)</li>
+<li><strong>User Interaction:</strong> Does the attack require victim participation</li>
+<li><strong>Exploit Availability:</strong> Are tools or techniques publicly available</li>
+</ul>
+
+<h3>Impact Assessment</h3>
+<p>Potential consequences if the threat is realized:</p>
+<ul>
+<li><strong>Confidentiality Impact:</strong> Exposure of sensitive information (none, low, high)</li>
+<li><strong>Integrity Impact:</strong> Corruption of data or system behavior (none, low, high)</li>
+<li><strong>Availability Impact:</strong> Service disruption or denial (none, low, high)</li>
+<li><strong>Safety Impact:</strong> Potential for physical or psychological harm</li>
+<li><strong>Reputational Impact:</strong> Damage to organizational trust and brand</li>
+<li><strong>Regulatory Impact:</strong> Compliance violations and legal consequences</li>
+</ul>
+
+<h3>Risk Scoring Matrix</h3>
+<table>
+<tr>
+<th>Likelihood / Impact</th>
+<th>Low Impact</th>
+<th>Medium Impact</th>
+<th>High Impact</th>
+</tr>
+<tr>
+<td><strong>High Likelihood</strong></td>
+<td>Medium Risk</td>
+<td>High Risk</td>
+<td>Critical Risk</td>
+</tr>
+<tr>
+<td><strong>Medium Likelihood</strong></td>
+<td>Low Risk</td>
+<td>Medium Risk</td>
+<td>High Risk</td>
+</tr>
+<tr>
+<td><strong>Low Likelihood</strong></td>
+<td>Low Risk</td>
+<td>Low Risk</td>
+<td>Medium Risk</td>
+</tr>
+</table>
+
+<h2>Use Case-Specific Threat Modeling</h2>
+<p>Threat priorities vary significantly based on deployment context. Consider these examples:</p>
+
+<h3>Customer Service Chatbot</h3>
+<p><strong>Primary Threats:</strong></p>
+<ul>
+<li>Prompt injection to access customer data or internal systems</li>
+<li>Generation of offensive or inappropriate responses damaging brand reputation</li>
+<li>Hallucinations providing incorrect product information or policies</li>
+<li>Social engineering to extract sensitive business information</li>
+</ul>
+<p><strong>Risk Priority:</strong> Confidentiality and reputational impact</p>
+
+<h3>Medical Diagnosis Assistant</h3>
+<p><strong>Primary Threats:</strong></p>
+<ul>
+<li>Hallucinations leading to incorrect medical advice with patient safety implications</li>
+<li>Bias in diagnostic recommendations across demographic groups</li>
+<li>Leakage of patient health information (HIPAA violations)</li>
+<li>Manipulation to recommend specific treatments or medications</li>
+</ul>
+<p><strong>Risk Priority:</strong> Safety and regulatory compliance</p>
+
+<h3>Code Generation Tool</h3>
+<p><strong>Primary Threats:</strong></p>
+<ul>
+<li>Generation of insecure code with vulnerabilities (SQL injection, XSS)</li>
+<li>Leakage of proprietary code from training data</li>
+<li>Insertion of backdoors or malicious code</li>
+<li>Copyright violations through reproduction of licensed code</li>
+</ul>
+<p><strong>Risk Priority:</strong> Security and intellectual property</p>
+
+<h3>Content Moderation System</h3>
+<p><strong>Primary Threats:</strong></p>
+<ul>
+<li>Adversarial examples designed to evade detection</li>
+<li>Bias leading to unfair censorship of certain groups</li>
+<li>False positives blocking legitimate content</li>
+<li>Manipulation to allow harmful content through filters</li>
+</ul>
+<p><strong>Risk Priority:</strong> Fairness and effectiveness</p>
+
+<h2>Threat Intelligence and Emerging Risks</h2>
+<p>The AI threat landscape evolves rapidly as researchers discover new attack techniques and adversaries adapt their methods. Organizations must maintain awareness of emerging threats through:</p>
+
+<h3>Information Sources</h3>
+<ul>
+<li><strong>Academic Research:</strong> Papers from conferences like NeurIPS, ICML, ICLR, and security venues</li>
+<li><strong>Industry Reports:</strong> Threat intelligence from AI safety organizations and security vendors</li>
+<li><strong>Bug Bounty Programs:</strong> Vulnerabilities discovered through responsible disclosure programs</li>
+<li><strong>Incident Reports:</strong> Public disclosures of AI system compromises or failures</li>
+<li><strong>Community Forums:</strong> Discussions on platforms like Hugging Face, Reddit, and specialized Discord servers</li>
+</ul>
+
+<h3>Recent Emerging Threats (2023-2024)</h3>
+<ul>
+<li><strong>Indirect Prompt Injection:</strong> Malicious instructions hidden in web pages, emails, or documents processed by AI agents</li>
+<li><strong>Multi-Modal Attacks:</strong> Exploiting vision-language models through adversarial images combined with text</li>
+<li><strong>Compound AI System Vulnerabilities:</strong> Attacks targeting the integration points between multiple AI models</li>
+<li><strong>Retrieval Poisoning:</strong> Manipulating external knowledge bases used in RAG systems</li>
+<li><strong>Jailbreak-as-a-Service:</strong> Commoditization of attack techniques through automated tools and marketplaces</li>
+</ul>
+
+<h2>Documenting the Threat Model</h2>
+<p>A comprehensive threat model document should include:</p>
+
+<h3>Essential Components</h3>
+<ol>
+<li><strong>System Description:</strong> Architecture, components, data flows, and trust boundaries</li>
+<li><strong>Assets:</strong> What needs protection (data, model weights, system availability, reputation)</li>
+<li><strong>Threat Actors:</strong> Who might attack and their motivations (malicious users, competitors, nation-states)</li>
+<li><strong>Threat Scenarios:</strong> Specific attack paths and techniques</li>
+<li><strong>Risk Assessment:</strong> Likelihood and impact ratings for each threat</li>
+<li><strong>Existing Controls:</strong> Current security measures and their effectiveness</li>
+<li><strong>Gaps and Recommendations:</strong> Unmitigated risks and proposed countermeasures</li>
+</ol>
+
+<h3>Diagram Suggestion</h3>
+<p>Visual representations enhance understanding. Consider creating:</p>
+<ul>
+<li><strong>Data Flow Diagrams:</strong> Showing how information moves through the AI system</li>
+<li><strong>Attack Trees:</strong> Hierarchical representation of attack paths to achieve objectives</li>
+<li><strong>Threat Actor Profiles:</strong> Capabilities, motivations, and likely techniques for different adversaries</li>
+<li><strong>Risk Heat Maps:</strong> Visual representation of threat likelihood vs. impact</li>
+</ul>
+
+<h2>Integrating Threat Modeling into Development</h2>
+<p>Threat modeling should not be a one-time activity but an ongoing process integrated into the AI development lifecycle:</p>
+
+<h3>Development Phase Integration</h3>
+<ul>
+<li><strong>Design Phase:</strong> Initial threat model to inform architecture decisions and security requirements</li>
+<li><strong>Implementation Phase:</strong> Update threat model as features are added and attack surface changes</li>
+<li><strong>Testing Phase:</strong> Use threat model to guide red team testing priorities</li>
+<li><strong>Deployment Phase:</strong> Validate that mitigations are effective in production environment</li>
+<li><strong>Operations Phase:</strong> Monitor for new threats and update model based on incidents</li>
+</ul>
+
+<h3>Continuous Threat Modeling</h3>
+<p>Establish a cadence for threat model reviews:</p>
+<ul>
+<li>Quarterly reviews to incorporate new threat intelligence</li>
+<li>Event-driven updates when significant changes occur (new features, architecture changes, incidents)</li>
+<li>Annual comprehensive reassessment</li>
+<li>Post-incident analysis to update threat model with lessons learned</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>AI systems have unique attack surfaces spanning training, inference, and integration layers</li>
+<li>Frameworks like ATLAS and OWASP LLM Top 10 provide structured approaches to AI threat identification</li>
+<li>Risk assessment must consider both likelihood and impact across multiple dimensions (security, safety, fairness)</li>
+<li>Threat priorities vary significantly based on use case and deployment context</li>
+<li>Threat modeling is an ongoing process that must evolve with the threat landscape and system changes</li>
+<li>Effective threat models inform red team testing priorities and guide security investment decisions</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

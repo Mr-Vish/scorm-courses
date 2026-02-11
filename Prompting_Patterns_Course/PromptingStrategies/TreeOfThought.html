@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Tree of Thoughts</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Tree of Thoughts</h1>
+<div class="container">
+<h2>Tree of Thoughts: Solving Complex Problems</h2>
+<p>While "Chain of Thought" (CoT) prompting asks a model to follow a single linear path of reasoning, the "Tree of Thoughts" (ToT) pattern encourages the model to explore multiple different reasoning paths, evaluate them, and then branch out or backtrack as needed. This is particularly effective for complex tasks that require strategic planning, creative exploration, or mathematical problem-solving.</p>
+
+<h3>The Problem with Linear Thinking</h3>
+<p>In linear CoT, if the model makes a mistake early in its reasoning chain, it will likely continue down that wrong path to a final incorrect answer. It has no way to "look ahead" or "try another way."</p>
+
+<h3>How Tree of Thoughts Works</h3>
+<p>ToT mimics the way humans often solve problems: by brainstorming several ideas, testing which ones seem most promising, and then focusing on those. The process typically involves:</p>
+<ol>
+    <li><strong>Thought Generation:</strong> The model generates several "possible next steps" or "intermediate thoughts" for a problem.</li>
+    <li><strong>State Evaluation:</strong> The model (or a separate evaluation prompt) assesses the quality or potential of each of those thoughts. "Is this step likely to lead to a solution?"</li>
+    <li><strong>Search Algorithm:</strong> The process repeats, building a "tree" of possible solutions. Common search strategies include Breadth-First Search (BFS) or Depth-First Search (DFS).</li>
+</ol>
+
+<h3>Implementing ToT in a Single Prompt</h3>
+<p>While ToT is often implemented as a multi-call script, you can encourage a similar behavior in a single prompt:</p>
+<blockquote>
+"Think through this problem by exploring three different possible strategies. For each strategy, evaluate its pros and cons. After evaluating all three, choose the most promising strategy and provide the final solution based on that path."
+</blockquote>
+
+<h3>Use Cases for Tree of Thoughts</h3>
+<ul>
+    <li><strong>Strategic Decision Making:</strong> "Should our company expand into Market A or Market B? Explore both possibilities, considering regulatory, financial, and competitive factors."</li>
+    <li><strong>Complex Math and Logic:</strong> For problems that require multiple "if-then" branches.</li>
+    <li><strong>Creative Writing and Brainstorming:</strong> "Generate three different plot twists for this story. Evaluate which one is most surprising but still logically consistent with the characters."</li>
+    <li><strong>Coding Architecture:</strong> "Suggest three different ways to structure this microservice. Compare them based on scalability and ease of maintenance."</li>
+</ul>
+
+<h3>The 'Self-Correction' Branch</h3>
+<p>A key part of ToT is the ability to recognize a "dead end." You can prompt the model to explicitly look for flaws in its own reasoning: "If you find a contradiction or a logical flaw in this branch of thought, stop and try a different approach."</p>
+
+<h3>Benefits of Tree of Thoughts</h3>
+<ul>
+    <li><strong>Significantly Higher Accuracy:</strong> For complex tasks, ToT can outperform standard prompting and even linear CoT by a wide margin.</li>
+    <li><strong>Greater Robustness:</strong> The model is less likely to be derailed by a single mistake.</li>
+    <li><strong>Transparent Reasoning:</strong> You can see the different paths the model considered, providing more insight into its "thought process."</li>
+</ul>
+
+<h3>Practical Exercise: ToT for a Product Launch</h3>
+<p>Prompt: "We are launching a new eco-friendly water bottle. Explore three different marketing angles: 1. Health-focused, 2. Sustainability-focused, 3. Style/Status-focused. For each angle, draft a sample social media post and evaluate its potential impact on a Gen Z audience. Finally, recommend the best overall strategy."</p>
+
+<h3>Limitations</h3>
+<p>ToT is much more "token-intensive" than linear prompting because the model is generating and evaluating multiple paths. This leads to higher costs and higher latency. Use ToT for tasks where accuracy and depth are more important than speed and cost.</p>
+
+<p>In conclusion, the Tree of Thoughts pattern is a sophisticated technique for unlocking the full reasoning potential of an LLM. By encouraging the model to explore and evaluate multiple paths, you can solve problems that are far beyond the reach of simple linear prompting.</p>
+
+</div>
+</body>
+</html>

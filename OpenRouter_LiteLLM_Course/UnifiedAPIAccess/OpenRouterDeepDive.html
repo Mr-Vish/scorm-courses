@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>OpenRouter Deep Dive - Aggregating the World's LLMs</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>OpenRouter: The Unified Interface for Global AI</h1>
+
+<p>OpenRouter is not just another AI provider; it's a powerful aggregator that provides a single, consistent API for hundreds of different LLMs. By acting as a "clearinghouse" for AI capacity, OpenRouter enables developers to access the latest models from OpenAI, Anthropic, Google, Meta, Mistral, and many others without having to manage dozens of individual API keys and billing accounts.</p>
+
+<h2>The OpenRouter Architecture</h2>
+<p>When you make a request to OpenRouter, it acts as a smart proxy. It receives your request, identifies the requested model, and then routes it to the best available provider for that model. OpenRouter maintains connections to primary providers (like OpenAI directly) as well as dozens of specialized hosting providers (like Together AI, Anyscale, and Fireworks). This redundancy ensures high availability and competitive pricing.</p>
+
+<h3>Key Features of OpenRouter</h3>
+<ul>
+    <li><strong>Standardized API:</strong> OpenRouter uses the OpenAI Chat Completions API format for *all* models. This means you can switch from GPT-4 to Llama 3 just by changing the model name in your code.</li>
+    <li><strong>Dynamic Pricing:</strong> OpenRouter constantly monitors the prices of its various providers and routes your request to the cheapest one by default. You can also specify preferences for higher performance or lower latency.</li>
+    <li><strong>Model Rankings and Discovery:</strong> OpenRouter provides a "Rankings" page based on actual usage and performance data, helping you discover the best models for your specific use case.</li>
+    <li><strong>Unified Billing:</strong> You maintain a single balance on OpenRouter, which is used to pay for all your model usage across all providers. No more managing separate credit cards for every AI startup.</li>
+</ul>
+
+<h2>Using OpenRouter with LiteLLM</h2>
+<p>While you can call OpenRouter directly, it's most powerful when used alongside LiteLLM. LiteLLM provides additional enterprise features like local caching, detailed cost tracking, and automatic fallbacks between OpenRouter and other direct providers (like Azure or Bedrock).</p>
+
+<div class="code-block">
+<pre><code>import litellm
+
+# Call any model on OpenRouter using its full ID
+response = litellm.completion(
+    model="openrouter/anthropic/claude-3-opus",
+    messages=[{"role": "user", "content": "What is the capital of France?"}],
+    api_key="your-openrouter-key"
+)</code></pre>
+</div>
+
+<h2>The Ethics and Transparency of OpenRouter</h2>
+<p>OpenRouter is committed to transparency. It provides detailed data on model performance, provider reliability, and pricing. By democratizing access to AI, OpenRouter helps prevent the "monopolization" of AI by a few large players, empowering developers and startups to build innovative applications using the best tools available.</p>
+
+<p>In the next module, we will explore how to take this unified access and scale it using a centralized LiteLLM Proxy server.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

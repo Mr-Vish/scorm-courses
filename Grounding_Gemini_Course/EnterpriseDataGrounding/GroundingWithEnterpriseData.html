@@ -1,0 +1,470 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Grounding Gemini with Enterprise Data</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Grounding Gemini with Enterprise Data</h1>
+
+<h2>Connecting Gemini to Vertex AI Search</h2>
+<p>Once your Vertex AI Search data store is configured, you can ground Gemini responses in your enterprise data:</p>
+
+<blockquote>
+from vertexai.preview import generative_models
+from vertexai.preview.generative_models import Tool, grounding
+
+# Initialize Vertex AI
+import vertexai
+vertexai.init(project="YOUR_PROJECT_ID", location="us-central1")
+
+# Create grounding tool with your data store
+data_store_path = "projects/YOUR_PROJECT_ID/locations/global/collections/default_collection/dataStores/company-knowledge-base"
+
+grounding_tool = Tool.from_retrieval(
+    grounding.Retrieval(
+        grounding.VertexAISearch(
+            datastore=data_store_path
+        )
+    )
+)
+
+# Initialize model with grounding
+model = generative_models.GenerativeModel(
+    "gemini-1.5-pro",
+    tools=[grounding_tool]
+)
+
+# Generate grounded response
+response = model.generate_content(
+    "What is our company's remote work policy?"
+)
+
+print(response.text)
+
+# Access grounding metadata
+if response.candidates[0].grounding_metadata:
+    metadata = response.candidates[0].grounding_metadata
+    print(f"\nGrounding Score: {metadata.grounding_support.grounding_score:.2f}")
+    print(f"\nSources from enterprise data:")
+    for chunk in metadata.grounding_chunks:
+        print(f"  - {chunk.retrieved_context.title}")
+</blockquote>
+
+<h2>Hybrid Grounding: Combining Search and Enterprise Data</h2>
+<p>The most powerful approach combines both Google Search and enterprise data grounding:</p>
+
+<blockquote>
+from vertexai.preview.generative_models import Tool, grounding
+
+# Configure both grounding sources
+google_search_tool = Tool.from_google_search_retrieval(
+    grounding.GoogleSearchRetrieval()
+)
+
+enterprise_tool = Tool.from_retrieval(
+    grounding.Retrieval(
+        grounding.VertexAISearch(
+            datastore=data_store_path
+        )
+    )
+)
+
+# Initialize model with both tools
+model = generative_models.GenerativeModel(
+    "gemini-1.5-pro",
+    tools=[enterprise_tool, google_search_tool]
+)
+
+# The model will intelligently choose which source(s) to use
+response = model.generate_content(
+    """
+    Compare our company's AI ethics policy with industry best practices 
+    and recent regulatory developments.
+    """
+)
+
+print(response.text)
+</blockquote>
+
+<h2>Hybrid Grounding Strategy</h2>
+<p>Design your hybrid grounding strategy based on query characteristics:</p>
+
+<table>
+    <tr>
+        <th>Query Type</th>
+        <th>Primary Source</th>
+        <th>Secondary Source</th>
+        <th>Rationale</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Internal Policies</td>
+        <td>Enterprise Data</td>
+        <td>None</td>
+        <td>Proprietary information only in internal systems</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Product Comparisons</td>
+        <td>Enterprise Data</td>
+        <td>Google Search</td>
+        <td>Internal specs + external market data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Industry Trends</td>
+        <td>Google Search</td>
+        <td>Enterprise Data</td>
+        <td>Public trends + internal analysis</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Compliance Questions</td>
+        <td>Enterprise Data</td>
+        <td>Google Search</td>
+        <td>Internal policies + regulatory updates</td>
+    </tr>
+</table>
+
+<h2>Implementing Intelligent Source Selection</h2>
+<blockquote>
+class IntelligentGroundingRouter:
+    """
+    Route queries to appropriate grounding sources.
+    """
+    def __init__(self, project_id, data_store_id):
+        vertexai.init(project=project_id, location="us-central1")
+        self.data_store_path = f"projects/{project_id}/locations/global/collections/default_collection/dataStores/{data_store_id}"
+        
+        # Define grounding tools
+        self.enterprise_tool = Tool.from_retrieval(
+            grounding.Retrieval(
+                grounding.VertexAISearch(datastore=self.data_store_path)
+            )
+        )
+        self.search_tool = Tool.from_google_search_retrieval(
+            grounding.GoogleSearchRetrieval()
+        )
+    
+    def classify_query(self, query):
+        """
+        Classify query to determine grounding strategy.
+        """
+        query_lower = query.lower()
+        
+        # Internal-only keywords
+        internal_keywords = ['our company', 'our policy', 'internal', 
+                            'employee', 'hr policy', 'our process']
+        
+        # External-focused keywords
+        external_keywords = ['industry', 'market', 'competitor', 
+                            'latest', 'current', 'news']
+        
+        has_internal = any(kw in query_lower for kw in internal_keywords)
+        has_external = any(kw in query_lower for kw in external_keywords)
+        
+        if has_internal and not has_external:
+            return 'enterprise_only'
+        elif has_external and not has_internal:
+            return 'search_only'
+        else:
+            return 'hybrid'
+    
+    def generate_grounded_response(self, query):
+        """
+        Generate response with appropriate grounding.
+        """
+        strategy = self.classify_query(query)
+        
+        # Select tools based on strategy
+        if strategy == 'enterprise_only':
+            tools = [self.enterprise_tool]
+        elif strategy == 'search_only':
+            tools = [self.search_tool]
+        else:  # hybrid
+            tools = [self.enterprise_tool, self.search_tool]
+        
+        # Generate response
+        model = generative_models.GenerativeModel(
+            "gemini-1.5-pro",
+            tools=tools
+        )
+        
+        response = model.generate_content(query)
+        
+        return {
+            'strategy': strategy,
+            'response': response.text,
+            'metadata': response.candidates[0].grounding_metadata
+        }
+
+
+# Usage
+router = IntelligentGroundingRouter(
+    project_id="YOUR_PROJECT_ID",
+    data_store_id="company-knowledge-base"
+)
+
+# Test different query types
+queries = [
+    "What is our vacation policy?",  # enterprise_only
+    "What are the latest AI trends?",  # search_only
+    "How does our AI policy compare to industry standards?"  # hybrid
+]
+
+for query in queries:
+    result = router.generate_grounded_response(query)
+    print(f"Query: {query}")
+    print(f"Strategy: {result['strategy']}")
+    print(f"Response: {result['response'][:200]}...\n")
+</blockquote>
+
+<h2>Filtering and Ranking Results</h2>
+<p>Control which enterprise documents are used for grounding:</p>
+
+<blockquote>
+# Configure retrieval with filters
+filtered_retrieval = grounding.Retrieval(
+    grounding.VertexAISearch(
+        datastore=data_store_path
+    ),
+    # Filter by metadata
+    filter="department='Engineering' AND document_type='policy'",
+    # Limit number of results
+    max_results=5
+)
+
+grounding_tool = Tool.from_retrieval(filtered_retrieval)
+
+model = generative_models.GenerativeModel(
+    "gemini-1.5-pro",
+    tools=[grounding_tool]
+)
+
+# Only engineering policies will be used for grounding
+response = model.generate_content(
+    "What are the code review requirements?"
+)
+</blockquote>
+
+<h2>Handling Sensitive Data</h2>
+<p>Implement safeguards for sensitive enterprise data:</p>
+
+<blockquote>
+class SecureEnterpriseGrounding:
+    """
+    Grounding with data sensitivity controls.
+    """
+    def __init__(self, project_id, data_store_id):
+        vertexai.init(project=project_id, location="us-central1")
+        self.data_store_path = f"projects/{project_id}/locations/global/collections/default_collection/dataStores/{data_store_id}"
+    
+    def generate_with_sensitivity_check(self, query, user_clearance_level):
+        """
+        Generate response respecting user clearance level.
+        """
+        # Map clearance to document classifications
+        clearance_filters = {
+            'public': "classification='public'",
+            'internal': "classification IN ('public', 'internal')",
+            'confidential': "classification IN ('public', 'internal', 'confidential')",
+            'restricted': ""  # No filter, access all
+        }
+        
+        filter_expr = clearance_filters.get(user_clearance_level, "classification='public'")
+        
+        # Configure retrieval with access control
+        retrieval = grounding.Retrieval(
+            grounding.VertexAISearch(datastore=self.data_store_path),
+            filter=filter_expr
+        )
+        
+        grounding_tool = Tool.from_retrieval(retrieval)
+        
+        model = generative_models.GenerativeModel(
+            "gemini-1.5-pro",
+            tools=[grounding_tool]
+        )
+        
+        response = model.generate_content(query)
+        
+        # Log access for audit
+        self._log_access(query, user_clearance_level, response)
+        
+        return response.text
+    
+    def _log_access(self, query, clearance, response):
+        """
+        Log data access for compliance and auditing.
+        """
+        import logging
+        from datetime import datetime
+        
+        logging.info({
+            'timestamp': datetime.now().isoformat(),
+            'query': query,
+            'user_clearance': clearance,
+            'sources_accessed': len(response.candidates[0].grounding_metadata.grounding_chunks) if response.candidates[0].grounding_metadata else 0
+        })
+
+
+# Usage
+secure_grounding = SecureEnterpriseGrounding(
+    project_id="YOUR_PROJECT_ID",
+    data_store_id="company-knowledge-base"
+)
+
+# User with 'internal' clearance
+response = secure_grounding.generate_with_sensitivity_check(
+    query="What are our Q4 financial projections?",
+    user_clearance_level='internal'
+)
+</blockquote>
+
+<h2>Performance Optimization for Enterprise Grounding</h2>
+<table>
+    <tr>
+        <th>Technique</th>
+        <th>Implementation</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Index Optimization</td>
+        <td>Structure documents with clear metadata and sections</td>
+        <td>Faster, more accurate retrieval</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Result Limiting</td>
+        <td>Set max_results to 3-5 most relevant documents</td>
+        <td>Reduced latency, focused responses</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Caching</td>
+        <td>Cache responses for common internal queries</td>
+        <td>Significant latency reduction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Metadata Filtering</td>
+        <td>Pre-filter by department, date, or category</td>
+        <td>Improved relevance and speed</td>
+    </tr>
+</table>
+
+<h2>Monitoring Enterprise Grounding Quality</h2>
+<blockquote>
+class EnterpriseGroundingMonitor:
+    """
+    Monitor quality of enterprise data grounding.
+    """
+    def __init__(self):
+        self.metrics = []
+    
+    def analyze_grounding_quality(self, query, response):
+        """
+        Analyze quality of enterprise grounding.
+        """
+        metadata = response.candidates[0].grounding_metadata
+        
+        if not metadata:
+            return {'quality': 'NO_GROUNDING'}
+        
+        # Extract source information
+        sources = []
+        for chunk in metadata.grounding_chunks:
+            sources.append({
+                'title': chunk.retrieved_context.title if hasattr(chunk, 'retrieved_context') else 'Unknown',
+                'score': chunk.relevance_score if hasattr(chunk, 'relevance_score') else 0.0
+            })
+        
+        # Calculate metrics
+        grounding_score = metadata.grounding_support.grounding_score if metadata.grounding_support else 0.0
+        source_count = len(sources)
+        avg_relevance = sum(s['score'] for s in sources) / source_count if source_count > 0 else 0.0
+        
+        quality_assessment = {
+            'query': query,
+            'grounding_score': grounding_score,
+            'source_count': source_count,
+            'avg_relevance': avg_relevance,
+            'sources': sources,
+            'quality_rating': self._rate_quality(grounding_score, source_count)
+        }
+        
+        self.metrics.append(quality_assessment)
+        return quality_assessment
+    
+    def _rate_quality(self, score, source_count):
+        """
+        Rate overall quality.
+        """
+        if score >= 0.8 and source_count >= 2:
+            return 'EXCELLENT'
+        elif score >= 0.6 and source_count >= 1:
+            return 'GOOD'
+        elif score >= 0.4:
+            return 'FAIR'
+        else:
+            return 'POOR'
+    
+    def get_summary(self):
+        """
+        Get summary statistics.
+        """
+        if not self.metrics:
+            return "No metrics collected"
+        
+        avg_score = sum(m['grounding_score'] for m in self.metrics) / len(self.metrics)
+        avg_sources = sum(m['source_count'] for m in self.metrics) / len(self.metrics)
+        
+        quality_distribution = {}
+        for m in self.metrics:
+            rating = m['quality_rating']
+            quality_distribution[rating] = quality_distribution.get(rating, 0) + 1
+        
+        return {
+            'total_queries': len(self.metrics),
+            'avg_grounding_score': avg_score,
+            'avg_sources_per_query': avg_sources,
+            'quality_distribution': quality_distribution
+        }
+
+
+# Usage
+monitor = EnterpriseGroundingMonitor()
+
+# Analyze multiple queries
+test_queries = [
+    "What is our data retention policy?",
+    "How do I submit an expense report?",
+    "What are the requirements for promotion?"
+]
+
+for query in test_queries:
+    response = model.generate_content(query)
+    quality = monitor.analyze_grounding_quality(query, response)
+    print(f"Query: {query}")
+    print(f"Quality: {quality['quality_rating']}")
+    print(f"Score: {quality['grounding_score']:.2f}")
+    print(f"Sources: {quality['source_count']}\n")
+
+# Get summary
+summary = monitor.get_summary()
+print(f"Summary: {summary}")
+</blockquote>
+
+<h2>Best Practices for Enterprise Grounding</h2>
+<ul>
+    <li><strong>Structure Your Data:</strong> Use consistent metadata, clear titles, and logical document organization</li>
+    <li><strong>Implement Access Controls:</strong> Respect data sensitivity and user permissions</li>
+    <li><strong>Regular Updates:</strong> Keep data stores synchronized with source systems</li>
+    <li><strong>Monitor Quality:</strong> Track grounding scores and source relevance</li>
+    <li><strong>Hybrid Approach:</strong> Combine enterprise and public data for comprehensive answers</li>
+    <li><strong>Audit Logging:</strong> Log all queries and data access for compliance</li>
+    <li><strong>Test Thoroughly:</strong> Validate responses against known correct answers</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

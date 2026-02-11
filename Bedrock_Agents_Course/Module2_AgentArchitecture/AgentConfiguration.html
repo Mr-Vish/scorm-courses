@@ -1,0 +1,330 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Creating and Configuring Agents</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Creating and Configuring Agents</h1>
+
+<h2>Agent Creation Process</h2>
+<p>Creating a Bedrock Agent involves several steps, each requiring careful consideration of requirements and constraints. The process can be completed through the AWS Console, AWS CLI, or AWS SDKs (Boto3 for Python, AWS SDK for JavaScript, etc.).</p>
+
+<h3>Step 1: Define Agent Requirements</h3>
+<p>Before creating an agent, document:</p>
+<ul>
+    <li><strong>Purpose:</strong> What problem does this agent solve?</li>
+    <li><strong>Scope:</strong> What can and cannot the agent do?</li>
+    <li><strong>Users:</strong> Who will interact with this agent?</li>
+    <li><strong>Actions:</strong> What external systems must the agent access?</li>
+    <li><strong>Knowledge:</strong> What information does the agent need?</li>
+    <li><strong>Constraints:</strong> Security, compliance, performance requirements</li>
+</ul>
+
+<h3>Step 2: Select Foundation Model</h3>
+<p>Choose the appropriate model based on:</p>
+<ul>
+    <li><strong>Task Complexity:</strong> Simple routing vs. complex reasoning</li>
+    <li><strong>Context Needs:</strong> Short conversations vs. long document analysis</li>
+    <li><strong>Latency Requirements:</strong> Real-time responses vs. batch processing</li>
+    <li><strong>Budget:</strong> Cost per 1,000 tokens varies significantly across models</li>
+</ul>
+
+<p><strong>Recommended Starting Points:</strong></p>
+<ul>
+    <li><strong>Customer Service:</strong> Claude 3 Sonnet (balance of capability and cost)</li>
+    <li><strong>Document Analysis:</strong> Claude 3 Opus (long context, strong reasoning)</li>
+    <li><strong>Simple Routing:</strong> Claude 3 Haiku or Titan Text (fast, cost-effective)</li>
+    <li><strong>General Purpose:</strong> Llama 3 70B (good performance, open license)</li>
+</ul>
+
+<h3>Step 3: Craft Agent Instructions</h3>
+<p>Develop comprehensive instructions following the principles from Module 1:</p>
+
+<div class="code-block">
+<pre><code>You are a customer support agent for TechCorp, a B2B SaaS company providing 
+project management software. Your role is to assist enterprise customers with:
+- Account and billing inquiries
+- Technical troubleshooting
+- Feature questions and guidance
+- Escalation to human agents when needed
+
+Capabilities:
+- Look up account details and subscription information
+- Process refund requests up to $1,000
+- Access knowledge base for product documentation
+- Create support tickets for complex issues
+
+Guidelines:
+- Always verify customer identity before accessing account data
+- Be professional, empathetic, and solution-oriented
+- Provide specific, actionable guidance
+- Admit when you don't know something and offer alternatives
+- Escalate to human agents for: legal questions, contract changes, 
+  frustrated customers, or issues outside your capabilities
+
+Security:
+- Never share credentials or API keys
+- Redact sensitive information in logs
+- Report suspected fraud immediately</code></pre>
+</div>
+
+<h3>Step 4: Create the Agent</h3>
+<p>Using the AWS Console, CLI, or SDK, create the agent with basic configuration:</p>
+
+<div class="code-block">
+<pre><code># Example using AWS CLI
+aws bedrock-agent create-agent \
+    --agent-name "TechCorpSupportAgent" \
+    --foundation-model "anthropic.claude-3-sonnet-20240229-v1:0" \
+    --instruction "$(cat agent-instructions.txt)" \
+    --idle-session-ttl-in-seconds 1800 \
+    --agent-resource-role-arn "arn:aws:iam::123456789012:role/BedrockAgentRole"</code></pre>
+</div>
+
+<p><strong>Key Parameters:</strong></p>
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Purpose</th>
+        <th>Considerations</th>
+    </tr>
+    <tr>
+        <td class="rowheader">agent-name</td>
+        <td>Human-readable identifier</td>
+        <td>Use descriptive names indicating purpose</td>
+    </tr>
+    <tr>
+        <td class="rowheader">foundation-model</td>
+        <td>Model identifier</td>
+        <td>Can be changed later by updating agent</td>
+    </tr>
+    <tr>
+        <td class="rowheader">instruction</td>
+        <td>System prompt defining behavior</td>
+        <td>Keep under 1,500 words for best results</td>
+    </tr>
+    <tr>
+        <td class="rowheader">idle-session-ttl</td>
+        <td>Session expiration time (seconds)</td>
+        <td>Balance memory usage vs. user experience</td>
+    </tr>
+    <tr>
+        <td class="rowheader">agent-resource-role</td>
+        <td>IAM role for agent permissions</td>
+        <td>Must allow invoking Lambda, accessing S3, etc.</td>
+    </tr>
+</table>
+
+<h2>IAM Permissions and Security</h2>
+<p>Agents require proper IAM configuration to function securely.</p>
+
+<h3>Agent Resource Role</h3>
+<p>The agent resource role grants the agent permissions to:</p>
+<ul>
+    <li>Invoke foundation models in Bedrock</li>
+    <li>Call Lambda functions for action groups</li>
+    <li>Query knowledge bases</li>
+    <li>Write logs to CloudWatch</li>
+</ul>
+
+<p><strong>Example Trust Policy:</strong></p>
+<div class="code-block">
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {
+      "Service": "bedrock.amazonaws.com"
+    },
+    "Action": "sts:AssumeRole",
+    "Condition": {
+      "StringEquals": {
+        "aws:SourceAccount": "123456789012"
+      },
+      "ArnLike": {
+        "aws:SourceArn": "arn:aws:bedrock:us-east-1:123456789012:agent/*"
+      }
+    }
+  }]
+}</code></pre>
+</div>
+
+<p><strong>Example Permissions Policy:</strong></p>
+<div class="code-block">
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:*::foundation-model/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:us-east-1:123456789012:function:AgentActions*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:Retrieve",
+        "bedrock:RetrieveAndGenerate"
+      ],
+      "Resource": "arn:aws:bedrock:us-east-1:123456789012:knowledge-base/*"
+    }
+  ]
+}</code></pre>
+</div>
+
+<h3>Invoking Agent Permissions</h3>
+<p>Applications invoking agents need permissions:</p>
+<div class="code-block">
+<pre><code>{
+  "Effect": "Allow",
+  "Action": [
+    "bedrock:InvokeAgent"
+  ],
+  "Resource": "arn:aws:bedrock:us-east-1:123456789012:agent-alias/*"
+}</code></pre>
+</div>
+
+<h2>Agent Configuration Options</h2>
+
+<h3>Session Configuration</h3>
+<p><strong>Idle Session TTL:</strong> Controls how long sessions persist without activity. Considerations:</p>
+<ul>
+    <li><strong>Short TTL (300-900 seconds):</strong> Reduces memory usage, better for high-volume scenarios</li>
+    <li><strong>Medium TTL (1800-3600 seconds):</strong> Balances user experience and resource usage</li>
+    <li><strong>Long TTL (7200+ seconds):</strong> Better user experience for complex, multi-turn interactions</li>
+</ul>
+
+<h3>Prompt Override Configuration</h3>
+<p>Advanced users can override the default orchestration prompts used by Bedrock. This allows fine-tuning of:</p>
+<ul>
+    <li>Pre-processing logic</li>
+    <li>Orchestration reasoning</li>
+    <li>Post-processing formatting</li>
+    <li>Knowledge base query generation</li>
+</ul>
+
+<p><strong>Warning:</strong> Prompt overrides are advanced features that can break agent functionality if misconfigured. Use only when default orchestration doesn't meet specific requirements.</p>
+
+<h3>Customer Encryption Keys</h3>
+<p>For enhanced security, configure agents to use AWS KMS customer-managed keys for:</p>
+<ul>
+    <li>Encrypting session data at rest</li>
+    <li>Encrypting agent configuration</li>
+    <li>Encrypting knowledge base content</li>
+</ul>
+
+<h2>Testing and Validation</h2>
+
+<h3>Console Testing</h3>
+<p>The AWS Console provides a built-in test interface for agents:</p>
+<ol>
+    <li>Navigate to agent in Bedrock console</li>
+    <li>Ensure agent is prepared</li>
+    <li>Use "Test" panel to send sample queries</li>
+    <li>Enable trace to see orchestration steps</li>
+    <li>Review action invocations and knowledge base queries</li>
+</ol>
+
+<h3>Programmatic Testing</h3>
+<p>For automated testing, invoke agents programmatically:</p>
+
+<div class="code-block">
+<pre><code>import boto3
+
+bedrock_agent_runtime = boto3.client('bedrock-agent-runtime')
+
+response = bedrock_agent_runtime.invoke_agent(
+    agentId='AGENT_ID',
+    agentAliasId='ALIAS_ID',
+    sessionId='test-session-123',
+    inputText='What is my current subscription plan?'
+)
+
+# Process streaming response
+for event in response['completion']:
+    if 'chunk' in event:
+        print(event['chunk']['bytes'].decode('utf-8'))
+</code></pre>
+</div>
+
+<h3>Test Scenarios</h3>
+<p>Comprehensive testing should cover:</p>
+<ul>
+    <li><strong>Happy Path:</strong> Typical, straightforward requests</li>
+    <li><strong>Multi-Turn Conversations:</strong> Context maintenance across turns</li>
+    <li><strong>Action Group Invocation:</strong> Verify correct API calls</li>
+    <li><strong>Knowledge Base Queries:</strong> Ensure relevant information retrieval</li>
+    <li><strong>Error Handling:</strong> API failures, invalid inputs, missing data</li>
+    <li><strong>Edge Cases:</strong> Ambiguous requests, out-of-scope queries</li>
+    <li><strong>Security:</strong> Attempts to bypass guardrails or access unauthorized data</li>
+</ul>
+
+<h2>Monitoring and Observability</h2>
+
+<h3>CloudWatch Metrics</h3>
+<p>Bedrock automatically publishes metrics:</p>
+<ul>
+    <li><strong>Invocations:</strong> Number of agent invocations</li>
+    <li><strong>Latency:</strong> Response time distribution</li>
+    <li><strong>Errors:</strong> Failed invocations and error types</li>
+    <li><strong>Token Usage:</strong> Input and output tokens consumed</li>
+</ul>
+
+<h3>Trace Logging</h3>
+<p>Enable trace logging to capture detailed execution information:</p>
+<ul>
+    <li>Pre-processing steps and input validation</li>
+    <li>Reasoning process and decision-making</li>
+    <li>Action group invocations and responses</li>
+    <li>Knowledge base queries and retrieved content</li>
+    <li>Post-processing and response generation</li>
+</ul>
+
+<p>Traces are invaluable for debugging unexpected behavior and optimizing agent performance.</p>
+
+<h3>CloudWatch Logs</h3>
+<p>Configure log groups to capture:</p>
+<ul>
+    <li>Agent invocation requests and responses</li>
+    <li>Lambda function execution logs</li>
+    <li>Error messages and stack traces</li>
+    <li>Custom application logs</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Start Simple:</strong> Begin with basic agent, add complexity incrementally</li>
+    <li><strong>Version Control:</strong> Maintain agent configurations in source control</li>
+    <li><strong>Test Thoroughly:</strong> Comprehensive testing before production deployment</li>
+    <li><strong>Monitor Continuously:</strong> Set up alerts for errors, latency, and cost</li>
+    <li><strong>Iterate Based on Data:</strong> Use traces and logs to identify improvement opportunities</li>
+    <li><strong>Document Decisions:</strong> Record why specific models, instructions, or configurations were chosen</li>
+    <li><strong>Plan for Failure:</strong> Implement fallbacks and graceful degradation</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Agent creation involves defining requirements, selecting models, crafting instructions, and configuring IAM</li>
+    <li>Proper IAM roles are essential for agent security and functionality</li>
+    <li>Session TTL should balance user experience with resource efficiency</li>
+    <li>Comprehensive testing covers happy paths, edge cases, and security scenarios</li>
+    <li>Monitoring through CloudWatch metrics, traces, and logs enables optimization</li>
+    <li>Start simple and iterate based on real-world performance data</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

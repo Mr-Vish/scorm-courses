@@ -1,0 +1,363 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 1: Traffic Allocation and Variant Management</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Traffic Allocation and Variant Management</h1>
+
+<h2>Understanding Traffic Allocation Strategies</h2>
+
+<p>Traffic allocation determines how users are distributed across experimental variants. The allocation strategy significantly impacts experiment validity, statistical power, and business risk. For GenAI features, where model costs and latency vary substantially, thoughtful traffic allocation becomes even more critical.</p>
+
+<h2>Equal vs Unequal Traffic Splits</h2>
+
+<h3>Equal Allocation (50/50 Split)</h3>
+<p>Equal traffic allocation is the default choice for most A/B tests. It maximizes statistical power for a given total sample size and provides symmetric risk exposure between control and treatment variants.</p>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Optimal statistical power for detecting differences between two variants</li>
+    <li>Simplest to implement and explain to stakeholders</li>
+    <li>Equal exposure to potential risks or benefits</li>
+    <li>Straightforward interpretation of results</li>
+</ul>
+
+<p><strong>When to Use:</strong> Use equal allocation when you have high confidence in your treatment variant's safety and when statistical power is your primary concern.</p>
+
+<h3>Unequal Allocation (e.g., 90/10 or 95/5 Split)</h3>
+<p>Unequal allocation assigns more users to the control variant, limiting exposure to potentially risky or costly treatment variants.</p>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Reduces business risk when testing unproven features</li>
+    <li>Limits cost exposure when treatment uses expensive models</li>
+    <li>Maintains majority of users on known-good experience</li>
+    <li>Allows faster detection of severe negative effects</li>
+</ul>
+
+<p><strong>Trade-offs:</strong></p>
+<ul>
+    <li>Requires larger total sample size to achieve same statistical power</li>
+    <li>Takes longer to reach conclusive results</li>
+    <li>May delay learning about treatment performance</li>
+</ul>
+
+<p><strong>When to Use:</strong> Use unequal allocation when testing high-risk changes, expensive models, or when you need to maintain service quality for most users during experimentation.</p>
+
+<h2>Multi-Variant Experiments</h2>
+
+<p>Sometimes you need to test more than two variants simultaneously. For example, comparing GPT-4, Claude 3.5, and Gemini Pro in a single experiment.</p>
+
+<h3>Design Considerations</h3>
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Two-Variant Test</th>
+        <th>Multi-Variant Test</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Sample Size</td>
+        <td>Baseline requirement</td>
+        <td>Increases with number of variants</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Statistical Power</td>
+        <td>Maximum for given sample</td>
+        <td>Decreases as variants increase</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Experiment Duration</td>
+        <td>Shorter</td>
+        <td>Longer to reach significance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Learning Velocity</td>
+        <td>One comparison</td>
+        <td>Multiple comparisons simultaneously</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Complexity</td>
+        <td>Simple analysis</td>
+        <td>Multiple comparison corrections needed</td>
+    </tr>
+</table>
+
+<h3>Multiple Comparison Problem</h3>
+<p>When testing multiple variants, the probability of finding at least one false positive increases. If you run three pairwise comparisons at α=0.05, your family-wise error rate becomes approximately 14%, not 5%.</p>
+
+<p><strong>Correction Methods:</strong></p>
+<ul>
+    <li><strong>Bonferroni Correction:</strong> Divide α by the number of comparisons (conservative but simple)</li>
+    <li><strong>Holm-Bonferroni:</strong> Sequential testing procedure that's less conservative</li>
+    <li><strong>False Discovery Rate (FDR):</strong> Controls the expected proportion of false positives</li>
+</ul>
+
+<h2>Ramp-Up Strategies</h2>
+
+<p>Rather than immediately exposing 50% of users to a new variant, gradual ramp-up allows you to detect severe issues before they affect large user populations.</p>
+
+<h3>Typical Ramp-Up Schedule</h3>
+<table>
+    <tr>
+        <th>Phase</th>
+        <th>Traffic %</th>
+        <th>Duration</th>
+        <th>Monitoring Focus</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Phase 1: Canary</td>
+        <td>1-5%</td>
+        <td>24-48 hours</td>
+        <td>Error rates, crashes, severe quality issues</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Phase 2: Limited</td>
+        <td>10-25%</td>
+        <td>3-7 days</td>
+        <td>User feedback, engagement metrics, cost</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Phase 3: Full</td>
+        <td>50%</td>
+        <td>Until significance</td>
+        <td>Primary metrics, statistical analysis</td>
+    </tr>
+</table>
+
+<h3>Automated Ramp-Up Criteria</h3>
+<p>Define objective criteria for progressing through ramp-up phases:</p>
+<ul>
+    <li>Error rate below threshold (e.g., &lt;1%)</li>
+    <li>Latency within acceptable range (e.g., P95 &lt; 3 seconds)</li>
+    <li>No increase in safety violations</li>
+    <li>User satisfaction not significantly degraded</li>
+</ul>
+
+<h2>Variant Configuration Management</h2>
+
+<p>Proper variant configuration ensures reproducibility and prevents configuration drift during experiments.</p>
+
+<h3>Configuration as Code</h3>
+<div class="code-block">
+<pre><code>class ExperimentVariant:
+    """Defines a complete experiment variant configuration."""
+    
+    def __init__(self, name, model_config, prompt_config, ui_config):
+        self.name = name
+        self.model_config = model_config
+        self.prompt_config = prompt_config
+        self.ui_config = ui_config
+    
+    def to_dict(self):
+        """Serialize configuration for logging and reproducibility."""
+        return {
+            "name": self.name,
+            "model": {
+                "provider": self.model_config.provider,
+                "model_id": self.model_config.model_id,
+                "temperature": self.model_config.temperature,
+                "max_tokens": self.model_config.max_tokens
+            },
+            "prompt": {
+                "system_prompt": self.prompt_config.system_prompt,
+                "template": self.prompt_config.template
+            },
+            "ui": {
+                "streaming": self.ui_config.streaming,
+                "show_citations": self.ui_config.show_citations
+            }
+        }
+
+# Define control variant
+control = ExperimentVariant(
+    name="control",
+    model_config=ModelConfig(
+        provider="openai",
+        model_id="gpt-3.5-turbo",
+        temperature=0.7,
+        max_tokens=500
+    ),
+    prompt_config=PromptConfig(
+        system_prompt="You are a helpful assistant.",
+        template="{user_input}"
+    ),
+    ui_config=UIConfig(
+        streaming=False,
+        show_citations=False
+    )
+)
+
+# Define treatment variant
+treatment = ExperimentVariant(
+    name="treatment",
+    model_config=ModelConfig(
+        provider="openai",
+        model_id="gpt-4o",
+        temperature=0.7,
+        max_tokens=500
+    ),
+    prompt_config=PromptConfig(
+        system_prompt="You are a helpful assistant.",
+        template="{user_input}"
+    ),
+    ui_config=UIConfig(
+        streaming=False,
+        show_citations=False
+    )
+)</code></pre>
+</div>
+
+<h3>Version Control for Experiments</h3>
+<p>Treat experiment configurations as code and maintain them in version control:</p>
+<ul>
+    <li>Store configurations in Git alongside application code</li>
+    <li>Use semantic versioning for experiment iterations</li>
+    <li>Document configuration changes in commit messages</li>
+    <li>Enable rollback to previous configurations if needed</li>
+</ul>
+
+<h2>Handling Experiment Interactions</h2>
+
+<p>When running multiple experiments simultaneously, interactions between experiments can confound results.</p>
+
+<h3>Types of Interactions</h3>
+
+<h4>1. Direct Interactions</h4>
+<p>Two experiments modify the same feature or user experience element. For example, one experiment tests model selection while another tests prompt formatting for the same feature.</p>
+<p><strong>Solution:</strong> Use mutually exclusive assignment—users in Experiment A cannot be in Experiment B.</p>
+
+<h4>2. Indirect Interactions</h4>
+<p>Experiments affect different features but share underlying resources or user attention. For example, testing two different GenAI features that both increase API costs.</p>
+<p><strong>Solution:</strong> Monitor aggregate metrics and use holdout groups that receive no experimental treatments.</p>
+
+<h4>3. Carryover Effects</h4>
+<p>Users' experiences in one experiment influence their behavior in another. For example, a frustrating experience with one AI feature affects satisfaction with another.</p>
+<p><strong>Solution:</strong> Analyze user journeys and consider temporal separation between experiments.</p>
+
+<h3>Experiment Orchestration</h3>
+<div class="code-block">
+<pre><code>class ExperimentOrchestrator:
+    """Manages multiple concurrent experiments with interaction handling."""
+    
+    def __init__(self):
+        self.experiments = {}
+        self.exclusion_groups = {}
+    
+    def register_experiment(self, experiment_id, config, exclusion_group=None):
+        """Register an experiment with optional exclusion group."""
+        self.experiments[experiment_id] = config
+        if exclusion_group:
+            if exclusion_group not in self.exclusion_groups:
+                self.exclusion_groups[exclusion_group] = []
+            self.exclusion_groups[exclusion_group].append(experiment_id)
+    
+    def assign_user(self, user_id):
+        """Assign user to compatible experiments."""
+        assignments = {}
+        used_exclusion_groups = set()
+        
+        for exp_id, config in self.experiments.items():
+            exclusion_group = self._get_exclusion_group(exp_id)
+            
+            # Skip if user already assigned to conflicting experiment
+            if exclusion_group and exclusion_group in used_exclusion_groups:
+                continue
+            
+            # Assign to this experiment
+            variant = assign_user_to_variant(exp_id, user_id, config.traffic_splits)
+            assignments[exp_id] = variant
+            
+            if exclusion_group:
+                used_exclusion_groups.add(exclusion_group)
+        
+        return assignments</code></pre>
+</div>
+
+<h2>Monitoring and Quality Assurance</h2>
+
+<h3>Real-Time Monitoring Dashboards</h3>
+<p>Effective experiments require continuous monitoring to detect issues early:</p>
+
+<table>
+    <tr>
+        <th>Metric Category</th>
+        <th>Alert Threshold</th>
+        <th>Action</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>&gt;2% increase vs control</td>
+        <td>Immediate investigation, potential pause</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Latency P95</td>
+        <td>&gt;50% increase vs control</td>
+        <td>Review infrastructure, consider rollback</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost Per Request</td>
+        <td>&gt;3x control cost</td>
+        <td>Validate budget impact, adjust traffic</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Safety Violations</td>
+        <td>Any increase</td>
+        <td>Immediate pause, root cause analysis</td>
+    </tr>
+    <tr>
+        <td class="rowheader">User Satisfaction</td>
+        <td>&gt;10% decrease vs control</td>
+        <td>Investigate user feedback, consider termination</td>
+    </tr>
+</table>
+
+<h3>Sample Ratio Mismatch (SRM) Detection</h3>
+<p>SRM occurs when the observed traffic split differs significantly from the intended split, indicating implementation bugs or biased assignment.</p>
+
+<div class="code-block">
+<pre><code>from scipy.stats import chisquare
+
+def detect_srm(observed_counts, expected_proportions):
+    """Detect sample ratio mismatch using chi-square test."""
+    total = sum(observed_counts)
+    expected_counts = [p * total for p in expected_proportions]
+    
+    chi2_stat, p_value = chisquare(observed_counts, expected_counts)
+    
+    return {
+        "has_srm": p_value < 0.001,  # Very conservative threshold
+        "p_value": p_value,
+        "chi2_statistic": chi2_stat
+    }
+
+# Example: Expected 50/50 split
+observed = [5234, 4891]  # Actual user counts
+expected = [0.5, 0.5]
+
+result = detect_srm(observed, expected)
+if result["has_srm"]:
+    print("WARNING: Sample ratio mismatch detected!")</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Traffic allocation strategy balances statistical power against business risk</li>
+    <li>Equal splits maximize power; unequal splits minimize risk exposure</li>
+    <li>Multi-variant tests require larger samples and multiple comparison corrections</li>
+    <li>Gradual ramp-up with automated criteria prevents large-scale failures</li>
+    <li>Configuration management ensures reproducibility and prevents drift</li>
+    <li>Experiment orchestration prevents confounding from concurrent tests</li>
+    <li>Real-time monitoring with automated alerts enables rapid issue detection</li>
+    <li>SRM detection validates implementation correctness</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

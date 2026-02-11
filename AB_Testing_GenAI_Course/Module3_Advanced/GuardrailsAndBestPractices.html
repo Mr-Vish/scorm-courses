@@ -1,0 +1,363 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 3: Guardrail Metrics and Production Best Practices</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Guardrail Metrics and Production Best Practices</h1>
+
+<h2>The Critical Role of Guardrail Metrics</h2>
+
+<p>While primary metrics measure whether your experiment achieves its goal, guardrail metrics ensure you don't cause unintended harm in the process. For GenAI features, where models can occasionally produce problematic outputs, guardrails are essential safety mechanisms.</p>
+
+<p>Consider a scenario: Your experiment shows that increasing temperature from 0.7 to 1.0 improves user engagement by 15%. However, without guardrail metrics, you might miss that this change also increased safety violations by 200% and cost per request by 50%. Guardrails prevent such costly mistakes.</p>
+
+<h2>Categories of Guardrail Metrics</h2>
+
+<h3>1. Safety and Quality Guardrails</h3>
+<p>Protect users from harmful, inappropriate, or low-quality content:</p>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Threshold</th>
+        <th>Action if Violated</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Safety Violation Rate</td>
+        <td>No increase vs control</td>
+        <td>Immediate experiment pause</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hallucination Rate</td>
+        <td>&lt; 5% absolute rate</td>
+        <td>Investigation and potential termination</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Toxicity Score</td>
+        <td>No increase vs control</td>
+        <td>Immediate pause and review</td>
+    </tr>
+    <tr>
+        <td class="rowheader">PII Leakage Rate</td>
+        <td>Zero tolerance</td>
+        <td>Immediate shutdown</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Refusal Rate</td>
+        <td>&lt; 10% of requests</td>
+        <td>Review prompt engineering</td>
+    </tr>
+</table>
+
+<h3>2. Performance Guardrails</h3>
+<p>Ensure acceptable system performance and user experience:</p>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Threshold</th>
+        <th>Action if Violated</th>
+    </tr>
+    <tr>
+        <td class="rowheader">P95 Latency</td>
+        <td>&lt; 5 seconds</td>
+        <td>Optimize or reduce traffic</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>&lt; 1%</td>
+        <td>Debug and fix issues</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Timeout Rate</td>
+        <td>&lt; 0.5%</td>
+        <td>Increase timeout or optimize</td>
+    </tr>
+    <tr>
+        <td class="rowheader">API Availability</td>
+        <td>&gt; 99.9%</td>
+        <td>Implement fallback mechanisms</td>
+    </tr>
+</table>
+
+<h3>3. Business Guardrails</h3>
+<p>Protect business metrics and operational constraints:</p>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Threshold</th>
+        <th>Action if Violated</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost Per Request</td>
+        <td>&lt; 3x control cost</td>
+        <td>Evaluate ROI and budget impact</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Daily API Spend</td>
+        <td>&lt; $10,000/day</td>
+        <td>Reduce traffic or switch models</td>
+    </tr>
+    <tr>
+        <td class="rowheader">User Satisfaction</td>
+        <td>No &gt;5% decrease vs control</td>
+        <td>Investigate and consider termination</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Support Ticket Rate</td>
+        <td>No significant increase</td>
+        <td>Review user feedback</td>
+    </tr>
+</table>
+
+<h2>Implementing Automated Guardrail Monitoring</h2>
+
+<div class="code-block">
+<pre><code>class GuardrailMonitor:
+    """Automated monitoring system for experiment guardrails."""
+    
+    def __init__(self, experiment_id):
+        self.experiment_id = experiment_id
+        self.guardrails = []
+        self.violations = []
+    
+    def add_guardrail(self, name, metric_fn, threshold, comparison, severity):
+        """
+        Add a guardrail metric.
+        
+        Args:
+            name: Guardrail name
+            metric_fn: Function to calculate metric value
+            threshold: Threshold value
+            comparison: 'less_than', 'greater_than', 'no_increase'
+            severity: 'critical', 'high', 'medium'
+        """
+        self.guardrails.append({
+            "name": name,
+            "metric_fn": metric_fn,
+            "threshold": threshold,
+            "comparison": comparison,
+            "severity": severity
+        })
+    
+    def check_guardrails(self, control_data, treatment_data):
+        """Check all guardrails and return violations."""
+        violations = []
+        
+        for guardrail in self.guardrails:
+            control_value = guardrail["metric_fn"](control_data)
+            treatment_value = guardrail["metric_fn"](treatment_data)
+            
+            violated = False
+            
+            if guardrail["comparison"] == "less_than":
+                violated = treatment_value > guardrail["threshold"]
+            elif guardrail["comparison"] == "greater_than":
+                violated = treatment_value < guardrail["threshold"]
+            elif guardrail["comparison"] == "no_increase":
+                violated = treatment_value > control_value
+            
+            if violated:
+                violations.append({
+                    "guardrail": guardrail["name"],
+                    "severity": guardrail["severity"],
+                    "control_value": control_value,
+                    "treatment_value": treatment_value,
+                    "threshold": guardrail["threshold"]
+                })
+        
+        return violations
+    
+    def should_pause_experiment(self, violations):
+        """Determine if experiment should be paused based on violations."""
+        critical_violations = [v for v in violations if v["severity"] == "critical"]
+        return len(critical_violations) > 0
+
+# Example usage
+monitor = GuardrailMonitor("model-comparison-v1")
+
+# Add safety guardrail
+monitor.add_guardrail(
+    name="Safety Violation Rate",
+    metric_fn=lambda data: data["safety_violations"] / data["total_requests"],
+    threshold=0.0,
+    comparison="no_increase",
+    severity="critical"
+)
+
+# Add performance guardrail
+monitor.add_guardrail(
+    name="P95 Latency",
+    metric_fn=lambda data: np.percentile(data["latencies"], 95),
+    threshold=5.0,
+    comparison="less_than",
+    severity="high"
+)
+
+# Add cost guardrail
+monitor.add_guardrail(
+    name="Cost Per Request",
+    metric_fn=lambda data: data["total_cost"] / data["total_requests"],
+    threshold=0.15,
+    comparison="less_than",
+    severity="medium"
+)
+
+# Check guardrails
+violations = monitor.check_guardrails(control_data, treatment_data)
+if monitor.should_pause_experiment(violations):
+    print("ALERT: Critical guardrail violated - pausing experiment")</code></pre>
+</div>
+
+<h2>Experiment Documentation Best Practices</h2>
+
+<p>Comprehensive documentation ensures reproducibility, facilitates knowledge sharing, and enables future analysis:</p>
+
+<h3>Pre-Experiment Documentation</h3>
+<ul>
+    <li><strong>Hypothesis:</strong> Clear statement of what you expect to happen and why</li>
+    <li><strong>Primary Metric:</strong> Single metric that determines success or failure</li>
+    <li><strong>Secondary Metrics:</strong> Additional metrics providing context</li>
+    <li><strong>Guardrail Metrics:</strong> Metrics that must not degrade</li>
+    <li><strong>Minimum Detectable Effect:</strong> Smallest improvement worth detecting</li>
+    <li><strong>Sample Size Calculation:</strong> Required users per variant with justification</li>
+    <li><strong>Variant Configurations:</strong> Complete specification of all variants</li>
+    <li><strong>Success Criteria:</strong> Conditions for declaring a winner</li>
+</ul>
+
+<h3>During-Experiment Documentation</h3>
+<ul>
+    <li><strong>Daily Monitoring Logs:</strong> Key metrics and any anomalies observed</li>
+    <li><strong>Configuration Changes:</strong> Any adjustments made during the experiment</li>
+    <li><strong>Incidents:</strong> Errors, outages, or unexpected behaviors</li>
+    <li><strong>User Feedback:</strong> Qualitative insights from support tickets or surveys</li>
+</ul>
+
+<h3>Post-Experiment Documentation</h3>
+<ul>
+    <li><strong>Results Summary:</strong> Statistical analysis of all metrics</li>
+    <li><strong>Decision and Rationale:</strong> What was decided and why</li>
+    <li><strong>Lessons Learned:</strong> Insights for future experiments</li>
+    <li><strong>Unexpected Findings:</strong> Surprising results or behaviors</li>
+    <li><strong>Follow-up Actions:</strong> Next steps or future experiments</li>
+</ul>
+
+<h2>Decision-Making Framework</h2>
+
+<p>Not all statistically significant results should be shipped. Use a structured decision framework:</p>
+
+<h3>The Four-Quadrant Decision Matrix</h3>
+
+<table>
+    <tr>
+        <th></th>
+        <th>Statistically Significant</th>
+        <th>Not Statistically Significant</th>
+    </tr>
+    <tr>
+        <td class="rowheader"><strong>Large Effect Size</strong></td>
+        <td><strong>SHIP</strong><br/>Clear winner with strong evidence</td>
+        <td><strong>EXTEND</strong><br/>Promising but needs more data</td>
+    </tr>
+    <tr>
+        <td class="rowheader"><strong>Small Effect Size</strong></td>
+        <td><strong>EVALUATE</strong><br/>Significant but may not be worth the cost/complexity</td>
+        <td><strong>NO CHANGE</strong><br/>Insufficient evidence of meaningful improvement</td>
+    </tr>
+</table>
+
+<h3>Additional Decision Factors</h3>
+<ul>
+    <li><strong>Implementation Cost:</strong> Engineering effort required</li>
+    <li><strong>Maintenance Burden:</strong> Ongoing operational complexity</li>
+    <li><strong>Reversibility:</strong> Can you easily roll back if issues arise?</li>
+    <li><strong>Strategic Alignment:</strong> Does this support long-term product vision?</li>
+    <li><strong>User Segment Effects:</strong> Does it help or harm specific user groups?</li>
+</ul>
+
+<h2>Production Deployment Strategies</h2>
+
+<h3>Gradual Rollout Plan</h3>
+<ol>
+    <li><strong>Internal Testing (0.1%):</strong> Deploy to internal users and monitor closely</li>
+    <li><strong>Canary Release (1-5%):</strong> Limited external exposure with intensive monitoring</li>
+    <li><strong>Staged Rollout (10% → 25% → 50%):</strong> Gradual increase with validation at each stage</li>
+    <li><strong>Full Deployment (100%):</strong> Complete rollout after all stages pass</li>
+</ol>
+
+<h3>Rollback Criteria</h3>
+<p>Define clear conditions that trigger automatic rollback:</p>
+<ul>
+    <li>Error rate exceeds 2%</li>
+    <li>Any safety guardrail violation</li>
+    <li>P95 latency exceeds 10 seconds</li>
+    <li>User satisfaction drops more than 10%</li>
+    <li>Cost exceeds budget by 50%</li>
+</ul>
+
+<h2>Continuous Experimentation Culture</h2>
+
+<h3>Building an Experimentation Mindset</h3>
+<ul>
+    <li><strong>Embrace Failure:</strong> Failed experiments provide valuable learning</li>
+    <li><strong>Question Assumptions:</strong> Test intuitions rather than assuming they're correct</li>
+    <li><strong>Iterate Rapidly:</strong> Run many small experiments rather than few large ones</li>
+    <li><strong>Share Learnings:</strong> Document and communicate results across teams</li>
+    <li><strong>Celebrate Rigor:</strong> Reward good experimental design, not just positive results</li>
+</ul>
+
+<h3>Common Pitfalls to Avoid</h3>
+<ul>
+    <li><strong>HiPPO Decision-Making:</strong> Highest Paid Person's Opinion overriding data</li>
+    <li><strong>Confirmation Bias:</strong> Only looking for evidence that supports preconceptions</li>
+    <li><strong>Premature Optimization:</strong> Optimizing before understanding user needs</li>
+    <li><strong>Metric Fixation:</strong> Optimizing metrics at the expense of user experience</li>
+    <li><strong>Analysis Paralysis:</strong> Over-analyzing instead of making decisions</li>
+</ul>
+
+<h2>Ethical Considerations in GenAI Experimentation</h2>
+
+<h3>User Consent and Transparency</h3>
+<ul>
+    <li>Inform users that AI features may vary as part of ongoing improvements</li>
+    <li>Provide opt-out mechanisms for users uncomfortable with experimentation</li>
+    <li>Never experiment with safety-critical features without explicit consent</li>
+</ul>
+
+<h3>Fairness and Bias</h3>
+<ul>
+    <li>Monitor performance across demographic groups</li>
+    <li>Ensure experiments don't disproportionately harm vulnerable populations</li>
+    <li>Test for and mitigate algorithmic bias in model outputs</li>
+</ul>
+
+<h3>Data Privacy</h3>
+<ul>
+    <li>Anonymize user data in experiment analysis</li>
+    <li>Comply with GDPR, CCPA, and other privacy regulations</li>
+    <li>Minimize data retention and implement secure deletion</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Guardrail metrics prevent unintended negative consequences of optimization</li>
+    <li>Safety, performance, and business guardrails all play critical roles</li>
+    <li>Automated monitoring enables rapid detection of guardrail violations</li>
+    <li>Comprehensive documentation ensures reproducibility and knowledge sharing</li>
+    <li>Decision-making should consider both statistical and practical significance</li>
+    <li>Gradual rollout with clear rollback criteria minimizes deployment risk</li>
+    <li>Building an experimentation culture requires embracing failure and questioning assumptions</li>
+    <li>Ethical considerations must guide all GenAI experimentation</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

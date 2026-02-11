@@ -1,0 +1,363 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Spring AI Architecture and Setup</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring AI Architecture and Setup</h1>
+
+<h2>What is Spring AI?</h2>
+<p><strong>Spring AI</strong> is the official AI framework from the Spring team, designed to integrate seamlessly with the Spring ecosystem. It provides portable abstractions for AI models, vector databases, and RAG workflows while maintaining Spring's philosophy of convention over configuration.</p>
+
+<h2>Core Design Principles</h2>
+<ul>
+    <li><strong>Spring Native:</strong> Built from the ground up for Spring Boot applications</li>
+    <li><strong>Portability:</strong> Switch between AI providers without changing application code</li>
+    <li><strong>Auto-Configuration:</strong> Minimal configuration through Spring Boot starters</li>
+    <li><strong>Testability:</strong> Easy to mock and test AI components</li>
+    <li><strong>Observability:</strong> Built-in metrics and tracing support</li>
+</ul>
+
+<h2>Spring AI Architecture</h2>
+<p>Spring AI is organized into several key layers:</p>
+
+<table>
+    <tr>
+        <th>Layer</th>
+        <th>Components</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Layer</td>
+        <td>ChatModel, EmbeddingModel, ImageModel</td>
+        <td>Abstractions for different AI model types</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompt Layer</td>
+        <td>PromptTemplate, ChatClient</td>
+        <td>Prompt engineering and message construction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Document Layer</td>
+        <td>Document, DocumentReader, DocumentTransformer</td>
+        <td>Document processing and ETL pipeline</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vector Store Layer</td>
+        <td>VectorStore implementations</td>
+        <td>Embedding storage and similarity search</td>
+    </tr>
+    <tr>
+        <td class="rowheader">RAG Layer</td>
+        <td>QuestionAnswerAdvisor, RetrievalAugmentor</td>
+        <td>Retrieval-Augmented Generation workflows</td>
+    </tr>
+</table>
+
+<h2>Project Setup with Maven</h2>
+<p>Add Spring AI dependencies to your <strong>pom.xml</strong>:</p>
+
+<div class="code-block">
+<pre><code>&lt;properties&gt;
+    &lt;spring-ai.version&gt;1.0.0-M1&lt;/spring-ai.version&gt;
+&lt;/properties&gt;
+
+&lt;dependencies&gt;
+    &lt;!-- Spring AI BOM --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-ai-bom&lt;/artifactId&gt;
+        &lt;version&gt;${spring-ai.version}&lt;/version&gt;
+        &lt;type&gt;pom&lt;/type&gt;
+        &lt;scope&gt;import&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- OpenAI Integration --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-ai-openai-spring-boot-starter&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- Anthropic Integration --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-ai-anthropic-spring-boot-starter&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- Vector Store (PostgreSQL with pgvector) --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-ai-pgvector-store-spring-boot-starter&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+
+&lt;repositories&gt;
+    &lt;repository&gt;
+        &lt;id&gt;spring-milestones&lt;/id&gt;
+        &lt;url&gt;https://repo.spring.io/milestone&lt;/url&gt;
+    &lt;/repository&gt;
+&lt;/repositories&gt;
+</code></pre>
+</div>
+
+<h2>Application Configuration</h2>
+<p>Configure Spring AI in <strong>application.yml</strong>:</p>
+
+<blockquote>
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4
+          temperature: 0.7
+          max-tokens: 1000
+      embedding:
+        options:
+          model: text-embedding-3-small
+    
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-3-sonnet-20240229
+          temperature: 0.7
+    
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+</blockquote>
+
+<h2>Auto-Configuration Benefits</h2>
+<p>Spring Boot automatically configures beans based on your dependencies:</p>
+
+<div class="code-block">
+<pre><code>@RestController
+@RequestMapping("/ai")
+public class AIController {
+    
+    // Automatically injected by Spring Boot
+    private final ChatModel chatModel;
+    private final EmbeddingModel embeddingModel;
+    private final VectorStore vectorStore;
+    
+    public AIController(ChatModel chatModel,
+                        EmbeddingModel embeddingModel,
+                        VectorStore vectorStore) {
+        this.chatModel = chatModel;
+        this.embeddingModel = embeddingModel;
+        this.vectorStore = vectorStore;
+    }
+    
+    @PostMapping("/chat")
+    public String chat(@RequestBody String message) {
+        return chatModel.call(message);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Supported Model Providers</h2>
+<p>Spring AI supports multiple AI providers through dedicated starters:</p>
+
+<table>
+    <tr>
+        <th>Provider</th>
+        <th>Starter Artifact</th>
+        <th>Models</th>
+    </tr>
+    <tr>
+        <td class="rowheader">OpenAI</td>
+        <td>spring-ai-openai-spring-boot-starter</td>
+        <td>GPT-4, GPT-3.5, DALL-E, Whisper</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Anthropic</td>
+        <td>spring-ai-anthropic-spring-boot-starter</td>
+        <td>Claude 3 (Opus, Sonnet, Haiku)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Azure OpenAI</td>
+        <td>spring-ai-azure-openai-spring-boot-starter</td>
+        <td>Azure-hosted GPT models</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AWS Bedrock</td>
+        <td>spring-ai-bedrock-spring-boot-starter</td>
+        <td>Claude, Llama 2, Titan</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Google Vertex AI</td>
+        <td>spring-ai-vertex-ai-spring-boot-starter</td>
+        <td>PaLM 2, Gemini</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Ollama</td>
+        <td>spring-ai-ollama-spring-boot-starter</td>
+        <td>Local open-source models</td>
+    </tr>
+</table>
+
+<h2>Multiple Model Configuration</h2>
+<p>Configure multiple models simultaneously:</p>
+
+<div class="code-block">
+<pre><code>@Configuration
+public class MultiModelConfig {
+    
+    @Bean
+    @Primary
+    public ChatModel primaryChatModel(OpenAiChatModel openAiModel) {
+        return openAiModel;
+    }
+    
+    @Bean
+    @Qualifier("claude")
+    public ChatModel claudeModel(AnthropicChatModel anthropicModel) {
+        return anthropicModel;
+    }
+    
+    @Bean
+    @Qualifier("local")
+    public ChatModel localModel(OllamaChatModel ollamaModel) {
+        return ollamaModel;
+    }
+}
+
+// Usage
+@Service
+public class AIService {
+    
+    private final ChatModel primaryModel;
+    private final ChatModel claudeModel;
+    
+    public AIService(ChatModel primaryModel,
+                     @Qualifier("claude") ChatModel claudeModel) {
+        this.primaryModel = primaryModel;
+        this.claudeModel = claudeModel;
+    }
+    
+    public String askPrimary(String question) {
+        return primaryModel.call(question);
+    }
+    
+    public String askClaude(String question) {
+        return claudeModel.call(question);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Environment-Specific Configuration</h2>
+<p>Use Spring profiles for different environments:</p>
+
+<blockquote>
+# application-dev.yml
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-3.5-turbo  # Cheaper for development
+          temperature: 0.9
+
+# application-prod.yml
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4
+          temperature: 0.3  # More deterministic
+          max-tokens: 2000
+</blockquote>
+
+<h2>Observability and Monitoring</h2>
+<p>Spring AI integrates with Spring Boot Actuator:</p>
+
+<div class="code-block">
+<pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+# application.yml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+  metrics:
+    tags:
+      application: ${spring.application.name}
+</code></pre>
+</div>
+
+<h2>Testing Configuration</h2>
+<p>Configure test-specific AI beans:</p>
+
+<div class="code-block">
+<pre><code>@TestConfiguration
+public class TestAIConfig {
+    
+    @Bean
+    @Primary
+    public ChatModel mockChatModel() {
+        return new ChatModel() {
+            @Override
+            public String call(String message) {
+                return "Mock response for: " + message;
+            }
+            
+            @Override
+            public ChatResponse call(Prompt prompt) {
+                return new ChatResponse(
+                    List.of(new Generation("Mock response"))
+                );
+            }
+        };
+    }
+}
+
+@SpringBootTest
+@Import(TestAIConfig.class)
+class AIServiceTest {
+    
+    @Autowired
+    private AIService aiService;
+    
+    @Test
+    void testChatFunctionality() {
+        String response = aiService.chat("Hello");
+        assertNotNull(response);
+        assertTrue(response.contains("Mock response"));
+    }
+}
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Use Starters:</strong> Leverage Spring Boot starters for automatic configuration</li>
+    <li><strong>Externalize Configuration:</strong> Store API keys in environment variables or secret managers</li>
+    <li><strong>Profile-Based Config:</strong> Use different configurations for dev, test, and production</li>
+    <li><strong>Dependency Injection:</strong> Inject AI components rather than creating them manually</li>
+    <li><strong>Testing:</strong> Create mock implementations for unit tests</li>
+    <li><strong>Monitoring:</strong> Enable actuator endpoints for production monitoring</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

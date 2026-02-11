@@ -1,0 +1,421 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Regulatory Compliance: GDPR, HIPAA, and CCPA</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Regulatory Compliance: GDPR, HIPAA, and CCPA</h1>
+
+<h2>Overview of Privacy Regulations</h2>
+<table>
+    <tr>
+        <th>Regulation</th>
+        <th>Jurisdiction</th>
+        <th>Scope</th>
+        <th>Key Requirements</th>
+    </tr>
+    <tr>
+        <td class="rowheader">GDPR</td>
+        <td>European Union</td>
+        <td>EU residents' personal data</td>
+        <td>Consent, right to deletion, data minimization</td>
+    </tr>
+    <tr>
+        <td class="rowheader">HIPAA</td>
+        <td>United States</td>
+        <td>Protected Health Information (PHI)</td>
+        <td>Encryption, access controls, BAAs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">CCPA/CPRA</td>
+        <td>California, USA</td>
+        <td>California residents' data</td>
+        <td>Opt-out rights, data access, deletion</td>
+    </tr>
+    <tr>
+        <td class="rowheader">PCI DSS</td>
+        <td>Global</td>
+        <td>Payment card data</td>
+        <td>Encryption, tokenization, no storage of CVV</td>
+    </tr>
+</table>
+
+<h2>GDPR Compliance for GenAI</h2>
+
+<h3>Key GDPR Principles</h3>
+<ul>
+    <li><strong>Lawfulness, fairness, transparency:</strong> Users must know how their data is processed</li>
+    <li><strong>Purpose limitation:</strong> Data only used for stated purposes</li>
+    <li><strong>Data minimization:</strong> Collect only necessary data</li>
+    <li><strong>Accuracy:</strong> Keep data accurate and up-to-date</li>
+    <li><strong>Storage limitation:</strong> Don't keep data longer than necessary</li>
+    <li><strong>Integrity and confidentiality:</strong> Protect data with appropriate security</li>
+</ul>
+
+<h3>GDPR Requirements for GenAI Applications</h3>
+<div class="code-block">
+<pre><code>class GDPRCompliantGenAI:
+    """Implement GDPR requirements in GenAI applications"""
+    
+    def __init__(self):
+        self.consent_records = {}
+        self.data_retention_days = 90
+    
+    def obtain_consent(self, user_id: str, purpose: str) -> bool:
+        """Obtain explicit consent for data processing"""
+        
+        consent_text = f"""
+We will process your data for: {purpose}
+Your data will be:
+- Sent to third-party LLM APIs
+- Stored for {self.data_retention_days} days
+- Used to improve our services
+
+You have the right to:
+- Access your data
+- Request deletion
+- Withdraw consent at any time
+
+Do you consent to this processing?
+"""
+        
+        # In production, present to user and record response
+        consent_given = True  # Placeholder
+        
+        if consent_given:
+            self.consent_records[user_id] = {
+                "purpose": purpose,
+                "timestamp": datetime.now(),
+                "consent_given": True
+            }
+        
+        return consent_given
+    
+    def right_to_access(self, user_id: str) -> Dict:
+        """GDPR Article 15: Right of access"""
+        
+        # Retrieve all data associated with user
+        user_data = {
+            "conversations": self._get_user_conversations(user_id),
+            "consent_records": self.consent_records.get(user_id),
+            "processing_purposes": ["AI assistance", "Service improvement"],
+            "third_parties": ["OpenAI", "Anthropic"],
+            "retention_period": f"{self.data_retention_days} days"
+        }
+        
+        return user_data
+    
+    def right_to_erasure(self, user_id: str) -> bool:
+        """GDPR Article 17: Right to be forgotten"""
+        
+        # Delete all user data
+        self._delete_user_conversations(user_id)
+        self._delete_user_embeddings(user_id)
+        self._delete_user_logs(user_id)
+        
+        if user_id in self.consent_records:
+            del self.consent_records[user_id]
+        
+        return True
+    
+    def data_portability(self, user_id: str) -> str:
+        """GDPR Article 20: Right to data portability"""
+        
+        user_data = self.right_to_access(user_id)
+        
+        # Export in machine-readable format (JSON)
+        import json
+        return json.dumps(user_data, indent=2)
+    
+    def _get_user_conversations(self, user_id: str) -> List:
+        """Retrieve user conversations"""
+        return []  # Implement database query
+    
+    def _delete_user_conversations(self, user_id: str):
+        """Delete user conversations"""
+        pass  # Implement database deletion
+    
+    def _delete_user_embeddings(self, user_id: str):
+        """Delete user embeddings from vector DB"""
+        pass  # Implement vector DB deletion
+    
+    def _delete_user_logs(self, user_id: str):
+        """Delete user from audit logs (where legally required)"""
+        pass  # Implement log deletion/anonymization
+
+# Usage
+gdpr_system = GDPRCompliantGenAI()
+
+# Obtain consent before processing
+consent = gdpr_system.obtain_consent("user_123", "AI chat assistance")
+
+if consent:
+    # Process user data
+    pass
+
+# User requests their data
+user_data = gdpr_system.right_to_access("user_123")
+
+# User requests deletion
+gdpr_system.right_to_erasure("user_123")
+</code></pre>
+</div>
+
+<h2>HIPAA Compliance for Healthcare GenAI</h2>
+
+<h3>HIPAA Requirements</h3>
+<ul>
+    <li><strong>Business Associate Agreements (BAAs):</strong> Required with all third-party processors</li>
+    <li><strong>Encryption:</strong> PHI must be encrypted in transit and at rest</li>
+    <li><strong>Access Controls:</strong> Role-based access to PHI</li>
+    <li><strong>Audit Logs:</strong> Track all PHI access</li>
+    <li><strong>Breach Notification:</strong> Report breaches within 60 days</li>
+</ul>
+
+<h3>HIPAA-Compliant GenAI Architecture</h3>
+<blockquote>
+<strong>Critical:</strong> Most public LLM APIs (OpenAI, Anthropic, Google) do NOT have BAAs for standard accounts. For HIPAA compliance, you must:
+<ul>
+    <li>Use on-premise LLMs (e.g., Llama, Mistral)</li>
+    <li>Use HIPAA-compliant cloud services (AWS, Azure, GCP with BAAs)</li>
+    <li>Never send PHI to public LLM APIs</li>
+</ul>
+</blockquote>
+
+<div class="code-block">
+<pre><code>class HIPAACompliantGenAI:
+    """HIPAA-compliant GenAI implementation"""
+    
+    def __init__(self, use_on_premise_llm=True):
+        self.use_on_premise = use_on_premise_llm
+        self.audit_logger = AuditLogger()
+    
+    def process_medical_query(
+        self,
+        query: str,
+        user_id: str,
+        patient_id: str
+    ) -> Dict:
+        """Process medical query with HIPAA compliance"""
+        
+        # Step 1: Verify user authorization
+        if not self._check_hipaa_authorization(user_id, patient_id):
+            self.audit_logger.log_unauthorized_access(user_id, patient_id)
+            return {"error": "Unauthorized access to PHI"}
+        
+        # Step 2: Detect and block PHI in query
+        phi_detected = self._detect_phi(query)
+        if phi_detected and not self.use_on_premise:
+            return {"error": "Cannot send PHI to third-party API"}
+        
+        # Step 3: Process with on-premise LLM
+        if self.use_on_premise:
+            response = self._call_on_premise_llm(query)
+        else:
+            # Redact PHI before sending to cloud
+            clean_query = self._redact_phi(query)
+            response = self._call_cloud_llm(clean_query)
+        
+        # Step 4: Audit log
+        self.audit_logger.log_phi_access(
+            user_id=user_id,
+            patient_id=patient_id,
+            action="query_processed",
+            phi_detected=phi_detected
+        )
+        
+        return {"response": response}
+    
+    def _check_hipaa_authorization(self, user_id: str, patient_id: str) -> bool:
+        """Verify user has authorization to access patient data"""
+        # Implement role-based access control
+        return True
+    
+    def _detect_phi(self, text: str) -> bool:
+        """Detect Protected Health Information"""
+        phi_types = [
+            "MEDICAL_RECORD_NUMBER",
+            "PERSON",  # Patient names
+            "DATE_TIME",  # Dates related to health
+            "PHONE_NUMBER",
+            "EMAIL_ADDRESS",
+            "US_SSN"
+        ]
+        
+        analyzer = AnalyzerEngine()
+        results = analyzer.analyze(text=text, entities=phi_types, language="en")
+        return len(results) > 0
+    
+    def _redact_phi(self, text: str) -> str:
+        """Redact all PHI from text"""
+        # Use Presidio to redact
+        pass
+    
+    def _call_on_premise_llm(self, query: str) -> str:
+        """Call on-premise HIPAA-compliant LLM"""
+        # Use local model (Llama, Mistral, etc.)
+        return "Response from on-premise LLM"
+    
+    def _call_cloud_llm(self, query: str) -> str:
+        """Call cloud LLM (only with redacted data)"""
+        return "Response from cloud LLM"
+
+class AuditLogger:
+    """HIPAA-compliant audit logging"""
+    
+    def log_phi_access(self, user_id: str, patient_id: str, action: str, phi_detected: bool):
+        """Log PHI access for HIPAA compliance"""
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "user_id": user_id,
+            "patient_id": patient_id,
+            "action": action,
+            "phi_detected": phi_detected,
+            "ip_address": "192.168.1.1"  # Get from request
+        }
+        
+        # Store in tamper-proof audit log
+        print(f"AUDIT LOG: {log_entry}")
+    
+    def log_unauthorized_access(self, user_id: str, patient_id: str):
+        """Log unauthorized access attempt"""
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "user_id": user_id,
+            "patient_id": patient_id,
+            "action": "UNAUTHORIZED_ACCESS_ATTEMPT",
+            "severity": "HIGH"
+        }
+        
+        print(f"SECURITY ALERT: {log_entry}")
+        # Trigger security alert
+</code></pre>
+</div>
+
+<h2>CCPA/CPRA Compliance</h2>
+
+<h3>Key CCPA Rights</h3>
+<ul>
+    <li><strong>Right to know:</strong> What personal information is collected</li>
+    <li><strong>Right to delete:</strong> Request deletion of personal information</li>
+    <li><strong>Right to opt-out:</strong> Opt-out of sale of personal information</li>
+    <li><strong>Right to non-discrimination:</strong> Equal service regardless of privacy choices</li>
+</ul>
+
+<div class="code-block">
+<pre><code>class CCPACompliantGenAI:
+    """CCPA compliance implementation"""
+    
+    def __init__(self):
+        self.opt_out_users = set()
+    
+    def handle_opt_out(self, user_id: str):
+        """CCPA: Right to opt-out of data sale"""
+        self.opt_out_users.add(user_id)
+        
+        # Stop sharing data with third parties
+        self._stop_data_sharing(user_id)
+    
+    def can_share_data(self, user_id: str) -> bool:
+        """Check if user has opted out"""
+        return user_id not in self.opt_out_users
+    
+    def provide_privacy_notice(self) -> str:
+        """CCPA-required privacy notice"""
+        return """
+PRIVACY NOTICE FOR CALIFORNIA RESIDENTS
+
+Categories of Personal Information Collected:
+- Identifiers (name, email, IP address)
+- Internet activity (chat history, usage patterns)
+- Inferences (preferences, characteristics)
+
+Purposes of Collection:
+- Provide AI assistance services
+- Improve service quality
+- Comply with legal obligations
+
+Third Parties We Share With:
+- OpenAI (LLM provider)
+- AWS (cloud hosting)
+
+Your Rights:
+- Right to know what data we collect
+- Right to delete your data
+- Right to opt-out of data sale
+- Right to non-discrimination
+
+To exercise your rights, contact: privacy@company.com
+"""
+    
+    def _stop_data_sharing(self, user_id: str):
+        """Stop sharing user data with third parties"""
+        pass
+</code></pre>
+</div>
+
+<h2>Compliance Checklist</h2>
+<table>
+    <tr>
+        <th>Requirement</th>
+        <th>GDPR</th>
+        <th>HIPAA</th>
+        <th>CCPA</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Consent mechanism</td>
+        <td>Required</td>
+        <td>Authorization</td>
+        <td>Opt-out</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data access rights</td>
+        <td>Required</td>
+        <td>Required</td>
+        <td>Required</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data deletion</td>
+        <td>Required</td>
+        <td>Required</td>
+        <td>Required</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Encryption</td>
+        <td>Recommended</td>
+        <td>Required</td>
+        <td>Recommended</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Audit logging</td>
+        <td>Recommended</td>
+        <td>Required</td>
+        <td>Recommended</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Breach notification</td>
+        <td>72 hours</td>
+        <td>60 days</td>
+        <td>Required</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Privacy by design:</strong> Build privacy controls from the start</li>
+    <li><strong>Data minimization:</strong> Only collect and process necessary data</li>
+    <li><strong>Regular audits:</strong> Conduct privacy impact assessments</li>
+    <li><strong>User transparency:</strong> Clear privacy notices and consent forms</li>
+    <li><strong>Vendor management:</strong> Ensure third-party LLM providers have appropriate agreements</li>
+    <li><strong>Incident response:</strong> Have a plan for data breaches</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

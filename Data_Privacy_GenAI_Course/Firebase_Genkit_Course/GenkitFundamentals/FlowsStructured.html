@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Flows and Structured Generation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Flows and Structured Generation</h1>
+
+<h2>Understanding Flows</h2>
+<p>Flows are the core abstraction in Genkit for building AI-powered functionality. They provide a structured, type-safe way to define AI operations with automatic observability, error handling, and testing capabilities.</p>
+
+<h2>Defining a Basic Flow</h2>
+<div class="code-block">
+<pre><code>import { z } from 'zod';
+
+// Define a simple flow with input/output schemas
+const greetingFlow = ai.defineFlow(
+  {
+    name: 'greeting',
+    inputSchema: z.object({ 
+      name: z.string(),
+      language: z.enum(['en', 'es', 'fr'])
+    }),
+    outputSchema: z.object({ 
+      message: z.string() 
+    })
+  },
+  async (input) => {
+    const { output } = await ai.generate({
+      prompt: `Generate a greeting for ${input.name} in ${input.language}`,
+      output: { 
+        schema: z.object({ message: z.string() })
+      }
+    });
+    return output;
+  }
+);
+</code></pre>
+</div>
+
+<h2>Flow Components Explained</h2>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Required</th>
+    </tr>
+    <tr>
+        <td class="rowheader">name</td>
+        <td>Unique identifier for the flow</td>
+        <td>Yes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">inputSchema</td>
+        <td>Zod schema defining expected input structure</td>
+        <td>Yes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">outputSchema</td>
+        <td>Zod schema defining output structure</td>
+        <td>Yes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">handler function</td>
+        <td>Async function implementing the flow logic</td>
+        <td>Yes</td>
+    </tr>
+</table>
+
+<h2>Structured Output Generation</h2>
+<p>Genkit uses <strong>Zod schemas</strong> to enforce structured output from LLMs. This ensures type safety and automatic validation of AI-generated content.</p>
+
+<h3>Complex Structured Output Example</h3>
+<div class="code-block">
+<pre><code>const analyzeArticleFlow = ai.defineFlow(
+  {
+    name: 'analyzeArticle',
+    inputSchema: z.object({ 
+      text: z.string(),
+      maxKeyPoints: z.number().default(5)
+    }),
+    outputSchema: z.object({
+      summary: z.string(),
+      keyPoints: z.array(z.string()),
+      sentiment: z.enum(['positive', 'negative', 'neutral']),
+      topics: z.array(z.string()),
+      readingTimeMinutes: z.number()
+    })
+  },
+  async (input) => {
+    const { output } = await ai.generate({
+      model: gemini15Flash,
+      prompt: `Analyze this article and provide structured output:
+      
+      ${input.text}
+      
+      Provide exactly ${input.maxKeyPoints} key points.`,
+      output: {
+        schema: z.object({
+          summary: z.string().describe('A concise 2-3 sentence summary'),
+          keyPoints: z.array(z.string()).describe('Main takeaways'),
+          sentiment: z.enum(['positive', 'negative', 'neutral']),
+          topics: z.array(z.string()).describe('Main topics covered'),
+          readingTimeMinutes: z.number().describe('Estimated reading time')
+        })
+      }
+    });
+    return output;
+  }
+);
+</code></pre>
+</div>
+
+<h2>Running Flows</h2>
+<p>Flows can be executed in multiple ways:</p>
+
+<h3>Direct Invocation</h3>
+<div class="code-block">
+<pre><code>// Run the flow directly
+const result = await greetingFlow({ 
+  name: 'Alice', 
+  language: 'es' 
+});
+console.log(result.message); // "¡Hola Alice!"
+</code></pre>
+</div>
+
+<h3>Via Developer UI</h3>
+<p>Test flows interactively in the Genkit Developer UI at <code>http://localhost:4000</code></p>
+
+<h3>As HTTP Endpoints</h3>
+<div class="code-block">
+<pre><code>import { startFlowsServer } from '@genkit-ai/flow';
+
+// Start HTTP server for flows
+startFlowsServer({
+  flows: [greetingFlow, analyzeArticleFlow],
+  port: 3000
+});
+
+// Access via POST http://localhost:3000/greeting
+</code></pre>
+</div>
+
+<h2>Flow Observability</h2>
+<p>Every flow execution is automatically traced with comprehensive telemetry:</p>
+
+<h3>Automatic Tracing Includes</h3>
+<ul>
+    <li><strong>Input/Output Logging:</strong> Complete record of data flowing through the system</li>
+    <li><strong>LLM Call Details:</strong> Model used, tokens consumed, latency, cost estimates</li>
+    <li><strong>Tool Execution Traces:</strong> When and how tools are invoked</li>
+    <li><strong>Error Tracking:</strong> Full stack traces with context</li>
+    <li><strong>Performance Metrics:</strong> Execution time for each step</li>
+</ul>
+
+<h3>Accessing Traces</h3>
+<div class="code-block">
+<pre><code>// Traces are automatically available in Developer UI
+// Or export to observability platforms
+
+import { enableGoogleCloudTelemetry } from '@genkit-ai/google-cloud';
+
+enableGoogleCloudTelemetry({
+  projectId: 'my-project',
+  telemetryConfig: {
+    sampler: { probability: 1.0 }
+  }
+});
+</code></pre>
+</div>
+
+<h2>Error Handling in Flows</h2>
+<div class="code-block">
+<pre><code>const robustFlow = ai.defineFlow(
+  {
+    name: 'robustFlow',
+    inputSchema: z.object({ query: z.string() }),
+    outputSchema: z.object({ result: z.string() })
+  },
+  async (input) => {
+    try {
+      const { output } = await ai.generate({
+        prompt: input.query,
+        output: { schema: z.object({ result: z.string() }) }
+      });
+      return output;
+    } catch (error) {
+      // Handle specific error types
+      if (error.code === 'RATE_LIMIT_EXCEEDED') {
+        // Implement retry logic
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return robustFlow(input); // Retry
+      }
+      throw error; // Re-throw unhandled errors
+    }
+  }
+);
+</code></pre>
+</div>
+
+<h2>Flow Composition</h2>
+<p>Flows can call other flows, enabling modular AI application design:</p>
+
+<div class="code-block">
+<pre><code>// Sub-flow for translation
+const translateFlow = ai.defineFlow({
+  name: 'translate',
+  inputSchema: z.object({ text: z.string(), targetLang: z.string() }),
+  outputSchema: z.object({ translated: z.string() })
+}, async (input) => {
+  const { output } = await ai.generate({
+    prompt: `Translate to ${input.targetLang}: ${input.text}`,
+    output: { schema: z.object({ translated: z.string() }) }
+  });
+  return output;
+});
+
+// Main flow that uses translation
+const summarizeAndTranslateFlow = ai.defineFlow({
+  name: 'summarizeAndTranslate',
+  inputSchema: z.object({ 
+    article: z.string(), 
+    targetLang: z.string() 
+  }),
+  outputSchema: z.object({ 
+    summary: z.string(),
+    translatedSummary: z.string()
+  })
+}, async (input) => {
+  // First, summarize
+  const { output: summaryOutput } = await ai.generate({
+    prompt: `Summarize: ${input.article}`,
+    output: { schema: z.object({ summary: z.string() }) }
+  });
+  
+  // Then, translate the summary using another flow
+  const translationResult = await translateFlow({
+    text: summaryOutput.summary,
+    targetLang: input.targetLang
+  });
+  
+  return {
+    summary: summaryOutput.summary,
+    translatedSummary: translationResult.translated
+  };
+});
+</code></pre>
+</div>
+
+<h2>Best Practices for Flows</h2>
+<ul>
+    <li><strong>Single Responsibility:</strong> Each flow should have one clear purpose</li>
+    <li><strong>Descriptive Names:</strong> Use clear, action-oriented names (e.g., 'summarizeArticle', not 'flow1')</li>
+    <li><strong>Schema Descriptions:</strong> Add descriptions to schema fields for better AI understanding</li>
+    <li><strong>Input Validation:</strong> Use Zod's validation features (min/max, regex, custom validators)</li>
+    <li><strong>Error Boundaries:</strong> Implement proper error handling and fallback strategies</li>
+    <li><strong>Testing:</strong> Write unit tests for flows using mock inputs</li>
+</ul>
+
+<h2>Streaming Responses</h2>
+<p>For long-running generations, use streaming to provide real-time feedback:</p>
+
+<div class="code-block">
+<pre><code>const streamingFlow = ai.defineFlow({
+  name: 'streamingGeneration',
+  inputSchema: z.object({ prompt: z.string() }),
+  outputSchema: z.object({ text: z.string() }),
+  streamSchema: z.object({ chunk: z.string() })
+}, async (input, { streamingCallback }) => {
+  const { stream } = await ai.generateStream({
+    prompt: input.prompt
+  });
+  
+  let fullText = '';
+  for await (const chunk of stream) {
+    fullText += chunk.text;
+    streamingCallback({ chunk: chunk.text });
+  }
+  
+  return { text: fullText };
+});
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Scalability and Performance Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Scalability and Performance Optimization</h1>
+
+<h2>Scaling Strategies</h2>
+<table>
+    <tr>
+        <th>Volume</th>
+        <th>Architecture</th>
+        <th>Infrastructure</th>
+        <th>Cost/Document</th>
+    </tr>
+    <tr>
+        <td class="rowheader">&lt; 1K/day</td>
+        <td>Single server</td>
+        <td>1 API instance, 1 worker</td>
+        <td>$0.15-0.20</td>
+    </tr>
+    <tr>
+        <td class="rowheader">1K-10K/day</td>
+        <td>Horizontal scaling</td>
+        <td>Load balancer, 3-5 workers</td>
+        <td>$0.10-0.15</td>
+    </tr>
+    <tr>
+        <td class="rowheader">10K-100K/day</td>
+        <td>Distributed processing</td>
+        <td>Auto-scaling, 10-50 workers</td>
+        <td>$0.07-0.10</td>
+    </tr>
+    <tr>
+        <td class="rowheader">&gt; 100K/day</td>
+        <td>Multi-region</td>
+        <td>Global distribution, 100+ workers</td>
+        <td>$0.05-0.07</td>
+    </tr>
+</table>
+
+<h2>Performance Optimization Techniques</h2>
+
+<h3>1. Caching Strategies</h3>
+<ul>
+    <li><strong>Document Hash Caching:</strong> Skip processing for duplicate documents</li>
+    <li><strong>Vendor Data Caching:</strong> Cache frequently accessed vendor information</li>
+    <li><strong>Schema Caching:</strong> Reuse extraction schemas for same document types</li>
+    <li><strong>Classification Caching:</strong> Cache classification results for similar documents</li>
+</ul>
+
+<h3>2. Batch Processing</h3>
+<blockquote>
+Batch API Benefits:
+
+- 50% cost reduction vs individual calls
+- Higher throughput (5000+ docs/hour)
+- Reduced API overhead
+- Better resource utilization
+
+Best Practices:
+- Batch size: 10-50 documents
+- Group by document type
+- Process during off-peak hours
+- Monitor batch completion rates
+</blockquote>
+
+<h3>3. Parallel Processing</h3>
+<blockquote>
+import concurrent.futures
+import time
+
+def process_document_batch(documents, max_workers=10):
+    results = []
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_doc = {
+            executor.submit(process_single_document, doc): doc 
+            for doc in documents
+        }
+        
+        for future in concurrent.futures.as_completed(future_to_doc):
+            doc = future_to_doc[future]
+            try:
+                result = future.result()
+                results.append(result)
+            except Exception as e:
+                print(f"Document {doc['id']} failed: {e}")
+                results.append({'id': doc['id'], 'status': 'failed', 'error': str(e)})
+    
+    return results
+
+# Process 100 documents in parallel
+documents = load_documents()
+results = process_document_batch(documents, max_workers=20)
+</blockquote>
+
+<h2>Cost Optimization</h2>
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Cost Savings</th>
+        <th>Implementation Effort</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Selection</td>
+        <td>40-60%</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batch API</td>
+        <td>50%</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Caching</td>
+        <td>20-30%</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hybrid OCR/GenAI</td>
+        <td>40-60%</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompt Optimization</td>
+        <td>10-20%</td>
+        <td>Low</td>
+    </tr>
+</table>
+
+<h3>Tiered Model Strategy</h3>
+<blockquote>
+Use different models based on complexity:
+
+Tier 1 - Simple Documents (60% of volume):
+- Model: Claude Haiku or GPT-3.5
+- Cost: $0.03 per document
+- Use for: Standard invoices, simple forms
+
+Tier 2 - Moderate Complexity (30% of volume):
+- Model: Claude Sonnet or GPT-4
+- Cost: $0.10 per document
+- Use for: Multi-page invoices, contracts
+
+Tier 3 - Complex Documents (10% of volume):
+- Model: Claude Opus or GPT-4 Turbo
+- Cost: $0.30 per document
+- Use for: Legal contracts, complex forms
+
+Average Cost: $0.08 per document (vs $0.15 single-model)
+Savings: 47%
+</blockquote>
+
+<h2>Monitoring and Observability</h2>
+
+<h3>Key Performance Indicators</h3>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Target</th>
+        <th>Alert Threshold</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Processing Time (P95)</td>
+        <td>&lt; 10 seconds</td>
+        <td>&gt; 15 seconds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Throughput</td>
+        <td>&gt; 1000 docs/hour</td>
+        <td>&lt; 500 docs/hour</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Rate</td>
+        <td>&lt; 2%</td>
+        <td>&gt; 5%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">API Success Rate</td>
+        <td>&gt; 99%</td>
+        <td>&lt; 95%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost per Document</td>
+        <td>&lt; $0.10</td>
+        <td>&gt; $0.15</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Queue Depth</td>
+        <td>&lt; 100</td>
+        <td>&gt; 500</td>
+    </tr>
+</table>
+
+<h3>Distributed Tracing</h3>
+<blockquote>
+Track document processing across services:
+
+1. Document Upload (50ms)
+2. Storage (100ms)
+3. Classification (2s)
+4. Extraction (5s)
+5. Validation (500ms)
+6. Human Review Queue (if needed)
+7. Integration (1s)
+8. Notification (200ms)
+
+Total: ~9 seconds for auto-approved documents
+
+Use tools: OpenTelemetry, Jaeger, AWS X-Ray
+</blockquote>
+
+<h2>Auto-Scaling Configuration</h2>
+<blockquote>
+Auto-Scaling Rules:
+
+Scale Up When:
+- Queue depth > 100 documents
+- CPU utilization > 70%
+- Processing time P95 > 15 seconds
+- Error rate > 3%
+
+Scale Down When:
+- Queue depth < 20 documents
+- CPU utilization < 30%
+- Sustained for 10 minutes
+
+Min Instances: 2
+Max Instances: 50
+Scale Up: Add 2 instances
+Scale Down: Remove 1 instance
+Cooldown: 5 minutes
+</blockquote>
+
+<h2>Disaster Recovery</h2>
+<ul>
+    <li><strong>Multi-Region Deployment:</strong> Active-passive across 2+ regions</li>
+    <li><strong>Database Replication:</strong> Real-time replication with automatic failover</li>
+    <li><strong>Document Backup:</strong> Daily backups, 90-day retention</li>
+    <li><strong>RTO (Recovery Time Objective):</strong> &lt; 1 hour</li>
+    <li><strong>RPO (Recovery Point Objective):</strong> &lt; 15 minutes</li>
+    <li><strong>Failover Testing:</strong> Quarterly DR drills</li>
+</ul>
+
+<h2>Load Testing</h2>
+<blockquote>
+Load Test Scenarios:
+
+1. Normal Load:
+   - 1000 documents/hour
+   - Mixed document types
+   - Target: P95 &lt; 10s, 0% errors
+
+2. Peak Load (3x normal):
+   - 3000 documents/hour
+   - Target: P95 &lt; 15s, &lt; 1% errors
+
+3. Stress Test (10x normal):
+   - 10,000 documents/hour
+   - Target: Graceful degradation, no crashes
+
+4. Spike Test:
+   - 0 to 5000 documents in 5 minutes
+   - Target: Auto-scaling responds within 2 minutes
+
+Tools: JMeter, Locust, k6
+Frequency: Monthly
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

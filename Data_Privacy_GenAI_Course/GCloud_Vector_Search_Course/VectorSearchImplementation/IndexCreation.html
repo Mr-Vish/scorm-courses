@@ -1,0 +1,325 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Creating and Configuring Vector Indexes</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Creating and Configuring Vector Indexes</h1>
+
+<h2>Index Creation Overview</h2>
+<p>Creating a vector index in Vertex AI involves preparing your embeddings, uploading them to Cloud Storage, and configuring the index with appropriate parameters for your use case. This process transforms raw embeddings into a queryable search infrastructure.</p>
+
+<h2>Prerequisites</h2>
+<ul>
+<li>Google Cloud project with Vertex AI API enabled</li>
+<li>Embeddings generated and stored in Cloud Storage (GCS)</li>
+<li>Appropriate IAM permissions (Vertex AI User, Storage Object Viewer)</li>
+<li>Python SDK installed: <code>pip install google-cloud-aiplatform</code></li>
+</ul>
+
+<h2>Preparing Embedding Data</h2>
+<p>Embeddings must be formatted correctly before index creation:</p>
+
+<div class="code-block">
+<pre><code>import json
+from vertexai.language_models import TextEmbeddingModel
+
+# Initialize embedding model
+model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+
+# Sample documents
+documents = [
+    {"id": "doc_001", "text": "Introduction to machine learning", "category": "AI"},
+    {"id": "doc_002", "text": "Cloud computing fundamentals", "category": "Cloud"},
+    {"id": "doc_003", "text": "Deep learning with neural networks", "category": "AI"}
+]
+
+# Generate embeddings and format for Vertex AI
+embeddings_output = []
+for doc in documents:
+    embedding = model.get_embeddings([doc['text']])[0].values
+    
+    # Format with metadata for filtering
+    embeddings_output.append({
+        "id": doc['id'],
+        "embedding": embedding,
+        "restricts": [
+            {"namespace": "category", "allow": [doc['category']]}
+        ]
+    })
+
+# Save to JSONL format
+with open('embeddings.jsonl', 'w') as f:
+    for item in embeddings_output:
+        f.write(json.dumps(item) + '\n')
+
+print(f"Generated {len(embeddings_output)} embeddings")
+</code></pre>
+</div>
+
+<h2>Uploading to Cloud Storage</h2>
+<div class="code-block">
+<pre><code>from google.cloud import storage
+
+def upload_embeddings_to_gcs(local_file, bucket_name, destination_path):
+    """Upload embeddings file to Google Cloud Storage"""
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(destination_path)
+    
+    blob.upload_from_filename(local_file)
+    print(f"Uploaded {local_file} to gs://{bucket_name}/{destination_path}")
+
+# Upload embeddings
+upload_embeddings_to_gcs(
+    'embeddings.jsonl',
+    'my-vector-search-bucket',
+    'embeddings/v1/embeddings.jsonl'
+)
+</code></pre>
+</div>
+
+<h2>Creating a Tree-AH Index</h2>
+<p>Tree-AH (Anisotropic Vector Quantization with Hierarchical Trees) is the recommended index type for most use cases:</p>
+
+<div class="code-block">
+<pre><code>from google.cloud import aiplatform
+
+# Initialize Vertex AI
+aiplatform.init(
+    project="my-project-id",
+    location="us-central1"
+)
+
+# Create index
+index = aiplatform.MatchingEngineIndex.create_tree_ah_index(
+    display_name="product-search-index",
+    contents_delta_uri="gs://my-vector-search-bucket/embeddings/v1/",
+    dimensions=768,
+    
+    # Core ScaNN parameters
+    approximate_neighbors_count=150,
+    leaf_node_embedding_count=500,
+    leaf_nodes_to_search_percent=7,
+    
+    # Distance metric
+    distance_measure_type="DOT_PRODUCT_DISTANCE",
+    
+    # Optional: Metadata for filtering
+    description="Product embeddings for semantic search",
+    labels={"env": "production", "version": "v1"}
+)
+
+print(f"Index created: {index.resource_name}")
+print(f"Index will be ready in 30-60 minutes for 1M vectors")
+</code></pre>
+</div>
+
+<h2>Index Configuration Parameters</h2>
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Description</th>
+        <th>Recommended Values</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">dimensions</td>
+        <td>Vector dimensionality</td>
+        <td>768 (text-embedding-004)</td>
+        <td>Must match embedding model</td>
+    </tr>
+    <tr>
+        <td class="rowheader">approximate_neighbors_count</td>
+        <td>Candidate neighbors to consider</td>
+        <td>100-200</td>
+        <td>Higher = better recall, slower queries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">leaf_node_embedding_count</td>
+        <td>Vectors per leaf partition</td>
+        <td>500-1000</td>
+        <td>Lower = better recall, slower indexing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">leaf_nodes_to_search_percent</td>
+        <td>Percentage of partitions to search</td>
+        <td>5-10%</td>
+        <td>Higher = better recall, slower queries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">distance_measure_type</td>
+        <td>Similarity metric</td>
+        <td>DOT_PRODUCT_DISTANCE</td>
+        <td>Must align with use case</td>
+    </tr>
+</table>
+
+<h2>Distance Measure Types</h2>
+<ul>
+<li><strong>DOT_PRODUCT_DISTANCE:</strong> Best for normalized embeddings (text-embedding-004). Equivalent to cosine similarity.</li>
+<li><strong>SQUARED_L2_DISTANCE:</strong> Euclidean distance squared. Use when magnitude matters (image embeddings, spatial data).</li>
+<li><strong>COSINE_DISTANCE:</strong> Explicitly computes cosine similarity. Use if embeddings are not pre-normalized.</li>
+</ul>
+
+<h2>Creating a Brute Force Index</h2>
+<p>For small datasets (&lt;10,000 vectors) or when 100% recall is required:</p>
+
+<div class="code-block">
+<pre><code># Brute force index (exact search)
+index = aiplatform.MatchingEngineIndex.create_brute_force_index(
+    display_name="small-dataset-index",
+    contents_delta_uri="gs://my-bucket/embeddings/",
+    dimensions=768,
+    distance_measure_type="DOT_PRODUCT_DISTANCE"
+)
+
+# Advantages: 100% recall, simpler configuration
+# Disadvantages: O(n) query time, doesn't scale beyond 10K vectors
+</code></pre>
+</div>
+
+<h2>Index Build Time Estimates</h2>
+<table>
+    <tr>
+        <th>Vector Count</th>
+        <th>Dimensions</th>
+        <th>Build Time</th>
+        <th>Storage Size</th>
+    </tr>
+    <tr>
+        <td class="rowheader">100,000</td>
+        <td>768</td>
+        <td>10-15 minutes</td>
+        <td>~300 MB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">1,000,000</td>
+        <td>768</td>
+        <td>30-60 minutes</td>
+        <td>~3 GB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">10,000,000</td>
+        <td>768</td>
+        <td>2-4 hours</td>
+        <td>~30 GB</td>
+    </tr>
+    <tr>
+        <td class="rowheader">100,000,000</td>
+        <td>768</td>
+        <td>8-12 hours</td>
+        <td>~300 GB</td>
+    </tr>
+</table>
+
+<h2>Monitoring Index Creation</h2>
+<div class="code-block">
+<pre><code># Check index status
+index = aiplatform.MatchingEngineIndex(
+    index_name="projects/123/locations/us-central1/indexes/456"
+)
+
+print(f"Display Name: {index.display_name}")
+print(f"Create Time: {index.create_time}")
+print(f"Update Time: {index.update_time}")
+print(f"Index Stats: {index.index_stats}")
+
+# Wait for index to be ready
+index.wait()
+print("Index is ready for deployment!")
+</code></pre>
+</div>
+
+<h2>Updating an Existing Index</h2>
+<p>Add new embeddings without rebuilding from scratch:</p>
+
+<div class="code-block">
+<pre><code># Prepare incremental embeddings
+new_embeddings = generate_new_embeddings()  # Your new data
+save_to_gcs(new_embeddings, "gs://my-bucket/embeddings/v2/")
+
+# Update index with new data
+index = index.update_embeddings(
+    contents_delta_uri="gs://my-bucket/embeddings/v2/"
+)
+
+# Incremental updates are faster than full rebuilds
+# Typical update time: 10-30% of initial build time
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Normalize embeddings:</strong> Pre-normalize vectors to unit length for optimal performance with DOT_PRODUCT_DISTANCE</li>
+<li><strong>Batch uploads:</strong> Upload embeddings in batches of 100K-1M vectors for efficient processing</li>
+<li><strong>Version control:</strong> Use separate GCS paths for different index versions (v1/, v2/, etc.)</li>
+<li><strong>Test configurations:</strong> Start with default parameters, then tune based on recall/latency metrics</li>
+<li><strong>Monitor costs:</strong> Index storage and build compute incur costs; clean up unused indexes</li>
+</ul>
+
+<h2>Common Configuration Patterns</h2>
+
+<h3>High Recall Configuration (Research, Critical Applications)</h3>
+<div class="code-block">
+<pre><code>index = aiplatform.MatchingEngineIndex.create_tree_ah_index(
+    display_name="high-recall-index",
+    contents_delta_uri="gs://bucket/embeddings/",
+    dimensions=768,
+    approximate_neighbors_count=200,
+    leaf_node_embedding_count=500,
+    leaf_nodes_to_search_percent=12,
+    distance_measure_type="DOT_PRODUCT_DISTANCE"
+)
+# Expected: 97-98% recall, 15-20ms latency
+</code></pre>
+</div>
+
+<h3>Balanced Configuration (General Purpose)</h3>
+<div class="code-block">
+<pre><code>index = aiplatform.MatchingEngineIndex.create_tree_ah_index(
+    display_name="balanced-index",
+    contents_delta_uri="gs://bucket/embeddings/",
+    dimensions=768,
+    approximate_neighbors_count=150,
+    leaf_node_embedding_count=750,
+    leaf_nodes_to_search_percent=7,
+    distance_measure_type="DOT_PRODUCT_DISTANCE"
+)
+# Expected: 95-96% recall, 8-12ms latency
+</code></pre>
+</div>
+
+<h3>Low Latency Configuration (High-Throughput Applications)</h3>
+<div class="code-block">
+<pre><code>index = aiplatform.MatchingEngineIndex.create_tree_ah_index(
+    display_name="low-latency-index",
+    contents_delta_uri="gs://bucket/embeddings/",
+    dimensions=768,
+    approximate_neighbors_count=100,
+    leaf_node_embedding_count=1000,
+    leaf_nodes_to_search_percent=5,
+    distance_measure_type="DOT_PRODUCT_DISTANCE"
+)
+# Expected: 92-94% recall, 4-6ms latency
+</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Index creation requires properly formatted embeddings in JSONL or Avro format stored in Cloud Storage</li>
+<li>Tree-AH indexes are recommended for most use cases, offering the best balance of performance and accuracy</li>
+<li>Key configuration parameters (approximate_neighbors_count, leaf_node_embedding_count, leaf_nodes_to_search_percent) control the recall-latency trade-off</li>
+<li>Index build time scales with dataset size, from minutes for small datasets to hours for billions of vectors</li>
+<li>Incremental updates allow adding new embeddings without full index rebuilds</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

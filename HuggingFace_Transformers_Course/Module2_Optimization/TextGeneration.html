@@ -1,0 +1,337 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Text Generation Control and Sampling</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Text Generation Control and Sampling</h1>
+
+<h2>Understanding Generation Parameters</h2>
+<p>Text generation quality and style are controlled through sampling parameters. Understanding these parameters is essential for achieving desired outputs.</p>
+
+<h2>Core Generation Parameters</h2>
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Range</th>
+        <th>Effect</th>
+        <th>Recommended Values</th>
+    </tr>
+    <tr>
+        <td class="rowheader">temperature</td>
+        <td>0.0 - 2.0</td>
+        <td>Controls randomness; lower = more deterministic</td>
+        <td>0.7-0.9 for creative, 0.1-0.3 for factual</td>
+    </tr>
+    <tr>
+        <td class="rowheader">top_p</td>
+        <td>0.0 - 1.0</td>
+        <td>Nucleus sampling; considers top probability mass</td>
+        <td>0.9-0.95 for balanced output</td>
+    </tr>
+    <tr>
+        <td class="rowheader">top_k</td>
+        <td>1 - vocab_size</td>
+        <td>Limits sampling to top K tokens</td>
+        <td>40-50 for general use</td>
+    </tr>
+    <tr>
+        <td class="rowheader">repetition_penalty</td>
+        <td>1.0 - 2.0</td>
+        <td>Penalizes repeated tokens</td>
+        <td>1.1-1.2 to reduce repetition</td>
+    </tr>
+    <tr>
+        <td class="rowheader">max_new_tokens</td>
+        <td>1 - context_length</td>
+        <td>Maximum tokens to generate</td>
+        <td>Task-dependent</td>
+    </tr>
+</table>
+
+<h2>Greedy Decoding</h2>
+<p>Always selects the most probable next token:</p>
+
+<pre><code>from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+
+prompt = "The capital of France is"
+inputs = tokenizer(prompt, return_tensors="pt")
+
+# Greedy decoding (deterministic)
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=20,
+    do_sample=False  # Greedy decoding
+)
+
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+# Output: "The capital of France is Paris, which is located in the north..."\n</code></pre>
+
+<h2>Temperature Sampling</h2>
+<pre><code># Low temperature (more focused, deterministic)
+outputs_low = model.generate(
+    **inputs,
+    max_new_tokens=50,
+    do_sample=True,
+    temperature=0.3  # More deterministic
+)
+
+# High temperature (more creative, random)
+outputs_high = model.generate(
+    **inputs,
+    max_new_tokens=50,
+    do_sample=True,
+    temperature=1.5  # More creative
+)
+
+# Temperature = 0 is equivalent to greedy decoding
+# Temperature &gt; 1 increases randomness
+# Temperature &lt; 1 makes distribution more peaked\n</code></pre>
+
+<h2>Top-p (Nucleus) Sampling</h2>
+<p>Samples from the smallest set of tokens whose cumulative probability exceeds p:</p>
+
+<pre><code>outputs = model.generate(
+    **inputs,
+    max_new_tokens=50,
+    do_sample=True,
+    top_p=0.9,  # Consider tokens in top 90% probability mass
+    temperature=0.8
+)
+
+# top_p = 1.0: Consider all tokens
+# top_p = 0.9: Consider top 90% probability mass
+# top_p = 0.5: More focused, less diverse
+
+# Nucleus sampling adapts to probability distribution
+# - High confidence: Few tokens selected
+# - Low confidence: More tokens considered\n</code></pre>
+
+<h2>Top-k Sampling</h2>
+<pre><code>outputs = model.generate(
+    **inputs,
+    max_new_tokens=50,
+    do_sample=True,
+    top_k=50,  # Consider only top 50 tokens
+    temperature=0.8
+)
+
+# top_k limits vocabulary at each step
+# Prevents sampling from very unlikely tokens
+# Can be combined with top_p\n</code></pre>
+
+<h2>Combining Sampling Strategies</h2>
+<pre><code># Recommended combination for balanced generation
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=100,
+    do_sample=True,
+    temperature=0.7,
+    top_p=0.9,
+    top_k=50,
+    repetition_penalty=1.1
+)
+
+# This combination:
+# - Allows creativity (temperature=0.7)
+# - Prevents unlikely tokens (top_k=50)
+# - Maintains coherence (top_p=0.9)
+# - Reduces repetition (repetition_penalty=1.1)\n</code></pre>
+
+<h2>Repetition Control</h2>
+<pre><code># Without repetition penalty
+outputs_no_penalty = model.generate(
+    **inputs,
+    max_new_tokens=100,
+    do_sample=True,
+    temperature=0.7
+)
+
+# With repetition penalty
+outputs_with_penalty = model.generate(
+    **inputs,
+    max_new_tokens=100,
+    do_sample=True,
+    temperature=0.7,
+    repetition_penalty=1.2,  # Penalize repeated tokens
+    no_repeat_ngram_size=3  # Prevent 3-gram repetition
+)
+
+# repetition_penalty &gt; 1.0: Discourage repetition
+# no_repeat_ngram_size: Prevent exact n-gram repeats\n</code></pre>
+
+<h2>Beam Search</h2>
+<p>Explores multiple generation paths simultaneously:</p>
+
+<pre><code>outputs = model.generate(
+    **inputs,
+    max_new_tokens=50,
+    num_beams=5,  # Explore 5 paths
+    early_stopping=True,  # Stop when all beams finish
+    no_repeat_ngram_size=2
+)
+
+# Beam search:
+# - More deterministic than sampling
+# - Better for tasks requiring accuracy (translation, summarization)
+# - Slower than greedy or sampling
+# - num_beams=1 is equivalent to greedy decoding
+
+# Diverse beam search
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=50,
+    num_beams=5,
+    num_beam_groups=5,  # Divide beams into groups
+    diversity_penalty=1.0,  # Encourage diversity between groups
+    early_stopping=True
+)\n</code></pre>
+
+<h2>Constrained Generation</h2>
+<pre><code>from transformers import AutoModelForCausalLM, AutoTokenizer, LogitsProcessor
+
+# Force generation to include specific words
+class ForceWordsLogitsProcessor(LogitsProcessor):
+    def __init__(self, force_word_ids):
+        self.force_word_ids = force_word_ids
+    
+    def __call__(self, input_ids, scores):
+        # Boost probability of forced words
+        for word_id in self.force_word_ids:
+            scores[:, word_id] += 10.0
+        return scores
+
+# Usage
+force_words = ["Paris", "France"]
+force_word_ids = [tokenizer.encode(word)[0] for word in force_words]
+processor = ForceWordsLogitsProcessor(force_word_ids)
+
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=50,
+    logits_processor=[processor]
+)\n</code></pre>
+
+<h2>Length Control</h2>
+<pre><code># Minimum and maximum length
+outputs = model.generate(
+    **inputs,
+    min_new_tokens=20,  # Generate at least 20 tokens
+    max_new_tokens=100,  # Generate at most 100 tokens
+    do_sample=True,
+    temperature=0.7
+)
+
+# Length penalty (for beam search)
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=100,
+    num_beams=5,
+    length_penalty=2.0  # &gt;1.0 encourages longer sequences
+)
+
+# length_penalty &lt; 1.0: Prefer shorter sequences
+# length_penalty = 1.0: No preference
+# length_penalty &gt; 1.0: Prefer longer sequences\n</code></pre>
+
+<h2>Stopping Criteria</h2>
+<pre><code>from transformers import StoppingCriteria, StoppingCriteriaList
+
+class StopOnTokens(StoppingCriteria):
+    def __init__(self, stop_token_ids):
+        self.stop_token_ids = stop_token_ids
+    
+    def __call__(self, input_ids, scores, **kwargs):
+        for stop_id in self.stop_token_ids:
+            if input_ids[0][-1] == stop_id:
+                return True
+        return False
+
+# Stop on specific tokens
+stop_tokens = [".", "!", "?"]
+stop_token_ids = [tokenizer.encode(t)[0] for t in stop_tokens]
+stopping_criteria = StoppingCriteriaList([StopOnTokens(stop_token_ids)])
+
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=100,
+    stopping_criteria=stopping_criteria
+)\n</code></pre>
+
+<h2>Generation Presets</h2>
+<pre><code># Creative writing
+creative_config = {
+    "do_sample": True,
+    "temperature": 0.9,
+    "top_p": 0.95,
+    "top_k": 50,
+    "repetition_penalty": 1.1
+}
+
+# Factual/Precise
+factual_config = {
+    "do_sample": True,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "top_k": 40,
+    "repetition_penalty": 1.05
+}
+
+# Balanced
+balanced_config = {
+    "do_sample": True,
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "top_k": 50,
+    "repetition_penalty": 1.1
+}
+
+# Use preset
+outputs = model.generate(**inputs, max_new_tokens=100, **creative_config)\n</code></pre>
+
+<h2>Streaming Generation</h2>
+<pre><code>from transformers import TextIteratorStreamer
+from threading import Thread
+
+streamer = TextIteratorStreamer(tokenizer, skip_special_tokens=True)
+
+# Generate in separate thread
+generation_kwargs = dict(
+    inputs,
+    max_new_tokens=100,
+    streamer=streamer,
+    do_sample=True,
+    temperature=0.7
+)
+
+thread = Thread(target=model.generate, kwargs=generation_kwargs)
+thread.start()
+
+# Stream tokens as they're generated
+for text in streamer:
+    print(text, end="", flush=True)
+
+thread.join()\n</code></pre>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Start with Defaults:</strong> Use temperature=0.7, top_p=0.9 as baseline</li>
+    <li><strong>Adjust for Task:</strong> Lower temperature for factual, higher for creative</li>
+    <li><strong>Combine Strategies:</strong> Use top_p + top_k + temperature together</li>
+    <li><strong>Control Repetition:</strong> Always set repetition_penalty for long generations</li>
+    <li><strong>Test Extensively:</strong> Generation quality is subjective, test with real users</li>
+    <li><strong>Use Beam Search Sparingly:</strong> Slower and can be less diverse than sampling</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

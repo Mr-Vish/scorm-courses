@@ -1,0 +1,461 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Security and Access Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Security and Access Control</h1>
+
+<h2>Security Fundamentals in AI-Assisted Development</h2>
+<p>Integrating AI tools like Claude Code CLI into development workflows introduces unique security considerations that extend beyond traditional application security. The tool's ability to read files, execute commands, and modify code requires comprehensive security controls to protect intellectual property, prevent unauthorized access, and maintain compliance with organizational policies. A robust security model balances the productivity benefits of AI assistance with the imperative to safeguard sensitive information and maintain system integrity.</p>
+
+<h3>Security Threat Model</h3>
+<p>Understanding potential security risks enables appropriate countermeasures:</p>
+
+<ul>
+    <li><strong>Credential Exposure:</strong> API keys, passwords, or tokens inadvertently shared with AI service</li>
+    <li><strong>Data Exfiltration:</strong> Sensitive code or data transmitted outside organizational boundaries</li>
+    <li><strong>Unauthorized Access:</strong> Improper access to files or systems beyond intended scope</li>
+    <li><strong>Code Injection:</strong> Malicious code introduced through AI-generated suggestions</li>
+    <li><strong>Compliance Violations:</strong> Handling of regulated data (PII, PHI, PCI) without proper controls</li>
+</ul>
+
+<h2>Authentication and Authorization</h2>
+
+<h3>API Key Management</h3>
+<p>Secure handling of Anthropic API keys is foundational to security:</p>
+
+<table>
+    <tr>
+        <th>Practice</th>
+        <th>Implementation</th>
+        <th>Security Benefit</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Environment Variables</td>
+        <td>Store keys in ANTHROPIC_API_KEY environment variable</td>
+        <td>Prevents accidental commit to version control</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Secret Management</td>
+        <td>Use tools like HashiCorp Vault, AWS Secrets Manager</td>
+        <td>Centralized, audited secret storage with rotation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Key Rotation</td>
+        <td>Regularly rotate API keys (30-90 day cycle)</td>
+        <td>Limits exposure window if key is compromised</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Scope Limitation</td>
+        <td>Use keys with minimum necessary permissions</td>
+        <td>Reduces impact of potential key compromise</td>
+    </tr>
+</table>
+
+<h3>User Authentication</h3>
+<p>For team environments, implement user-level authentication:</p>
+
+<blockquote>
+{
+  "authentication": {
+    "method": "sso",
+    "provider": "okta",
+    "domain": "company.okta.com",
+    "requireMFA": true,
+    "sessionTimeout": 3600,
+    "allowedUsers": ["engineering@company.com"],
+    "deniedUsers": ["contractor@external.com"]
+  }
+}
+</blockquote>
+
+<h3>Role-Based Access Control (RBAC)</h3>
+<p>Define roles with specific permissions for different user types:</p>
+
+<table>
+    <tr>
+        <th>Role</th>
+        <th>Permissions</th>
+        <th>Typical Users</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Developer</td>
+        <td>Read/write code, execute tests, commit changes</td>
+        <td>Software engineers, full-time developers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Reviewer</td>
+        <td>Read code, run analysis, no write access</td>
+        <td>Code reviewers, security auditors</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Contractor</td>
+        <td>Limited read/write to specific directories</td>
+        <td>External contractors, temporary staff</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Admin</td>
+        <td>Full access including configuration changes</td>
+        <td>DevOps engineers, team leads</td>
+    </tr>
+</table>
+
+<h2>Data Protection and Privacy</h2>
+
+<h3>Data Classification</h3>
+<p>Classify data to apply appropriate protection measures:</p>
+
+<ul>
+    <li><strong>Public:</strong> Open source code, public documentation (no restrictions)</li>
+    <li><strong>Internal:</strong> Proprietary code, internal tools (standard protection)</li>
+    <li><strong>Confidential:</strong> Trade secrets, unreleased features (enhanced protection)</li>
+    <li><strong>Restricted:</strong> Customer data, credentials, PII (maximum protection)</li>
+</ul>
+
+<h3>Sensitive Data Handling</h3>
+<p>Implement controls to prevent exposure of sensitive information:</p>
+
+<blockquote>
+{
+  "dataProtection": {
+    "piiRedaction": {
+      "enabled": true,
+      "patterns": [
+        "email addresses",
+        "phone numbers",
+        "social security numbers",
+        "credit card numbers"
+      ]
+    },
+    "credentialScanning": {
+      "enabled": true,
+      "patterns": [
+        "API keys",
+        "passwords",
+        "private keys",
+        "OAuth tokens"
+      ],
+      "action": "block"
+    },
+    "excludedPaths": [
+      "**/*.env",
+      "**/secrets/**",
+      "**/credentials/**",
+      "**/.aws/**"
+    ]
+  }
+}
+</blockquote>
+
+<h3>Data Transmission Security</h3>
+<p>Protect data in transit to and from Claude API:</p>
+
+<ul>
+    <li><strong>TLS Encryption:</strong> All API communication uses TLS 1.3</li>
+    <li><strong>Certificate Validation:</strong> Verify server certificates to prevent MITM attacks</li>
+    <li><strong>Request Signing:</strong> Sign requests to ensure integrity and authenticity</li>
+    <li><strong>Payload Encryption:</strong> Additional encryption layer for highly sensitive data</li>
+</ul>
+
+<h2>Access Control Mechanisms</h2>
+
+<h3>File System Permissions</h3>
+<p>Control which files and directories Claude Code CLI can access:</p>
+
+<blockquote>
+{
+  "accessControl": {
+    "fileSystem": {
+      "allowedPaths": [
+        "/home/user/projects/myapp/src",
+        "/home/user/projects/myapp/tests"
+      ],
+      "deniedPaths": [
+        "/home/user/projects/myapp/.env",
+        "/home/user/projects/myapp/secrets",
+        "/home/user/.ssh",
+        "/etc"
+      ],
+      "readOnly": [
+        "/home/user/projects/myapp/node_modules"
+      ]
+    }
+  }
+}
+</blockquote>
+
+<h3>Command Execution Controls</h3>
+<p>Restrict which commands Claude Code CLI can execute:</p>
+
+<blockquote>
+{
+  "accessControl": {
+    "commands": {
+      "allowList": [
+        "npm",
+        "git",
+        "pytest",
+        "cargo",
+        "mvn"
+      ],
+      "denyList": [
+        "rm -rf",
+        "sudo",
+        "curl",
+        "wget",
+        "ssh",
+        "scp"
+      ],
+      "requireApproval": [
+        "npm install",
+        "pip install",
+        "git push"
+      ]
+    }
+  }
+}
+</blockquote>
+
+<h3>Network Access Controls</h3>
+<p>Limit network connectivity to approved destinations:</p>
+
+<ul>
+    <li><strong>Allowlist Approach:</strong> Permit only connections to approved domains</li>
+    <li><strong>Proxy Configuration:</strong> Route all traffic through corporate proxy</li>
+    <li><strong>Firewall Rules:</strong> Enforce network segmentation at infrastructure level</li>
+    <li><strong>DNS Filtering:</strong> Block access to malicious or unauthorized domains</li>
+</ul>
+
+<h2>Audit Logging and Monitoring</h2>
+
+<h3>Comprehensive Audit Logging</h3>
+<p>Log all significant events for security monitoring and compliance:</p>
+
+<table>
+    <tr>
+        <th>Event Category</th>
+        <th>Logged Information</th>
+        <th>Retention Period</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Authentication</td>
+        <td>Login attempts, session creation, MFA events</td>
+        <td>1 year</td>
+    </tr>
+    <tr>
+        <td class="rowheader">File Access</td>
+        <td>Files read/written, timestamps, user identity</td>
+        <td>90 days</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Command Execution</td>
+        <td>Commands run, exit codes, output summaries</td>
+        <td>90 days</td>
+    </tr>
+    <tr>
+        <td class="rowheader">API Requests</td>
+        <td>Request/response metadata, token usage, errors</td>
+        <td>30 days</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Security Events</td>
+        <td>Access denials, policy violations, anomalies</td>
+        <td>2 years</td>
+    </tr>
+</table>
+
+<h3>Security Monitoring</h3>
+<p>Implement real-time monitoring for security threats:</p>
+
+<ul>
+    <li><strong>Anomaly Detection:</strong> Identify unusual patterns in usage or access</li>
+    <li><strong>Threshold Alerts:</strong> Alert on excessive API usage or failed authentications</li>
+    <li><strong>Behavioral Analysis:</strong> Detect deviations from normal user behavior</li>
+    <li><strong>Threat Intelligence:</strong> Integrate with threat feeds for known attack patterns</li>
+</ul>
+
+<h2>Compliance and Regulatory Requirements</h2>
+
+<h3>Common Compliance Frameworks</h3>
+
+<table>
+    <tr>
+        <th>Framework</th>
+        <th>Key Requirements</th>
+        <th>Implementation Considerations</th>
+    </tr>
+    <tr>
+        <td class="rowheader">GDPR</td>
+        <td>Data minimization, consent, right to deletion</td>
+        <td>Redact PII, log data processing, enable data export</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SOC 2</td>
+        <td>Security, availability, confidentiality controls</td>
+        <td>Access controls, audit logging, incident response</td>
+    </tr>
+    <tr>
+        <td class="rowheader">HIPAA</td>
+        <td>PHI protection, access controls, audit trails</td>
+        <td>Encryption, authentication, comprehensive logging</td>
+    </tr>
+    <tr>
+        <td class="rowheader">PCI DSS</td>
+        <td>Cardholder data protection, network security</td>
+        <td>Data encryption, access restrictions, monitoring</td>
+    </tr>
+</table>
+
+<h3>Compliance Configuration</h3>
+<p>Configure Claude Code CLI to meet compliance requirements:</p>
+
+<blockquote>
+{
+  "compliance": {
+    "framework": "SOC2",
+    "dataResidency": "US",
+    "retentionPolicy": {
+      "auditLogs": "2years",
+      "conversationHistory": "90days",
+      "generatedCode": "30days"
+    },
+    "dataProcessing": {
+      "consentRequired": true,
+      "purposeLimitation": true,
+      "minimization": true
+    }
+  }
+}
+</blockquote>
+
+<h2>Incident Response</h2>
+
+<h3>Security Incident Types</h3>
+<ul>
+    <li><strong>Credential Compromise:</strong> API key or user credentials exposed or stolen</li>
+    <li><strong>Unauthorized Access:</strong> Access to files or systems without proper authorization</li>
+    <li><strong>Data Breach:</strong> Sensitive data exposed or exfiltrated</li>
+    <li><strong>Malicious Code:</strong> Harmful code introduced through AI suggestions</li>
+    <li><strong>Policy Violation:</strong> Actions that violate security or compliance policies</li>
+</ul>
+
+<h3>Incident Response Procedures</h3>
+
+<p><strong>Detection and Triage:</strong></p>
+<ul>
+    <li>Monitor alerts from security systems</li>
+    <li>Assess severity and potential impact</li>
+    <li>Classify incident type and priority</li>
+    <li>Initiate appropriate response procedures</li>
+</ul>
+
+<p><strong>Containment:</strong></p>
+<ul>
+    <li>Revoke compromised credentials immediately</li>
+    <li>Disable affected user accounts</li>
+    <li>Block suspicious network connections</li>
+    <li>Isolate affected systems if necessary</li>
+</ul>
+
+<p><strong>Investigation:</strong></p>
+<ul>
+    <li>Review audit logs for incident timeline</li>
+    <li>Identify root cause and attack vector</li>
+    <li>Assess scope of compromise</li>
+    <li>Document findings for remediation</li>
+</ul>
+
+<p><strong>Recovery and Remediation:</strong></p>
+<ul>
+    <li>Restore systems to secure state</li>
+    <li>Implement fixes to prevent recurrence</li>
+    <li>Update security policies and controls</li>
+    <li>Conduct post-incident review</li>
+</ul>
+
+<h2>Security Best Practices</h2>
+
+<h3>Principle of Least Privilege</h3>
+<ul>
+    <li>Grant minimum permissions necessary for tasks</li>
+    <li>Use role-based access control for team environments</li>
+    <li>Regularly review and revoke unnecessary permissions</li>
+    <li>Implement time-limited access for temporary needs</li>
+</ul>
+
+<h3>Defense in Depth</h3>
+<ul>
+    <li>Implement multiple layers of security controls</li>
+    <li>Don't rely on single security mechanism</li>
+    <li>Combine preventive, detective, and corrective controls</li>
+    <li>Assume breach and plan accordingly</li>
+</ul>
+
+<h3>Security Awareness</h3>
+<ul>
+    <li>Train team members on security risks and best practices</li>
+    <li>Establish clear security policies and procedures</li>
+    <li>Conduct regular security reviews and assessments</li>
+    <li>Foster culture of security consciousness</li>
+</ul>
+
+<h3>Continuous Improvement</h3>
+<ul>
+    <li>Regularly update security configurations</li>
+    <li>Stay informed about new threats and vulnerabilities</li>
+    <li>Conduct periodic security audits</li>
+    <li>Learn from incidents and near-misses</li>
+</ul>
+
+<h2>Enterprise Security Architecture</h2>
+
+<h3>Network Segmentation</h3>
+<p>Isolate Claude Code CLI within secure network zones:</p>
+<ul>
+    <li>Deploy in development network segment</li>
+    <li>Restrict access to production systems</li>
+    <li>Use VPN for remote access</li>
+    <li>Implement firewall rules between segments</li>
+</ul>
+
+<h3>Identity and Access Management Integration</h3>
+<p>Integrate with enterprise IAM systems:</p>
+<ul>
+    <li>Single Sign-On (SSO) for user authentication</li>
+    <li>Active Directory/LDAP integration</li>
+    <li>Multi-factor authentication (MFA) enforcement</li>
+    <li>Centralized user provisioning and deprovisioning</li>
+</ul>
+
+<h3>Security Information and Event Management (SIEM)</h3>
+<p>Forward logs to enterprise SIEM for centralized monitoring:</p>
+<ul>
+    <li>Aggregate logs from all Claude Code CLI instances</li>
+    <li>Correlate events across security tools</li>
+    <li>Enable advanced threat detection</li>
+    <li>Support compliance reporting requirements</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Security in AI-assisted development requires protecting credentials, data, and system integrity</li>
+    <li>Authentication and authorization use API keys, SSO, and role-based access control</li>
+    <li>Data protection involves classification, PII redaction, credential scanning, and encryption</li>
+    <li>Access controls restrict file system access, command execution, and network connectivity</li>
+    <li>Comprehensive audit logging and monitoring enable security oversight and compliance</li>
+    <li>Compliance frameworks (GDPR, SOC 2, HIPAA, PCI DSS) require specific security controls</li>
+    <li>Incident response procedures address detection, containment, investigation, and recovery</li>
+    <li>Best practices emphasize least privilege, defense in depth, and continuous improvement</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

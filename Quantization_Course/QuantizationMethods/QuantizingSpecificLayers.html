@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Layer-Specific Quantization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Layer-Specific Quantization</h1>
+<div class="container">
+<h2>Advanced: Layer-Specific Quantization</h2>
+<p>One of the most powerful but least discussed techniques in quantization is the ability to treat different layers of the model differently. Instead of quantizing the entire model to 4 bits, you can choose to keep some layers in 8-bit or even 16-bit while quantizing the rest even further. This is known as "Mixed-Precision Quantization."</p>
+
+<h3>Are All Layers Equal?</h3>
+<p>Research has shown that some layers in a transformer model are much more sensitive to quantization than others.
+<ul>
+    <li><strong>The First and Last Layers:</strong> The embedding layer (first) and the output head (last) are often extremely sensitive. Quantizing them to 4 bits often leads to a massive drop in quality. Many experts recommend keeping these in 16-bit.</li>
+    <li><strong>Attention Layers vs. MLP Layers:</strong> The Multi-Layer Perceptron (MLP) layers often make up the bulk of the model's parameters and can be quantized quite aggressively. The Attention layers, which handle the relationships between words, are often more sensitive.</li>
+</ul></p>
+
+<h3>The 'Per-Channel' vs. 'Per-Tensor' Approach</h3>
+<p>Quantization can be applied at different levels of granularity:
+<ul>
+    <li><strong>Per-Tensor:</strong> One scaling factor for the entire layer. Simple but can lead to accuracy loss if the weights have a wide range of values.</li>
+    <li><strong>Per-Channel:</strong> A different scaling factor for every output channel in the layer. Much more accurate because it can adapt to the specific distribution of each channel. Most high-quality 4-bit and 8-bit models use per-channel quantization.</li>
+</ul></p>
+
+<h3>Identifying 'Sensitive' Layers</h3>
+<p>To perform layer-specific quantization, you first need to identify which layers are sensitive. This is often done by:
+1. Quantizing one layer at a time and measuring the drop in model accuracy (perplexity).
+2. Using a small calibration dataset to see which layers have the most "noise" after quantization.
+3. Keeping the most sensitive layers in higher precision and the least sensitive in lower precision.</p>
+
+<h3>Benefits of Mixed-Precision</h3>
+<ul>
+    <li><strong>Better Accuracy-to-Size Ratio:</strong> You can often get the accuracy of a 6-bit model with the size of a 4.5-bit model by being smart about which layers you quantize.</li>
+    <li><strong>Hardware Optimization:</strong> Some hardware might be faster at certain bit-widths. You can tailor the quantization to the specific hardware's performance profile.</li>
+</ul>
+
+<h3>The Challenge of Implementation</h3>
+<p>Mixed-precision is harder to implement because the low-level kernels must support multiple different bit-widths in the same forward pass. This adds complexity to the model's architecture and the inference engine. However, as tools like <code>llama.cpp</code> and <code>AutoGPTQ</code> mature, support for mixed-precision is becoming more common.</p>
+
+<h3>Use Case: Quantizing a 70B Model for a 48GB GPU</h3>
+<p>If a 4-bit quantized 70B model is 35GB and a 3-bit version is 26GB, but the 3-bit version is too "stupid," you can use mixed-precision. You might keep the first 10% and last 10% of layers in 4-bit and quantize the middle 80% to 3-bit. This might result in a 28GB model that is nearly as smart as the 4-bit version but fits comfortably on your hardware with room for a large context.</p>
+
+<h3>Practical Exercise: Exploring K-Quants</h3>
+<p>Go back to the GGUF documentation and look at the description of <code>Q4_K_M</code>. Which parts of the model does it keep in higher precision? (Hint: It often keeps the "attention.v" and "attention.output" tensors in higher precision than the others).</p>
+
+<h3>Summary</h3>
+<p>Layer-specific and mixed-precision quantization are the "fine-tuning" phase of the quantization process. By recognizing that some weights are more important than others, we can create models that are incredibly small without sacrificing their intelligence. This surgical approach is the future of efficient AI deployment.</p>
+
+</div>
+</body>
+</html>

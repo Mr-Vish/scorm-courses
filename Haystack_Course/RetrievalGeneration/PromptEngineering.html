@@ -1,0 +1,427 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Engineering and Generation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Engineering and Generation</h1>
+
+<h2>The Art and Science of Prompt Engineering</h2>
+<p>Prompt engineering is the practice of designing effective instructions for LLMs to produce desired outputs. In RAG systems, prompts must balance providing context, asking clear questions, and guiding the model's behavior.</p>
+
+<h2>Anatomy of an Effective RAG Prompt</h2>
+<p>A well-structured RAG prompt typically includes:</p>
+
+<ol>
+    <li><strong>System Role:</strong> Defines the assistant's persona and behavior</li>
+    <li><strong>Context Section:</strong> Retrieved documents providing factual grounding</li>
+    <li><strong>Instructions:</strong> Clear guidelines on how to use the context</li>
+    <li><strong>Question:</strong> The user's actual query</li>
+    <li><strong>Output Format:</strong> Specifications for the response structure</li>
+</ol>
+
+<h2>Basic Prompt Template</h2>
+<div class="code-block">
+<pre><code>from haystack.components.builders import PromptBuilder
+
+basic_template = """
+You are a helpful AI assistant. Answer the question based on the provided context.
+
+Context:
+{% for doc in documents %}
+  {{ doc.content }}
+{% endfor %}
+
+Question: {{ question }}
+
+Answer:
+"""
+
+prompt_builder = PromptBuilder(template=basic_template)
+</code></pre>
+</div>
+
+<h2>Advanced Prompt Template with Instructions</h2>
+<div class="code-block">
+<pre><code>advanced_template = """
+You are an expert technical support assistant. Your role is to provide accurate, 
+helpful answers based on the official documentation provided below.
+
+INSTRUCTIONS:
+- Answer ONLY based on the provided context
+- If the context doesn't contain the answer, say "I don't have enough information"
+- Cite specific sections when possible
+- Be concise but complete
+- Use technical terminology appropriately
+
+CONTEXT:
+{% for doc in documents %}
+---
+Source: {{ doc.meta.get('source', 'Unknown') }}
+Content: {{ doc.content }}
+---
+{% endfor %}
+
+USER QUESTION: {{ question }}
+
+ANSWER:
+"""
+
+advanced_prompt_builder = PromptBuilder(template=advanced_template)
+</code></pre>
+</div>
+
+<h2>Prompt Engineering Best Practices</h2>
+<table>
+    <tr>
+        <th>Principle</th>
+        <th>Why It Matters</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Be Specific</td>
+        <td>Reduces ambiguity and hallucinations</td>
+        <td>"Answer in 2-3 sentences" vs "Be brief"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Provide Examples</td>
+        <td>Shows desired output format</td>
+        <td>Include sample Q&A pairs in prompt</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Set Boundaries</td>
+        <td>Prevents off-topic responses</td>
+        <td>"Only use the provided context"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Structure Output</td>
+        <td>Makes responses parseable</td>
+        <td>"Format as: Answer: ... Source: ..."</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Handle Edge Cases</td>
+        <td>Graceful failure modes</td>
+        <td>"If unsure, explain what's missing"</td>
+    </tr>
+</table>
+
+<h2>Conditional Logic in Prompts</h2>
+<p>Use Jinja2 templating for dynamic prompts:</p>
+
+<div class="code-block">
+<pre><code>conditional_template = """
+You are a {{ role }} assistant.
+
+{% if documents %}
+Based on the following information:
+{% for doc in documents %}
+  - {{ doc.content }}
+{% endfor %}
+{% else %}
+Note: No specific context was found for this question.
+{% endif %}
+
+{% if include_sources %}
+Please cite your sources in your answer.
+{% endif %}
+
+Question: {{ question }}
+
+{% if max_length %}
+Answer in no more than {{ max_length }} words.
+{% endif %}
+
+Answer:
+"""
+
+prompt_builder = PromptBuilder(template=conditional_template)
+
+# Usage with different parameters
+result = prompt_builder.run(
+    role="technical support",
+    documents=retrieved_docs,
+    question="How do I install the software?",
+    include_sources=True,
+    max_length=100
+)
+</code></pre>
+</div>
+
+<h2>Generators in Haystack</h2>
+<p>Generators are components that interface with LLMs to produce text. Haystack supports multiple LLM providers:</p>
+
+<h3>OpenAI Generator</h3>
+<div class="code-block">
+<pre><code>from haystack.components.generators import OpenAIGenerator
+
+openai_gen = OpenAIGenerator(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    model="gpt-4o-mini",
+    generation_kwargs={
+        "temperature": 0.2,  # Lower = more deterministic
+        "max_tokens": 500,
+        "top_p": 0.95,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0
+    }
+)
+</code></pre>
+</div>
+
+<h3>Hugging Face Local Generator</h3>
+<div class="code-block">
+<pre><code>from haystack.components.generators import HuggingFaceLocalGenerator
+
+local_gen = HuggingFaceLocalGenerator(
+    model="google/flan-t5-large",
+    task="text2text-generation",
+    generation_kwargs={
+        "max_new_tokens": 500,
+        "temperature": 0.7,
+        "do_sample": True
+    }
+)
+</code></pre>
+</div>
+
+<h2>Generation Parameters Explained</h2>
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Range</th>
+        <th>Effect</th>
+        <th>Recommended for RAG</th>
+    </tr>
+    <tr>
+        <td class="rowheader">temperature</td>
+        <td>0.0 - 2.0</td>
+        <td>Controls randomness (higher = more creative)</td>
+        <td>0.1 - 0.3 (factual responses)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">max_tokens</td>
+        <td>1 - model limit</td>
+        <td>Maximum response length</td>
+        <td>300 - 800 (concise answers)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">top_p</td>
+        <td>0.0 - 1.0</td>
+        <td>Nucleus sampling threshold</td>
+        <td>0.9 - 0.95 (balanced)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">frequency_penalty</td>
+        <td>-2.0 - 2.0</td>
+        <td>Reduces repetition</td>
+        <td>0.0 - 0.3 (slight reduction)</td>
+    </tr>
+</table>
+
+<h2>Complete Production RAG Pipeline</h2>
+<div class="code-block">
+<pre><code>import os
+from haystack import Pipeline
+from haystack.components.embedders import SentenceTransformersTextEmbedder
+from haystack_integrations.components.retrievers.qdrant import QdrantEmbeddingRetriever
+from haystack.components.builders import PromptBuilder
+from haystack.components.generators import OpenAIGenerator
+
+def create_rag_pipeline(document_store):
+    """Create a production-ready RAG pipeline."""
+    
+    pipeline = Pipeline()
+    
+    # Query embedding
+    pipeline.add_component(
+        "embedder",
+        SentenceTransformersTextEmbedder(
+            model="sentence-transformers/all-MiniLM-L6-v2"
+        )
+    )
+    
+    # Document retrieval
+    pipeline.add_component(
+        "retriever",
+        QdrantEmbeddingRetriever(
+            document_store=document_store,
+            top_k=5,
+            scale_score=True
+        )
+    )
+    
+    # Prompt construction
+    prompt_template = """
+    You are a knowledgeable assistant. Answer the question accurately based on the context.
+    
+    Context:
+    {% for doc in documents %}
+    {{ loop.index }}. {{ doc.content }}
+    (Source: {{ doc.meta.get('source', 'N/A') }})
+    {% endfor %}
+    
+    Question: {{ query }}
+    
+    Instructions:
+    - Provide a clear, concise answer
+    - Reference specific sources when applicable
+    - If the context is insufficient, state what information is missing
+    
+    Answer:
+    """
+    
+    pipeline.add_component(
+        "prompt_builder",
+        PromptBuilder(template=prompt_template)
+    )
+    
+    # Answer generation
+    pipeline.add_component(
+        "generator",
+        OpenAIGenerator(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            model="gpt-4o-mini",
+            generation_kwargs={
+                "temperature": 0.2,
+                "max_tokens": 600
+            }
+        )
+    )
+    
+    # Connect components
+    pipeline.connect("embedder.embedding", "retriever.query_embedding")
+    pipeline.connect("retriever.documents", "prompt_builder.documents")
+    pipeline.connect("prompt_builder.prompt", "generator.prompt")
+    
+    return pipeline
+
+# Usage
+rag_pipeline = create_rag_pipeline(document_store)
+
+response = rag_pipeline.run({
+    "embedder": {"text": "What are the installation requirements?"},
+    "prompt_builder": {"query": "What are the installation requirements?"}
+})
+
+print(response["generator"]["replies"][0])
+</code></pre>
+</div>
+
+<h2>Handling Citations and Source Attribution</h2>
+<div class="code-block">
+<pre><code>citation_template = """
+Answer the question and provide citations.
+
+Context:
+{% for doc in documents %}
+[{{ loop.index }}] {{ doc.content }}
+Source: {{ doc.meta.get('source', 'Unknown') }}
+{% endfor %}
+
+Question: {{ question }}
+
+Provide your answer with inline citations using [1], [2], etc.
+
+Answer:
+"""
+
+# The LLM will generate responses like:
+# "The system requires Python 3.8+ [1] and at least 4GB RAM [2]."
+</code></pre>
+</div>
+
+<h2>Streaming Responses</h2>
+<p>For better user experience, stream responses as they're generated:</p>
+
+<div class="code-block">
+<pre><code>from haystack.components.generators import OpenAIGenerator
+
+streaming_generator = OpenAIGenerator(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    model="gpt-4o-mini",
+    streaming_callback=lambda chunk: print(chunk.content, end="", flush=True),
+    generation_kwargs={"temperature": 0.2, "max_tokens": 500}
+)
+
+# When run, this will print tokens as they're generated
+</code></pre>
+</div>
+
+<h2>Error Handling in Generation</h2>
+<div class="code-block">
+<pre><code>def safe_rag_query(pipeline, query):
+    """Execute RAG query with error handling."""
+    try:
+        result = pipeline.run({
+            "embedder": {"text": query},
+            "prompt_builder": {"query": query}
+        })
+        
+        if not result.get("generator", {}).get("replies"):
+            return "No response generated. Please try again."
+        
+        return result["generator"]["replies"][0]
+        
+    except Exception as e:
+        logger.error(f"RAG query failed: {str(e)}")
+        return "I encountered an error processing your question. Please try rephrasing."
+
+# Usage
+answer = safe_rag_query(rag_pipeline, "How do I configure the database?")
+</code></pre>
+</div>
+
+<h2>Multi-Turn Conversations</h2>
+<p>Maintain conversation history for context-aware responses:</p>
+
+<div class="code-block">
+<pre><code>conversation_template = """
+You are a helpful assistant. Use the conversation history and retrieved context.
+
+Conversation History:
+{% for turn in history %}
+User: {{ turn.user }}
+Assistant: {{ turn.assistant }}
+{% endfor %}
+
+Retrieved Context:
+{% for doc in documents %}
+{{ doc.content }}
+{% endfor %}
+
+Current Question: {{ question }}
+
+Answer:
+"""
+
+# Maintain history in your application
+conversation_history = []
+
+def conversational_rag(pipeline, question, history):
+    """RAG with conversation context."""
+    result = pipeline.run({
+        "embedder": {"text": question},
+        "prompt_builder": {
+            "question": question,
+            "history": history
+        }
+    })
+    
+    answer = result["generator"]["replies"][0]
+    
+    # Update history
+    history.append({"user": question, "assistant": answer})
+    
+    return answer
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

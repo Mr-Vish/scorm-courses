@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM04: Model Denial of Service</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM04: Model Denial of Service (DoS)</h1>
+
+<p>Model Denial of Service occurs when an attacker consumes an excessive amount of the LLM's resources—such as GPU memory, context window, or API quotas—causing the system to become slow or completely unavailable to legitimate users.</p>
+
+<h2>4.1 The High Cost of Inference</h2>
+<p>Unlike traditional web requests, which are relatively "cheap" in terms of CPU and RAM, LLM inference is incredibly resource-intensive. This makes LLMs an attractive target for DoS attacks.</p>
+
+<h2>4.2 Common DoS Attack Vectors</h2>
+<ul>
+    <li><strong>Context Window Flooding:</strong> Sending extremely long prompts (e.g., 100k+ tokens) that consume all the available memory in the model's context window.</li>
+    <li><strong>Recursive Prompting:</strong> Using prompt injection to cause the model to generate a response that then triggers another expensive LLM call, creating an infinite loop.</li>
+    <li><strong>Token Exhaustion:</strong> Sending a high volume of requests to quickly drain the application's API quota or exceed its rate limits with the model provider.</li>
+    <li><strong>Complex Logic Attacks:</strong> Crafting queries that require an immense amount of reasoning or multi-step processing (e.g., "Summarize these 500 documents and compare them in detail").</li>
+</ul>
+
+<h2>4.3 Remediation Strategies</h2>
+<p>Protecting against Model DoS requires strict resource management and rate limiting:
+<ul>
+    <li><strong>Input Token Limits:</strong> Enforcing a maximum token count for every user prompt. Rejecting any prompt that exceeds this limit.</li>
+    <li><strong>Output Token Limits:</strong> Setting a hard limit on the number of tokens the model can generate in a single response (e.g., max 1024 tokens).</li>
+    <li><strong>Rate Limiting (RPM and TPM):</strong> Implementing strict limits on the number of Requests Per Minute and Tokens Per Minute for each user and tenant.</li>
+    <li><strong>Request Queuing and Prioritization:</strong> Using a fair scheduler to ensure that no single user can starve others of inference time.</li>
+    <li><strong>Monitoring and Alerting:</strong> Tracking resource usage (GPU, memory, latency) in real-time and alerting when usage spikes or thresholds are exceeded.</li>
+    <li><strong>Circuit Breakers:</strong> Automatically shutting down or throttling the service if the underlying model provider returns frequent "Rate Limit Exceeded" errors.</li>
+</ul></p>
+
+<h2>4.4 Case Study: The Research Bot DoS</h2>
+<p>A research assistant bot allowed users to provide URLs for summarization. An attacker submitted a list of 1,000 links to massive PDF documents. The bot attempted to fetch and summarize all of them simultaneously, exceeding the application's API quota within minutes and causing all other user requests to fail with a "Quota Exceeded" error.</p>
+
+<p>By implementing robust resource guardrails and monitoring, you can ensure that your LLM application remains available and responsive for all your users, even in the face of malicious activity.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

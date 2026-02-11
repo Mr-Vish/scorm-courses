@@ -1,0 +1,347 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Prompt Engineering for Test Creation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Engineering for Test Creation</h1>
+
+<h2>The Critical Role of Prompt Engineering</h2>
+<p>Prompt engineering—the art and science of crafting effective instructions for Large Language Models—is the single most important factor determining the quality of AI-generated tests. While LLMs possess vast knowledge about programming and testing, they require clear, specific guidance to produce tests that meet your project's unique requirements, conventions, and quality standards.</p>
+
+<p>Poor prompts lead to generic, incomplete, or incorrect tests. Excellent prompts produce tests that are indistinguishable from those written by experienced developers, complete with appropriate edge cases, meaningful assertions, and adherence to project conventions. The difference between these outcomes often lies in just a few well-chosen sentences in the prompt.</p>
+
+<h2>Fundamental Principles of Effective Test Prompts</h2>
+
+<h3>Principle 1: Specificity Over Generality</h3>
+<p>Vague prompts produce vague results. Instead of "write tests for this function," specify exactly what you need:</p>
+<ul>
+    <li>Which testing framework and version</li>
+    <li>What types of tests (unit, integration, edge cases)</li>
+    <li>How many tests or what coverage level</li>
+    <li>What naming conventions to follow</li>
+    <li>What assertion style to use</li>
+</ul>
+
+<p><strong>Weak Prompt:</strong> "Create tests for this code."</p>
+<p><strong>Strong Prompt:</strong> "Generate pytest unit tests for this Python function using pytest 7.x. Include 8-10 tests covering normal cases, boundary values, and error conditions. Use descriptive test names following the pattern test_functionname_scenario_expectedoutcome."</p>
+
+<h3>Principle 2: Context Provision</h3>
+<p>LLMs perform better when they understand the broader context:</p>
+<ul>
+    <li>Purpose of the code being tested</li>
+    <li>Domain-specific terminology and business rules</li>
+    <li>Dependencies and their expected behavior</li>
+    <li>Existing test patterns in the project</li>
+</ul>
+
+<p>Providing context helps the LLM generate tests that align with your application's semantics, not just its syntax.</p>
+
+<h3>Principle 3: Example-Driven Learning</h3>
+<p>LLMs excel at pattern matching. Providing examples of existing tests helps the LLM understand:</p>
+<ul>
+    <li>Your preferred test structure</li>
+    <li>How you handle mocking and fixtures</li>
+    <li>Your documentation style</li>
+    <li>Your assertion patterns</li>
+</ul>
+
+<p>This technique, called "few-shot learning," dramatically improves consistency between generated tests and your existing test suite.</p>
+
+<h3>Principle 4: Explicit Constraint Definition</h3>
+<p>Clearly state what the LLM should and should not do:</p>
+<ul>
+    <li>Which dependencies to mock vs. use directly</li>
+    <li>Whether to use fixtures or inline setup</li>
+    <li>Maximum test complexity or length</li>
+    <li>Specific scenarios to include or exclude</li>
+</ul>
+
+<h2>Anatomy of a High-Quality Test Generation Prompt</h2>
+
+<h3>Component 1: Framework and Environment Specification</h3>
+<p>Begin by establishing the technical environment:</p>
+<blockquote>
+"Generate unit tests using pytest 7.4 for Python 3.11. Use pytest fixtures for test setup and the pytest.raises context manager for exception testing."
+</blockquote>
+
+<p>This eliminates ambiguity about which testing tools and language features are available.</p>
+
+<h3>Component 2: Code Presentation</h3>
+<p>Present the code to be tested with clear formatting and relevant context:</p>
+<blockquote>
+"Here is the function to test:
+<br/><br/>
+[Include the function with its docstring, type hints, and any relevant helper functions or constants it uses]
+<br/><br/>
+This function is part of a payment processing system and must handle monetary calculations with precision."
+</blockquote>
+
+<h3>Component 3: Test Requirements Enumeration</h3>
+<p>Explicitly list the types of tests needed:</p>
+<blockquote>
+"Generate tests that cover:
+<ul>
+    <li>Happy path: Valid inputs producing expected outputs</li>
+    <li>Boundary conditions: Zero values, maximum values, minimum values</li>
+    <li>Edge cases: Empty strings, None values, very large numbers</li>
+    <li>Error cases: Invalid types, out-of-range values, malformed inputs</li>
+    <li>State transitions: If applicable, different object states</li>
+</ul>"
+</blockquote>
+
+<h3>Component 4: Style and Convention Guidelines</h3>
+<p>Specify formatting and naming expectations:</p>
+<blockquote>
+"Follow these conventions:
+<ul>
+    <li>Test names: test_[function]_[scenario]_[expected_result]</li>
+    <li>Use descriptive variable names in tests</li>
+    <li>Include a docstring for each test explaining what it validates</li>
+    <li>Group related tests using pytest marks</li>
+    <li>Limit each test to a single logical assertion</li>
+</ul>"
+</blockquote>
+
+<h3>Component 5: Example Tests (Optional but Powerful)</h3>
+<p>Provide 1-2 examples of existing tests from your project:</p>
+<blockquote>
+"Here's an example of our test style:
+<br/><br/>
+[Include a representative test from your codebase]
+<br/><br/>
+Generate tests following this same pattern and style."
+</blockquote>
+
+<h2>Advanced Prompt Engineering Techniques</h2>
+
+<h3>Technique 1: Scenario Enumeration</h3>
+<p>For complex business logic, explicitly enumerate test scenarios:</p>
+<blockquote>
+"Generate tests for these specific scenarios:
+<ol>
+    <li>User with premium subscription accessing premium content - should succeed</li>
+    <li>User with basic subscription accessing premium content - should raise PermissionError</li>
+    <li>User with expired subscription accessing any content - should raise SubscriptionExpiredError</li>
+    <li>Guest user accessing free content - should succeed</li>
+    <li>Guest user accessing premium content - should raise AuthenticationError</li>
+</ol>"
+</blockquote>
+
+<p>This ensures the LLM generates tests for all critical business scenarios, not just technical edge cases.</p>
+
+<h3>Technique 2: Negative Prompting</h3>
+<p>Explicitly state what to avoid:</p>
+<blockquote>
+"Do NOT:
+<ul>
+    <li>Use time.sleep() or other blocking operations</li>
+    <li>Access real external services or databases</li>
+    <li>Create tests that depend on execution order</li>
+    <li>Generate tests longer than 20 lines</li>
+    <li>Use deprecated assertion methods</li>
+</ul>"
+</blockquote>
+
+<p>This prevents common pitfalls and ensures generated tests meet quality standards.</p>
+
+<h3>Technique 3: Incremental Refinement Prompts</h3>
+<p>After initial generation, use targeted prompts to improve specific aspects:</p>
+<ul>
+    <li>"Add tests for the case where the input list contains duplicate values"</li>
+    <li>"Improve the test names to be more descriptive of what's being validated"</li>
+    <li>"Add docstrings to each test explaining the scenario"</li>
+    <li>"Refactor these tests to use a pytest fixture for the common setup code"</li>
+</ul>
+
+<h3>Technique 4: Coverage-Driven Prompting</h3>
+<p>Use coverage analysis to guide test generation:</p>
+<blockquote>
+"The current tests achieve 75% branch coverage. The following branches are not covered:
+<ul>
+    <li>Line 45: The else clause when status is 'pending'</li>
+    <li>Line 67: The exception handler for ValueError</li>
+    <li>Line 89: The early return when cache is empty</li>
+</ul>
+Generate additional tests to cover these specific branches."
+</blockquote>
+
+<h3>Technique 5: Persona-Based Prompting</h3>
+<p>Frame the prompt as if the LLM is a specific type of expert:</p>
+<blockquote>
+"You are a senior QA engineer with 10 years of experience in financial software testing. Generate comprehensive unit tests for this payment calculation function, paying special attention to floating-point precision, rounding edge cases, and regulatory compliance requirements."
+</blockquote>
+
+<p>This technique leverages the LLM's ability to adopt different perspectives and expertise levels.</p>
+
+<h2>Domain-Specific Prompt Strategies</h2>
+
+<h3>Testing Data Processing Functions</h3>
+<p>For functions that transform or validate data:</p>
+<ul>
+    <li>Specify input data formats and schemas</li>
+    <li>Enumerate data quality issues to test (missing fields, wrong types, malformed values)</li>
+    <li>Request tests for empty datasets and very large datasets</li>
+    <li>Include tests for data at schema boundaries</li>
+</ul>
+
+<h3>Testing API Clients</h3>
+<p>For functions that interact with external APIs:</p>
+<ul>
+    <li>Specify which HTTP methods and endpoints are used</li>
+    <li>Request mocking of HTTP responses</li>
+    <li>Include tests for various HTTP status codes (200, 400, 401, 404, 500, 503)</li>
+    <li>Test timeout and retry scenarios</li>
+    <li>Validate request payload construction</li>
+</ul>
+
+<h3>Testing Business Logic</h3>
+<p>For functions implementing business rules:</p>
+<ul>
+    <li>Provide business rule documentation or requirements</li>
+    <li>Enumerate all rule combinations that should be tested</li>
+    <li>Include tests for rule precedence and conflicts</li>
+    <li>Request tests for boundary conditions specific to business rules</li>
+</ul>
+
+<h3>Testing Stateful Classes</h3>
+<p>For object-oriented code with state:</p>
+<ul>
+    <li>Describe valid state transitions</li>
+    <li>Request tests for invalid state transitions</li>
+    <li>Specify initialization and cleanup requirements</li>
+    <li>Include tests for concurrent state modifications if applicable</li>
+</ul>
+
+<h2>Handling LLM Limitations Through Prompting</h2>
+
+<h3>Context Window Constraints</h3>
+<p><strong>Challenge:</strong> Large codebases may exceed the LLM's context window.</p>
+<p><strong>Solution:</strong> Break prompts into smaller chunks:</p>
+<ul>
+    <li>Generate tests for one function at a time</li>
+    <li>Provide only essential context (function signature, docstring, key dependencies)</li>
+    <li>Use summarized descriptions of complex dependencies rather than full code</li>
+</ul>
+
+<h3>Hallucination Prevention</h3>
+<p><strong>Challenge:</strong> LLMs may generate calls to non-existent methods or use incorrect syntax.</p>
+<p><strong>Solution:</strong> Explicitly list available methods:</p>
+<blockquote>
+"Use only these pytest assertion methods: assert, pytest.raises, pytest.warns, pytest.approx. Do not use any other assertion functions."
+</blockquote>
+
+<h3>Ensuring Test Independence</h3>
+<p><strong>Challenge:</strong> Generated tests may inadvertently share state or depend on execution order.</p>
+<p><strong>Solution:</strong> Explicitly require independence:</p>
+<blockquote>
+"Each test must be completely independent and able to run in any order. Use pytest fixtures or setup methods to ensure clean state for each test. Do not rely on side effects from other tests."
+</blockquote>
+
+<h2>Prompt Templates for Common Scenarios</h2>
+
+<h3>Template 1: Pure Function Testing</h3>
+<blockquote>
+"Generate pytest unit tests for the following pure Python function. Include tests for:
+<ul>
+    <li>Normal inputs with expected outputs</li>
+    <li>Boundary values (empty, zero, maximum)</li>
+    <li>Invalid inputs that should raise exceptions</li>
+</ul>
+Use descriptive test names and include docstrings. Function: [code]"
+</blockquote>
+
+<h3>Template 2: Class Method Testing</h3>
+<blockquote>
+"Generate pytest unit tests for the methods of this Python class. Use a pytest fixture to create a fresh instance for each test. Test all public methods, including:
+<ul>
+    <li>Normal operation</li>
+    <li>Edge cases</li>
+    <li>State transitions</li>
+    <li>Error conditions</li>
+</ul>
+Class: [code]"
+</blockquote>
+
+<h3>Template 3: Function with Mocked Dependencies</h3>
+<blockquote>
+"Generate pytest unit tests for this function that calls external services. Use unittest.mock to mock the following dependencies: [list dependencies]. Test:
+<ul>
+    <li>Successful responses from dependencies</li>
+    <li>Error responses from dependencies</li>
+    <li>Timeout scenarios</li>
+    <li>Correct parameters passed to dependencies</li>
+</ul>
+Function: [code]"
+</blockquote>
+
+<h3>Template 4: Async Function Testing</h3>
+<blockquote>
+"Generate pytest unit tests for this async Python function. Use pytest-asyncio and mark tests with @pytest.mark.asyncio. Mock async dependencies using AsyncMock. Test:
+<ul>
+    <li>Successful async operations</li>
+    <li>Concurrent execution scenarios</li>
+    <li>Exception handling in async context</li>
+</ul>
+Function: [code]"
+</blockquote>
+
+<h2>Evaluating Prompt Effectiveness</h2>
+
+<h3>Quality Metrics</h3>
+<p>Assess prompt effectiveness by measuring:</p>
+<ul>
+    <li><strong>First-Pass Success Rate:</strong> Percentage of generated tests that pass without modification</li>
+    <li><strong>Coverage Achievement:</strong> Code coverage percentage achieved by generated tests</li>
+    <li><strong>Iteration Count:</strong> Number of refinement rounds needed to reach acceptable quality</li>
+    <li><strong>Hallucination Rate:</strong> Frequency of non-existent API calls or incorrect syntax</li>
+    <li><strong>Relevance Score:</strong> Percentage of generated tests that are actually useful (not redundant or trivial)</li>
+</ul>
+
+<h3>Continuous Improvement</h3>
+<p>Maintain a library of effective prompts:</p>
+<ul>
+    <li>Document prompts that consistently produce high-quality tests</li>
+    <li>Note which prompt variations work best for different code types</li>
+    <li>Share successful prompts across the team</li>
+    <li>Refine prompts based on common issues encountered</li>
+</ul>
+
+<h2>Best Practices Summary</h2>
+
+<ol>
+    <li><strong>Be Specific:</strong> Provide detailed requirements rather than vague instructions</li>
+    <li><strong>Provide Context:</strong> Include relevant information about the code's purpose and environment</li>
+    <li><strong>Use Examples:</strong> Show the LLM what good tests look like in your project</li>
+    <li><strong>Enumerate Scenarios:</strong> List specific test cases for complex logic</li>
+    <li><strong>Set Constraints:</strong> Explicitly state what to avoid</li>
+    <li><strong>Iterate Incrementally:</strong> Refine tests through targeted follow-up prompts</li>
+    <li><strong>Validate Results:</strong> Always review and test generated code</li>
+    <li><strong>Document Patterns:</strong> Build a library of effective prompts for reuse</li>
+</ol>
+
+<h2>Module 1 Summary</h2>
+
+<p>This module has covered the foundations of AI-powered test generation, from understanding how LLMs analyze and generate tests to mastering the critical skill of prompt engineering. You've learned that effective test generation is not about simply asking an AI to "write tests," but rather about crafting precise, context-rich prompts that guide the LLM to produce tests meeting your specific quality standards and project conventions.</p>
+
+<p>Key takeaways from Module 1:</p>
+<ul>
+    <li>AI test generation accelerates testing by 60-80% while potentially improving coverage</li>
+    <li>LLMs excel at unit test generation for well-defined functions with clear inputs and outputs</li>
+    <li>Prompt quality directly determines test quality—specificity, context, and examples are essential</li>
+    <li>Generated tests require validation through execution, coverage analysis, and mutation testing</li>
+    <li>Iterative refinement produces better results than expecting perfection on the first attempt</li>
+</ul>
+
+<p>You are now ready to proceed to Module 2, where we will explore advanced test generation techniques for integration tests, end-to-end tests, and complex testing scenarios.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

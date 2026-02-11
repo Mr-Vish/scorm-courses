@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Advisors API</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Advisors API</h1>
+<div class="container">
+<h2>Advanced RAG with the Spring AI Advisor API</h2>
+<p>While the <code>QuestionAnswerAdvisor</code> is great for basic RAG, many real-world applications require more complex logic. You might need to rerank documents, perform multiple searches, or dynamically change the prompt based on the user's intent. This is where the <strong>Advisor API</strong> truly shines, allowing you to build highly customized AI behaviors.</p>
+
+<h3>What is a Spring AI Advisor?</h3>
+<p>An Advisor is a component that implements the <code>CallAroundAdvisor</code> or <code>StreamAroundAdvisor</code> interfaces. It has the power to "around-advise" the call to the LLM, meaning it can:
+<ol>
+    <li>Modify the <code>AdvisedRequest</code> before it's sent (e.g., adding more context).</li>
+    <li>Intercept and potentially change the <code>AdvisedResponse</code> after it's returned.</li>
+    <li>Decide whether to call the LLM at all (e.g., if a result is already in the cache).</li>
+</ol></p>
+
+<h3>The 'AroundAdvice' Chain</h3>
+<p>You can stack multiple advisors into a "chain."
+- <strong>Advisor 1 (Logging):</strong> Records every request and response.
+- <strong>Advisor 2 (Security):</strong> Scans the user's input for PII or malicious prompts.
+- <strong>Advisor 3 (RAG):</strong> Retrieves documents and adds them to the prompt.
+- <strong>Advisor 4 (Citations):</strong> Ensures the model's response includes the required citation format.
+The request flows down the chain, and the response flows back up. This modularity is a core strength of Spring AI.</p>
+
+<h3>Building a Custom RAG Advisor</h3>
+<p>Imagine you want to implement a <strong>Reranking</strong> step in your RAG pipeline. You can create a custom advisor:
+<ul>
+    <li>In the <code>before</code> step, it performs a <code>similaritySearch</code> to get 50 documents.</li>
+    <li>It then calls a separate Reranking API (like Cohere) to find the top 5 most relevant documents from that 50.</li>
+    <li>It replaces the original search results with the reranked top 5 and passes them down the chain.</li>
+</ul></p>
+
+<h3>The 'Safe-Guard' Advisor</h3>
+<p>Another powerful use case is a "Guard" advisor.
+<ul>
+    <li>The advisor sends the user's query to a smaller, cheaper LLM (the Guard model).</li>
+    <li>If the Guard model identifies a prompt injection, the advisor immediately returns a "Safety Violation" response, skipping the call to the main (expensive) LLM entirely.</li>
+</ul></p>
+
+<h3>Advisors and Prompt Caching</h3>
+<p>Spring AI can integrate with prompt caching through advisors. An advisor can identify which parts of the prompt are static (like a large system message or a common set of documents) and add the necessary "cache breakpoints" before the request is sent to the provider (like Anthropic).</p>
+
+<h3>Dynamic Routing Advisor</h3>
+<p>You can build an advisor that "routes" the query to different vector stores based on the topic.
+- If the query mentions "billing," use the <code>billingVectorStore</code>.
+- If it mentions "tech support," use the <code>documentationVectorStore</code>.
+This keeps your knowledge bases focused and improves retrieval accuracy.</p>
+
+<h3>Summary</h3>
+<p>The Advisor API is the "secret weapon" for building advanced RAG systems in Spring AI. By providing a clean, modular way to intercept and modify the AI interaction, it empowers you to implement sophisticated patterns like reranking, guard models, and dynamic routing with ease and maintainability.</p>
+
+</div>
+</body>
+</html>

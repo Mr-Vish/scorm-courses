@@ -1,0 +1,411 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Setup and Configuration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: Foundations of Amazon Q Developer</h1>
+
+<h2>Lesson 3: Setup and Configuration</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand the installation process for different development environments</li>
+    <li>Configure Amazon Q Developer for individual and team use</li>
+    <li>Identify authentication methods and access management options</li>
+    <li>Optimize settings for specific development workflows</li>
+</ul>
+
+<h2>Introduction to Setup and Configuration</h2>
+<p>Proper configuration of Amazon Q Developer is essential for maximizing productivity while maintaining security and compliance. The setup process varies depending on your development environment, organizational requirements, and licensing tier. This lesson provides comprehensive guidance for installing, configuring, and optimizing Amazon Q Developer across different scenarios.</p>
+
+<h2>Installation Prerequisites</h2>
+
+<h3>System Requirements</h3>
+<p>Before installing Amazon Q Developer, ensure your system meets these requirements:</p>
+
+<h4>Hardware Requirements</h4>
+<ul>
+    <li><strong>Processor:</strong> Modern multi-core processor (Intel i5/AMD Ryzen 5 or better recommended)</li>
+    <li><strong>Memory:</strong> Minimum 8GB RAM (16GB recommended for large projects)</li>
+    <li><strong>Storage:</strong> 500MB free disk space for extensions and cache</li>
+    <li><strong>Network:</strong> Stable internet connection for real-time suggestions</li>
+</ul>
+
+<h4>Software Requirements</h4>
+<ul>
+    <li><strong>Operating System:</strong> Windows 10/11, macOS 10.15+, or Linux (Ubuntu 18.04+, RHEL 7+)</li>
+    <li><strong>IDE Version:</strong> Latest stable version of your chosen IDE</li>
+    <li><strong>Browser:</strong> Modern browser for authentication (Chrome, Firefox, Safari, Edge)</li>
+</ul>
+
+<h3>Account Requirements</h3>
+<p>You need one of the following to use Amazon Q Developer:</p>
+<ul>
+    <li><strong>AWS Builder ID:</strong> Free personal account for individual developers</li>
+    <li><strong>IAM Identity Center:</strong> For enterprise SSO integration</li>
+    <li><strong>AWS Account:</strong> For Pro tier with billing to AWS account</li>
+</ul>
+
+<h2>Installation for Visual Studio Code</h2>
+
+<h3>Step-by-Step Installation</h3>
+
+<h4>1. Install the Extension</h4>
+<p>There are multiple methods to install the Amazon Q extension:</p>
+
+<p><strong>Method A: VS Code Marketplace</strong></p>
+<ul>
+    <li>Open VS Code</li>
+    <li>Click the Extensions icon in the sidebar (or press Ctrl+Shift+X / Cmd+Shift+X)</li>
+    <li>Search for "Amazon Q"</li>
+    <li>Click "Install" on the official AWS extension</li>
+</ul>
+
+<p><strong>Method B: Command Line</strong></p>
+<blockquote>
+code --install-extension amazonwebservices.amazon-q-vscode
+</blockquote>
+
+<p><strong>Method C: Manual Installation</strong></p>
+<ul>
+    <li>Download the .vsix file from the VS Code Marketplace website</li>
+    <li>In VS Code, go to Extensions → More Actions (···) → Install from VSIX</li>
+    <li>Select the downloaded file</li>
+</ul>
+
+<h4>2. Initial Authentication</h4>
+<p>After installation, authenticate to activate features:</p>
+<ul>
+    <li>Click the Amazon Q icon in the sidebar</li>
+    <li>Select "Sign in to get started"</li>
+    <li>Choose authentication method:
+        <ul>
+            <li><strong>AWS Builder ID:</strong> For free tier individual use</li>
+            <li><strong>IAM Identity Center:</strong> For enterprise SSO</li>
+            <li><strong>AWS Account:</strong> For Pro tier billing</li>
+        </ul>
+    </li>
+    <li>Complete authentication in your browser</li>
+    <li>Return to VS Code to confirm connection</li>
+</ul>
+
+<h4>3. Verify Installation</h4>
+<p>Confirm Amazon Q is working correctly:</p>
+<ul>
+    <li>Open a code file in a supported language</li>
+    <li>Type a comment describing a function (e.g., "// function to sort array of numbers")</li>
+    <li>Press Enter and wait for inline suggestions to appear</li>
+    <li>Open the chat panel and ask a question</li>
+</ul>
+
+<h2>Installation for JetBrains IDEs</h2>
+
+<h3>Supported JetBrains Products</h3>
+<p>Amazon Q supports all major JetBrains IDEs:</p>
+<ul>
+    <li>IntelliJ IDEA (Community and Ultimate)</li>
+    <li>PyCharm (Community and Professional)</li>
+    <li>WebStorm</li>
+    <li>PhpStorm</li>
+    <li>GoLand</li>
+    <li>RubyMine</li>
+    <li>CLion</li>
+    <li>Rider</li>
+</ul>
+
+<h3>Installation Process</h3>
+
+<h4>1. Install the Plugin</h4>
+<p><strong>Via JetBrains Marketplace:</strong></p>
+<ul>
+    <li>Open your JetBrains IDE</li>
+    <li>Go to File → Settings (Windows/Linux) or Preferences (macOS)</li>
+    <li>Navigate to Plugins</li>
+    <li>Click the Marketplace tab</li>
+    <li>Search for "Amazon Q"</li>
+    <li>Click Install and restart the IDE</li>
+</ul>
+
+<p><strong>Via Command Line:</strong></p>
+<blockquote>
+# For IntelliJ IDEA
+idea installPlugins com.aws.amazonq
+</blockquote>
+
+<h4>2. Configure Authentication</h4>
+<ul>
+    <li>After restart, click the Amazon Q icon in the toolbar</li>
+    <li>Select authentication method</li>
+    <li>Complete browser-based authentication</li>
+    <li>Verify connection in the Amazon Q tool window</li>
+</ul>
+
+<h2>Command Line Interface Setup</h2>
+
+<h3>Installation</h3>
+<p>The Amazon Q CLI provides terminal-based assistance:</p>
+
+<p><strong>macOS/Linux:</strong></p>
+<blockquote>
+curl -fsSL https://q.aws.dev/install.sh | bash
+</blockquote>
+
+<p><strong>Windows (PowerShell):</strong></p>
+<blockquote>
+iwr -useb https://q.aws.dev/install.ps1 | iex
+</blockquote>
+
+<h3>CLI Configuration</h3>
+<p>After installation, configure the CLI:</p>
+<blockquote>
+q configure
+</blockquote>
+
+<p>This command guides you through:</p>
+<ul>
+    <li>Authentication method selection</li>
+    <li>Default region configuration</li>
+    <li>Output format preferences</li>
+    <li>Proxy settings (if required)</li>
+</ul>
+
+<h2>Configuration Options</h2>
+
+<h3>Individual Developer Settings</h3>
+
+<h4>Code Completion Preferences</h4>
+<table>
+    <tr>
+        <th>Setting</th>
+        <th>Options</th>
+        <th>Recommendation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Suggestion Trigger</td>
+        <td>Automatic / Manual</td>
+        <td>Automatic for most workflows</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Suggestion Delay</td>
+        <td>0-2000ms</td>
+        <td>300-500ms to balance responsiveness and distraction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Multi-line Suggestions</td>
+        <td>Enabled / Disabled</td>
+        <td>Enabled for maximum productivity</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Inline Preview</td>
+        <td>Ghost text / Popup</td>
+        <td>Ghost text for seamless integration</td>
+    </tr>
+</table>
+
+<h4>Chat Interface Settings</h4>
+<ul>
+    <li><strong>Panel Position:</strong> Left sidebar, right sidebar, or bottom panel</li>
+    <li><strong>Context Inclusion:</strong> Automatically include current file or require explicit selection</li>
+    <li><strong>History Retention:</strong> Number of previous conversations to maintain</li>
+    <li><strong>Response Format:</strong> Concise or detailed explanations</li>
+</ul>
+
+<h4>Security Scan Configuration</h4>
+<ul>
+    <li><strong>Automatic Scanning:</strong> Scan on save, on demand, or disabled</li>
+    <li><strong>Severity Threshold:</strong> Show all findings or only high/critical</li>
+    <li><strong>Notification Style:</strong> Inline annotations, problems panel, or both</li>
+    <li><strong>Auto-fix Suggestions:</strong> Automatically apply safe fixes or require confirmation</li>
+</ul>
+
+<h2>Enterprise Configuration</h2>
+
+<h3>Identity and Access Management</h3>
+
+<h4>IAM Identity Center Integration</h4>
+<p>Enterprise organizations typically use IAM Identity Center (formerly AWS SSO) for centralized authentication:</p>
+
+<p><strong>Administrator Setup:</strong></p>
+<ul>
+    <li>Create an IAM Identity Center instance in your AWS Organization</li>
+    <li>Configure identity source (Active Directory, Okta, Azure AD, etc.)</li>
+    <li>Create permission sets for Amazon Q Developer access</li>
+    <li>Assign users or groups to permission sets</li>
+    <li>Distribute start URL to developers</li>
+</ul>
+
+<p><strong>Developer Connection:</strong></p>
+<ul>
+    <li>In IDE, select "Sign in with IAM Identity Center"</li>
+    <li>Enter organization's start URL</li>
+    <li>Authenticate through corporate identity provider</li>
+    <li>Approve device authorization</li>
+</ul>
+
+<h4>Permission Management</h4>
+<p>Control feature access through IAM policies:</p>
+<blockquote>
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codewhisperer:GenerateRecommendations",
+        "codewhisperer:GetCodeAnalysis"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+</blockquote>
+
+<h3>Organizational Policies</h3>
+
+<h4>Content Filtering</h4>
+<p>Administrators can configure what types of suggestions are allowed:</p>
+<ul>
+    <li><strong>Language Restrictions:</strong> Limit to approved programming languages</li>
+    <li><strong>Framework Restrictions:</strong> Block suggestions for deprecated frameworks</li>
+    <li><strong>License Filtering:</strong> Automatically reject code matching certain licenses</li>
+    <li><strong>Sensitive Pattern Blocking:</strong> Prevent transmission of regex patterns matching secrets</li>
+</ul>
+
+<h4>Usage Monitoring</h4>
+<p>Track adoption and usage across the organization:</p>
+<ul>
+    <li><strong>Acceptance Rate:</strong> Percentage of suggestions accepted by developers</li>
+    <li><strong>Feature Utilization:</strong> Which features (completion, chat, scan) are most used</li>
+    <li><strong>Language Distribution:</strong> Which programming languages are being assisted</li>
+    <li><strong>Security Findings:</strong> Aggregate vulnerability detection statistics</li>
+</ul>
+
+<h2>Network and Proxy Configuration</h2>
+
+<h3>Corporate Proxy Settings</h3>
+<p>Many enterprises require proxy configuration for internet access:</p>
+
+<h4>VS Code Proxy Configuration</h4>
+<p>Edit settings.json:</p>
+<blockquote>
+{
+  "http.proxy": "http://proxy.company.com:8080",
+  "http.proxyStrictSSL": true,
+  "http.proxyAuthorization": "Basic base64encodedcredentials"
+}
+</blockquote>
+
+<h4>JetBrains Proxy Configuration</h4>
+<ul>
+    <li>Go to Settings → Appearance & Behavior → System Settings → HTTP Proxy</li>
+    <li>Select "Manual proxy configuration"</li>
+    <li>Enter proxy host and port</li>
+    <li>Configure authentication if required</li>
+</ul>
+
+<h3>Firewall Requirements</h3>
+<p>Ensure these endpoints are accessible:</p>
+<ul>
+    <li><strong>codewhisperer.*.amazonaws.com:</strong> Core service endpoints</li>
+    <li><strong>*.q.aws.dev:</strong> Amazon Q specific services</li>
+    <li><strong>sso.*.amazonaws.com:</strong> Authentication services</li>
+    <li><strong>*.cloudfront.net:</strong> Content delivery for models and updates</li>
+</ul>
+
+<h2>Optimization and Best Practices</h2>
+
+<h3>Performance Tuning</h3>
+
+<h4>For Large Codebases</h4>
+<ul>
+    <li><strong>Exclude Directories:</strong> Prevent scanning of node_modules, build outputs, and vendor directories</li>
+    <li><strong>File Size Limits:</strong> Configure maximum file size for analysis (default 1MB)</li>
+    <li><strong>Indexing Optimization:</strong> Allow IDE indexing to complete before heavy Amazon Q usage</li>
+</ul>
+
+<h4>For Remote Development</h4>
+<ul>
+    <li><strong>Latency Considerations:</strong> Increase suggestion delay for high-latency connections</li>
+    <li><strong>Bandwidth Management:</strong> Disable automatic security scanning on metered connections</li>
+    <li><strong>Local Caching:</strong> Enable aggressive caching of frequently used suggestions</li>
+</ul>
+
+<h3>Workflow Integration</h3>
+
+<h4>Version Control Integration</h4>
+<ul>
+    <li>Configure pre-commit hooks to run security scans</li>
+    <li>Add .gitignore entries for Amazon Q cache directories</li>
+    <li>Document AI-generated code in commit messages</li>
+</ul>
+
+<h4>CI/CD Pipeline Integration</h4>
+<ul>
+    <li>Integrate security scanning into build pipelines</li>
+    <li>Fail builds on critical vulnerabilities</li>
+    <li>Generate compliance reports for audit trails</li>
+</ul>
+
+<h2>Troubleshooting Common Issues</h2>
+
+<h3>Authentication Problems</h3>
+<table>
+    <tr>
+        <th>Issue</th>
+        <th>Possible Cause</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Login fails repeatedly</td>
+        <td>Expired credentials or network issues</td>
+        <td>Clear cached credentials and re-authenticate</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SSO not working</td>
+        <td>Incorrect start URL or permissions</td>
+        <td>Verify start URL with administrator; check IAM permissions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Browser doesn't open</td>
+        <td>Default browser not configured</td>
+        <td>Manually copy authentication URL to browser</td>
+    </tr>
+</table>
+
+<h3>Suggestion Issues</h3>
+<ul>
+    <li><strong>No suggestions appearing:</strong> Check internet connection, verify authentication, ensure file type is supported</li>
+    <li><strong>Slow suggestions:</strong> Check network latency, reduce suggestion delay, verify proxy configuration</li>
+    <li><strong>Irrelevant suggestions:</strong> Provide more context through comments, ensure file is properly formatted</li>
+</ul>
+
+<h3>Performance Issues</h3>
+<ul>
+    <li><strong>IDE slowdown:</strong> Exclude large directories, increase IDE memory allocation, disable unused features</li>
+    <li><strong>High CPU usage:</strong> Reduce scanning frequency, limit concurrent operations</li>
+    <li><strong>Network congestion:</strong> Configure bandwidth limits, schedule scans during off-peak hours</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Amazon Q Developer supports multiple IDEs with consistent functionality across platforms</li>
+    <li>Installation is straightforward through marketplace/plugin systems for each IDE</li>
+    <li>Authentication options include AWS Builder ID for individuals and IAM Identity Center for enterprises</li>
+    <li>Extensive configuration options allow customization for individual preferences and organizational policies</li>
+    <li>Enterprise deployments require careful planning for identity management, network access, and policy enforcement</li>
+    <li>Proper configuration of proxies and firewalls is essential for corporate environments</li>
+    <li>Performance optimization is important for large codebases and remote development scenarios</li>
+    <li>Integration with existing development workflows enhances productivity and maintains security</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

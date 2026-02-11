@@ -1,0 +1,402 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Function Calling and Grounding</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Function Calling and Grounding</h1>
+
+<h2>Understanding Function Calling</h2>
+<p>Function calling (also known as tool use) enables Gemini to interact with external systems, APIs, and databases. Instead of hallucinating data, the model can request execution of functions you define, making it possible to build AI agents that take real-world actions.</p>
+
+<p>The model doesn't execute functions directly. Instead, it returns structured requests that your application executes, then you provide the results back to the model for further processing.</p>
+
+<h2>Function Calling Workflow</h2>
+<div style="background-color: #f5f5f5; padding: 20px; margin: 20px 0; border-left: 4px solid #4285f4;">
+<ol>
+    <li><strong>Define Functions:</strong> Declare available functions with schemas</li>
+    <li><strong>User Query:</strong> User asks a question requiring external data</li>
+    <li><strong>Model Decision:</strong> Model determines which function(s) to call</li>
+    <li><strong>Function Execution:</strong> Your code executes the requested function</li>
+    <li><strong>Return Results:</strong> Provide function results back to the model</li>
+    <li><strong>Final Response:</strong> Model generates natural language response using the data</li>
+</ol>
+</div>
+
+<h2>Basic Function Calling Example</h2>
+<blockquote>
+import google.generativeai as genai
+
+# Define a function declaration
+get_weather_func = genai.protos.FunctionDeclaration(
+    name="get_weather",
+    description="Get current weather information for a specified city",
+    parameters=genai.protos.Schema(
+        type=genai.protos.Type.OBJECT,
+        properties={
+            "city": genai.protos.Schema(
+                type=genai.protos.Type.STRING,
+                description="The city name, e.g., 'Tokyo', 'London'"
+            ),
+            "unit": genai.protos.Schema(
+                type=genai.protos.Type.STRING,
+                description="Temperature unit",
+                enum=["celsius", "fahrenheit"]
+            )
+        },
+        required=["city"]
+    )
+)
+
+# Create tool with function declarations
+weather_tool = genai.protos.Tool(
+    function_declarations=[get_weather_func]
+)
+
+# Initialize model with tools
+model = genai.GenerativeModel(
+    "gemini-1.5-flash",
+    tools=[weather_tool]
+)
+
+# Start chat
+chat = model.start_chat()
+response = chat.send_message("What's the weather in Tokyo?")
+
+# Check if model wants to call a function
+function_call = response.candidates[0].content.parts[0].function_call
+print(f"Function: {function_call.name}")
+print(f"Arguments: {dict(function_call.args)}")
+</blockquote>
+
+<h2>Executing Functions and Returning Results</h2>
+<blockquote>
+import requests
+
+def get_weather(city, unit="celsius"):
+    """Actual implementation of weather API call"""
+    # This is a mock implementation
+    # In production, call a real weather API
+    weather_data = {
+        "Tokyo": {"temp": 22, "condition": "Sunny"},
+        "London": {"temp": 15, "condition": "Cloudy"},
+        "New York": {"temp": 18, "condition": "Rainy"}
+    }
+    
+    if city in weather_data:
+        temp = weather_data[city]["temp"]
+        if unit == "fahrenheit":
+            temp = (temp * 9/5) + 32
+        return {
+            "temperature": temp,
+            "unit": unit,
+            "condition": weather_data[city]["condition"]
+        }
+    else:
+        return {"error": f"Weather data not available for {city}"}
+
+# Execute the function based on model's request
+if function_call.name == "get_weather":
+    args = dict(function_call.args)
+    result = get_weather(**args)
+    
+    # Send function result back to model
+    response = chat.send_message(
+        genai.protos.Content(
+            parts=[genai.protos.Part(
+                function_response=genai.protos.FunctionResponse(
+                    name="get_weather",
+                    response={"result": result}
+                )
+            )]
+        )
+    )
+    
+    # Model generates natural language response
+    print(response.text)
+    # Output: "The weather in Tokyo is currently sunny with a temperature of 22°C."
+</blockquote>
+
+<h2>Multiple Function Declarations</h2>
+<blockquote>
+# Define multiple functions
+get_stock_price = genai.protos.FunctionDeclaration(
+    name="get_stock_price",
+    description="Get current stock price for a company",
+    parameters=genai.protos.Schema(
+        type=genai.protos.Type.OBJECT,
+        properties={
+            "symbol": genai.protos.Schema(
+                type=genai.protos.Type.STRING,
+                description="Stock ticker symbol, e.g., 'AAPL', 'GOOGL'"
+            )
+        },
+        required=["symbol"]
+    )
+)
+
+get_company_info = genai.protos.FunctionDeclaration(
+    name="get_company_info",
+    description="Get detailed information about a company",
+    parameters=genai.protos.Schema(
+        type=genai.protos.Type.OBJECT,
+        properties={
+            "company_name": genai.protos.Schema(
+                type=genai.protos.Type.STRING,
+                description="Full company name"
+            )
+        },
+        required=["company_name"]
+    )
+)
+
+# Create tool with multiple functions
+financial_tool = genai.protos.Tool(
+    function_declarations=[get_stock_price, get_company_info]
+)
+
+model = genai.GenerativeModel(
+    "gemini-1.5-flash",
+    tools=[financial_tool]
+)
+</blockquote>
+
+<h2>Automatic Function Execution Loop</h2>
+<blockquote>
+def execute_function_call(function_call):
+    """Route function calls to appropriate implementations"""
+    
+    function_map = {
+        "get_weather": get_weather,
+        "get_stock_price": get_stock_price_impl,
+        "get_company_info": get_company_info_impl
+    }
+    
+    func_name = function_call.name
+    args = dict(function_call.args)
+    
+    if func_name in function_map:
+        return function_map[func_name](**args)
+    else:
+        return {"error": f"Unknown function: {func_name}"}
+
+def chat_with_functions(user_message, model, max_iterations=5):
+    """Handle multi-turn function calling automatically"""
+    
+    chat = model.start_chat()
+    response = chat.send_message(user_message)
+    
+    for _ in range(max_iterations):
+        # Check if model wants to call a function
+        if not response.candidates[0].content.parts:
+            break
+            
+        part = response.candidates[0].content.parts[0]
+        
+        if not hasattr(part, 'function_call'):
+            # No function call, return final response
+            return response.text
+        
+        # Execute function
+        function_call = part.function_call
+        result = execute_function_call(function_call)
+        
+        # Send result back to model
+        response = chat.send_message(
+            genai.protos.Content(
+                parts=[genai.protos.Part(
+                    function_response=genai.protos.FunctionResponse(
+                        name=function_call.name,
+                        response={"result": result}
+                    )
+                )]
+            )
+        )
+    
+    return response.text
+
+# Usage
+result = chat_with_functions(
+    "What's the weather in Tokyo and the stock price of Sony?",
+    model
+)
+print(result)
+</blockquote>
+
+<h2>Complex Parameter Types</h2>
+<blockquote>
+# Function with nested objects and arrays
+search_products = genai.protos.FunctionDeclaration(
+    name="search_products",
+    description="Search for products with filters",
+    parameters=genai.protos.Schema(
+        type=genai.protos.Type.OBJECT,
+        properties={
+            "query": genai.protos.Schema(
+                type=genai.protos.Type.STRING,
+                description="Search query"
+            ),
+            "filters": genai.protos.Schema(
+                type=genai.protos.Type.OBJECT,
+                properties={
+                    "category": genai.protos.Schema(
+                        type=genai.protos.Type.STRING
+                    ),
+                    "price_range": genai.protos.Schema(
+                        type=genai.protos.Type.OBJECT,
+                        properties={
+                            "min": genai.protos.Schema(type=genai.protos.Type.NUMBER),
+                            "max": genai.protos.Schema(type=genai.protos.Type.NUMBER)
+                        }
+                    ),
+                    "brands": genai.protos.Schema(
+                        type=genai.protos.Type.ARRAY,
+                        items=genai.protos.Schema(type=genai.protos.Type.STRING)
+                    )
+                }
+            ),
+            "sort_by": genai.protos.Schema(
+                type=genai.protos.Type.STRING,
+                enum=["price_low", "price_high", "rating", "newest"]
+            )
+        },
+        required=["query"]
+    )
+)
+</blockquote>
+
+<h2>Google Search Grounding</h2>
+<p>Ground Gemini's responses in real-time web data using Google Search. This significantly reduces hallucinations and provides citations for factual claims.</p>
+
+<blockquote>
+# Enable Google Search grounding
+model = genai.GenerativeModel(
+    "gemini-1.5-flash",
+    tools=[genai.protos.Tool(google_search_retrieval={})]
+)
+
+# Query with grounding
+response = model.generate_content(
+    "What were the latest developments in AI announced this week?"
+)
+
+print(response.text)
+
+# Access grounding metadata
+if hasattr(response, 'grounding_metadata'):
+    print("\nSources:")
+    for chunk in response.grounding_metadata.grounding_chunks:
+        if hasattr(chunk, 'web'):
+            print(f"- {chunk.web.uri}")
+</blockquote>
+
+<h2>Combining Function Calling and Search Grounding</h2>
+<blockquote>
+# Use both custom functions and search grounding
+model = genai.GenerativeModel(
+    "gemini-1.5-flash",
+    tools=[
+        financial_tool,  # Custom functions
+        genai.protos.Tool(google_search_retrieval={})  # Search grounding
+    ]
+)
+
+# Model can choose between custom functions and web search
+response = model.generate_content(
+    "Compare Apple's current stock price with recent news about the company"
+)
+</blockquote>
+
+<h2>Function Calling Best Practices</h2>
+<ul>
+    <li><strong>Clear Descriptions:</strong> Provide detailed function and parameter descriptions</li>
+    <li><strong>Validate Inputs:</strong> Validate function arguments before execution</li>
+    <li><strong>Error Handling:</strong> Return structured error messages when functions fail</li>
+    <li><strong>Timeout Protection:</strong> Implement timeouts for long-running functions</li>
+    <li><strong>Security:</strong> Never expose sensitive functions without proper authentication</li>
+    <li><strong>Rate Limiting:</strong> Implement rate limits for expensive API calls</li>
+    <li><strong>Logging:</strong> Log all function calls for debugging and monitoring</li>
+</ul>
+
+<h2>Real-World Applications</h2>
+<ul>
+    <li><strong>Customer Support Bots:</strong> Query databases, update tickets, check order status</li>
+    <li><strong>Data Analysis:</strong> Execute SQL queries, generate reports, visualize data</li>
+    <li><strong>Home Automation:</strong> Control smart devices, check sensor data, set schedules</li>
+    <li><strong>E-commerce:</strong> Search products, check inventory, process orders</li>
+    <li><strong>Financial Services:</strong> Get stock prices, execute trades, analyze portfolios</li>
+    <li><strong>Travel Booking:</strong> Search flights, check availability, make reservations</li>
+</ul>
+
+<h2>Grounding Benefits</h2>
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Without Grounding</th>
+        <th>With Grounding</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Factual Accuracy</td>
+        <td>May hallucinate facts</td>
+        <td>Grounded in real web data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Timeliness</td>
+        <td>Limited to training data cutoff</td>
+        <td>Access to current information</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Citations</td>
+        <td>No source attribution</td>
+        <td>Provides source URLs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Verification</td>
+        <td>Difficult to verify claims</td>
+        <td>Easy to verify with sources</td>
+    </tr>
+</table>
+
+<h2>Advanced: Parallel Function Calling</h2>
+<blockquote>
+# Model can request multiple functions in parallel
+response = chat.send_message(
+    "Get weather for Tokyo, London, and New York"
+)
+
+# Process multiple function calls
+function_calls = []
+for part in response.candidates[0].content.parts:
+    if hasattr(part, 'function_call'):
+        function_calls.append(part.function_call)
+
+# Execute all functions
+results = []
+for fc in function_calls:
+    result = execute_function_call(fc)
+    results.append(
+        genai.protos.Part(
+            function_response=genai.protos.FunctionResponse(
+                name=fc.name,
+                response={"result": result}
+            )
+        )
+    )
+
+# Send all results back
+response = chat.send_message(
+    genai.protos.Content(parts=results)
+)
+
+print(response.text)
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 5: NL to Python for Advanced Analytics</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 5: Extending Analytics with NL to Python</h1>
+
+<p>SQL is excellent for data retrieval and basic aggregations, but it's not well-suited for advanced statistical analysis, machine learning, or complex data manipulation. For these tasks, we can leverage the power of Python. This module explores how to use LLMs to generate Python code for sophisticated data science tasks.</p>
+
+<h2>5.1 Why Python for NL Analytics?</h2>
+<ul>
+    <li><strong>Advanced Statistics:</strong> Performing tasks like hypothesis testing, correlation analysis, and regression.</li>
+    <li><strong>Machine Learning:</strong> Building and running models for forecasting, clustering, or classification on the fly.</li>
+    <li><strong>Complex Cleaning:</strong> Handling non-standard data formats or performing fuzzy matching that would be difficult in SQL.</li>
+    <li><strong>Rich Ecosystem:</strong> Accessing thousands of libraries like <code>pandas</code>, <code>scikit-learn</code>, and <code>numpy</code>.</li>
+</ul>
+
+<h2>5.2 The "Text-to-Python" Workflow</h2>
+<p>Unlike SQL, which runs inside a database, Python code requires a secure execution environment (a sandbox).
+<ol>
+    <li><strong>User Query:</strong> "Forecast our sales for the next 12 months based on the historical data in the sales table."</li>
+    <li><strong>Data Retrieval:</strong> A Text-to-SQL step fetches the necessary historical data and loads it into a <code>pandas</code> DataFrame.</li>
+    <li><strong>Code Generation:</strong> The LLM generates Python code using a library like <code>Prophet</code> or <code>statsmodels</code> to perform the forecast.</li>
+    <li><strong>Secure Execution:</strong> The code is executed in a restricted sandbox environment (like a Docker container or a Micro-VM).</li>
+    <li><strong>Result Presentation:</strong> The results (data tables + charts) are returned to the user.</li>
+</ol></p>
+
+<h2>5.3 Prompting for Python Code</h2>
+<p>To get reliable Python code, you must provide the model with:
+<ul>
+    <li><strong>DataFrame Structure:</strong> The names and data types of the columns in the available DataFrames.</li>
+    <li><strong>Allowed Libraries:</strong> A list of libraries that are installed and available in the sandbox.</li>
+    <li><strong>Output Requirements:</strong> Instructions on how to return the final results (e.g., "save the resulting plot to a file named 'plot.png'").</li>
+</ul></p>
+
+<h2>5.4 Security Considerations for Code Execution</h2>
+<p>Executing model-generated code is inherently risky. Robust security is non-negotiable:
+<ul>
+    <li><strong>No Network Access:</strong> The sandbox should have no access to the internal network or the internet.</li>
+    <li><strong>Resource Limits:</strong> Strictly limiting CPU, RAM, and disk usage to prevent denial-of-service attacks.</li>
+    <li><strong>Read-Only Data Access:</strong> Ensuring the code can only read the provided data and cannot modify any underlying databases.</li>
+</ul></p>
+
+<h2>5.5 Use Case: Customer Segmentation</h2>
+<p>A user asks: "Cluster our customers into 5 groups based on their purchasing behavior." The system fetches the transaction data, generates a Python script to perform K-Means clustering, and then visualizes the resulting segments—all through a single natural language request.</p>
+
+<p>By combining SQL for data access with Python for advanced analysis, you can build an NL Analytics system that rivals the capabilities of a full-time data scientist.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

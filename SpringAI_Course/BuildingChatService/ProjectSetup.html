@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Project Setup</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building a Simple Chat Service</h1>
+
+<h2>Project Setup with Maven</h2>
+<p>Let's create a minimal Spring Boot application that uses the ChatClient to generate responses based on a user's message. For this example, we will use the OpenAI model.</p>
+
+<h3>Step 1: Maven Dependencies</h3>
+<p>Add the following to your <strong>pom.xml</strong> file:</p>
+
+<blockquote>
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-ai-openai-spring-boot-starter&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+
+&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.ai&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-ai-bom&lt;/artifactId&gt;
+            &lt;version&gt;1.0.0&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+</blockquote>
+
+<h3>Understanding the Dependencies</h3>
+<ul>
+    <li><strong>spring-boot-starter-web:</strong> Provides web application capabilities including REST endpoints</li>
+    <li><strong>spring-ai-openai-spring-boot-starter:</strong> Auto-configures Spring AI with OpenAI support</li>
+    <li><strong>spring-ai-bom:</strong> Bill of Materials that manages Spring AI version compatibility</li>
+</ul>
+
+<h2>Configuration</h2>
+<p>You need to provide your AI provider's API key. Place this in your <strong>src/main/resources/application.properties</strong> file:</p>
+
+<blockquote>
+# Replace with your actual OpenAI API Key
+spring.ai.openai.api-key=&lt;YOUR_OPENAI_API_KEY&gt;
+</blockquote>
+
+<h3>Getting an API Key</h3>
+<p>To obtain an OpenAI API key:</p>
+<ul>
+    <li>Visit <strong>platform.openai.com</strong></li>
+    <li>Create an account or sign in</li>
+    <li>Navigate to API Keys section</li>
+    <li>Generate a new API key</li>
+    <li>Copy and paste it into your application.properties</li>
+</ul>
+
+<h2>Project Structure</h2>
+<p>Your Spring Boot project should have the following structure:</p>
+
+<blockquote>
+src/
+├── main/
+│   ├── java/
+│   │   └── com/example/aidemo/
+│   │       ├── AiDemoApplication.java
+│   │       └── AiController.java
+│   └── resources/
+│       └── application.properties
+└── test/
+    └── java/
+</blockquote>
+
+<h2>Spring Boot Application Class</h2>
+<p>Create a standard Spring Boot application class:</p>
+
+<blockquote>
+package com.example.aidemo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class AiDemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(AiDemoApplication.class, args);
+    }
+}
+</blockquote>
+
+<h2>What Happens Behind the Scenes</h2>
+<p>When you add the Spring AI starter dependency:</p>
+<ul>
+    <li>Spring Boot auto-configures the ChatClient bean</li>
+    <li>The OpenAI client is initialized with your API key</li>
+    <li>All necessary HTTP clients and serializers are set up</li>
+    <li>The ChatClient is ready to be injected into your components</li>
+</ul>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

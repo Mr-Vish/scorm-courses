@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to LCEL and Basic Chains</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Introduction to LCEL and Basic Chains</h1>
+
+<h2>Understanding LangChain Expression Language (LCEL)</h2>
+<p>LCEL is LangChain's declarative syntax for composing chains. It provides a unified interface for building complex workflows by connecting components using the pipe operator (<code>|</code>). This approach offers several advantages over traditional imperative programming:</p>
+
+<ul>
+<li><strong>Composability:</strong> Easily combine and reuse components</li>
+<li><strong>Streaming Support:</strong> Built-in streaming for all chains</li>
+<li><strong>Async Support:</strong> Automatic async/await handling</li>
+<li><strong>Parallel Execution:</strong> Run multiple operations concurrently</li>
+<li><strong>Fallbacks:</strong> Graceful error handling with alternative paths</li>
+</ul>
+
+<h2>Basic Chain Structure</h2>
+<p>A typical LCEL chain consists of three core components:</p>
+
+<table>
+<tr>
+<th>Component</th>
+<th>Purpose</th>
+<th>Common Types</th>
+</tr>
+<tr>
+<td class="rowheader">Prompt</td>
+<td>Formats input into a structured prompt</td>
+<td>ChatPromptTemplate, PromptTemplate</td>
+</tr>
+<tr>
+<td class="rowheader">Model</td>
+<td>Processes the prompt and generates output</td>
+<td>ChatOpenAI, ChatAnthropic, ChatGoogleGenerativeAI</td>
+</tr>
+<tr>
+<td class="rowheader">Parser</td>
+<td>Transforms model output into desired format</td>
+<td>StrOutputParser, JsonOutputParser, PydanticOutputParser</td>
+</tr>
+</table>
+
+<h2>Your First LCEL Chain</h2>
+<blockquote>
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+
+# Define the prompt template
+prompt = ChatPromptTemplate.from_template(
+    "Explain {topic} in simple terms suitable for a beginner."
+)
+
+# Initialize the language model
+model = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0.7
+)
+
+# Define the output parser
+parser = StrOutputParser()
+
+# Compose the chain using the pipe operator
+chain = prompt | model | parser
+
+# Invoke the chain
+result = chain.invoke({"topic": "quantum computing"})
+print(result)
+</blockquote>
+
+<h2>Chain Invocation Methods</h2>
+<p>LCEL chains support multiple invocation patterns:</p>
+
+<blockquote>
+# Synchronous invocation
+result = chain.invoke({"topic": "machine learning"})
+
+# Asynchronous invocation
+result = await chain.ainvoke({"topic": "neural networks"})
+
+# Batch processing
+results = chain.batch([
+    {"topic": "deep learning"},
+    {"topic": "natural language processing"},
+    {"topic": "computer vision"}
+])
+
+# Streaming output
+for chunk in chain.stream({"topic": "transformers"}):
+    print(chunk, end="", flush=True)
+
+# Async streaming
+async for chunk in chain.astream({"topic": "attention mechanisms"}):
+    print(chunk, end="", flush=True)
+</blockquote>
+
+<h2>Working with Multiple Inputs</h2>
+<p>Chains can accept multiple input variables:</p>
+
+<blockquote>
+from langchain_core.prompts import ChatPromptTemplate
+
+# Multi-variable prompt
+prompt = ChatPromptTemplate.from_template(
+    "You are a {role}. Explain {topic} to a {audience}."
+)
+
+chain = prompt | model | parser
+
+result = chain.invoke({
+    "role": "senior software engineer",
+    "topic": "microservices architecture",
+    "audience": "junior developer"
+})
+</blockquote>
+
+<h2>Message-Based Prompts</h2>
+<p>For chat models, use message-based prompts for better control:</p>
+
+<blockquote>
+from langchain_core.prompts import ChatPromptTemplate
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful AI assistant specialized in {domain}."),
+    ("human", "Please help me with: {question}"),
+])
+
+chain = prompt | model | parser
+
+result = chain.invoke({
+    "domain": "Python programming",
+    "question": "How do I handle exceptions properly?"
+})
+</blockquote>
+
+<h2>Chain Configuration</h2>
+<p>Configure chain behavior at runtime:</p>
+
+<blockquote>
+# Configure model parameters
+result = chain.invoke(
+    {"topic": "blockchain"},
+    config={
+        "configurable": {
+            "temperature": 0.3,
+            "max_tokens": 500
+        }
+    }
+)
+
+# Add metadata for tracking
+result = chain.invoke(
+    {"topic": "kubernetes"},
+    config={
+        "metadata": {
+            "user_id": "user123",
+            "session_id": "session456"
+        }
+    }
+)
+</blockquote>
+
+<h2>Debugging Chains</h2>
+<p>Enable verbose mode to see intermediate steps:</p>
+
+<blockquote>
+from langchain.globals import set_verbose, set_debug
+
+# Enable verbose output
+set_verbose(True)
+
+# Enable debug mode for detailed logging
+set_debug(True)
+
+# Run the chain
+result = chain.invoke({"topic": "docker containers"})
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Use Type Hints:</strong> Leverage Python type hints for better IDE support</li>
+<li><strong>Handle Errors:</strong> Implement proper error handling for production use</li>
+<li><strong>Test Incrementally:</strong> Build and test chains component by component</li>
+<li><strong>Monitor Performance:</strong> Track token usage and latency</li>
+<li><strong>Version Prompts:</strong> Keep track of prompt changes for reproducibility</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

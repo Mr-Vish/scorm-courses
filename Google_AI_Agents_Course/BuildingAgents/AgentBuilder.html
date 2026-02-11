@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Vertex AI Agent Builder</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Vertex AI Agent Builder</h1>
+
+
+<h2>Vertex AI Agent Builder Overview</h2>
+<p>Vertex AI Agent Builder is Google Cloud's managed platform for creating AI agents that can use tools, access data stores, and interact with users through natural language.</p>
+
+<h2>Agent Architecture</h2>
+<ul>
+    <li><strong>Agent:</strong> The top-level entity powered by Gemini for reasoning</li>
+    <li><strong>Tools:</strong> Functions the agent can invoke (APIs, data stores, code)</li>
+    <li><strong>Data Stores:</strong> Structured and unstructured data for grounding</li>
+    <li><strong>Extensions:</strong> Pre-built integrations with Google services and third-party APIs</li>
+    <li><strong>Playbooks:</strong> Step-by-step instructions for handling specific scenarios</li>
+</ul>
+
+<h2>Creating an Agent</h2>
+<div class="code-block">
+<pre><code>from google.cloud import aiplatform
+from vertexai.preview import reasoning_engines
+
+# Define tools
+def get_weather(city: str) -&gt; dict:
+    "Get current weather for a city."
+    # Call weather API
+    return {"city": city, "temp": 72, "condition": "sunny"}
+
+def search_flights(origin: str, dest: str, date: str) -&gt; list:
+    "Search available flights."
+    # Call flights API
+    return [{"flight": "AA123", "price": 299}]
+
+# Create the agent
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[get_weather, search_flights],
+    agent_executor_kwargs={"return_intermediate_steps": True}
+)
+
+# Deploy to Vertex AI
+remote_agent = reasoning_engines.ReasoningEngine.create(
+    agent,
+    display_name="Travel Assistant Agent"
+)</code></pre>
+</div>
+
+<h2>Grounding with Google Search</h2>
+<p>Ground agent responses with real-time Google Search results:</p>
+<ul>
+    <li>Reduces hallucination by providing current information</li>
+    <li>Includes source citations in responses</li>
+    <li>Configurable search parameters and domain restrictions</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

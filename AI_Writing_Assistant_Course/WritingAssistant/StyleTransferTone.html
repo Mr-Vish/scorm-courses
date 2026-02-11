@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Style Transfer and Tone Detection</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Style Transfer and Tone Detection</h1>
+
+
+<h2>AI Writing Assistance</h2>
+<p>AI writing assistants go beyond grammar checking to help with style, tone, clarity, and brand voice consistency. By combining LLMs with style analysis, you can build tools that adapt to any writing context.</p>
+
+<h2>Tone Detection</h2>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+import json
+
+client = OpenAI()
+
+def detect_tone(text: str) -&gt; dict:
+    '''Analyze the tone and style of a text passage.'''
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[{
+            "role": "user",
+            "content": (
+                "Analyze the tone and style of this text. "
+                "Return JSON with: {"tone": str, "formality": str (casual/neutral/formal), "
+                ""sentiment": str, "reading_level": str, "voice": str (active/passive), "
+                ""confidence": float, "suggestions": [str]}
+
+"
+                f"Text: {text}"
+            ),
+        }],
+    )
+    return json.loads(response.choices[0].message.content)
+
+result = detect_tone(
+    "We regret to inform you that your application has been unsuccessful "
+    "at this time. We appreciate your interest and encourage you to "
+    "reapply in the future."
+)
+# {
+#   "tone": "formal and apologetic",
+#   "formality": "formal",
+#   "sentiment": "negative with softening",
+#   "reading_level": "12th grade",
+#   "voice": "passive",
+#   "confidence": 0.92,
+#   "suggestions": ["Consider more direct language", "Use active voice"]
+# }</code></pre>
+</div>
+
+<h2>Style Transfer</h2>
+<div class="code-block">
+<pre><code>def transfer_style(
+    text: str,
+    target_tone: str,
+    target_formality: str,
+    preserve_meaning: bool = True,
+) -&gt; str:
+    '''Rewrite text in a different style while preserving meaning.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                f"Rewrite the text in a {target_tone} tone with {target_formality} formality. "
+                "Preserve the core meaning and all factual information. "
+                "Do not add new information or opinions."
+            )},
+            {"role": "user", "content": text},
+        ],
+    )
+    return response.choices[0].message.content
+
+# Formal to casual
+casual = transfer_style(
+    "We regret to inform you that your application has been unsuccessful.",
+    target_tone="friendly and empathetic",
+    target_formality="casual",
+)
+# "Hey, thanks for applying! Unfortunately, we went with other candidates
+#  this time. We'd love for you to try again in the future."</code></pre>
+</div>
+
+<h2>Writing Quality Dimensions</h2>
+<table>
+    <tr><th>Dimension</th><th>What to Measure</th><th>AI Can Help With</th></tr>
+    <tr><td>Clarity</td><td>Sentence length, jargon, ambiguity</td><td>Simplify complex sentences, replace jargon</td></tr>
+    <tr><td>Conciseness</td><td>Word count, filler words, redundancy</td><td>Remove unnecessary words and phrases</td></tr>
+    <tr><td>Tone</td><td>Emotional register, formality level</td><td>Adjust tone to match context</td></tr>
+    <tr><td>Structure</td><td>Paragraph flow, logical order</td><td>Reorganize for better flow</td></tr>
+    <tr><td>Inclusivity</td><td>Gender-neutral language, accessibility</td><td>Flag and suggest inclusive alternatives</td></tr>
+    <tr><td>Grammar</td><td>Spelling, punctuation, syntax</td><td>Catch and fix errors</td></tr>
+</table>
+
+<h2>Readability Scoring</h2>
+<div class="code-block">
+<pre><code>import re
+
+def flesch_reading_ease(text: str) -&gt; float:
+    '''Calculate Flesch Reading Ease score.
+    90-100: Very easy (5th grade)
+    60-70: Standard (8th-9th grade)
+    30-50: Difficult (college)
+    0-30: Very difficult (professional)'''
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    words = text.split()
+    syllables = sum(count_syllables(word) for word in words)
+
+    if not sentences or not words:
+        return 0.0
+
+    asl = len(words) / len(sentences)  # Average sentence length
+    asw = syllables / len(words)       # Average syllables per word
+
+    return 206.835 - (1.015 * asl) - (84.6 * asw)</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

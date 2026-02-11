@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Context Window Fundamentals</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Context Window Fundamentals</h1>
+
+
+<h2>What is the Context Window?</h2>
+<p>The context window is the maximum number of tokens an LLM can process in a single request (input + output combined). It functions as the model's "working memory."</p>
+
+<h2>Current Context Window Sizes</h2>
+<table>
+    <tr><th>Model</th><th>Context Window</th><th>Approximate Pages of Text</th></tr>
+    <tr><td>Claude 3.5 Sonnet</td><td>200K tokens</td><td>~500 pages</td></tr>
+    <tr><td>GPT-4o</td><td>128K tokens</td><td>~320 pages</td></tr>
+    <tr><td>Gemini 1.5 Pro</td><td>2M tokens</td><td>~5,000 pages</td></tr>
+    <tr><td>Llama 3.1 (405B)</td><td>128K tokens</td><td>~320 pages</td></tr>
+</table>
+
+<h2>Why Context Management Matters</h2>
+<ul>
+    <li><strong>Cost:</strong> More input tokens = higher cost per request</li>
+    <li><strong>Quality:</strong> Models can "lose focus" in very long contexts (lost-in-the-middle effect)</li>
+    <li><strong>Latency:</strong> More tokens = slower time-to-first-token</li>
+    <li><strong>Limits:</strong> Even large windows have limits; conversations can exceed them</li>
+</ul>
+
+<h2>The Lost-in-the-Middle Problem</h2>
+<p>Research shows LLMs are better at using information at the beginning and end of the context, with reduced attention to the middle. Strategies to mitigate:</p>
+<ul>
+    <li>Place the most important context at the start or end</li>
+    <li>Use structured formatting (headings, XML tags) to help the model locate information</li>
+    <li>Repeat critical instructions at the end of long contexts</li>
+    <li>Break long contexts into focused, shorter requests when possible</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

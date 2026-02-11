@@ -1,0 +1,379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Code Completion and Inline Suggestions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Core Features and Implementation</h1>
+
+<h2>Lesson 1: Code Completion and Inline Suggestions</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand how Amazon Q Developer generates contextual code suggestions</li>
+    <li>Master techniques for maximizing suggestion quality and relevance</li>
+    <li>Identify best practices for accepting, modifying, and rejecting suggestions</li>
+    <li>Recognize patterns that trigger effective AI assistance</li>
+</ul>
+
+<h2>Introduction to Intelligent Code Completion</h2>
+<p>Code completion in Amazon Q Developer represents a fundamental shift from traditional autocomplete systems. Rather than simply matching prefixes or suggesting method names from imported libraries, Amazon Q analyzes the semantic intent of your code, understands the broader context of your project, and generates multi-line suggestions that implement complete logical units of functionality.</p>
+
+<p>This capability is powered by transformer-based neural networks that have learned patterns from billions of lines of code across diverse programming languages, frameworks, and problem domains. The system doesn't merely retrieve pre-existing code snippets; it generates novel code tailored to your specific context.</p>
+
+<h2>How Code Completion Works</h2>
+
+<h3>Context Analysis Pipeline</h3>
+<p>When you pause while typing, Amazon Q Developer executes a sophisticated analysis pipeline:</p>
+
+<h4>1. Context Extraction</h4>
+<p>The system gathers multiple layers of contextual information:</p>
+<ul>
+    <li><strong>Immediate Context:</strong> 10,000 characters surrounding your cursor position</li>
+    <li><strong>File-Level Context:</strong> Import statements, class definitions, existing functions</li>
+    <li><strong>Syntactic Context:</strong> Current scope (inside function, class, conditional, etc.)</li>
+    <li><strong>Semantic Context:</strong> Variable types, function signatures, data flow</li>
+    <li><strong>Comment Context:</strong> Natural language descriptions of intent</li>
+</ul>
+
+<h4>2. Intent Recognition</h4>
+<p>The AI model interprets what you're trying to accomplish:</p>
+<ul>
+    <li>Are you defining a new function or completing an existing one?</li>
+    <li>Are you implementing error handling, data validation, or business logic?</li>
+    <li>Are you working with specific frameworks or libraries?</li>
+    <li>What patterns have you established in surrounding code?</li>
+</ul>
+
+<h4>3. Suggestion Generation</h4>
+<p>Based on context and intent, the model generates candidate completions:</p>
+<ul>
+    <li>Multiple potential completions are generated internally</li>
+    <li>Each completion is scored for relevance, correctness, and style consistency</li>
+    <li>The highest-scoring suggestion is presented as ghost text</li>
+    <li>Alternative suggestions may be available through cycling</li>
+</ul>
+
+<h4>4. Post-Processing and Filtering</h4>
+<p>Before displaying suggestions, the system applies filters:</p>
+<ul>
+    <li><strong>Syntax Validation:</strong> Ensures generated code is syntactically correct</li>
+    <li><strong>Security Screening:</strong> Removes suggestions containing obvious vulnerabilities</li>
+    <li><strong>License Checking:</strong> Flags suggestions similar to copyrighted code</li>
+    <li><strong>Style Alignment:</strong> Adjusts formatting to match your project conventions</li>
+</ul>
+
+<h2>Types of Code Suggestions</h2>
+
+<h3>Single-Line Completions</h3>
+<p>The simplest form completes the current line:</p>
+<ul>
+    <li><strong>Variable Declarations:</strong> Suggesting appropriate types and initial values</li>
+    <li><strong>Method Calls:</strong> Completing API calls with correct parameters</li>
+    <li><strong>Conditional Expressions:</strong> Generating logical conditions</li>
+    <li><strong>Return Statements:</strong> Providing appropriate return values</li>
+</ul>
+
+<h3>Multi-Line Function Implementations</h3>
+<p>More powerful suggestions implement entire functions:</p>
+<ul>
+    <li><strong>Comment-Driven Generation:</strong> Implementing functions described in comments</li>
+    <li><strong>Signature-Based Generation:</strong> Completing function bodies based on signatures</li>
+    <li><strong>Pattern-Based Generation:</strong> Implementing common patterns (CRUD operations, validators, etc.)</li>
+</ul>
+
+<h3>Block-Level Suggestions</h3>
+<p>Complex suggestions that span multiple logical blocks:</p>
+<ul>
+    <li><strong>Error Handling:</strong> Try-catch blocks with appropriate exception handling</li>
+    <li><strong>Loop Structures:</strong> Iteration patterns with proper initialization and termination</li>
+    <li><strong>Conditional Logic:</strong> If-else chains or switch statements</li>
+    <li><strong>Class Definitions:</strong> Complete class structures with constructors and methods</li>
+</ul>
+
+<h2>Maximizing Suggestion Quality</h2>
+
+<h3>Writing Effective Comments</h3>
+<p>Comments are the primary mechanism for communicating intent to Amazon Q:</p>
+
+<h4>Characteristics of Effective Comments</h4>
+<table>
+    <tr>
+        <th>Principle</th>
+        <th>Poor Example</th>
+        <th>Good Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Specificity</td>
+        <td>// validate input</td>
+        <td>// validate email format and check domain exists via DNS lookup</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Clarity</td>
+        <td>// do the thing</td>
+        <td>// parse JSON response and extract user profile data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Completeness</td>
+        <td>// sort array</td>
+        <td>// sort array of products by price ascending, then by name alphabetically</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context</td>
+        <td>// handle error</td>
+        <td>// handle network timeout error by retrying up to 3 times with exponential backoff</td>
+    </tr>
+</table>
+
+<h4>Comment Patterns That Work Well</h4>
+<ul>
+    <li><strong>Function Purpose:</strong> "// function to calculate compound interest given principal, rate, and time"</li>
+    <li><strong>Algorithm Description:</strong> "// implement binary search on sorted array returning index or -1"</li>
+    <li><strong>Data Transformation:</strong> "// convert array of user objects to map keyed by user ID"</li>
+    <li><strong>Integration Specification:</strong> "// call AWS Lambda function with payload and handle response"</li>
+</ul>
+
+<h3>Providing Contextual Clues</h3>
+
+<h4>Type Annotations</h4>
+<p>Explicit type information improves suggestion accuracy:</p>
+<ul>
+    <li>Use TypeScript types instead of plain JavaScript when possible</li>
+    <li>Add Python type hints for function parameters and returns</li>
+    <li>Declare variable types in statically-typed languages</li>
+</ul>
+
+<h4>Naming Conventions</h4>
+<p>Descriptive names help the AI understand intent:</p>
+<ul>
+    <li><strong>Functions:</strong> Use verb phrases (calculateTotal, validateEmail, fetchUserData)</li>
+    <li><strong>Variables:</strong> Use descriptive nouns (userProfile, orderTotal, validationResult)</li>
+    <li><strong>Constants:</strong> Use uppercase with underscores (MAX_RETRY_ATTEMPTS, API_BASE_URL)</li>
+</ul>
+
+<h4>Consistent Patterns</h4>
+<p>Establishing patterns helps Amazon Q learn your style:</p>
+<ul>
+    <li>Use consistent error handling approaches</li>
+    <li>Follow consistent data validation patterns</li>
+    <li>Maintain consistent API interaction patterns</li>
+    <li>Apply consistent logging and debugging practices</li>
+</ul>
+
+<h2>Working with Suggestions</h2>
+
+<h3>Accepting Suggestions</h3>
+
+<h4>Full Acceptance</h4>
+<p>When a suggestion perfectly matches your intent:</p>
+<ul>
+    <li><strong>Keyboard:</strong> Press Tab or Enter (configurable)</li>
+    <li><strong>Effect:</strong> Entire suggestion is inserted at cursor position</li>
+    <li><strong>Best For:</strong> Boilerplate code, standard patterns, complete implementations</li>
+</ul>
+
+<h4>Partial Acceptance</h4>
+<p>When you want only part of a suggestion:</p>
+<ul>
+    <li><strong>Word-by-Word:</strong> Press Ctrl+Right Arrow (Cmd+Right on Mac) to accept one word</li>
+    <li><strong>Line-by-Line:</strong> Some IDEs support accepting one line at a time</li>
+    <li><strong>Best For:</strong> When the beginning is correct but the end needs modification</li>
+</ul>
+
+<h3>Modifying Suggestions</h3>
+
+<h4>Edit After Acceptance</h4>
+<p>The most common workflow:</p>
+<ul>
+    <li>Accept the suggestion</li>
+    <li>Immediately edit to adjust details</li>
+    <li>Modify variable names, adjust logic, or add error handling</li>
+</ul>
+
+<h4>Iterative Refinement</h4>
+<p>Use suggestions as starting points:</p>
+<ul>
+    <li>Accept initial suggestion</li>
+    <li>Add comments describing needed changes</li>
+    <li>Request new suggestions for the modified context</li>
+    <li>Repeat until desired functionality is achieved</li>
+</ul>
+
+<h3>Rejecting Suggestions</h3>
+
+<h4>When to Reject</h4>
+<p>Not all suggestions should be accepted:</p>
+<ul>
+    <li><strong>Incorrect Logic:</strong> Suggestion doesn't implement the intended algorithm</li>
+    <li><strong>Security Concerns:</strong> Suggestion contains potential vulnerabilities</li>
+    <li><strong>Performance Issues:</strong> Suggestion uses inefficient approaches</li>
+    <li><strong>Style Mismatch:</strong> Suggestion doesn't match project conventions</li>
+    <li><strong>Over-Engineering:</strong> Suggestion is more complex than necessary</li>
+</ul>
+
+<h4>How to Reject</h4>
+<ul>
+    <li><strong>Keyboard:</strong> Press Escape or simply continue typing</li>
+    <li><strong>Effect:</strong> Suggestion disappears and your typing continues normally</li>
+    <li><strong>Feedback:</strong> Rejections help the system learn your preferences over time</li>
+</ul>
+
+<h2>Advanced Techniques</h2>
+
+<h3>Cycling Through Alternatives</h3>
+<p>Amazon Q often generates multiple candidate suggestions:</p>
+<ul>
+    <li><strong>Next Suggestion:</strong> Alt+] or Option+] to see alternative completions</li>
+    <li><strong>Previous Suggestion:</strong> Alt+[ or Option+[ to go back</li>
+    <li><strong>Use Case:</strong> When the first suggestion is close but not quite right</li>
+</ul>
+
+<h3>Triggering Manual Suggestions</h3>
+<p>Force suggestion generation when automatic triggers don't fire:</p>
+<ul>
+    <li><strong>Keyboard:</strong> Alt+C or Option+C (configurable)</li>
+    <li><strong>Use Case:</strong> When you want suggestions but haven't paused long enough</li>
+    <li><strong>Context:</strong> Works best when cursor is at a logical completion point</li>
+</ul>
+
+<h3>Context Priming</h3>
+<p>Techniques to improve suggestion relevance:</p>
+
+<h4>Import Priming</h4>
+<p>Add relevant imports before requesting suggestions:</p>
+<ul>
+    <li>Import specific libraries you intend to use</li>
+    <li>Amazon Q will favor suggestions using those libraries</li>
+    <li>Particularly effective for AWS SDK operations</li>
+</ul>
+
+<h4>Example Priming</h4>
+<p>Provide an example of the pattern you want:</p>
+<ul>
+    <li>Implement one instance of a pattern manually</li>
+    <li>Request suggestions for similar operations</li>
+    <li>Amazon Q will match the established pattern</li>
+</ul>
+
+<h4>Comment Chaining</h4>
+<p>Break complex tasks into commented steps:</p>
+<ul>
+    <li>Write comments for each step of an algorithm</li>
+    <li>Request suggestions for each step individually</li>
+    <li>Results in more accurate, maintainable code</li>
+</ul>
+
+<h2>Language-Specific Considerations</h2>
+
+<h3>Python</h3>
+<p>Amazon Q excels at Python due to extensive training data:</p>
+<ul>
+    <li><strong>Strengths:</strong> Data processing, AWS SDK operations, web frameworks (Flask, Django)</li>
+    <li><strong>Tips:</strong> Use type hints, follow PEP 8 conventions, leverage docstrings</li>
+    <li><strong>Common Patterns:</strong> List comprehensions, context managers, decorators</li>
+</ul>
+
+<h3>JavaScript/TypeScript</h3>
+<p>Strong support for modern JavaScript and TypeScript:</p>
+<ul>
+    <li><strong>Strengths:</strong> React components, Node.js APIs, async/await patterns</li>
+    <li><strong>Tips:</strong> Use TypeScript for better suggestions, leverage JSDoc comments</li>
+    <li><strong>Common Patterns:</strong> Promise chains, arrow functions, destructuring</li>
+</ul>
+
+<h3>Java</h3>
+<p>Comprehensive support for enterprise Java development:</p>
+<ul>
+    <li><strong>Strengths:</strong> Spring Boot applications, AWS SDK v2, stream operations</li>
+    <li><strong>Tips:</strong> Use clear class and method names, leverage annotations</li>
+    <li><strong>Common Patterns:</strong> Builder patterns, dependency injection, exception handling</li>
+</ul>
+
+<h3>Other Languages</h3>
+<table>
+    <tr>
+        <th>Language</th>
+        <th>Support Level</th>
+        <th>Best Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">C#</td>
+        <td>Strong</td>
+        <td>.NET Core APIs, LINQ queries, async patterns</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Go</td>
+        <td>Strong</td>
+        <td>Concurrent patterns, error handling, AWS SDK</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Rust</td>
+        <td>Moderate</td>
+        <td>Memory-safe patterns, error handling, traits</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Ruby</td>
+        <td>Moderate</td>
+        <td>Rails applications, metaprogramming, blocks</td>
+    </tr>
+</table>
+
+<h2>Measuring and Improving Effectiveness</h2>
+
+<h3>Acceptance Rate Metrics</h3>
+<p>Track your suggestion acceptance to understand effectiveness:</p>
+<ul>
+    <li><strong>High Acceptance (>60%):</strong> Indicates well-aligned suggestions</li>
+    <li><strong>Moderate Acceptance (30-60%):</strong> Normal range, suggestions are helpful but require editing</li>
+    <li><strong>Low Acceptance (<30%):</strong> May indicate need for better context or comment quality</li>
+</ul>
+
+<h3>Productivity Indicators</h3>
+<p>Signs that Amazon Q is improving your productivity:</p>
+<ul>
+    <li>Reduced time writing boilerplate code</li>
+    <li>Fewer syntax errors and typos</li>
+    <li>Faster implementation of standard patterns</li>
+    <li>More time available for complex problem-solving</li>
+</ul>
+
+<h2>Common Pitfalls and How to Avoid Them</h2>
+
+<h3>Over-Reliance on Suggestions</h3>
+<p><strong>Problem:</strong> Accepting suggestions without understanding them</p>
+<p><strong>Solution:</strong> Always review generated code, understand the logic, and verify correctness</p>
+
+<h3>Insufficient Context</h3>
+<p><strong>Problem:</strong> Vague comments leading to irrelevant suggestions</p>
+<p><strong>Solution:</strong> Write detailed, specific comments describing exact requirements</p>
+
+<h3>Ignoring Security Warnings</h3>
+<p><strong>Problem:</strong> Accepting suggestions flagged with security concerns</p>
+<p><strong>Solution:</strong> Always address security warnings before committing code</p>
+
+<h3>Style Inconsistency</h3>
+<p><strong>Problem:</strong> Suggestions don't match project coding standards</p>
+<p><strong>Solution:</strong> Configure linters and formatters, establish clear patterns early in files</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Amazon Q Developer uses transformer-based neural networks to generate contextual code suggestions</li>
+    <li>Suggestion quality depends heavily on context quality—detailed comments and clear patterns yield better results</li>
+    <li>Suggestions range from single-line completions to multi-line function implementations</li>
+    <li>Effective use requires balancing acceptance, modification, and rejection of suggestions</li>
+    <li>Advanced techniques like cycling alternatives and context priming can improve relevance</li>
+    <li>Language-specific strengths exist, with Python, JavaScript/TypeScript, and Java having the strongest support</li>
+    <li>Always review and understand generated code rather than blindly accepting suggestions</li>
+    <li>Tracking acceptance rates and productivity indicators helps optimize your workflow</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

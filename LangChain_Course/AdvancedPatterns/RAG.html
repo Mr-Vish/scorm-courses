@@ -1,0 +1,332 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Retrieval-Augmented Generation (RAG)</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Retrieval-Augmented Generation (RAG)</h1>
+
+<h2>What is RAG?</h2>
+<p>Retrieval-Augmented Generation combines the power of large language models with external knowledge retrieval. Instead of relying solely on the model's training data, RAG systems retrieve relevant information from a knowledge base and use it to generate more accurate, up-to-date responses.</p>
+
+<h2>RAG Architecture</h2>
+<p>A typical RAG system consists of four main components:</p>
+
+<ul>
+<li><strong>Document Loader:</strong> Ingests documents from various sources</li>
+<li><strong>Text Splitter:</strong> Breaks documents into manageable chunks</li>
+<li><strong>Vector Store:</strong> Stores document embeddings for semantic search</li>
+<li><strong>Retriever:</strong> Finds relevant chunks based on user queries</li>
+</ul>
+
+<h2>Basic RAG Implementation</h2>
+<blockquote>
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+
+# 1. Load documents
+loader = TextLoader("knowledge_base.txt")
+documents = loader.load()
+
+# 2. Split into chunks
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200
+)
+splits = text_splitter.split_documents(documents)
+
+# 3. Create vector store
+embeddings = OpenAIEmbeddings()
+vectorstore = FAISS.from_documents(splits, embeddings)
+
+# 4. Create retriever
+retriever = vectorstore.as_retriever(
+    search_type="similarity",
+    search_kwargs={"k": 3}
+)
+
+# 5. Build RAG chain
+template = """Answer the question based on the following context:
+
+Context: {context}
+
+Question: {question}
+
+Answer:"""
+
+prompt = ChatPromptTemplate.from_template(template)
+model = ChatOpenAI(model="gpt-4o")
+
+rag_chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt
+    | model
+    | StrOutputParser()
+)
+
+# Use the RAG chain
+response = rag_chain.invoke("What is the main topic of the document?")
+</blockquote>
+
+<h2>Document Loaders</h2>
+<table>
+<tr>
+<th>Loader</th>
+<th>Source Type</th>
+<th>Use Case</th>
+</tr>
+<tr>
+<td class="rowheader">TextLoader</td>
+<td>Plain text files</td>
+<td>Simple text documents</td>
+</tr>
+<tr>
+<td class="rowheader">PyPDFLoader</td>
+<td>PDF files</td>
+<td>PDF documents</td>
+</tr>
+<tr>
+<td class="rowheader">CSVLoader</td>
+<td>CSV files</td>
+<td>Structured data</td>
+</tr>
+<tr>
+<td class="rowheader">WebBaseLoader</td>
+<td>Web pages</td>
+<td>Online content</td>
+</tr>
+<tr>
+<td class="rowheader">DirectoryLoader</td>
+<td>Multiple files</td>
+<td>Batch processing</td>
+</tr>
+</table>
+
+<h2>Loading Multiple Document Types</h2>
+<blockquote>
+from langchain_community.document_loaders import (
+    PyPDFLoader,
+    CSVLoader,
+    DirectoryLoader
+)
+
+# Load PDFs
+pdf_loader = DirectoryLoader(
+    "docs/",
+    glob="**/*.pdf",
+    loader_cls=PyPDFLoader
+)
+pdf_docs = pdf_loader.load()
+
+# Load CSVs
+csv_loader = CSVLoader("data.csv")
+csv_docs = csv_loader.load()
+
+# Combine all documents
+all_docs = pdf_docs + csv_docs
+</blockquote>
+
+<h2>Text Splitting Strategies</h2>
+<blockquote>
+from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter,
+    CharacterTextSplitter,
+    TokenTextSplitter
+)
+
+# Character-based splitting
+char_splitter = CharacterTextSplitter(
+    separator="\n\n",
+    chunk_size=1000,
+    chunk_overlap=200
+)
+
+# Recursive splitting (recommended)
+recursive_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200,
+    separators=["\n\n", "\n", " ", ""]
+)
+
+# Token-based splitting
+token_splitter = TokenTextSplitter(
+    chunk_size=500,
+    chunk_overlap=50
+)
+</blockquote>
+
+<h2>Vector Store Options</h2>
+<blockquote>
+from langchain_community.vectorstores import (
+    FAISS,
+    Chroma,
+    Pinecone,
+    Weaviate
+)
+
+# FAISS (local, fast)
+faiss_store = FAISS.from_documents(splits, embeddings)
+
+# Chroma (local, persistent)
+chroma_store = Chroma.from_documents(
+    splits,
+    embeddings,
+    persist_directory="./chroma_db"
+)
+
+# Pinecone (cloud, scalable)
+pinecone_store = Pinecone.from_documents(
+    splits,
+    embeddings,
+    index_name="my-index"
+)
+</blockquote>
+
+<h2>Advanced Retrieval Strategies</h2>
+
+<h3>MMR (Maximum Marginal Relevance)</h3>
+<blockquote>
+# Retrieve diverse results
+retriever = vectorstore.as_retriever(
+    search_type="mmr",
+    search_kwargs={
+        "k": 5,
+        "fetch_k": 20,
+        "lambda_mult": 0.5
+    }
+)
+</blockquote>
+
+<h3>Similarity Score Threshold</h3>
+<blockquote>
+# Only retrieve documents above similarity threshold
+retriever = vectorstore.as_retriever(
+    search_type="similarity_score_threshold",
+    search_kwargs={
+        "score_threshold": 0.8,
+        "k": 3
+    }
+)
+</blockquote>
+
+<h2>Multi-Query Retrieval</h2>
+<p>Generate multiple query variations for better retrieval:</p>
+
+<blockquote>
+from langchain.retrievers.multi_query import MultiQueryRetriever
+
+multi_query_retriever = MultiQueryRetriever.from_llm(
+    retriever=vectorstore.as_retriever(),
+    llm=model
+)
+
+# Automatically generates query variations
+docs = multi_query_retriever.get_relevant_documents(
+    "What are the benefits of RAG?"
+)
+</blockquote>
+
+<h2>Contextual Compression</h2>
+<p>Compress retrieved documents to only relevant parts:</p>
+
+<blockquote>
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import LLMChainExtractor
+
+compressor = LLMChainExtractor.from_llm(model)
+
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor,
+    base_retriever=vectorstore.as_retriever()
+)
+
+# Returns only relevant excerpts
+compressed_docs = compression_retriever.get_relevant_documents(
+    "Explain the RAG architecture"
+)
+</blockquote>
+
+<h2>RAG with Citations</h2>
+<blockquote>
+template = """Answer based on the context below. Include source references.
+
+Context:
+{context}
+
+Question: {question}
+
+Answer with citations:"""
+
+def format_docs(docs):
+    formatted = []
+    for i, doc in enumerate(docs):
+        source = doc.metadata.get("source", "Unknown")
+        formatted.append(f"[{i+1}] {doc.page_content} (Source: {source})")
+    return "\n\n".join(formatted)
+
+rag_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt
+    | model
+    | StrOutputParser()
+)
+</blockquote>
+
+<h2>Hybrid Search</h2>
+<p>Combine semantic and keyword search:</p>
+
+<blockquote>
+from langchain.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
+
+# Semantic retriever
+semantic_retriever = vectorstore.as_retriever()
+
+# Keyword retriever
+keyword_retriever = BM25Retriever.from_documents(splits)
+
+# Combine both
+ensemble_retriever = EnsembleRetriever(
+    retrievers=[semantic_retriever, keyword_retriever],
+    weights=[0.5, 0.5]
+)
+</blockquote>
+
+<h2>RAG Evaluation</h2>
+<blockquote>
+from langchain.evaluation import load_evaluator
+
+# Evaluate retrieval relevance
+evaluator = load_evaluator("qa")
+
+result = evaluator.evaluate_strings(
+    prediction="The capital of France is Paris",
+    reference="Paris is the capital of France",
+    input="What is the capital of France?"
+)
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Chunk Size:</strong> Balance between context and precision (500-1500 tokens)</li>
+<li><strong>Overlap:</strong> Use 10-20% overlap to maintain context continuity</li>
+<li><strong>Metadata:</strong> Include source, date, and other metadata for citations</li>
+<li><strong>Reranking:</strong> Use reranking models to improve retrieval quality</li>
+<li><strong>Caching:</strong> Cache embeddings to reduce costs</li>
+<li><strong>Monitoring:</strong> Track retrieval quality and user feedback</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

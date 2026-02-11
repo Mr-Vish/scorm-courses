@@ -1,0 +1,369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Complex Workflow Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Complex Workflow Patterns</h1>
+
+<h2>Lesson Objectives</h2>
+<p>In this lesson, you will:</p>
+<ul>
+    <li>Learn patterns for building complex agent workflows</li>
+    <li>Understand hierarchical and collaborative agent architectures</li>
+    <li>Explore conditional logic and branching in agents</li>
+    <li>Handle long-running and multi-stage processes</li>
+</ul>
+
+<h2>What Are Complex Workflows?</h2>
+<p>Complex workflows involve:</p>
+
+<ul>
+    <li>Multiple decision points and branches</li>
+    <li>Long sequences of dependent operations</li>
+    <li>Parallel execution paths that must synchronize</li>
+    <li>Error recovery and retry logic</li>
+    <li>Human-in-the-loop approvals</li>
+    <li>Integration with multiple external systems</li>
+</ul>
+
+<h2>Workflow Design Patterns</h2>
+
+<h3>1. Linear Workflow</h3>
+<p>Sequential steps executed in order:</p>
+
+<blockquote>
+Step 1: Validate input
+Step 2: Fetch data
+Step 3: Process data
+Step 4: Store results
+Step 5: Send notification
+</blockquote>
+
+<p><strong>Use When:</strong> Steps must occur in strict order</p>
+<p><strong>Example:</strong> Order processing pipeline</p>
+
+<h3>2. Branching Workflow</h3>
+<p>Different paths based on conditions:</p>
+
+<blockquote>
+Check user type:
+  If premium → Fast processing path
+  If standard → Normal processing path
+  If trial → Limited processing path
+</blockquote>
+
+<p><strong>Use When:</strong> Different scenarios require different handling</p>
+<p><strong>Example:</strong> Customer support routing</p>
+
+<h3>3. Parallel Workflow</h3>
+<p>Multiple independent paths execute simultaneously:</p>
+
+<blockquote>
+Fork:
+  Path A: Process payment
+  Path B: Update inventory
+  Path C: Send confirmation
+Join: Wait for all paths to complete
+</blockquote>
+
+<p><strong>Use When:</strong> Operations are independent and can run concurrently</p>
+<p><strong>Example:</strong> Multi-channel notifications</p>
+
+<h3>4. Iterative Workflow</h3>
+<p>Repeat steps until condition is met:</p>
+
+<blockquote>
+While not complete:
+  1. Analyze current state
+  2. Take action
+  3. Check if goal achieved
+  4. If not, adjust approach and repeat
+</blockquote>
+
+<p><strong>Use When:</strong> Solution requires trial and refinement</p>
+<p><strong>Example:</strong> Research and analysis tasks</p>
+
+<h2>Hierarchical Agent Architecture</h2>
+
+<h3>Manager-Worker Pattern</h3>
+<p>A manager agent delegates to specialist worker agents:</p>
+
+<table>
+    <tr>
+        <th>Agent Type</th>
+        <th>Responsibilities</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Manager Agent</td>
+        <td>Task decomposition, delegation, coordination, result aggregation</td>
+        <td>Travel planning coordinator</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Worker Agent 1</td>
+        <td>Specialized domain expertise</td>
+        <td>Flight booking specialist</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Worker Agent 2</td>
+        <td>Different specialized domain</td>
+        <td>Hotel booking specialist</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Worker Agent 3</td>
+        <td>Another specialized domain</td>
+        <td>Activity recommendation specialist</td>
+    </tr>
+</table>
+
+<h3>Benefits of Hierarchical Architecture</h3>
+<ul>
+    <li><strong>Separation of Concerns:</strong> Each agent focuses on specific domain</li>
+    <li><strong>Scalability:</strong> Add new specialists without changing manager</li>
+    <li><strong>Maintainability:</strong> Update specialists independently</li>
+    <li><strong>Expertise:</strong> Deep knowledge in each domain</li>
+</ul>
+
+<h3>Implementation Approach</h3>
+<blockquote>
+Manager Agent Prompt:
+"You are a travel planning coordinator. You can delegate to:
+- flight_agent: Books flights
+- hotel_agent: Books hotels
+- activity_agent: Recommends activities
+
+Break down user requests and delegate to appropriate specialists."
+</blockquote>
+
+<h2>Collaborative Agent Patterns</h2>
+
+<h3>Peer-to-Peer Collaboration</h3>
+<p>Agents work together as equals:</p>
+
+<ul>
+    <li>Research agent gathers information</li>
+    <li>Analysis agent processes data</li>
+    <li>Writing agent creates report</li>
+    <li>Review agent checks quality</li>
+</ul>
+
+<h3>Debate Pattern</h3>
+<p>Multiple agents propose and critique solutions:</p>
+
+<blockquote>
+Agent A: Proposes solution
+Agent B: Identifies weaknesses
+Agent C: Suggests improvements
+Synthesizer: Combines best ideas
+</blockquote>
+
+<p><strong>Use When:</strong> Complex decisions benefit from multiple perspectives</p>
+
+<h2>Conditional Logic in Workflows</h2>
+
+<h3>Simple Conditionals</h3>
+<blockquote>
+If condition:
+    Execute action A
+Else:
+    Execute action B
+</blockquote>
+
+<h3>Multi-Way Branching</h3>
+<blockquote>
+If priority == "urgent":
+    Escalate immediately
+Elif priority == "high":
+    Process within 1 hour
+Elif priority == "normal":
+    Add to queue
+Else:
+    Schedule for later
+</blockquote>
+
+<h3>Guard Conditions</h3>
+<blockquote>
+Before processing payment:
+- Check: User authenticated?
+- Check: Sufficient balance?
+- Check: Payment method valid?
+- Check: No fraud indicators?
+
+Only proceed if all checks pass
+</blockquote>
+
+<h2>Long-Running Workflow Management</h2>
+
+<h3>Checkpointing</h3>
+<p>Save progress at key milestones:</p>
+
+<blockquote>
+Checkpoint 1: Data collected
+Checkpoint 2: Analysis complete
+Checkpoint 3: Report generated
+Checkpoint 4: Review approved
+
+If failure occurs, resume from last checkpoint
+</blockquote>
+
+<h3>Progress Tracking</h3>
+<blockquote>
+Workflow State:
+- total_steps: 10
+- completed_steps: 6
+- current_step: "generating_report"
+- estimated_completion: "5 minutes"
+- status: "in_progress"
+</blockquote>
+
+<h3>Timeout Handling</h3>
+<ul>
+    <li><strong>Step Timeouts:</strong> Individual operations have time limits</li>
+    <li><strong>Workflow Timeouts:</strong> Overall process has maximum duration</li>
+    <li><strong>Graceful Degradation:</strong> Return partial results if timeout occurs</li>
+</ul>
+
+<h2>Human-in-the-Loop Workflows</h2>
+
+<h3>Approval Gates</h3>
+<blockquote>
+1. Agent prepares action
+2. Request human approval
+3. Wait for response
+4. If approved: Execute
+5. If rejected: Revise or cancel
+</blockquote>
+
+<h3>Escalation Patterns</h3>
+<ul>
+    <li><strong>Automatic Escalation:</strong> Agent recognizes it needs help</li>
+    <li><strong>Threshold-Based:</strong> Escalate if confidence below threshold</li>
+    <li><strong>Time-Based:</strong> Escalate if stuck for too long</li>
+    <li><strong>User-Requested:</strong> User asks to speak with human</li>
+</ul>
+
+<h3>Handoff Protocol</h3>
+<blockquote>
+When escalating to human:
+1. Summarize what has been done
+2. Explain why escalation is needed
+3. Provide relevant context and data
+4. Suggest next steps
+5. Transfer control smoothly
+</blockquote>
+
+<h2>Error Recovery Strategies</h2>
+
+<h3>Retry with Backoff</h3>
+<blockquote>
+Attempt 1: Immediate
+Attempt 2: Wait 1 second
+Attempt 3: Wait 2 seconds
+Attempt 4: Wait 4 seconds
+After 4 failures: Give up and escalate
+</blockquote>
+
+<h3>Alternative Paths</h3>
+<blockquote>
+Primary approach fails:
+→ Try alternative tool
+→ Try different parameters
+→ Try simplified version
+→ Request human assistance
+</blockquote>
+
+<h3>Compensating Actions</h3>
+<p>Undo partial work if workflow fails:</p>
+
+<blockquote>
+Transaction started:
+- Reserve inventory ✓
+- Charge payment ✗ (failed)
+
+Compensation:
+- Release inventory reservation
+- Notify user of failure
+</blockquote>
+
+<h2>Workflow Optimization Techniques</h2>
+
+<h3>Lazy Evaluation</h3>
+<p>Only execute steps when results are actually needed:</p>
+<ul>
+    <li>Skip optional steps if not required</li>
+    <li>Defer expensive operations until necessary</li>
+    <li>Cache results for potential reuse</li>
+</ul>
+
+<h3>Speculative Execution</h3>
+<p>Start likely next steps before current step completes:</p>
+<ul>
+    <li>Predict probable path</li>
+    <li>Begin preparation in parallel</li>
+    <li>Cancel if prediction wrong</li>
+</ul>
+
+<h3>Batch Processing</h3>
+<p>Group similar operations for efficiency:</p>
+<ul>
+    <li>Collect multiple requests</li>
+    <li>Process as single batch</li>
+    <li>Distribute results</li>
+</ul>
+
+<h2>Real-World Workflow Example</h2>
+
+<p><strong>Scenario:</strong> Automated customer onboarding</p>
+
+<blockquote>
+1. Collect Information Phase:
+   - Get user details
+   - Verify email
+   - Check eligibility
+
+2. Account Creation Phase:
+   - Create user account
+   - Generate credentials
+   - Set up preferences
+
+3. Integration Phase (Parallel):
+   - Connect payment method
+   - Link external accounts
+   - Configure notifications
+
+4. Verification Phase:
+   - Send verification email
+   - Wait for confirmation
+   - Activate account
+
+5. Welcome Phase:
+   - Send welcome email
+   - Schedule onboarding call
+   - Assign account manager
+
+Error Handling:
+- If email verification fails: Resend or offer alternative
+- If payment setup fails: Allow skip and setup later
+- If any critical step fails: Rollback and notify support
+</blockquote>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Complex workflows use patterns like linear, branching, parallel, and iterative execution</li>
+    <li>Hierarchical architectures with manager and worker agents enable specialization and scalability</li>
+    <li>Conditional logic and guard conditions control workflow paths</li>
+    <li>Long-running workflows require checkpointing, progress tracking, and timeout handling</li>
+    <li>Human-in-the-loop patterns enable approval gates and escalation when needed</li>
+    <li>Robust error recovery includes retries, alternative paths, and compensating actions</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

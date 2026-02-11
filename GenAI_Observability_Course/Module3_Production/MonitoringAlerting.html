@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Monitoring Dashboards and Alerting</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Monitoring Dashboards and Alerting</h1>
+
+<h2>Building Effective Dashboards</h2>
+<p>A well-designed dashboard provides at-a-glance visibility into system health and enables rapid incident response. GenAI dashboards must balance technical metrics with business outcomes.</p>
+
+<h2>Dashboard Hierarchy</h2>
+
+<h3>Level 1: Executive Dashboard</h3>
+<p><strong>Audience:</strong> Leadership, product managers</p>
+<p><strong>Key Metrics:</strong></p>
+<ul>
+    <li>Daily active users interacting with AI features</li>
+    <li>Total daily cost and cost trend</li>
+    <li>User satisfaction score (average rating)</li>
+    <li>Feature adoption rates</li>
+    <li>Cost per successful interaction</li>
+</ul>
+
+<h3>Level 2: Operations Dashboard</h3>
+<p><strong>Audience:</strong> Engineers, DevOps, on-call team</p>
+<p><strong>Key Metrics:</strong></p>
+<ul>
+    <li>Request rate (requests per minute)</li>
+    <li>Error rate and success rate</li>
+    <li>P50, P95, P99 latency</li>
+    <li>Current hourly burn rate</li>
+    <li>Active incidents and alerts</li>
+    <li>Model API health status</li>
+</ul>
+
+<h3>Level 3: Deep Dive Dashboards</h3>
+<p><strong>Audience:</strong> ML engineers, prompt engineers</p>
+<p><strong>Specialized views:</strong></p>
+<ul>
+    <li><strong>Model Performance:</strong> Compare metrics across different models</li>
+    <li><strong>Cost Analysis:</strong> Breakdown by feature, user segment, model</li>
+    <li><strong>Quality Metrics:</strong> Evaluation scores, user feedback trends</li>
+    <li><strong>Cache Performance:</strong> Hit rates, cost savings from caching</li>
+</ul>
+
+<h2>Essential Dashboard Panels</h2>
+
+<h3>1. System Health Overview</h3>
+<div class="code-block">
+<pre><code># Grafana Dashboard Panel (PromQL)
+# Request Success Rate
+sum(rate(llm_requests_total{status="success"}[5m])) 
+/ 
+sum(rate(llm_requests_total[5m])) * 100
+
+# P95 Latency
+histogram_quantile(0.95, 
+  sum(rate(llm_request_duration_seconds_bucket[5m])) by (le)
+)
+
+# Current Error Rate
+sum(rate(llm_requests_total{status="error"}[5m]))
+</code></pre>
+</div>
+
+<h3>2. Cost Monitoring</h3>
+<div class="code-block">
+<pre><code># Hourly Burn Rate
+sum(rate(llm_cost_usd_total[1h])) * 3600
+
+# Cost by Model
+sum(rate(llm_cost_usd_total[5m])) by (model) * 300
+
+# Top Cost Users (requires custom metrics)
+topk(10, sum(rate(llm_cost_usd_total[1h])) by (user_tier))
+</code></pre>
+</div>
+
+<h3>3. Quality Metrics</h3>
+<div class="code-block">
+<pre><code># Average User Rating
+avg(llm_user_rating)
+
+# Task Success Rate
+sum(rate(llm_task_success_total[5m])) 
+/ 
+sum(rate(llm_task_attempts_total[5m])) * 100
+
+# Guardrail Trigger Rate
+sum(rate(guardrail_triggers_total[5m])) by (type)
+</code></pre>
+</div>
+
+<h2>Alerting Strategy</h2>
+
+<h3>Alert Severity Levels</h3>
+<table>
+    <tr><th>Severity</th><th>Response Time</th><th>Examples</th></tr>
+    <tr>
+        <td class="rowheader">Critical</td>
+        <td>Immediate (page on-call)</td>
+        <td>Complete service outage, error rate &gt; 50%, cost spike &gt; 5x baseline</td>
+    </tr>
+    <tr>
+        <td class="rowheader">High</td>
+        <td>Within 15 minutes</td>
+        <td>Error rate &gt; 10%, P95 latency &gt; 5s, cost spike &gt; 3x baseline</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Medium</td>
+        <td>Within 1 hour</td>
+        <td>Error rate &gt; 5%, elevated latency, quality score drop</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Low</td>
+        <td>Next business day</td>
+        <td>Cache hit rate decline, minor cost increase, low user ratings</td>
+    </tr>
+</table>
+
+<h3>Alert Configuration Examples</h3>
+<div class="code-block">
+<pre><code># Prometheus Alert Rules
+groups:
+  - name: genai_alerts
+    interval: 30s
+    rules:
+      # Critical: High Error Rate
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(llm_requests_total{status="error"}[5m])) 
+          / 
+          sum(rate(llm_requests_total[5m])) > 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High LLM error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+      
+      # Critical: Cost Spike
+      - alert: CostSpike
+        expr: |
+          sum(rate(llm_cost_usd_total[1h])) * 3600
+          >
+          avg_over_time(sum(rate(llm_cost_usd_total[1h]))[7d:1h]) * 3600 * 3
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "LLM cost spike detected"
+          description: "Hourly cost is 3x the 7-day average"
+      
+      # High: Elevated Latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(llm_request_duration_seconds_bucket[5m])) by (le)
+          ) > 5
+        for: 10m
+        labels:
+          severity: high
+        annotations:
+          summary: "High P95 latency detected"
+          description: "P95 latency is {{ $value }}s"
+      
+      # Medium: Quality Degradation
+      - alert: QualityDrop
+        expr: |
+          avg(llm_user_rating) < 3.0
+        for: 30m
+        labels:
+          severity: medium
+        annotations:
+          summary: "User satisfaction score dropped"
+          description: "Average rating is {{ $value }}"
+</code></pre>
+</div>
+
+<h2>Alert Fatigue Prevention</h2>
+
+<h3>Best Practices</h3>
+<ul>
+    <li><strong>Use appropriate thresholds:</strong> Set levels that indicate real problems, not noise</li>
+    <li><strong>Require sustained conditions:</strong> Use "for: 5m" to avoid flapping alerts</li>
+    <li><strong>Group related alerts:</strong> Don't alert on symptoms when root cause is known</li>
+    <li><strong>Include context:</strong> Provide runbook links and relevant metrics in alerts</li>
+    <li><strong>Regular review:</strong> Tune thresholds based on actual incident patterns</li>
+</ul>
+
+<h3>Alert Routing</h3>
+<div class="code-block">
+<pre><code># Alertmanager Configuration
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  
+  routes:
+    # Critical alerts page on-call immediately
+    - match:
+        severity: critical
+      receiver: 'pagerduty'
+      continue: true
+    
+    # High severity to Slack + email
+    - match:
+        severity: high
+      receiver: 'slack-ops'
+      continue: true
+    
+    # Medium/Low to Slack only
+    - match_re:
+        severity: medium|low
+      receiver: 'slack-monitoring'
+
+receivers:
+  - name: 'pagerduty'
+    pagerduty_configs:
+      - service_key: '<key>'
+  
+  - name: 'slack-ops'
+    slack_configs:
+      - api_url: '<webhook>'
+        channel: '#genai-ops'
+        title: 'GenAI Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+</code></pre>
+</div>
+
+<h2>Incident Response Workflow</h2>
+
+<h3>1. Detection</h3>
+<ul>
+    <li>Alert fires and notifies on-call engineer</li>
+    <li>Dashboard shows anomaly in key metrics</li>
+    <li>User reports or support tickets increase</li>
+</ul>
+
+<h3>2. Triage</h3>
+<ul>
+    <li>Check operations dashboard for scope of impact</li>
+    <li>Review recent deployments or configuration changes</li>
+    <li>Examine traces for failed requests</li>
+    <li>Check LLM provider status pages</li>
+</ul>
+
+<h3>3. Mitigation</h3>
+<ul>
+    <li>Rollback recent changes if applicable</li>
+    <li>Switch to backup model or provider</li>
+    <li>Enable rate limiting to control costs</li>
+    <li>Increase timeout thresholds if provider is slow</li>
+</ul>
+
+<h3>4. Resolution</h3>
+<ul>
+    <li>Implement permanent fix</li>
+    <li>Verify metrics return to normal</li>
+    <li>Document incident and root cause</li>
+    <li>Update runbooks and alerts</li>
+</ul>
+
+<h2>Runbook Example</h2>
+<div class="code-block">
+<pre><code>## Alert: HighErrorRate
+
+### Symptoms
+- Error rate exceeds 10% for 5+ minutes
+- Users unable to get AI responses
+- Increased support tickets
+
+### Possible Causes
+1. LLM provider API outage
+2. Network connectivity issues
+3. Invalid API credentials
+4. Rate limit exceeded
+5. Malformed requests from recent deployment
+
+### Investigation Steps
+1. Check LLM provider status page
+2. Review error logs: `kubectl logs -l app=genai-api --tail=100 | grep ERROR`
+3. Check recent deployments: `kubectl rollout history deployment/genai-api`
+4. Examine failed request traces in LangSmith/Phoenix
+5. Verify API key validity and rate limits
+
+### Mitigation
+- If provider outage: Switch to backup provider
+  `kubectl set env deployment/genai-api LLM_PROVIDER=backup`
+- If rate limit: Enable request queuing
+  `kubectl scale deployment/genai-api --replicas=3`
+- If bad deployment: Rollback
+  `kubectl rollout undo deployment/genai-api`
+
+### Post-Incident
+- Document root cause in incident report
+- Update monitoring thresholds if needed
+- Add preventive measures (circuit breakers, better testing)
+</code></pre>
+</div>
+
+<h2>Dashboard Best Practices</h2>
+<ul>
+    <li><strong>Start with the most important metric:</strong> Place critical health indicators at the top</li>
+    <li><strong>Use consistent time ranges:</strong> Default to last 1 hour for operations, last 7 days for trends</li>
+    <li><strong>Include comparison periods:</strong> Show current vs. previous day/week</li>
+    <li><strong>Add annotations:</strong> Mark deployments and incidents on time-series graphs</li>
+    <li><strong>Optimize for mobile:</strong> On-call engineers need to view dashboards on phones</li>
+    <li><strong>Link to traces:</strong> Enable drill-down from metrics to individual requests</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

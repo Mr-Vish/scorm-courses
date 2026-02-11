@@ -1,0 +1,360 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Implementing Knowledge Bases with RAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Implementing Knowledge Bases with RAG</h1>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand Retrieval-Augmented Generation (RAG) and its benefits</li>
+    <li>Learn how to create and configure Bedrock Knowledge Bases</li>
+    <li>Master data source integration and chunking strategies</li>
+    <li>Apply best practices for RAG implementation and optimization</li>
+</ul>
+
+<h3>Understanding Retrieval-Augmented Generation (RAG)</h3>
+
+<p>Retrieval-Augmented Generation (RAG) addresses a fundamental limitation of foundation models: their knowledge is frozen at the time of training. While models like Claude or Llama possess vast general knowledge, they cannot access organization-specific information, recent events, or proprietary data. RAG solves this by <strong>dynamically retrieving relevant information from external sources</strong> and providing it as context to the model, enabling responses grounded in current, specific data.</p>
+
+<p>The RAG process follows a clear pattern: when a user asks a question, the system first searches a knowledge base for relevant documents or passages, then provides these retrieved materials along with the user's question to the foundation model. The model uses this context to generate an informed, accurate response. This approach combines the reasoning capabilities of large language models with the specificity and currency of organizational data.</p>
+
+<h3>Why RAG Matters for Enterprise Applications</h3>
+
+<h4>Addressing Model Limitations</h4>
+<ul>
+    <li><strong>Knowledge Cutoff:</strong> Models are trained on data up to a specific date; RAG provides access to current information</li>
+    <li><strong>Hallucination Reduction:</strong> Grounding responses in retrieved documents significantly reduces fabricated information</li>
+    <li><strong>Domain Specificity:</strong> Models lack deep knowledge of organization-specific processes, products, and policies</li>
+    <li><strong>Verifiability:</strong> RAG enables citation of sources, allowing users to verify information</li>
+</ul>
+
+<h4>Business Benefits</h4>
+<ul>
+    <li><strong>Reduced Training Costs:</strong> No need to fine-tune models on proprietary data</li>
+    <li><strong>Dynamic Updates:</strong> Knowledge base updates immediately reflect in responses without model retraining</li>
+    <li><strong>Compliance:</strong> Easier to audit and control what information the model can access</li>
+    <li><strong>Accuracy:</strong> Responses based on authoritative sources rather than model's parametric memory</li>
+</ul>
+
+<h3>Bedrock Knowledge Bases Architecture</h3>
+
+<p>Bedrock Knowledge Bases provide a fully managed RAG implementation, handling the complex infrastructure required for semantic search and retrieval.</p>
+
+<h4>Core Components</h4>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Implementation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Sources</td>
+        <td>Original documents and content</td>
+        <td>Amazon S3 buckets, web crawlers, Confluence, SharePoint, Salesforce</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Chunking Strategy</td>
+        <td>Breaking documents into searchable segments</td>
+        <td>Fixed-size, semantic, or hierarchical chunking</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Embedding Model</td>
+        <td>Converting text chunks to vector representations</td>
+        <td>Amazon Titan Embeddings, Cohere Embed</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vector Database</td>
+        <td>Storing and searching embeddings</td>
+        <td>Amazon OpenSearch Serverless, Pinecone, Redis, Aurora PostgreSQL</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Retrieval Logic</td>
+        <td>Finding relevant chunks for queries</td>
+        <td>Semantic similarity search with configurable parameters</td>
+    </tr>
+</table>
+
+<h3>Creating a Knowledge Base</h3>
+
+<h4>Step 1: Prepare Data Sources</h4>
+<p>Organize your documents in supported formats:</p>
+<ul>
+    <li><strong>Supported Formats:</strong> PDF, TXT, MD, HTML, DOC, DOCX, CSV, XLS, XLSX</li>
+    <li><strong>Storage:</strong> Upload to Amazon S3 bucket with appropriate structure</li>
+    <li><strong>Metadata:</strong> Include metadata files for enhanced filtering and attribution</li>
+    <li><strong>Access Control:</strong> Ensure Bedrock has appropriate IAM permissions to access S3</li>
+</ul>
+
+<p><strong>Example S3 Structure:</strong></p>
+<blockquote>
+s3://my-knowledge-base-bucket/
+├── product-documentation/
+│   ├── user-guide.pdf
+│   ├── api-reference.pdf
+│   └── troubleshooting.pdf
+├── policies/
+│   ├── privacy-policy.pdf
+│   ├── terms-of-service.pdf
+│   └── refund-policy.pdf
+└── faqs/
+    ├── technical-faq.md
+    └── billing-faq.md
+</blockquote>
+
+<h4>Step 2: Configure Chunking Strategy</h4>
+<p>Chunking determines how documents are divided for embedding and retrieval. The strategy significantly impacts retrieval quality.</p>
+
+<p><strong>Chunking Options:</strong></p>
+
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Description</th>
+        <th>Best For</th>
+        <th>Considerations</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Fixed-Size</td>
+        <td>Split documents into chunks of specified token count with overlap</td>
+        <td>General-purpose, mixed content types</td>
+        <td>May split mid-sentence or mid-concept; overlap helps maintain context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Semantic</td>
+        <td>Intelligent splitting based on content structure and meaning</td>
+        <td>Well-structured documents with clear sections</td>
+        <td>Better preserves context but may create variable-sized chunks</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hierarchical</td>
+        <td>Parent-child relationships with summaries</td>
+        <td>Long documents requiring context preservation</td>
+        <td>More complex but provides better context for retrieval</td>
+    </tr>
+</table>
+
+<p><strong>Recommended Settings:</strong></p>
+<ul>
+    <li><strong>Chunk Size:</strong> 300-500 tokens for most use cases (balance between context and specificity)</li>
+    <li><strong>Overlap:</strong> 10-20% overlap to prevent context loss at boundaries</li>
+    <li><strong>Max Chunks:</strong> Consider document length and retrieval needs</li>
+</ul>
+
+<h4>Step 3: Select Embedding Model</h4>
+<p>Embedding models convert text into high-dimensional vectors that capture semantic meaning.</p>
+
+<p><strong>Available Options:</strong></p>
+<ul>
+    <li><strong>Amazon Titan Embeddings G1:</strong> Cost-effective, good general-purpose performance, 1536 dimensions</li>
+    <li><strong>Titan Multimodal Embeddings:</strong> Supports both text and images</li>
+    <li><strong>Cohere Embed English/Multilingual:</strong> Strong performance, especially for RAG-optimized retrieval</li>
+</ul>
+
+<p><strong>Selection Criteria:</strong></p>
+<ul>
+    <li>Language requirements (English-only vs. multilingual)</li>
+    <li>Cost considerations (Titan is typically more economical)</li>
+    <li>Performance requirements (benchmark on your specific data)</li>
+    <li>Multimodal needs (text + images)</li>
+</ul>
+
+<h4>Step 4: Configure Vector Database</h4>
+<p>The vector database stores embeddings and enables fast similarity search.</p>
+
+<p><strong>Supported Vector Stores:</strong></p>
+<ul>
+    <li><strong>Amazon OpenSearch Serverless:</strong> Fully managed, auto-scaling, integrated with AWS</li>
+    <li><strong>Pinecone:</strong> Purpose-built vector database with excellent performance</li>
+    <li><strong>Redis Enterprise Cloud:</strong> In-memory performance for low-latency requirements</li>
+    <li><strong>Amazon Aurora PostgreSQL:</strong> Leverage existing PostgreSQL with pgvector extension</li>
+</ul>
+
+<p><strong>Recommendation:</strong> OpenSearch Serverless for most use cases due to seamless AWS integration and managed operations.</p>
+
+<h3>Retrieval Configuration and Optimization</h3>
+
+<h4>Search Parameters</h4>
+
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Purpose</th>
+        <th>Typical Values</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Number of Results</td>
+        <td>How many chunks to retrieve</td>
+        <td>3-10 (balance between context and token cost)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Similarity Threshold</td>
+        <td>Minimum relevance score for inclusion</td>
+        <td>0.7-0.8 (higher = more selective)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Metadata Filters</td>
+        <td>Restrict search to specific document types or categories</td>
+        <td>Based on use case (e.g., department, date range)</td>
+    </tr>
+</table>
+
+<h4>Retrieval Strategies</h4>
+
+<p><strong>1. Semantic Search (Default)</strong></p>
+<p>Finds chunks with similar meaning to the query using vector similarity.</p>
+
+<p><strong>2. Hybrid Search</strong></p>
+<p>Combines semantic search with keyword matching for better precision.</p>
+
+<p><strong>3. Reranking</strong></p>
+<p>Applies a secondary model to reorder retrieved results by relevance, improving quality at the cost of additional latency.</p>
+
+<h3>Integrating Knowledge Bases with Agents</h3>
+
+<p>Knowledge Bases can be attached to Bedrock Agents, enabling them to automatically retrieve relevant information when answering questions.</p>
+
+<p><strong>Integration Benefits:</strong></p>
+<ul>
+    <li>Agent automatically determines when to query the knowledge base</li>
+    <li>Retrieved context is seamlessly incorporated into responses</li>
+    <li>No explicit action group needed for knowledge retrieval</li>
+    <li>Supports multi-turn conversations with context retention</li>
+</ul>
+
+<p><strong>Configuration:</strong></p>
+<blockquote>
+When creating or updating an agent:
+1. Navigate to Knowledge Bases section
+2. Select "Add Knowledge Base"
+3. Choose your configured knowledge base
+4. Provide instructions on when to use the knowledge base
+   Example: "Use this knowledge base to answer questions about company policies, product features, and technical documentation"
+5. Configure retrieval settings (number of results, filters)
+</blockquote>
+
+<h3>Querying Knowledge Bases Directly</h3>
+
+<p>Knowledge Bases can also be queried directly without an agent for simpler RAG implementations.</p>
+
+<p><strong>Python Example:</strong></p>
+<blockquote>
+import boto3
+import json
+
+bedrock_agent_runtime = boto3.client('bedrock-agent-runtime', region_name='us-east-1')
+
+response = bedrock_agent_runtime.retrieve_and_generate(
+    input={
+        'text': 'What is our company refund policy for defective products?'
+    },
+    retrieveAndGenerateConfiguration={
+        'type': 'KNOWLEDGE_BASE',
+        'knowledgeBaseConfiguration': {
+            'knowledgeBaseId': 'KB123456',
+            'modelArn': 'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0',
+            'retrievalConfiguration': {
+                'vectorSearchConfiguration': {
+                    'numberOfResults': 5
+                }
+            }
+        }
+    }
+)
+
+answer = response['output']['text']
+citations = response.get('citations', [])
+
+print(f"Answer: {answer}\n")
+print("Sources:")
+for citation in citations:
+    for reference in citation.get('retrievedReferences', []):
+        print(f"- {reference['location']['s3Location']['uri']}")
+</blockquote>
+
+<h3>Best Practices for Knowledge Base Implementation</h3>
+
+<h4>Data Preparation</h4>
+<ul>
+    <li><strong>Clean Data:</strong> Remove irrelevant content, headers, footers, and navigation elements</li>
+    <li><strong>Consistent Formatting:</strong> Standardize document structure for better chunking</li>
+    <li><strong>Metadata Enrichment:</strong> Add metadata for filtering (department, date, document type)</li>
+    <li><strong>Deduplication:</strong> Remove duplicate or near-duplicate content</li>
+</ul>
+
+<h4>Chunking Optimization</h4>
+<ul>
+    <li>Test different chunk sizes with representative queries</li>
+    <li>Ensure chunks contain complete thoughts or concepts</li>
+    <li>Use overlap to maintain context across chunk boundaries</li>
+    <li>Consider document structure when choosing chunking strategy</li>
+</ul>
+
+<h4>Retrieval Quality</h4>
+<ul>
+    <li><strong>Evaluation:</strong> Test with diverse queries and measure retrieval accuracy</li>
+    <li><strong>Iteration:</strong> Adjust number of results and similarity thresholds based on performance</li>
+    <li><strong>Monitoring:</strong> Track which documents are frequently retrieved and which are never accessed</li>
+    <li><strong>Feedback Loop:</strong> Collect user feedback on answer quality to identify gaps</li>
+</ul>
+
+<h4>Maintenance and Updates</h4>
+<ul>
+    <li>Establish processes for regular content updates</li>
+    <li>Monitor knowledge base sync status and errors</li>
+    <li>Archive outdated documents to prevent retrieval of obsolete information</li>
+    <li>Version control for critical documents</li>
+</ul>
+
+<h3>Common Challenges and Solutions</h3>
+
+<table>
+    <tr>
+        <th>Challenge</th>
+        <th>Cause</th>
+        <th>Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Irrelevant Retrievals</td>
+        <td>Poor chunking, low-quality embeddings</td>
+        <td>Optimize chunk size, improve data quality, adjust similarity threshold</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Missing Information</td>
+        <td>Relevant content not in knowledge base</td>
+        <td>Expand data sources, improve coverage, add missing documents</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Inconsistent Answers</td>
+        <td>Contradictory information in different documents</td>
+        <td>Consolidate authoritative sources, remove outdated content</td>
+    </tr>
+    <tr>
+        <td class="rowheader">High Latency</td>
+        <td>Too many retrievals, slow vector search</td>
+        <td>Reduce number of results, optimize vector database, use caching</td>
+    </tr>
+</table>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>RAG enables foundation models to access current, organization-specific information by retrieving relevant documents</li>
+    <li>Bedrock Knowledge Bases provide fully managed RAG infrastructure including chunking, embedding, and vector search</li>
+    <li>Effective chunking strategies balance context preservation with retrieval specificity</li>
+    <li>Knowledge Bases integrate seamlessly with Bedrock Agents for autonomous information retrieval</li>
+    <li>Retrieval quality depends on data preparation, chunking configuration, and search parameters</li>
+    <li>Regular maintenance and monitoring ensure knowledge bases remain accurate and useful</li>
+    <li>Citations and source attribution enable verification and build user trust</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>1. When is Multistep RAG Required?</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>1. When is Multistep RAG Required?</h1>
+
+<p>Identifying when to move from a simple RAG pipeline to a multi-step one is a key skill for AI architects. While simple RAG is faster and cheaper, it has clear limitations that multi-step patterns are designed to address.</p>
+
+<h2>The Limits of Simple RAG</h2>
+<p>Simple RAG typically struggles in the following scenarios:</p>
+
+<h3>1. Multi-faceted Questions</h3>
+<p>Consider a query like: "Compare the revenue growth of Company A and Company B over the last three fiscal years and identify which one had a higher margin in 2023."
+<p>A simple RAG system would try to find a single chunk that contains all this information. In reality, this data is likely spread across multiple annual reports. A multi-step system would break this down into several sub-queries:
+<ul>
+    <li>"What was Company A's revenue growth for the last 3 years?"</li>
+    <li>"What was Company B's revenue growth for the last 3 years?"</li>
+    <li>"What was Company A's margin in 2023?"</li>
+    <li>"What was Company B's margin in 2023?"</li>
+</ul>
+<p>It then retrieves the answers for each and synthesizes the final comparison.</p>
+
+<h3>2. Ambiguous or Poorly Phrased Queries</h3>
+<p>Users often provide very short or vague queries like "tax laws for startups." A simple vector search might return general documents about taxes or startups, but not the specific laws. A multi-step system can use an LLM to "expand" this query into a more detailed set of search terms: "current federal tax incentives and requirements for early-stage technology startups in the United States."</p>
+
+<h3>3. Data Sprawl</h3>
+<p>When the relevant information is buried deep within a massive document or spread across many different sources, the "signal-to-noise" ratio in a simple search can be very low. Multi-step patterns like **Re-ranking** help by taking a larger set of potentially relevant documents and carefully selecting only the absolute best ones to provide to the LLM.</p>
+
+<h3>4. Questions Requiring "Global" Knowledge</h3>
+<p>Queries like "What are the common themes across all the project reports from Q3?" require looking at the entire dataset, not just a few similar chunks. Multi-step patterns can iteratively summarize each report and then provide those summaries to the LLM for a final "global" synthesis.</p>
+
+<h2>Evaluating the Trade-offs</h2>
+<p>Before implementing multi-step RAG, you must consider the trade-offs:
+<ul>
+    <li><strong>Latency:</strong> Each additional step adds to the total response time. For real-time chat, this can be a deal-breaker.</li>
+    <li><strong>Cost:</strong> More LLM calls and more complex processing lead to higher token usage and compute costs.</li>
+    <li><strong>Complexity:</strong> The system is harder to build, debug, and maintain.</li>
+</ul>
+
+<h2>The Decision Framework</h2>
+<p>Use multi-step RAG when:
+<ol>
+    <li>The questions are complex and require data from multiple sources.</li>
+    <li>Factual accuracy is paramount and simple RAG is showing high hallucination rates.</li>
+    <li>The documents have complex structures (like large tables) that simple chunking fails to capture.</li>
+    <li>You have the budget and latency headroom to support a more sophisticated approach.</li>
+</ol></p>
+
+<p>Understanding these drivers will help you choose the right architectural pattern for your specific use case, ensuring you provide the best possible experience for your users.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

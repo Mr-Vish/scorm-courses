@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cost Optimization for Resilient AI Applications</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cost Optimization: Balancing Resilience and Budget</h1>
+
+<div class="content-section">
+<h2>1. The Financial Side of Resilience</h2>
+<p>In traditional cloud computing, resilience is relatively cheap (e.g., adding a load balancer or a few extra small VMs). In the world of LLMs, however, resilience can be expensive. Every retry, every hedged request, and every complex multi-stage prompt adds to your token usage. If you're not careful, a "resilient" system can quickly become an unaffordable one. This module focuses on how to maintain high availability while keeping your costs under control.</p>
+
+<h2>2. Model Routing: The Right Tool for the Job</h2>
+<p>The most effective cost-saving strategy is to use the smallest and cheapest model possible for any given task. This is often called <strong>Model Routing</strong> or <strong>Orchestration</strong>.</p>
+<ul>
+    <li><strong>Categorization Phase:</strong> Use a very fast, cheap model (like GPT-4o-mini or a local Llama-3-8B) to categorize the incoming request. Is it a simple question? A request for code? A complex reasoning task?</li>
+    <li><strong>Execution Phase:</strong> Route the request to the appropriate "Tier":
+        <ul>
+            <li><strong>Tier 1 (High Complexity):</strong> GPT-4 or Claude 3.5 Sonnet.</li>
+            <li><strong>Tier 2 (Medium Complexity):</strong> GPT-4o-mini or Claude 3 Haiku.</li>
+            <li><strong>Tier 3 (Simple/Structural):</strong> Local models or specialized SLMs (Small Language Models).</li>
+        </ul>
+    </li>
+</ul>
+<p>By routing even 50% of your traffic away from the most expensive models, you can cut your costs significantly while maintaining the same perceived quality for the user.</p>
+
+<h2>3. Token Reduction Strategies</h2>
+<p>Since you pay by the token, every token you save is direct profit. However, saving tokens shouldn't come at the cost of the model's performance.</p>
+
+<h3>System Prompt Optimization</h3>
+<p>System prompts are prepended to every single request in a conversation. A 500-word system prompt in a 20-turn conversation means you are paying for those 500 words 20 times! <strong>Prompt Compression</strong> involves trimming your system prompts to the bare essentials, using concise instructions rather than long-winded examples.</p>
+
+<h3>Strict Output Control</h3>
+<ul>
+    <li><strong>Max Tokens:</strong> Always set a <code>max_tokens</code> limit on your responses to prevent the model from "wandering" or generating irrelevant content if it gets confused.</li>
+    <li><strong>Stop Sequences:</strong> Use stop sequences (like <code>\n</code> or <code>END</code>) to cut off the model as soon as it has provided the necessary information.</li>
+    <li><strong>Structured Outputs:</strong> Use JSON mode or Function Calling to force the model to be concise. This prevents the model from adding conversational filler like "Sure, I can help you with that. Here is the information you requested..."</li>
+</ul>
+
+<h2>4. Caching: The Ultimate Cost Saver</h2>
+<p>We've discussed <strong>Semantic Caching</strong> as a resilience tool, but it's even more powerful as a cost tool. By serving repetitive queries from a local database (like Redis or Pinecone), you incur zero token costs for those requests.</p>
+<p><strong>Advanced Tip:</strong> Implement a <strong>Layered Cache</strong>.
+    <ol>
+        <li><strong>Exact Match Cache:</strong> For identical prompts (very fast, 100% accuracy).</li>
+        <li><strong>Semantic Cache:</strong> For similar prompts (uses vector similarity, great for common variations).</li>
+        <li><strong>LLM Provider Cache:</strong> Some providers (like Anthropic and OpenAI) now offer "Prompt Caching" where they discount the cost of input tokens that they have seen recently.</li>
+    </ol>
+</p>
+
+<h2>5. Batching for Discounts</h2>
+<p>Many providers offer deep discounts (up to 50%) for <strong>Batch APIs</strong>. If a request doesn't need to be answered within seconds (e.g., nightly report generation), send it to the Batch API. The provider will process it whenever they have spare capacity and return the results within 24 hours. This is an excellent way to handle high-volume, non-interactive workloads at a fraction of the cost.</p>
+
+<h2>6. Usage Governance and Guardrails</h2>
+<p>To prevent "runaway" costs, a resilient system needs governance:</p>
+<ul>
+    <li><strong>Per-User Quotas:</strong> Limit how many tokens a single user can consume per day or month.</li>
+    <li><strong>Hard Budget Caps:</strong> At the organizational level, set a hard limit. If reached, the system should gracefully degrade to a "free" or local model rather than shutting down.</li>
+    <li><strong>Anomaly Detection:</strong> Monitor for sudden spikes in usage. A bug in a recursive loop could cost thousands of dollars in minutes if not caught by an automated monitoring system.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>Cost optimization is not about being cheap; it's about being efficient. By implementing model routing, optimizing your prompts, and leveraging caching and batching, you can build a system that is both highly resilient and financially sustainable. In our final module, we will look at real-world architecture case studies to see how these patterns all fit together.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

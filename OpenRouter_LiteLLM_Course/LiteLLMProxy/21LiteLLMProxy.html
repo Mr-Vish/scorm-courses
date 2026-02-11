@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 2: The LiteLLM Proxy Server</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Setting up and Scaling the LiteLLM Proxy</h1>
+
+<p>The LiteLLM Proxy is a centralized server that allows you to manage all your LLM interactions in one place. It provides an OpenAI-compatible API that can be called by any application, while it handles the routing, authentication, and monitoring of the actual model requests.</p>
+
+<h2>2.1 Why Use a Proxy?</h2>
+<p>Instead of every application having its own set of API keys and logic for different providers, they all talk to the LiteLLM Proxy. This offers:
+<ul>
+    <li><strong>Centralized Key Management:</strong> Store your master API keys from OpenAI, Anthropic, etc., in the proxy and provide applications with "virtual" keys.</li>
+    <li><strong>Unified Logging:</strong> Capture every single AI request and response across your entire organization in a single log.</li>
+    <li><strong>Enterprise Controls:</strong> Implement global rate limits, usage quotas, and budget alerts.</li>
+    <li><strong>Dynamic Configuration:</strong> Change models or fallback strategies without having to redeploy your applications.</li>
+</ul></p>
+
+<h2>2.2 Installing and Starting the Proxy</h2>
+<p>The proxy is a Python-based server that can be installed via <code>pip</code>:
+<pre><code>pip install 'litellm[proxy]'
+litellm --model gpt-3.5-turbo</code></pre>
+<p>This starts a server on <code>localhost:4000</code> that accepts OpenAI-formatted requests and forwards them to GPT-3.5-Turbo.</p>
+
+<h2>2.3 Configuring the Proxy with YAML</h2>
+<p>For production use, you use a <code>config.yaml</code> file to define your models, keys, and rules:
+<pre><code>model_list:
+  - model_name: my-gpt-model
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: my-claude-model
+    litellm_params:
+      model: anthropic/claude-3-5-sonnet-20241022
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+litellm_settings:
+  set_verbose: True</code></pre>
+<p>You can then start the proxy with: <code>litellm --config config.yaml</code></p>
+
+<h2>2.4 Scaling with Docker and Kubernetes</h2>
+<p>The LiteLLM Proxy is stateless and can be easily scaled horizontally.
+<ul>
+    <li><strong>Docker:</strong> Official images are available (<code>ghcr.io/berriai/litellm:main</code>).</li>
+    <li><strong>Kubernetes:</strong> Deploy multiple replicas of the proxy behind a load balancer to handle high volumes of traffic.</li>
+    <li><strong>Database Integration:</strong> Connect the proxy to a PostgreSQL or Redis database to store persistent data like virtual keys, usage metrics, and logs.</li>
+</ul></p>
+
+<p>By implementing a centralized proxy, you create a robust and manageable "AI Backbone" for your organization, simplifying development and improving governance.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

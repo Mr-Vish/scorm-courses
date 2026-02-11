@@ -1,0 +1,280 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Working with Tokenizers</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Working with Tokenizers</h1>
+
+<h2>What is Tokenization?</h2>
+<p>Tokenization is the process of converting text into numerical representations that transformer models can process. It's a critical step that directly impacts model performance, context window management, and computational costs.</p>
+
+<p>Hugging Face tokenizers are written in Rust for maximum performance, providing fast tokenization even for large documents. They handle complex tasks like subword tokenization, special token insertion, and padding automatically.</p>
+
+<h2>Tokenization Algorithms</h2>
+<table>
+    <tr>
+        <th>Algorithm</th>
+        <th>Used By</th>
+        <th>How It Works</th>
+        <th>Advantages</th>
+    </tr>
+    <tr>
+        <td class="rowheader">WordPiece</td>
+        <td>BERT, DistilBERT</td>
+        <td>Splits words into subword units based on frequency</td>
+        <td>Handles unknown words well, balanced vocabulary size</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Byte-Pair Encoding (BPE)</td>
+        <td>GPT-2, GPT-3, RoBERTa</td>
+        <td>Merges most frequent character pairs iteratively</td>
+        <td>Efficient, handles any text, good compression</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SentencePiece</td>
+        <td>T5, ALBERT, XLNet</td>
+        <td>Treats text as raw stream, language-agnostic</td>
+        <td>Works for any language, no pre-tokenization needed</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Unigram</td>
+        <td>ALBERT, T5</td>
+        <td>Probabilistic model of subword units</td>
+        <td>Multiple tokenization options, flexible</td>
+    </tr>
+</table>
+
+<h2>Loading and Using Tokenizers</h2>
+<pre><code>from transformers import AutoTokenizer
+
+# Load tokenizer for a specific model
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3-8b-instruct")
+
+# Basic tokenization
+text = "Hello, how are you doing today?"
+tokens = tokenizer.encode(text)
+print(f"Token IDs: {tokens}")
+print(f"Token count: {len(tokens)}")
+
+# Decode tokens back to text
+decoded = tokenizer.decode(tokens)
+print(f"Decoded: {decoded}")
+
+# Tokenize with return_tensors for model input
+inputs = tokenizer(text, return_tensors="pt")
+print(inputs)
+# Output: {'input_ids': tensor([[...]]), 'attention_mask': tensor([[...]])}\n</code></pre>
+
+<h2>Understanding Token IDs and Vocabulary</h2>
+<pre><code># View specific tokens
+text = "Tokenization is important"
+tokens = tokenizer.tokenize(text)
+print(f"Tokens: {tokens}")
+# Output: ['Token', 'ization', 'is', 'important']
+
+# Convert tokens to IDs
+token_ids = tokenizer.convert_tokens_to_ids(tokens)
+print(f"Token IDs: {token_ids}")
+
+# Check vocabulary size
+print(f"Vocabulary size: {tokenizer.vocab_size}")
+
+# Access special tokens
+print(f"BOS token: {tokenizer.bos_token} (ID: {tokenizer.bos_token_id})")
+print(f"EOS token: {tokenizer.eos_token} (ID: {tokenizer.eos_token_id})")
+print(f"PAD token: {tokenizer.pad_token} (ID: {tokenizer.pad_token_id})")
+print(f"UNK token: {tokenizer.unk_token} (ID: {tokenizer.unk_token_id})")\n</code></pre>
+
+<h2>Batch Tokenization and Padding</h2>
+<p>When processing multiple texts, tokenizers handle padding and truncation automatically:</p>
+
+<pre><code>texts = [
+    "This is a short sentence.",
+    "This is a much longer sentence that contains more words.",
+    "Short."
+]
+
+# Tokenize batch with padding
+inputs = tokenizer(
+    texts,
+    padding=True,  # Pad to longest sequence in batch
+    truncation=True,  # Truncate if exceeds max_length
+    max_length=512,
+    return_tensors="pt"
+)
+
+print(f"Input IDs shape: {inputs['input_ids'].shape}")
+print(f"Attention mask shape: {inputs['attention_mask'].shape}")
+
+# Different padding strategies
+inputs = tokenizer(
+    texts,
+    padding="max_length",  # Pad all to max_length
+    max_length=128,
+    truncation=True,
+    return_tensors="pt"
+)\n</code></pre>
+
+<h2>Attention Masks</h2>
+<p>Attention masks tell the model which tokens to attend to (1) and which to ignore (0, typically padding):</p>
+
+<pre><code>text = "Hello world"
+inputs = tokenizer(text, padding="max_length", max_length=10, return_tensors="pt")
+
+print(f"Input IDs: {inputs['input_ids']}")
+print(f"Attention Mask: {inputs['attention_mask']}")
+# Attention mask will be [1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+# 1s for actual tokens, 0s for padding\n</code></pre>
+
+<h2>Chat Templates for Conversational Models</h2>
+<p>Modern chat models require specific formatting with special tokens. The apply_chat_template method handles this automatically:</p>
+
+<pre><code>from transformers import AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3-8b-instruct")
+
+# Define conversation
+messages = [
+    {"role": "system", "content": "You are a helpful AI assistant."},
+    {"role": "user", "content": "What is machine learning?"},
+    {"role": "assistant", "content": "Machine learning is a subset of AI..."},
+    {"role": "user", "content": "Can you give an example?"}
+]
+
+# Apply chat template
+formatted_text = tokenizer.apply_chat_template(
+    messages,
+    tokenize=False,
+    add_generation_prompt=True
+)
+print(formatted_text)
+
+# Tokenize for model input
+inputs = tokenizer.apply_chat_template(
+    messages,
+    tokenize=True,
+    add_generation_prompt=True,
+    return_tensors="pt"
+)\n</code></pre>
+
+<h2>Managing Context Windows</h2>
+<p>Understanding token counts is crucial for staying within model context limits:</p>
+
+<pre><code># Check model's maximum context length
+print(f"Max model length: {tokenizer.model_max_length}")
+
+# Count tokens in text
+long_text = "..." * 1000  # Very long text
+token_count = len(tokenizer.encode(long_text))
+
+if token_count &gt; tokenizer.model_max_length:
+    print(f"Text exceeds limit: {token_count} &gt; {tokenizer.model_max_length}")
+    
+    # Truncate to fit
+    inputs = tokenizer(
+        long_text,
+        max_length=tokenizer.model_max_length,
+        truncation=True,
+        return_tensors="pt"
+    )\n</code></pre>
+
+<h2>Streaming Tokenization for Large Documents</h2>
+<pre><code># For very large documents, process in chunks
+def chunk_text(text, tokenizer, max_length=512, overlap=50):
+    tokens = tokenizer.encode(text)
+    chunks = []
+    
+    for i in range(0, len(tokens), max_length - overlap):
+        chunk = tokens[i:i + max_length]
+        chunks.append(chunk)
+    
+    return chunks
+
+large_document = "..." * 10000
+chunks = chunk_text(large_document, tokenizer)
+print(f"Split into {len(chunks)} chunks")\n</code></pre>
+
+<h2>Fast Tokenizers vs Slow Tokenizers</h2>
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Fast Tokenizers (Rust)</th>
+        <th>Slow Tokenizers (Python)</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Speed</td>
+        <td>10-100x faster</td>
+        <td>Slower, pure Python</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Offset Mapping</td>
+        <td>Yes - track original text positions</td>
+        <td>No</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batch Processing</td>
+        <td>Highly optimized</td>
+        <td>Sequential processing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Availability</td>
+        <td>Most modern models</td>
+        <td>Legacy models</td>
+    </tr>
+</table>
+
+<pre><code># Check if tokenizer is fast
+print(f"Is fast tokenizer: {tokenizer.is_fast}")
+
+# Use offset mapping (fast tokenizers only)
+if tokenizer.is_fast:
+    text = "Hello world"
+    encoding = tokenizer(text, return_offsets_mapping=True)
+    print(f"Offsets: {encoding['offset_mapping']}")
+    # Shows character positions in original text for each token\n</code></pre>
+
+<h2>Custom Tokenization</h2>
+<pre><code># Add custom tokens
+special_tokens = {"additional_special_tokens": ["[CUSTOM]", "[SPECIAL]"]}
+tokenizer.add_special_tokens(special_tokens)
+
+# Resize model embeddings to match new vocabulary
+# model.resize_token_embeddings(len(tokenizer))
+
+# Use custom tokens
+text = "This is [CUSTOM] text with [SPECIAL] tokens"
+tokens = tokenizer.tokenize(text)
+print(tokens)\n</code></pre>
+
+<h2>Tokenizer Configuration</h2>
+<pre><code># Save tokenizer configuration
+tokenizer.save_pretrained("./my_tokenizer")
+
+# Load custom tokenizer
+custom_tokenizer = AutoTokenizer.from_pretrained("./my_tokenizer")
+
+# View tokenizer configuration
+print(tokenizer.init_kwargs)
+print(tokenizer.padding_side)  # 'right' or 'left'
+print(tokenizer.truncation_side)  # 'right' or 'left'\n</code></pre>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Always Use the Matching Tokenizer:</strong> Each model requires its specific tokenizer</li>
+    <li><strong>Monitor Token Counts:</strong> Track tokens to manage costs and context limits</li>
+    <li><strong>Use Batch Processing:</strong> Tokenize multiple texts together for better performance</li>
+    <li><strong>Handle Padding Carefully:</strong> Choose padding strategy based on your use case</li>
+    <li><strong>Leverage Chat Templates:</strong> Use apply_chat_template for conversational models</li>
+    <li><strong>Test Tokenization:</strong> Verify tokenization output before production deployment</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

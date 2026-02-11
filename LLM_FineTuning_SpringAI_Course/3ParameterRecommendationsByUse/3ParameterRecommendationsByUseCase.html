@@ -1,0 +1,415 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Parameter Recommendations by Use Case</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Parameter Recommendations by Use Case</h1>
+
+<h2>Introduction</h2>
+<p>Selecting optimal parameters depends entirely on your use case. This module provides battle-tested parameter combinations for common scenarios, along with the reasoning behind each choice.</p>
+
+<h2>Comprehensive Parameter Guide</h2>
+<table>
+    <tr>
+        <th>Use Case</th>
+        <th>Temperature</th>
+        <th>Top-P</th>
+        <th>Frequency Penalty</th>
+        <th>Presence Penalty</th>
+        <th>Max Tokens</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Extraction</td>
+        <td>0.0 - 0.1</td>
+        <td>0.1</td>
+        <td>0.0</td>
+        <td>0.0</td>
+        <td>200-500</td>
+    </tr>
+    <tr>
+        <td class="rowheader">JSON Generation</td>
+        <td>0.0</td>
+        <td>0.1</td>
+        <td>0.0</td>
+        <td>0.0</td>
+        <td>300-800</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Code Generation</td>
+        <td>0.1 - 0.2</td>
+        <td>0.2</td>
+        <td>0.0</td>
+        <td>0.0</td>
+        <td>500-2000</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Technical Documentation</td>
+        <td>0.2 - 0.3</td>
+        <td>0.3</td>
+        <td>0.1</td>
+        <td>0.0</td>
+        <td>800-1500</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Customer Support</td>
+        <td>0.5 - 0.7</td>
+        <td>0.8</td>
+        <td>0.2</td>
+        <td>0.1</td>
+        <td>300-600</td>
+    </tr>
+    <tr>
+        <td class="rowheader">General Q&A</td>
+        <td>0.7</td>
+        <td>1.0</td>
+        <td>0.0</td>
+        <td>0.0</td>
+        <td>400-800</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Creative Writing</td>
+        <td>0.9 - 1.2</td>
+        <td>0.9</td>
+        <td>0.3 - 0.5</td>
+        <td>0.2 - 0.4</td>
+        <td>500-1500</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Marketing Copy</td>
+        <td>0.8 - 1.0</td>
+        <td>0.9</td>
+        <td>0.5</td>
+        <td>0.3</td>
+        <td>200-500</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Brainstorming</td>
+        <td>1.0 - 1.3</td>
+        <td>0.95</td>
+        <td>0.4</td>
+        <td>0.5</td>
+        <td>300-800</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Summarization</td>
+        <td>0.3 - 0.5</td>
+        <td>0.5</td>
+        <td>0.1</td>
+        <td>0.0</td>
+        <td>150-400</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Translation</td>
+        <td>0.2 - 0.3</td>
+        <td>0.3</td>
+        <td>0.0</td>
+        <td>0.0</td>
+        <td>Match source length</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Classification</td>
+        <td>0.0</td>
+        <td>0.1</td>
+        <td>0.0</td>
+        <td>0.0</td>
+        <td>10-50</td>
+    </tr>
+</table>
+
+<h2>Use Case 1: Data Extraction and JSON Generation</h2>
+
+<h3>Scenario</h3>
+<p>Extracting structured information from unstructured text and converting it to JSON format for downstream processing.</p>
+
+<h3>Parameter Rationale</h3>
+<ul>
+    <li><strong>Temperature 0.0:</strong> Ensures deterministic output - same input always produces same output</li>
+    <li><strong>Top-P 0.1:</strong> Restricts to highest probability tokens only</li>
+    <li><strong>No Penalties:</strong> Allows natural repetition of JSON keys and structure</li>
+    <li><strong>Limited Tokens:</strong> Prevents verbose output that could break parsing</li>
+</ul>
+
+<h3>Spring AI Implementation</h3>
+<div class="code-block">
+<pre><code>public String extractToJson(String text) {
+    String prompt = """
+            Extract contact information as JSON:
+            {
+              "name": "...",
+              "email": "...",
+              "phone": "..."
+            }
+            
+            Text: %s
+            """.formatted(text);
+
+    return chatClient.prompt()
+            .user(prompt)
+            .options(OpenAiChatOptions.builder()
+                    .withTemperature(0.0f)
+                    .withTopP(0.1f)
+                    .withMaxTokens(300)
+                    .build())
+            .call()
+            .content();
+}
+</code></pre>
+</div>
+
+<h2>Use Case 2: Code Generation</h2>
+
+<h3>Scenario</h3>
+<p>Generating syntactically correct code based on natural language requirements.</p>
+
+<h3>Parameter Rationale</h3>
+<ul>
+    <li><strong>Temperature 0.1-0.2:</strong> Low enough for consistency, high enough for some flexibility in implementation</li>
+    <li><strong>Top-P 0.2:</strong> Allows some variation in coding style while maintaining correctness</li>
+    <li><strong>No Penalties:</strong> Code naturally repeats keywords, variable names, and patterns</li>
+    <li><strong>Higher Tokens:</strong> Code can be verbose, especially with comments</li>
+</ul>
+
+<h3>Spring AI Implementation</h3>
+<div class="code-block">
+<pre><code>public String generateCode(String requirement) {
+    String prompt = """
+            Generate Java code for: %s
+            
+            Requirements:
+            - Include error handling
+            - Add JavaDoc comments
+            - Follow best practices
+            """.formatted(requirement);
+
+    return chatClient.prompt()
+            .user(prompt)
+            .options(OpenAiChatOptions.builder()
+                    .withTemperature(0.2f)
+                    .withTopP(0.2f)
+                    .withMaxTokens(1500)
+                    .build())
+            .call()
+            .content();
+}
+</code></pre>
+</div>
+
+<h2>Use Case 3: Customer Support Chatbot</h2>
+
+<h3>Scenario</h3>
+<p>Providing helpful, professional responses to customer inquiries.</p>
+
+<h3>Parameter Rationale</h3>
+<ul>
+    <li><strong>Temperature 0.5-0.7:</strong> Balanced between consistency and natural conversation</li>
+    <li><strong>Top-P 0.8:</strong> Allows varied phrasing while maintaining professionalism</li>
+    <li><strong>Frequency Penalty 0.2:</strong> Prevents repetitive phrasing in longer conversations</li>
+    <li><strong>Presence Penalty 0.1:</strong> Encourages addressing different aspects of customer questions</li>
+    <li><strong>Moderate Tokens:</strong> Concise but complete responses</li>
+</ul>
+
+<h3>Spring AI Implementation</h3>
+<div class="code-block">
+<pre><code>public String handleCustomerQuery(String query, String context) {
+    String prompt = """
+            Customer Query: %s
+            
+            Context: %s
+            
+            Provide a helpful, professional response.
+            """.formatted(query, context);
+
+    return chatClient.prompt()
+            .user(prompt)
+            .options(OpenAiChatOptions.builder()
+                    .withTemperature(0.6f)
+                    .withTopP(0.8f)
+                    .withFrequencyPenalty(0.2f)
+                    .withPresencePenalty(0.1f)
+                    .withMaxTokens(400)
+                    .build())
+            .call()
+            .content();
+}
+</code></pre>
+</div>
+
+<h2>Use Case 4: Creative Content Generation</h2>
+
+<h3>Scenario</h3>
+<p>Creating engaging marketing copy, blog posts, or creative narratives.</p>
+
+<h3>Parameter Rationale</h3>
+<ul>
+    <li><strong>Temperature 0.9-1.2:</strong> High creativity and diverse output</li>
+    <li><strong>Top-P 0.9:</strong> Broad vocabulary selection</li>
+    <li><strong>Frequency Penalty 0.3-0.5:</strong> Prevents repetitive phrasing</li>
+    <li><strong>Presence Penalty 0.2-0.4:</strong> Encourages exploring different themes</li>
+    <li><strong>Variable Tokens:</strong> Depends on content length requirements</li>
+</ul>
+
+<h3>Spring AI Implementation</h3>
+<div class="code-block">
+<pre><code>public String generateMarketingCopy(String product, String audience, String tone) {
+    String prompt = """
+            Create compelling marketing copy for:
+            Product: %s
+            Target Audience: %s
+            Tone: %s
+            
+            Make it engaging and memorable.
+            """.formatted(product, audience, tone);
+
+    return chatClient.prompt()
+            .user(prompt)
+            .options(OpenAiChatOptions.builder()
+                    .withTemperature(1.0f)
+                    .withTopP(0.9f)
+                    .withFrequencyPenalty(0.5f)
+                    .withPresencePenalty(0.3f)
+                    .withMaxTokens(400)
+                    .build())
+            .call()
+            .content();
+}
+</code></pre>
+</div>
+
+<h2>Use Case 5: Technical Documentation</h2>
+
+<h3>Scenario</h3>
+<p>Generating clear, accurate technical documentation from code or specifications.</p>
+
+<h3>Parameter Rationale</h3>
+<ul>
+    <li><strong>Temperature 0.2-0.3:</strong> Consistent terminology while allowing natural explanation</li>
+    <li><strong>Top-P 0.3:</strong> Limited vocabulary for technical precision</li>
+    <li><strong>Frequency Penalty 0.1:</strong> Slight penalty to vary phrasing without losing technical terms</li>
+    <li><strong>No Presence Penalty:</strong> Technical docs should thoroughly cover each topic</li>
+    <li><strong>Higher Tokens:</strong> Documentation can be detailed</li>
+</ul>
+
+<h3>Spring AI Implementation</h3>
+<div class="code-block">
+<pre><code>public String generateDocumentation(String code, String context) {
+    String prompt = """
+            Generate technical documentation for:
+            
+            %s
+            
+            Context: %s
+            
+            Include: purpose, parameters, return values, exceptions, examples.
+            """.formatted(code, context);
+
+    return chatClient.prompt()
+            .user(prompt)
+            .options(OpenAiChatOptions.builder()
+                    .withTemperature(0.3f)
+                    .withTopP(0.3f)
+                    .withFrequencyPenalty(0.1f)
+                    .withMaxTokens(1200)
+                    .build())
+            .call()
+            .content();
+}
+</code></pre>
+</div>
+
+<h2>Use Case 6: Summarization</h2>
+
+<h3>Scenario</h3>
+<p>Creating concise summaries of longer documents or articles.</p>
+
+<h3>Parameter Rationale</h3>
+<ul>
+    <li><strong>Temperature 0.3-0.5:</strong> Consistent key point extraction with some flexibility</li>
+    <li><strong>Top-P 0.5:</strong> Balanced vocabulary</li>
+    <li><strong>Frequency Penalty 0.1:</strong> Slight variation in phrasing</li>
+    <li><strong>No Presence Penalty:</strong> Should focus on main themes</li>
+    <li><strong>Limited Tokens:</strong> Summaries should be concise</li>
+</ul>
+
+<h3>Spring AI Implementation</h3>
+<div class="code-block">
+<pre><code>public String summarize(String text, int maxLength) {
+    String prompt = """
+            Summarize the following text in %d words or less:
+            
+            %s
+            """.formatted(maxLength, text);
+
+    return chatClient.prompt()
+            .user(prompt)
+            .options(OpenAiChatOptions.builder()
+                    .withTemperature(0.4f)
+                    .withTopP(0.5f)
+                    .withFrequencyPenalty(0.1f)
+                    .withMaxTokens(maxLength * 2)  // Tokens ≈ words * 1.5
+                    .build())
+            .call()
+            .content();
+}
+</code></pre>
+</div>
+
+<h2>Use Case 7: Classification Tasks</h2>
+
+<h3>Scenario</h3>
+<p>Categorizing text into predefined categories (sentiment analysis, topic classification, etc.).</p>
+
+<h3>Parameter Rationale</h3>
+<ul>
+    <li><strong>Temperature 0.0:</strong> Completely deterministic classification</li>
+    <li><strong>Top-P 0.1:</strong> Only highest probability tokens</li>
+    <li><strong>No Penalties:</strong> Simple classification doesn't need them</li>
+    <li><strong>Minimal Tokens:</strong> Output is just a category label</li>
+</ul>
+
+<h3>Spring AI Implementation</h3>
+<div class="code-block">
+<pre><code>public String classifySentiment(String text) {
+    String prompt = """
+            Classify the sentiment of this text as exactly one of:
+            POSITIVE, NEGATIVE, or NEUTRAL
+            
+            Text: %s
+            
+            Classification:
+            """.formatted(text);
+
+    return chatClient.prompt()
+            .user(prompt)
+            .options(OpenAiChatOptions.builder()
+                    .withTemperature(0.0f)
+                    .withTopP(0.1f)
+                    .withMaxTokens(10)
+                    .build())
+            .call()
+            .content()
+            .trim();
+}
+</code></pre>
+</div>
+
+<h2>Key Principles for Parameter Selection</h2>
+<ul>
+    <li><strong>Deterministic Tasks:</strong> Use Temperature 0.0 (JSON, classification, data extraction)</li>
+    <li><strong>Creative Tasks:</strong> Use Temperature 0.8+ (writing, brainstorming, marketing)</li>
+    <li><strong>Balanced Tasks:</strong> Use Temperature 0.5-0.7 (chatbots, Q&A, support)</li>
+    <li><strong>Technical Tasks:</strong> Use Temperature 0.1-0.3 (code, documentation, translation)</li>
+    <li><strong>Repetition Issues:</strong> Increase Frequency Penalty</li>
+    <li><strong>Topic Diversity Needed:</strong> Increase Presence Penalty</li>
+    <li><strong>Cost Optimization:</strong> Set appropriate Max Tokens limits</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

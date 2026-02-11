@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>System Integration and API Design</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>System Integration and API Design</h1>
+
+<h2>Integration Architecture Overview</h2>
+<p>GenAI customer support systems must integrate with multiple enterprise systems:</p>
+
+<table>
+    <tr>
+        <th>System Type</th>
+        <th>Purpose</th>
+        <th>Integration Method</th>
+        <th>Data Flow</th>
+    </tr>
+    <tr>
+        <td class="rowheader">CRM (Salesforce, HubSpot)</td>
+        <td>Customer data, interaction history</td>
+        <td>REST API, Webhooks</td>
+        <td>Bidirectional</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Ticketing (Zendesk, Jira)</td>
+        <td>Create and update support tickets</td>
+        <td>REST API</td>
+        <td>Bidirectional</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Knowledge Base (Confluence)</td>
+        <td>Source documentation for RAG</td>
+        <td>REST API, Sync jobs</td>
+        <td>Inbound</td>
+    </tr>
+    <tr>
+        <td class="rowheader">E-commerce Platform</td>
+        <td>Order status, returns, refunds</td>
+        <td>REST API, GraphQL</td>
+        <td>Bidirectional</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Payment Gateway</td>
+        <td>Process refunds, check payment status</td>
+        <td>REST API</td>
+        <td>Bidirectional</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Identity Provider (Okta, Auth0)</td>
+        <td>User authentication and authorization</td>
+        <td>OAuth 2.0, SAML</td>
+        <td>Inbound</td>
+    </tr>
+</table>
+
+<h2>API Design Principles</h2>
+<p>Design your GenAI support API for reliability and scalability:</p>
+
+<blockquote>
+Core API Endpoints:
+
+POST /api/v1/conversations
+- Create new conversation session
+- Returns: conversation_id, session_token
+
+POST /api/v1/conversations/{id}/messages
+- Send user message, receive AI response
+- Handles: intent classification, retrieval, generation
+
+GET /api/v1/conversations/{id}
+- Retrieve conversation history
+- Includes: messages, metadata, state
+
+POST /api/v1/conversations/{id}/escalate
+- Escalate to human agent
+- Transfers: full context, customer info
+
+POST /api/v1/conversations/{id}/feedback
+- Submit user feedback on responses
+- Captures: rating, reason, comments
+
+GET /api/v1/conversations/{id}/actions
+- List available actions for customer
+- Returns: action types, parameters, permissions
+</blockquote>
+
+<h2>Authentication and Authorization</h2>
+<ul>
+    <li><strong>Customer Authentication:</strong> OAuth 2.0 or JWT tokens for identified customers</li>
+    <li><strong>Anonymous Support:</strong> Session-based tokens for unauthenticated users</li>
+    <li><strong>Agent Access:</strong> Role-based access control (RBAC) for human agents</li>
+    <li><strong>System-to-System:</strong> API keys or service accounts for integrations</li>
+</ul>
+
+<h2>Webhook Integration Pattern</h2>
+<blockquote>
+Use webhooks for real-time updates from external systems:
+
+Example: Order Status Updates
+
+1. Customer asks: "Where is my order?"
+2. AI retrieves order ID from conversation
+3. AI calls e-commerce API: GET /orders/{id}
+4. E-commerce system registers webhook for order updates
+5. When order ships, webhook fires: POST /api/v1/webhooks/order-update
+6. System proactively notifies customer: "Your order has shipped!"
+
+Benefits:
+- Reduces polling overhead
+- Enables proactive communication
+- Improves customer experience
+</blockquote>
+
+<h2>Error Handling and Retry Logic</h2>
+<table>
+    <tr>
+        <th>Error Type</th>
+        <th>HTTP Status</th>
+        <th>Retry Strategy</th>
+        <th>Fallback</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Rate Limit Exceeded</td>
+        <td>429</td>
+        <td>Exponential backoff</td>
+        <td>Queue request, inform user of delay</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Service Unavailable</td>
+        <td>503</td>
+        <td>Retry 3 times with backoff</td>
+        <td>Graceful degradation, create ticket</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Timeout</td>
+        <td>504</td>
+        <td>Retry once immediately</td>
+        <td>Async processing, notify when complete</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Authentication Failed</td>
+        <td>401</td>
+        <td>No retry</td>
+        <td>Request re-authentication</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Not Found</td>
+        <td>404</td>
+        <td>No retry</td>
+        <td>Inform user, suggest alternatives</td>
+    </tr>
+</table>
+
+<h2>Data Synchronization Strategies</h2>
+<p>Keep your knowledge base and customer data synchronized:</p>
+
+<ul>
+    <li><strong>Real-time Sync:</strong> Webhooks trigger immediate updates - for critical data like order status</li>
+    <li><strong>Scheduled Batch:</strong> Nightly sync jobs - for documentation updates</li>
+    <li><strong>Event-Driven:</strong> Message queue (Kafka, RabbitMQ) - for high-volume updates</li>
+    <li><strong>Change Data Capture (CDC):</strong> Database-level replication - for large datasets</li>
+</ul>
+
+<h2>Multi-Channel Support</h2>
+<blockquote>
+Unified API supporting multiple communication channels:
+
+Channel Adapters:
+- Web Chat: WebSocket for real-time messaging
+- Email: SMTP/IMAP integration, async responses
+- SMS: Twilio/AWS SNS integration
+- Voice: Speech-to-text → AI → Text-to-speech
+- Social Media: Platform APIs (Twitter, Facebook)
+
+Unified Message Format:
+{
+  "conversation_id": "conv_123",
+  "channel": "web_chat",
+  "user_id": "user_456",
+  "message": {
+    "type": "text",
+    "content": "I need help with my order",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "context": {
+    "customer_tier": "premium",
+    "previous_interactions": 3
+  }
+}
+
+Channel-specific formatting handled by adapters
+</blockquote>
+
+<h2>Caching Strategy</h2>
+<p>Reduce latency and costs with intelligent caching:</p>
+
+<table>
+    <tr>
+        <th>Cache Layer</th>
+        <th>What to Cache</th>
+        <th>TTL</th>
+        <th>Invalidation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Response Cache</td>
+        <td>Common question-answer pairs</td>
+        <td>1 hour</td>
+        <td>On knowledge base update</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Embedding Cache</td>
+        <td>Query embeddings</td>
+        <td>24 hours</td>
+        <td>LRU eviction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Customer Data Cache</td>
+        <td>User profiles, preferences</td>
+        <td>15 minutes</td>
+        <td>On profile update</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Session Cache</td>
+        <td>Conversation state</td>
+        <td>Session duration</td>
+        <td>On session end</td>
+    </tr>
+</table>
+
+<h2>Monitoring and Observability</h2>
+<ul>
+    <li><strong>API Metrics:</strong> Request rate, latency, error rate per endpoint</li>
+    <li><strong>Integration Health:</strong> Monitor connectivity to external systems</li>
+    <li><strong>Data Quality:</strong> Track sync failures, data staleness</li>
+    <li><strong>Distributed Tracing:</strong> Follow requests across microservices</li>
+    <li><strong>Alerting:</strong> Notify on-call team of critical failures</li>
+</ul>
+
+<h2>Security Best Practices</h2>
+<blockquote>
+Security Checklist:
+
+✓ Encrypt data in transit (TLS 1.3)
+✓ Encrypt sensitive data at rest
+✓ Implement rate limiting per user/IP
+✓ Validate and sanitize all inputs
+✓ Use parameterized queries (prevent injection)
+✓ Implement CORS policies
+✓ Log security events (auth failures, suspicious activity)
+✓ Regular security audits and penetration testing
+✓ Principle of least privilege for API access
+✓ Rotate API keys and secrets regularly
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

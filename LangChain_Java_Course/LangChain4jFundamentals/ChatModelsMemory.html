@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Chat Models and Conversation Memory</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Chat Models and Conversation Memory</h1>
+
+<h2>Understanding Chat Models</h2>
+<p>LangChain4j provides two primary interfaces for LLM interaction:</p>
+
+<table>
+    <tr>
+        <th>Interface</th>
+        <th>Purpose</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">ChatLanguageModel</td>
+        <td>Stateless single-turn interactions</td>
+        <td>Simple queries, one-off generations</td>
+    </tr>
+    <tr>
+        <td class="rowheader">StreamingChatLanguageModel</td>
+        <td>Streaming responses token-by-token</td>
+        <td>Real-time chat UIs, progressive display</td>
+    </tr>
+</table>
+
+<h2>Basic Chat Interaction</h2>
+<p>The simplest way to interact with an LLM:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+
+public class BasicChat {
+    
+    public static void main(String[] args) {
+        ChatLanguageModel model = OpenAiChatModel.builder()
+            .apiKey(System.getenv("OPENAI_API_KEY"))
+            .modelName("gpt-4")
+            .build();
+        
+        String answer = model.generate("What is the capital of France?");
+        System.out.println(answer); // Paris
+    }
+}
+</code></pre>
+</div>
+
+<h2>Multi-Turn Conversations with Messages</h2>
+<p>For conversations with context, use the message-based API:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.data.message.*;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import java.util.List;
+
+public class ConversationExample {
+    
+    public static void main(String[] args) {
+        ChatLanguageModel model = OpenAiChatModel.builder()
+            .apiKey(System.getenv("OPENAI_API_KEY"))
+            .modelName("gpt-4")
+            .build();
+        
+        // Create conversation history
+        List&lt;ChatMessage&gt; messages = List.of(
+            SystemMessage.from("You are a helpful Java programming assistant"),
+            UserMessage.from("How do I create a list in Java?"),
+            AiMessage.from("You can create a list using: List&lt;String&gt; list = new ArrayList&lt;&gt;();"),
+            UserMessage.from("How do I add items to it?")
+        );
+        
+        Response&lt;AiMessage&gt; response = model.generate(messages);
+        System.out.println(response.content().text());
+        // Output: You can add items using the add() method: list.add("item");
+    }
+}
+</code></pre>
+</div>
+
+<h2>Message Types</h2>
+<p>LangChain4j supports different message types for structured conversations:</p>
+
+<ul>
+    <li><strong>SystemMessage:</strong> Sets the AI's behavior and context (e.g., "You are a helpful assistant")</li>
+    <li><strong>UserMessage:</strong> Represents user input or questions</li>
+    <li><strong>AiMessage:</strong> Represents AI responses in conversation history</li>
+    <li><strong>ToolExecutionResultMessage:</strong> Contains results from function/tool calls</li>
+</ul>
+
+<h2>Conversation Memory</h2>
+<p>LangChain4j provides memory implementations to maintain conversation context:</p>
+
+<h3>Message Window Memory</h3>
+<p>Keeps the last N messages in memory:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+
+// Keep last 10 messages
+ChatMemory memory = MessageWindowChatMemory.withMaxMessages(10);
+
+// Add messages
+memory.add(UserMessage.from("Hello"));
+memory.add(AiMessage.from("Hi! How can I help you?"));
+
+// Retrieve all messages
+List&lt;ChatMessage&gt; messages = memory.messages();
+</code></pre>
+</div>
+
+<h3>Token Window Memory</h3>
+<p>Limits memory by token count instead of message count:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.memory.chat.TokenWindowChatMemory;
+import dev.langchain4j.model.Tokenizer;
+import dev.langchain4j.model.openai.OpenAiTokenizer;
+
+Tokenizer tokenizer = new OpenAiTokenizer("gpt-4");
+
+// Keep last 1000 tokens
+ChatMemory memory = TokenWindowChatMemory.builder()
+    .maxTokens(1000, tokenizer)
+    .build();
+</code></pre>
+</div>
+
+<h2>Streaming Responses</h2>
+<p>For real-time user experiences, stream responses token-by-token:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.model.StreamingResponseHandler;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.output.Response;
+
+public class StreamingExample {
+    
+    public static void main(String[] args) {
+        StreamingChatLanguageModel model = OpenAiStreamingChatModel.builder()
+            .apiKey(System.getenv("OPENAI_API_KEY"))
+            .modelName("gpt-4")
+            .build();
+        
+        model.generate("Write a haiku about Java", new StreamingResponseHandler&lt;AiMessage&gt;() {
+            
+            @Override
+            public void onNext(String token) {
+                // Called for each token
+                System.out.print(token);
+            }
+            
+            @Override
+            public void onComplete(Response&lt;AiMessage&gt; response) {
+                // Called when complete
+                System.out.println("\n\nGeneration complete!");
+            }
+            
+            @Override
+            public void onError(Throwable error) {
+                // Handle errors
+                error.printStackTrace();
+            }
+        });
+    }
+}
+</code></pre>
+</div>
+
+<h2>Building a Conversational Service</h2>
+<p>Combine chat models with memory for stateful conversations:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.data.message.*;
+
+public class ConversationalService {
+    
+    private final ChatLanguageModel model;
+    private final ChatMemory memory;
+    
+    public ConversationalService() {
+        this.model = OpenAiChatModel.builder()
+            .apiKey(System.getenv("OPENAI_API_KEY"))
+            .modelName("gpt-4")
+            .build();
+        
+        this.memory = MessageWindowChatMemory.withMaxMessages(20);
+        
+        // Set system context
+        memory.add(SystemMessage.from(
+            "You are a helpful Java programming tutor. " +
+            "Provide clear, concise explanations with code examples."
+        ));
+    }
+    
+    public String chat(String userMessage) {
+        // Add user message to memory
+        memory.add(UserMessage.from(userMessage));
+        
+        // Generate response with full conversation history
+        Response&lt;AiMessage&gt; response = model.generate(memory.messages());
+        
+        // Add AI response to memory
+        AiMessage aiMessage = response.content();
+        memory.add(aiMessage);
+        
+        return aiMessage.text();
+    }
+    
+    public void clearHistory() {
+        memory.clear();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Model Parameters</h2>
+<p>Fine-tune model behavior with these parameters:</p>
+
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Range</th>
+        <th>Effect</th>
+    </tr>
+    <tr>
+        <td class="rowheader">temperature</td>
+        <td>0.0 - 2.0</td>
+        <td>Controls randomness (0 = deterministic, 2 = very creative)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">maxTokens</td>
+        <td>1 - model limit</td>
+        <td>Maximum length of generated response</td>
+    </tr>
+    <tr>
+        <td class="rowheader">topP</td>
+        <td>0.0 - 1.0</td>
+        <td>Nucleus sampling (alternative to temperature)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">frequencyPenalty</td>
+        <td>-2.0 - 2.0</td>
+        <td>Reduces repetition of frequent tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">presencePenalty</td>
+        <td>-2.0 - 2.0</td>
+        <td>Encourages discussing new topics</td>
+    </tr>
+</table>
+
+<h2>Example with Custom Parameters</h2>
+<div class="code-block">
+<pre><code>ChatLanguageModel model = OpenAiChatModel.builder()
+    .apiKey(System.getenv("OPENAI_API_KEY"))
+    .modelName("gpt-4")
+    .temperature(0.3)           // More focused responses
+    .maxTokens(500)             // Limit response length
+    .topP(0.9)                  // Nucleus sampling
+    .frequencyPenalty(0.5)      // Reduce repetition
+    .presencePenalty(0.3)       // Encourage topic diversity
+    .timeout(Duration.ofSeconds(30))
+    .logRequests(true)          // Enable request logging
+    .logResponses(true)         // Enable response logging
+    .build();
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>System Messages:</strong> Always set clear system instructions for consistent behavior</li>
+    <li><strong>Memory Management:</strong> Use token-based memory for production to control costs</li>
+    <li><strong>Error Handling:</strong> Implement retry logic and fallbacks for API failures</li>
+    <li><strong>Temperature Settings:</strong> Use low temperature (0.1-0.3) for factual tasks, higher (0.7-1.0) for creative tasks</li>
+    <li><strong>Token Limits:</strong> Monitor token usage to manage API costs effectively</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

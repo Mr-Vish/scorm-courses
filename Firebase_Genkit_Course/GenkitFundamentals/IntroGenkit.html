@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to Firebase Genkit</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Introduction to Firebase Genkit</h1>
+
+
+<h2>What Is Genkit?</h2>
+<p>Firebase Genkit is an <strong>open-source framework</strong> from Google for building AI-powered applications. It provides a unified interface for working with multiple AI models, structured generation, retrieval, and evaluation.</p>
+
+<h2>Key Concepts</h2>
+<ul>
+    <li><strong>Flows:</strong> Type-safe, observable functions that can call AI models and tools</li>
+    <li><strong>Models:</strong> Abstraction over LLM providers (Gemini, GPT, Claude, Ollama)</li>
+    <li><strong>Prompts:</strong> Managed prompt templates with input/output schemas</li>
+    <li><strong>Retrievers:</strong> Built-in RAG support with pluggable vector stores</li>
+    <li><strong>Evaluators:</strong> Test AI output quality with automated metrics</li>
+</ul>
+
+<h2>Setup</h2>
+<div class="code-block">
+<pre><code>npm install genkit @genkit-ai/googleai
+
+// Initialize Genkit
+import { genkit } from 'genkit';
+import { googleAI, gemini15Flash } from '@genkit-ai/googleai';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: gemini15Flash,
+});</code></pre>
+</div>
+
+<h2>Genkit Developer UI</h2>
+<p>Run <code>npx genkit start</code> to launch a visual developer UI for testing flows, inspecting traces, and evaluating outputs.</p>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

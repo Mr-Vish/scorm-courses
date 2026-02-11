@@ -1,0 +1,255 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding PII Types and Risk Levels</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Understanding PII Types and Risk Levels</h1>
+
+<h2>What is Personally Identifiable Information (PII)?</h2>
+<p>Personally Identifiable Information (PII) is any data that can be used to identify, contact, or locate a specific individual, either alone or when combined with other information. In GenAI applications, PII poses unique risks because:</p>
+<ul>
+    <li>LLMs may memorize and reproduce PII from training data</li>
+    <li>User prompts containing PII are sent to third-party APIs</li>
+    <li>Generated responses may inadvertently expose sensitive information</li>
+    <li>Conversation logs and embeddings can persist PII indefinitely</li>
+</ul>
+
+<h2>Categories of PII</h2>
+
+<h3>Direct Identifiers (Critical Risk)</h3>
+<p>These uniquely identify an individual and pose the highest privacy risk:</p>
+<table>
+    <tr>
+        <th>Type</th>
+        <th>Examples</th>
+        <th>Regulatory Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Full Name</td>
+        <td>John Michael Smith, María García</td>
+        <td>GDPR, CCPA</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Government IDs</td>
+        <td>SSN (123-45-6789), Passport (A12345678), Driver's License</td>
+        <td>GDPR, CCPA, Identity Theft Risk</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Biometric Data</td>
+        <td>Fingerprints, facial recognition data, voice prints</td>
+        <td>GDPR Article 9 (Special Category)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Account Numbers</td>
+        <td>Bank account, credit card (4532-1234-5678-9010)</td>
+        <td>PCI DSS, GLBA</td>
+    </tr>
+</table>
+
+<h3>Contact Information (High Risk)</h3>
+<p>Enables direct communication with individuals:</p>
+<table>
+    <tr>
+        <th>Type</th>
+        <th>Examples</th>
+        <th>Detection Complexity</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Email Address</td>
+        <td>john.smith@company.com, user123@gmail.com</td>
+        <td>Low (regex patterns)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Phone Number</td>
+        <td>+1-555-123-4567, (555) 123-4567</td>
+        <td>Medium (format variations)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Physical Address</td>
+        <td>123 Main St, Apt 4B, New York, NY 10001</td>
+        <td>High (unstructured text)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Social Media Handles</td>
+        <td>@username, linkedin.com/in/johndoe</td>
+        <td>Medium (platform-specific)</td>
+    </tr>
+</table>
+
+<h3>Protected Health Information (Critical - HIPAA)</h3>
+<p>Medical data subject to strict regulatory requirements:</p>
+<ul>
+    <li><strong>Medical Record Numbers (MRN):</strong> Patient identifiers in healthcare systems</li>
+    <li><strong>Diagnoses and Conditions:</strong> "Patient has Type 2 diabetes"</li>
+    <li><strong>Prescriptions:</strong> Medication names, dosages, pharmacy information</li>
+    <li><strong>Treatment History:</strong> Procedures, surgeries, therapy sessions</li>
+    <li><strong>Insurance Information:</strong> Policy numbers, claims data</li>
+</ul>
+<blockquote>
+<strong>HIPAA Requirement:</strong> PHI must never be transmitted to third-party LLM APIs without proper Business Associate Agreements (BAAs) and encryption. Most public LLM services do not qualify as HIPAA-compliant.
+</blockquote>
+
+<h3>Financial Information (Critical - PCI DSS)</h3>
+<table>
+    <tr>
+        <th>Type</th>
+        <th>Example</th>
+        <th>Compliance Standard</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Credit Card Numbers</td>
+        <td>4532-1234-5678-9010 (Visa), 5425-2334-3010-9903 (Mastercard)</td>
+        <td>PCI DSS Level 1</td>
+    </tr>
+    <tr>
+        <td class="rowheader">CVV/CVC Codes</td>
+        <td>123, 4567 (Amex)</td>
+        <td>PCI DSS - Never store</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Bank Account Numbers</td>
+        <td>Account: 123456789, Routing: 021000021</td>
+        <td>GLBA, SOX</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Income/Salary</td>
+        <td>"Annual salary: $85,000"</td>
+        <td>GDPR, CCPA</td>
+    </tr>
+</table>
+
+<h3>Quasi-Identifiers (Moderate Risk)</h3>
+<p>These don't uniquely identify individuals alone, but can enable re-identification when combined:</p>
+<ul>
+    <li><strong>Date of Birth:</strong> 1985-03-15 (especially when combined with location)</li>
+    <li><strong>ZIP Code:</strong> 90210 (87% of US population uniquely identified by ZIP + DOB + gender)</li>
+    <li><strong>Age:</strong> "42 years old"</li>
+    <li><strong>Gender:</strong> Male, Female, Non-binary</li>
+    <li><strong>Race/Ethnicity:</strong> GDPR Article 9 special category</li>
+    <li><strong>Job Title:</strong> "Senior VP of Engineering at TechCorp"</li>
+    <li><strong>Education:</strong> "Harvard MBA Class of 2010"</li>
+</ul>
+<blockquote>
+<strong>Re-identification Risk:</strong> Research shows that 87% of the US population can be uniquely identified using just ZIP code, birth date, and gender. Always consider combinations of quasi-identifiers.
+</blockquote>
+
+<h3>Digital Identifiers (Moderate Risk)</h3>
+<p>Online tracking and identification data:</p>
+<table>
+    <tr>
+        <th>Type</th>
+        <th>Example</th>
+        <th>Privacy Concern</th>
+    </tr>
+    <tr>
+        <td class="rowheader">IP Address</td>
+        <td>192.168.1.1, 2001:0db8:85a3::8a2e:0370:7334</td>
+        <td>GDPR considers PII, location tracking</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Device IDs</td>
+        <td>IMEI, MAC address, Android ID</td>
+        <td>Cross-app tracking, device fingerprinting</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cookies/Session IDs</td>
+        <td>session_id=a3fWa, _ga=GA1.2.123456789</td>
+        <td>User behavior tracking</td>
+    </tr>
+    <tr>
+        <td class="rowheader">User IDs</td>
+        <td>user_12345, customer_id=ABC-789</td>
+        <td>Cross-system correlation</td>
+    </tr>
+</table>
+
+<h2>Risk Assessment Framework</h2>
+<p>Not all PII requires the same level of protection. Use this framework to prioritize:</p>
+
+<div class="code-block">
+<pre><code>Risk Level = (Sensitivity × Identifiability × Regulatory Impact) / Mitigation Controls
+
+Critical Risk (Score 9-10):
+- Must be redacted before any LLM processing
+- Examples: SSN, credit cards, medical records
+- Action: Block or fully anonymize
+
+High Risk (Score 7-8):
+- Redact before third-party API calls
+- May be acceptable for on-premise models with proper controls
+- Examples: Full names, email addresses, phone numbers
+- Action: Tokenize or pseudonymize
+
+Moderate Risk (Score 4-6):
+- Context-dependent handling
+- Examples: ZIP codes, job titles, ages
+- Action: Aggregate or generalize
+
+Low Risk (Score 1-3):
+- May be acceptable with proper consent and controls
+- Examples: Generic demographic data, anonymized statistics
+- Action: Monitor and log access
+</code></pre>
+</div>
+
+<h2>Context Matters: GenAI-Specific Considerations</h2>
+
+<h3>Training Data vs. Inference Data</h3>
+<ul>
+    <li><strong>Training Data:</strong> PII in training data can be memorized and reproduced. Always scrub before fine-tuning.</li>
+    <li><strong>Inference Data:</strong> User prompts and context sent to LLM APIs. Redact before transmission.</li>
+    <li><strong>Generated Output:</strong> Models may hallucinate realistic-looking PII. Scan outputs before returning to users.</li>
+</ul>
+
+<h3>RAG Pipeline Considerations</h3>
+<ul>
+    <li><strong>Document Ingestion:</strong> Scan and classify documents before embedding</li>
+    <li><strong>Vector Databases:</strong> Embeddings can encode PII information</li>
+    <li><strong>Context Retrieval:</strong> Filter retrieved documents based on user permissions</li>
+    <li><strong>Prompt Assembly:</strong> Final PII check before sending to LLM</li>
+</ul>
+
+<h2>Real-World Example: Customer Support Chatbot</h2>
+<div class="code-block">
+<pre><code>User Prompt: "Hi, I'm John Smith (SSN: 123-45-6789). 
+I need help with my credit card ending in 4532. 
+My email is john.smith@email.com and I live at 
+123 Main Street, New York, NY 10001."
+
+PII Detected:
+- PERSON: "John Smith" (High Risk)
+- US_SSN: "123-45-6789" (Critical Risk)
+- CREDIT_CARD: "4532" (partial - Critical Risk)
+- EMAIL_ADDRESS: "john.smith@email.com" (High Risk)
+- LOCATION: "123 Main Street, New York, NY 10001" (High Risk)
+
+Redacted Prompt for LLM:
+"Hi, I'm [PERSON]. I need help with my credit card 
+ending in [CREDIT_CARD]. My email is [EMAIL] and 
+I live at [LOCATION]."
+
+Action: Process with redacted version, maintain mapping 
+for response reconstruction if needed.
+</code></pre>
+</div>
+
+<h2>Industry-Specific PII</h2>
+<p>Different industries have domain-specific sensitive data:</p>
+<ul>
+    <li><strong>Healthcare:</strong> Patient names, MRNs, diagnoses, prescriptions</li>
+    <li><strong>Finance:</strong> Account numbers, transaction details, credit scores</li>
+    <li><strong>Legal:</strong> Case numbers, client names, attorney-client communications</li>
+    <li><strong>Education:</strong> Student IDs, grades, disciplinary records (FERPA)</li>
+    <li><strong>HR:</strong> Employee IDs, performance reviews, salary information</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

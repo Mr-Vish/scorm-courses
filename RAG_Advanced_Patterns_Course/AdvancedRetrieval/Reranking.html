@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Reranking</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Reranking</h1>
+<div class="container">
+<h2>Reranking: Refining Retrieval Quality</h2>
+<p>Retrieval is often a two-stage process. The first stage (Initial Retrieval) is fast but sometimes "noisy." The second stage, known as <strong>Reranking</strong>, uses a more powerful but slower model to re-evaluate the top results and ensure the most relevant ones are actually at the top.</p>
+
+<h3>Why is Reranking Necessary?</h3>
+<p>In the initial retrieval phase (using Vector Search or Hybrid Search), we might retrieve 50 or 100 documents. Because this stage has to be very fast, it uses "bi-encoders" which compare the similarity between the query and the documents in a relatively simple way. This can lead to "false positives"—documents that are semantically similar but don't actually answer the user's question.</p>
+
+<h3>How Reranking Works</h3>
+<ol>
+    <li><strong>Retrieve:</strong> Get the top 50 documents using a fast method (e.g., Vector Search).</li>
+    <li><strong>Score:</strong> Pass the user's query and each of those 50 documents into a <strong>Cross-Encoder</strong> model.
+        <ul>
+            <li>Unlike a bi-encoder, a cross-encoder processes the query and the document *together*, allowing it to understand the deep interactions between them.</li>
+        </ul>
+    </li>
+    <li><strong>Sort:</strong> Re-sort the 50 documents based on the cross-encoder's high-precision scores.</li>
+    <li><strong>Select:</strong> Take the top 5 or 10 reranked documents and pass them to the LLM.</li>
+</ol>
+
+<h3>Bi-Encoders vs. Cross-Encoders</h3>
+<ul>
+    <li><strong>Bi-Encoders (Standard RAG):</strong> Encode query and documents separately. Very fast (milliseconds) but less accurate at finding the subtle relationship between a specific question and an answer.</li>
+    <li><strong>Cross-Encoders (Rerankers):</strong> Process query and document together. Slower (tens of milliseconds per pair) but much more accurate at determining relevance.</li>
+</ul>
+
+<h3>The Benefits of Reranking</h3>
+<ul>
+    <li><strong>Significantly Higher Precision:</strong> Rerankers are excellent at filtering out the "distraction" documents that can confuse an LLM.</li>
+    <li><strong>Improved RAGAS Scores:</strong> Reranking consistently improves metrics like "Faithfulness" and "Answer Relevance."</li>
+    <li><strong>Cost Savings:</strong> By providing the LLM with only the most relevant documents (and fewer of them), you can reduce the number of input tokens and save money.</li>
+</ul>
+
+<h3>Popular Reranking Models</h3>
+<ul>
+    <li><strong>Cohere Rerank:</strong> One of the most popular and easy-to-use managed reranking services.</li>
+    <li><strong>BGE-Reranker:</strong> A powerful open-source cross-encoder model.</li>
+    <li><strong>ColBERT:</strong> A specialized model architecture that provides cross-encoder-like accuracy with much higher speed.</li>
+</ul>
+
+<h3>Use Case: Multi-Document Reasoning</h3>
+<p>If a user asks a complex question that requires comparing two specific documents, a standard vector search might return 20 documents, and the two important ones might be at rank 15 and 20. An LLM might miss them. A reranker, however, will recognize their relevance and move them to rank 1 and 2, ensuring the LLM sees them clearly.</p>
+
+<h3>Implementation Tip: The 'Top-K' Tradeoff</h3>
+<p>You must decide how many documents to rerank (your "Top-K"). Reranking 100 documents is more accurate than reranking 20, but it adds more latency. A common sweet spot is reranking the top 25-50 documents.</p>
+
+<h3>Summary</h3>
+<p>Reranking is the most powerful "plug-and-play" upgrade you can add to a RAG pipeline. It bridges the gap between the speed of vector search and the intelligence of cross-encoders, ensuring that your LLM always has the highest quality information to work with.</p>
+
+</div>
+</body>
+</html>

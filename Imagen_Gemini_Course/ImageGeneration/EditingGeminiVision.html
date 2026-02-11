@@ -1,0 +1,366 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Image Editing and Gemini Vision</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Image Editing and Gemini Vision Integration</h1>
+
+<h2>Image Editing with Imagen</h2>
+<p>Imagen's editing capabilities allow you to modify existing images using natural language instructions. This is particularly
+valuable for product photography, real estate staging, and content adaptation. The imagen-3.0-capability-001 model is specifically
+optimized for editing operations.</p>
+
+<h2>Edit Modes and Operations</h2>
+<table>
+    <tr><th>Edit Mode</th><th>Purpose</th><th>Use Case</th></tr>
+    <tr><td class="rowheader">inpainting-insert</td><td>Add new elements to specific regions</td><td>Adding furniture to empty rooms, inserting objects</td></tr>
+    <tr><td class="rowheader">inpainting-remove</td><td>Remove objects from images</td><td>Removing unwanted elements, cleaning backgrounds</td></tr>
+    <tr><td class="rowheader">outpainting</td><td>Extend image beyond boundaries</td><td>Expanding canvas, extending scenes</td></tr>
+    <tr><td class="rowheader">product-image</td><td>Optimize for product photography</td><td>E-commerce product enhancement</td></tr>
+</table>
+
+<h2>Basic Image Editing Implementation</h2>
+<blockquote>
+<pre><code>from vertexai.preview.vision_models import ImageGenerationModel, Image
+import vertexai
+
+vertexai.init(project="your-project-id", location="us-central1")
+
+# Load the editing model
+model = ImageGenerationModel.from_pretrained("imagen-3.0-capability-001")
+
+# Load base image
+base_image = Image.load_from_file("office.png")
+
+# Edit with text instructions
+response = model.edit_image(
+    base_image=base_image,
+    prompt="Add a rooftop garden with solar panels and modern outdoor furniture",
+    edit_mode="inpainting-insert"
+)
+
+# Save edited image
+response.images[0].save("office_with_garden.png")</code></pre>
+</blockquote>
+
+<h2>Advanced Editing with Masks</h2>
+<p>For precise control over editing regions, you can provide a mask image that specifies exactly where changes should occur:</p>
+<blockquote>
+<pre><code>from PIL import Image as PILImage
+import numpy as np
+
+def create_mask(image_path: str, region_coords: tuple) -> Image:
+    """Create a binary mask for specific region
+    
+    Args:
+        image_path: Path to original image
+        region_coords: (x1, y1, x2, y2) coordinates of region to edit
+    
+    Returns:
+        Vertex AI Image object with mask
+    """
+    # Load original image to get dimensions
+    original = PILImage.open(image_path)
+    width, height = original.size
+    
+    # Create black image (mask)
+    mask_array = np.zeros((height, width), dtype=np.uint8)
+    
+    # Set region to white (area to edit)
+    x1, y1, x2, y2 = region_coords
+    mask_array[y1:y2, x1:x2] = 255
+    
+    # Convert to PIL Image and save temporarily
+    mask_pil = PILImage.fromarray(mask_array)
+    mask_pil.save("temp_mask.png")
+    
+    # Load as Vertex AI Image
+    return Image.load_from_file("temp_mask.png")
+
+# Usage example
+base_image = Image.load_from_file("product.png")
+mask = create_mask("product.png", region_coords=(100, 100, 400, 400))
+
+response = model.edit_image(
+    base_image=base_image,
+    mask=mask,
+    prompt="Replace with modern minimalist design",
+    edit_mode="inpainting-insert"
+)
+
+response.images[0].save("product_edited.png")</code></pre>
+</blockquote>
+
+<h2>Outpainting for Canvas Extension</h2>
+<blockquote>
+<pre><code>def extend_image(image_path: str, direction: str = "all"):
+    """Extend image boundaries using outpainting
+    
+    Args:
+        image_path: Path to original image
+        direction: 'left', 'right', 'top', 'bottom', or 'all'
+    """
+    model = ImageGenerationModel.from_pretrained("imagen-3.0-capability-001")
+    base_image = Image.load_from_file(image_path)
+    
+    # Outpainting prompt should describe what to add
+    prompt = "Continue the scene naturally, maintaining style and lighting"
+    
+    response = model.edit_image(
+        base_image=base_image,
+        prompt=prompt,
+        edit_mode="outpainting",
+        # Optionally specify mask for direction
+    )
+    
+    return response.images[0]
+
+# Extend a landscape image
+extended = extend_image("landscape.png", direction="all")
+extended.save("landscape_extended.png")</code></pre>
+</blockquote>
+
+<h2>Gemini Vision for Image Understanding</h2>
+<p>While Imagen generates and edits images, Gemini Vision excels at understanding and analyzing them. Gemini's multimodal
+capabilities enable sophisticated image analysis, object detection, OCR, and visual question answering.</p>
+
+<h2>Setting Up Gemini Vision</h2>
+<blockquote>
+<pre><code>import google.generativeai as genai
+from PIL import Image
+import os
+
+# Configure API key
+genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
+
+# Initialize Gemini model
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+# For more advanced use cases, use gemini-1.5-pro
+model_pro = genai.GenerativeModel("gemini-1.5-pro")</code></pre>
+</blockquote>
+
+<h2>Basic Image Analysis</h2>
+<blockquote>
+<pre><code>def analyze_image(image_path: str, question: str) -> str:
+    """Analyze image and answer questions about it"""
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    image = Image.open(image_path)
+    
+    response = model.generate_content([question, image])
+    return response.text
+
+# Example: Product analysis
+analysis = analyze_image(
+    "product_photo.jpg",
+    "Describe this product in detail. Include: 1) Main features visible, "
+    "2) Color and material, 3) Condition, 4) Suggested improvements for the listing"
+)
+print(analysis)</code></pre>
+</blockquote>
+
+<h2>Advanced Vision Analysis Patterns</h2>
+<blockquote>
+<pre><code>class ImageAnalyzer:
+    """Comprehensive image analysis using Gemini Vision"""
+    
+    def __init__(self, model_name: str = "gemini-1.5-flash"):
+        self.model = genai.GenerativeModel(model_name)
+    
+    def extract_text(self, image_path: str) -> str:
+        """Extract all text from image (OCR)"""
+        image = Image.open(image_path)
+        prompt = "Extract all text from this image. Preserve formatting and structure."
+        response = self.model.generate_content([prompt, image])
+        return response.text
+    
+    def detect_objects(self, image_path: str) -> list:
+        """Detect and list all objects in image"""
+        image = Image.open(image_path)
+        prompt = """List all objects visible in this image. 
+        For each object provide:
+        - Object name
+        - Location (approximate position)
+        - Size (relative: small/medium/large)
+        - Confidence (high/medium/low)
+        Format as JSON array."""
+        response = self.model.generate_content([prompt, image])
+        return response.text
+    
+    def assess_quality(self, image_path: str) -> dict:
+        """Assess image quality for various criteria"""
+        image = Image.open(image_path)
+        prompt = """Assess this image quality on the following criteria (score 1-10):
+        - Lighting
+        - Focus/Sharpness
+        - Composition
+        - Color balance
+        - Overall professional quality
+        Provide scores and brief explanation for each."""
+        response = self.model.generate_content([prompt, image])
+        return response.text
+    
+    def compare_images(self, image1_path: str, image2_path: str) -> str:
+        """Compare two images and identify differences"""
+        image1 = Image.open(image1_path)
+        image2 = Image.open(image2_path)
+        prompt = """Compare these two images and identify:
+        1. Key differences
+        2. Similarities
+        3. Which image is better for professional use and why"""
+        response = self.model.generate_content([prompt, image1, image2])
+        return response.text
+
+# Usage
+analyzer = ImageAnalyzer()
+
+# Extract text from document
+text = analyzer.extract_text("invoice.jpg")
+
+# Detect objects in scene
+objects = analyzer.detect_objects("warehouse.jpg")
+
+# Assess product photo quality
+quality = analyzer.assess_quality("product.jpg")</code></pre>
+</blockquote>
+
+<h2>Combining Imagen and Gemini Vision</h2>
+<p>The real power comes from combining both models in a workflow:</p>
+<blockquote>
+class ImageWorkflow:
+    """Automated image generation and validation workflow"""
+    
+    def __init__(self):
+        vertexai.init(project="your-project-id", location="us-central1")
+        self.imagen = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+        self.gemini = genai.GenerativeModel("gemini-1.5-flash")
+    
+    def generate_and_validate(self, prompt: str, quality_threshold: float = 7.0):
+        """Generate image and validate quality before accepting"""
+        # Generate image
+        response = self.imagen.generate_images(
+            prompt=prompt,
+            number_of_images=4
+        )
+        
+        validated_images = []
+        
+        for idx, image in enumerate(response.images):
+            # Save temporarily
+            temp_path = f"temp_{idx}.png"
+            image.save(temp_path)
+            
+            # Validate with Gemini
+            validation_prompt = f"""
+            Analyze this image generated from prompt: "{prompt}"
+            
+            Rate on scale 1-10:
+            1. Prompt adherence (does it match the description?)
+            2. Visual quality (resolution, clarity, artifacts)
+            3. Composition (professional, well-framed)
+            
+            Provide average score and brief explanation.
+            """
+            
+            pil_image = Image.open(temp_path)
+            validation = self.gemini.generate_content([validation_prompt, pil_image])
+            
+            # Parse score (simplified - in production use structured output)
+            if "score" in validation.text.lower():
+                validated_images.append({
+                    'image': image,
+                    'validation': validation.text,
+                    'path': temp_path
+                })
+        
+        return validated_images
+    
+    def iterative_refinement(self, initial_prompt: str, max_iterations: int = 3):
+        """Generate image and iteratively refine based on Gemini feedback"""
+        current_prompt = initial_prompt
+        
+        for iteration in range(max_iterations):
+            print(f"Iteration {iteration + 1}: {current_prompt}")
+            
+            # Generate
+            response = self.imagen.generate_images(
+                prompt=current_prompt,
+                number_of_images=1
+            )
+            
+            image = response.images[0]
+            temp_path = f"iteration_{iteration}.png"
+            image.save(temp_path)
+            
+            # Analyze with Gemini
+            pil_image = Image.open(temp_path)
+            analysis_prompt = f"""
+            This image was generated from: "{current_prompt}"
+            
+            Analyze the image and suggest specific improvements to the prompt
+            that would enhance quality, composition, or adherence to intent.
+            """
+            
+            feedback = self.gemini.generate_content([analysis_prompt, pil_image])
+            print(f"Feedback: {feedback.text}")
+            
+            # In production, parse feedback and update prompt automatically
+            # For now, return results
+            if iteration == max_iterations - 1:
+                return image, feedback.text
+
+# Usage
+workflow = ImageWorkflow()
+
+# Generate and validate
+results = workflow.generate_and_validate(
+    "Professional product photo of wireless headphones on white background"
+)
+
+# Iterative refinement
+final_image, feedback = workflow.iterative_refinement(
+    "Modern office interior with natural lighting"
+)
+</blockquote>
+
+<h2>Enterprise Use Cases</h2>
+<table>
+    <tr><th>Industry</th><th>Use Case</th><th>Model Combination</th></tr>
+    <tr><td class="rowheader">E-commerce</td><td>Product image generation and quality validation</td><td>Imagen + Gemini Vision</td></tr>
+    <tr><td class="rowheader">Real Estate</td><td>Virtual staging with automated quality checks</td><td>Imagen editing + Gemini validation</td></tr>
+    <tr><td class="rowheader">Marketing</td><td>Ad creative generation with A/B testing analysis</td><td>Imagen + Gemini comparison</td></tr>
+    <tr><td class="rowheader">Manufacturing</td><td>Visual quality inspection and defect detection</td><td>Gemini Vision</td></tr>
+    <tr><td class="rowheader">Insurance</td><td>Damage assessment from photos</td><td>Gemini Vision analysis</td></tr>
+    <tr><td class="rowheader">Healthcare</td><td>Medical image analysis and reporting</td><td>Gemini Vision (with compliance)</td></tr>
+</table>
+
+<h2>Performance Optimization</h2>
+<ul>
+    <li><strong>Batch Processing:</strong> Process multiple images in parallel using ThreadPoolExecutor</li>
+    <li><strong>Caching:</strong> Cache Gemini analysis results for identical images</li>
+    <li><strong>Model Selection:</strong> Use gemini-1.5-flash for speed, gemini-1.5-pro for accuracy</li>
+    <li><strong>Image Preprocessing:</strong> Resize images before sending to reduce latency and costs</li>
+    <li><strong>Async Operations:</strong> Use async/await for non-blocking API calls</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Validate Generated Content:</strong> Always use Gemini to validate Imagen outputs for quality</li>
+    <li><strong>Implement Feedback Loops:</strong> Use Gemini analysis to improve Imagen prompts iteratively</li>
+    <li><strong>Handle Edge Cases:</strong> Implement fallbacks for safety filter blocks or generation failures</li>
+    <li><strong>Monitor Costs:</strong> Track API usage for both models to optimize spending</li>
+    <li><strong>Preserve Metadata:</strong> Store generation parameters and validation results for auditing</li>
+    <li><strong>Test Thoroughly:</strong> Validate workflows with diverse inputs before production deployment</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

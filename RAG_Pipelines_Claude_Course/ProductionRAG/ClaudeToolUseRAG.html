@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Tool Use in RAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Tool Use in RAG</h1>
+<div class="container">
+<h2>Advanced Tool Use in Claude RAG Pipelines</h2>
+<p>In a sophisticated RAG pipeline, Claude is not just a passive receiver of documents; it's an active agent that can use tools to find the information it needs. <strong>Tool Use</strong> (also known as function calling) allows Claude to interact with databases, search engines, and other APIs in real-time, leading to much more capable and dynamic RAG systems.</p>
+
+<h3>The 'Agentic RAG' Concept</h3>
+<p>Instead of the system deciding which documents to show Claude, Claude decides which documents it wants to see.
+<ol>
+    <li><strong>Analyze Query:</strong> Claude reads the user's question and decides which tool to use.</li>
+    <li><strong>Call Tool:</strong> Claude generates a tool use block, e.g., <code>search_documentation(query="HNSW indexing")</code>.</li>
+    <li><strong>Process Result:</strong> The system executes the search and provides the result back to Claude.</li>
+    <li><strong>Iterate:</strong> Claude might realize it needs more information and call another tool (e.g., <code>query_sql_database(...)</code>) before giving the final answer.</li>
+</ol></p>
+
+<h3>Defining Tools for Claude RAG</h3>
+<p>When defining tools for your RAG pipeline, precision is key. Use JSON Schema to define the parameters and provide clear descriptions.
+<ul>
+    <li><strong>Search Tool:</strong> <code>{ "name": "search", "description": "Searches the vector store for semantic matches.", "parameters": { "query": "string" } }</code></li>
+    <li><strong>Metadata Tool:</strong> <code>{ "name": "get_by_id", "description": "Retrieves a specific document by its ID.", "parameters": { "doc_id": "string" } }</code></li>
+    <li><strong>Web Tool:</strong> <code>{ "name": "web_search", "description": "Searches the internet for real-time news.", "parameters": { "query": "string" } }</code></li>
+</ul></p>
+
+<h3>Handling Multi-Step Retrieval</h3>
+<p>Claude's strong reasoning makes it excellent at multi-step tasks. For example, if a user asks "How do our 2024 revenue projections compare to our 2023 performance?", Claude can:
+1. Use the <code>search</code> tool to find 2024 projections.
+2. Use the <code>query_db</code> tool to find actual 2023 revenue.
+3. Compare the two and provide a detailed analysis.</p>
+
+<h3>The 'Thinking' Step in Tool Use</h3>
+<p>To improve the reliability of tool use, encourage Claude to "think" before it calls a tool. You can ask it to provide its reasoning within a <code>&lt;thought&gt;</code> tag.
+<blockquote>
+&lt;thought&gt;<br/>
+The user is asking for a comparison. I need to first find the pricing for Product A and then the pricing for Product B. I will start by searching for Product A.<br/>
+&lt;/thought&gt;<br/>
+Action: call search_tool(product="Product A")
+</blockquote>
+This "Chain of Thought" makes it much easier for developers to debug why an agent made a specific retrieval decision.</p>
+
+<h3>Safety and Security in Agentic RAG</h3>
+<p>Giving Claude access to tools requires careful security considerations:
+<ul>
+    <li><strong>Least Privilege:</strong> Only give Claude the permissions it needs. Don't give it a tool that can delete data.</li>
+    <li><strong>Human Oversight:</strong> For high-impact tools (like sending an email or making a purchase), require a human-in-the-loop.</li>
+    <li><strong>Input Validation:</strong> Always validate the parameters Claude provides to a tool before executing it.</li>
+</ul></p>
+
+<h3>Combining Tool Use with Prompt Caching</h3>
+<p>If Claude is performing a long, multi-step research task, you can cache the "state" of the research (the thoughts and the previous tool results) to reduce cost and latency as the conversation progresses.</p>
+
+<h3>Summary</h3>
+<p>Tool Use transforms RAG from a simple search-and-response loop into an intelligent, autonomous research process. By empowering Claude to choose its own sources and interact with diverse data types, you can build AI agents that solve complex real-world problems with unparalleled depth and accuracy.</p>
+
+</div>
+</body>
+</html>

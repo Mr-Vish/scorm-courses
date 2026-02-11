@@ -1,0 +1,442 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Advanced GenAI Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced GenAI Patterns</h1>
+
+<h2>Long-Running Task Pattern with SQS</h2>
+<p>Some GenAI tasks require extensive processing time—document analysis, batch content generation, or complex multi-step reasoning. SQS enables asynchronous processing that exceeds Lambda's 15-minute timeout limit.</p>
+
+<h3>SQS-Based Architecture</h3>
+<div class="flow-diagram">
+    <div class="flow-box">API Request</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Lambda (Submit)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">SQS Queue</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Lambda (Process)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Bedrock</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">S3/DynamoDB</div>
+</div>
+
+<h3>Task Submission Handler</h3>
+<div class="code-block">
+<pre><code>import boto3
+import json
+import uuid
+
+sqs = boto3.client('sqs')
+dynamodb = boto3.resource('dynamodb')
+tasks_table = dynamodb.Table('GenAITasks')
+
+QUEUE_URL = 'https://sqs.us-east-1.amazonaws.com/123456789/genai-tasks'
+
+def submit_handler(event, context):
+    """Submit long-running GenAI task"""
+    body = json.loads(event['body'])
+    
+    # Generate task ID
+    task_id = str(uuid.uuid4())
+    
+    # Store task metadata
+    tasks_table.put_item(Item={
+        'taskId': task_id,
+        'status': 'pending',
+        'input': body,
+        'createdAt': int(time.time()),
+        'ttl': int(time.time()) + (30 * 24 * 3600)  # 30 days
+    })
+    
+    # Send to SQS
+    sqs.send_message(
+        QueueUrl=QUEUE_URL,
+        MessageBody=json.dumps({
+            'taskId': task_id,
+            'operation': body['operation'],
+            'parameters': body['parameters']
+        }),
+        MessageAttributes={
+            'taskType': {'StringValue': body['operation'], 'DataType': 'String'}
+        }
+    )
+    
+    return {
+        'statusCode': 202,  # Accepted
+        'body': json.dumps({
+            'taskId': task_id,
+            'status': 'pending',
+            'statusUrl': f'/tasks/{task_id}'
+        })
+    }
+</code></pre>
+</div>
+
+<h3>Task Processing Handler</h3>
+<div class="code-block">
+<pre><code>def process_handler(event, context):
+    """Process tasks from SQS queue"""
+    
+    for record in event['Records']:
+        message = json.loads(record['body'])
+        task_id = message['taskId']
+        operation = message['operation']
+        parameters = message['parameters']
+        
+        try:
+            # Update status to processing
+            tasks_table.update_item(
+                Key={'taskId': task_id},
+                UpdateExpression='SET #status = :status, startedAt = :time',
+                ExpressionAttributeNames={'#status': 'status'},
+                ExpressionAttributeValues={
+                    ':status': 'processing',
+                    ':time': int(time.time())
+                }
+            )
+            
+            # Execute operation
+            if operation == 'document_analysis':
+                result = analyze_document(parameters)
+            elif operation == 'batch_generation':
+                result = generate_batch_content(parameters)
+            elif operation == 'multi_step_reasoning':
+                result = multi_step_reasoning(parameters)
+            else:
+                raise ValueError(f"Unknown operation: {operation}")
+            
+            # Store result
+            tasks_table.update_item(
+                Key={'taskId': task_id},
+                UpdateExpression='SET #status = :status, result = :result, completedAt = :time',
+                ExpressionAttributeNames={'#status': 'status'},
+                ExpressionAttributeValues={
+                    ':status': 'completed',
+                    ':result': result,
+                    ':time': int(time.time())
+                }
+            )
+            
+        except Exception as e:
+            # Handle failure
+            tasks_table.update_item(
+                Key={'taskId': task_id},
+                UpdateExpression='SET #status = :status, error = :error',
+                ExpressionAttributeNames={'#status': 'status'},
+                ExpressionAttributeValues={
+                    ':status': 'failed',
+                    ':error': str(e)
+                }
+            )
+            print(f"Task {task_id} failed: {str(e)}")
+
+def analyze_document(parameters):
+    """Analyze large document with Bedrock"""
+    s3 = boto3.client('s3')
+    bedrock = boto3.client('bedrock-runtime')
+    
+    # Download document from S3
+    document = s3.get_object(
+        Bucket=parameters['bucket'],
+        Key=parameters['key']
+    )
+    content = document['Body'].read().decode('utf-8')
+    
+    # Analyze with Bedrock
+    response = bedrock.invoke_model(
+        modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+        body=json.dumps({
+            'anthropic_version': 'bedrock-2023-05-31',
+            'max_tokens': 4096,
+            'messages': [{
+                'role': 'user',
+                'content': f'Analyze this document and provide key insights:\n\n{content}'
+            }]
+        })
+    )
+    
+    result = json.loads(response['body'].read())
+    return result['content'][0]['text']
+</code></pre>
+</div>
+
+<h3>Status Check Handler</h3>
+<div class="code-block">
+<pre><code>def status_handler(event, context):
+    """Check task status"""
+    task_id = event['pathParameters']['taskId']
+    
+    response = tasks_table.get_item(Key={'taskId': task_id})
+    
+    if 'Item' not in response:
+        return {
+            'statusCode': 404,
+            'body': json.dumps({'error': 'Task not found'})
+        }
+    
+    task = response['Item']
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps({
+            'taskId': task_id,
+            'status': task['status'],
+            'result': task.get('result'),
+            'error': task.get('error'),
+            'createdAt': task['createdAt'],
+            'completedAt': task.get('completedAt')
+        })
+    }
+</code></pre>
+</div>
+
+<h2>Step Functions Orchestration</h2>
+<p>AWS Step Functions orchestrate complex multi-step GenAI workflows with built-in error handling, retries, and parallel execution.</p>
+
+<h3>Multi-Step Document Processing Workflow</h3>
+<div class="code-block">
+<pre><code>{
+  "Comment": "Document Processing Pipeline",
+  "StartAt": "ExtractText",
+  "States": {
+    "ExtractText": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:extract-text",
+      "Next": "ClassifyDocument",
+      "Retry": [{
+        "ErrorEquals": ["States.TaskFailed"],
+        "IntervalSeconds": 2,
+        "MaxAttempts": 3,
+        "BackoffRate": 2.0
+      }]
+    },
+    "ClassifyDocument": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:classify-bedrock",
+      "Next": "RouteByType",
+      "ResultPath": "$.classification"
+    },
+    "RouteByType": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.classification.type",
+          "StringEquals": "invoice",
+          "Next": "ExtractInvoiceData"
+        },
+        {
+          "Variable": "$.classification.type",
+          "StringEquals": "contract",
+          "Next": "AnalyzeContract"
+        },
+        {
+          "Variable": "$.classification.type",
+          "StringEquals": "report",
+          "Next": "SummarizeReport"
+        }
+      ],
+      "Default": "GeneralProcessing"
+    },
+    "ExtractInvoiceData": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:extract-invoice",
+      "Next": "ValidateData"
+    },
+    "ValidateData": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:validate-data",
+      "Next": "StoreResults"
+    },
+    "AnalyzeContract": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:analyze-contract",
+      "Next": "StoreResults"
+    },
+    "SummarizeReport": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:summarize-report",
+      "Next": "StoreResults"
+    },
+    "GeneralProcessing": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:general-processing",
+      "Next": "StoreResults"
+    },
+    "StoreResults": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:store-results",
+      "End": true
+    }
+  }
+}
+</code></pre>
+</div>
+
+<h3>Lambda Function for Step Functions</h3>
+<div class="code-block">
+<pre><code>def classify_document(event, context):
+    """Classify document type using Bedrock"""
+    document_text = event['extractedText']
+    
+    bedrock = boto3.client('bedrock-runtime')
+    response = bedrock.invoke_model(
+        modelId='anthropic.claude-3-haiku-20240307-v1:0',  # Fast, cheap model
+        body=json.dumps({
+            'anthropic_version': 'bedrock-2023-05-31',
+            'max_tokens': 100,
+            'messages': [{
+                'role': 'user',
+                'content': f'''Classify this document as one of: invoice, contract, report, other.
+                
+Document:
+{document_text[:1000]}
+
+Classification (one word):'''
+            }]
+        })
+    )
+    
+    result = json.loads(response['body'].read())
+    classification = result['content'][0]['text'].strip().lower()
+    
+    return {
+        'type': classification,
+        'confidence': 0.95,  # Could use Bedrock's confidence scores
+        'extractedText': document_text
+    }
+</code></pre>
+</div>
+
+<h2>Batch Processing Pattern</h2>
+<p>Process multiple GenAI requests efficiently using batch operations and parallel execution.</p>
+
+<h3>Parallel Batch Processing</h3>
+<div class="code-block">
+<pre><code>import concurrent.futures
+from functools import partial
+
+def process_batch(items, max_workers=10):
+    """Process multiple items in parallel"""
+    bedrock = boto3.client('bedrock-runtime')
+    
+    def process_single_item(item):
+        try:
+            response = bedrock.invoke_model(
+                modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+                body=json.dumps({
+                    'anthropic_version': 'bedrock-2023-05-31',
+                    'max_tokens': 1024,
+                    'messages': [{
+                        'role': 'user',
+                        'content': item['prompt']
+                    }]
+                })
+            )
+            
+            result = json.loads(response['body'].read())
+            return {
+                'id': item['id'],
+                'status': 'success',
+                'result': result['content'][0]['text']
+            }
+        except Exception as e:
+            return {
+                'id': item['id'],
+                'status': 'failed',
+                'error': str(e)
+            }
+    
+    # Process in parallel with thread pool
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = list(executor.map(process_single_item, items))
+    
+    return results
+
+def batch_handler(event, context):
+    """Handle batch processing requests"""
+    body = json.loads(event['body'])
+    items = body['items']
+    
+    # Process batch
+    results = process_batch(items, max_workers=10)
+    
+    # Store results in S3
+    s3 = boto3.client('s3')
+    result_key = f"batch-results/{uuid.uuid4()}.json"
+    
+    s3.put_object(
+        Bucket='genai-results',
+        Key=result_key,
+        Body=json.dumps(results),
+        ContentType='application/json'
+    )
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps({
+            'processed': len(results),
+            'resultsUrl': f's3://genai-results/{result_key}'
+        })
+    }
+</code></pre>
+</div>
+
+<h2>EventBridge Integration</h2>
+<p>Use EventBridge to trigger GenAI workflows based on events from other AWS services or custom applications.</p>
+
+<div class="code-block">
+<pre><code># EventBridge Rule (CloudFormation/SAM)
+GenAIEventRule:
+  Type: AWS::Events::Rule
+  Properties:
+    Description: "Trigger GenAI processing on S3 uploads"
+    EventPattern:
+      source:
+        - aws.s3
+      detail-type:
+        - "Object Created"
+      detail:
+        bucket:
+          name:
+            - "document-uploads"
+    State: ENABLED
+    Targets:
+      - Arn: !GetAtt ProcessDocumentFunction.Arn
+        Id: "ProcessDocumentTarget"
+</code></pre>
+</div>
+
+<h2>Pattern Selection Guide</h2>
+<table>
+    <tr><th>Use Case</th><th>Pattern</th><th>Key Benefit</th></tr>
+    <tr><td class="rowheader">Simple Q&A</td><td>Synchronous REST</td><td>Immediate response</td></tr>
+    <tr><td class="rowheader">Chat Interface</td><td>WebSocket Streaming</td><td>Real-time experience</td></tr>
+    <tr><td class="rowheader">Document Analysis</td><td>SQS + Async</td><td>Handles long processing</td></tr>
+    <tr><td class="rowheader">Multi-Step Workflow</td><td>Step Functions</td><td>Orchestration & error handling</td></tr>
+    <tr><td class="rowheader">Bulk Processing</td><td>Batch + Parallel</td><td>High throughput</td></tr>
+    <tr><td class="rowheader">Event-Driven</td><td>EventBridge</td><td>Automatic triggering</td></tr>
+</table>
+
+<h2>Performance Optimization</h2>
+<ul>
+    <li><strong>Connection Reuse:</strong> Initialize boto3 clients outside handler</li>
+    <li><strong>Parallel Execution:</strong> Use ThreadPoolExecutor for concurrent requests</li>
+    <li><strong>Batch Operations:</strong> Group multiple DynamoDB/S3 operations</li>
+    <li><strong>Provisioned Concurrency:</strong> Eliminate cold starts for critical functions</li>
+    <li><strong>Model Selection:</strong> Use Haiku for simple tasks, Sonnet for complex ones</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-Agent Systems</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Multi-Agent Systems</h1>
+
+<h2>Multi-Agent Architecture</h2>
+<p>Multi-agent systems consist of multiple specialized agents that collaborate to accomplish complex tasks. Each agent has specific expertise and capabilities, working together through orchestration patterns.</p>
+
+<h3>Benefits of Multi-Agent Systems</h3>
+<ul>
+<li><strong>Specialization:</strong> Each agent focuses on specific domain expertise</li>
+<li><strong>Scalability:</strong> Add or remove agents based on workload</li>
+<li><strong>Modularity:</strong> Update individual agents without affecting the system</li>
+<li><strong>Parallel Processing:</strong> Multiple agents work simultaneously</li>
+<li><strong>Fault Tolerance:</strong> System continues if one agent fails</li>
+<li><strong>Better Performance:</strong> Specialized agents outperform generalists</li>
+</ul>
+
+<h2>Agent Roles and Patterns</h2>
+<table>
+<tr>
+<th>Agent Type</th>
+<th>Responsibility</th>
+<th>Example Use Case</th>
+</tr>
+<tr>
+<td class="rowheader">Router Agent</td>
+<td>Classifies intent and delegates tasks</td>
+<td>Route customer queries to specialists</td>
+</tr>
+<tr>
+<td class="rowheader">Research Agent</td>
+<td>Gathers and synthesizes information</td>
+<td>Search documents and databases</td>
+</tr>
+<tr>
+<td class="rowheader">Action Agent</td>
+<td>Executes operations and transactions</td>
+<td>Book flights, process orders</td>
+</tr>
+<tr>
+<td class="rowheader">Review Agent</td>
+<td>Validates and approves actions</td>
+<td>Check compliance, verify data</td>
+</tr>
+<tr>
+<td class="rowheader">Coordinator Agent</td>
+<td>Orchestrates multi-agent workflows</td>
+<td>Manage complex multi-step processes</td>
+</tr>
+</table>
+
+<h2>Router Agent Pattern</h2>
+<blockquote>
+from vertexai.preview import reasoning_engines
+from langchain.agents import create_tool_calling_agent
+
+# Define specialized agents
+class TechnicalSupportAgent:
+    """Handles technical support queries."""
+    
+    def __init__(self):
+        self.llm = ChatVertexAI(model_name="gemini-1.5-pro")
+        self.tools = [check_system_status, restart_service, view_logs]
+    
+    def handle(self, query: str) -> str:
+        agent = create_tool_calling_agent(self.llm, self.tools, tech_prompt)
+        executor = AgentExecutor(agent=agent, tools=self.tools)
+        return executor.invoke({"input": query})["output"]
+
+class BillingSupportAgent:
+    """Handles billing and payment queries."""
+    
+    def __init__(self):
+        self.llm = ChatVertexAI(model_name="gemini-1.5-pro")
+        self.tools = [get_invoice, process_refund, update_payment]
+    
+    def handle(self, query: str) -> str:
+        agent = create_tool_calling_agent(self.llm, self.tools, billing_prompt)
+        executor = AgentExecutor(agent=agent, tools=self.tools)
+        return executor.invoke({"input": query})["output"]
+
+class RouterAgent:
+    """Routes queries to appropriate specialist agents."""
+    
+    def __init__(self):
+        self.llm = ChatVertexAI(model_name="gemini-1.5-flash", temperature=0.1)
+        self.tech_agent = TechnicalSupportAgent()
+        self.billing_agent = BillingSupportAgent()
+    
+    def classify_intent(self, query: str) -> str:
+        """Classify user intent."""
+        prompt = f"""Classify this customer query into one category:
+        - technical: Technical issues, bugs, system problems
+        - billing: Payments, invoices, refunds, pricing
+        - general: Other queries
+        
+        Query: {query}
+        
+        Respond with only the category name."""
+        
+        response = self.llm.invoke(prompt)
+        return response.content.strip().lower()
+    
+    def route(self, query: str) -> str:
+        """Route query to appropriate agent."""
+        intent = self.classify_intent(query)
+        
+        if intent == "technical":
+            return self.tech_agent.handle(query)
+        elif intent == "billing":
+            return self.billing_agent.handle(query)
+        else:
+            return "I'll connect you with a general support representative."
+
+# Use router
+router = RouterAgent()
+response = router.route("My service keeps crashing")
+# Routes to TechnicalSupportAgent
+</blockquote>
+
+<h2>Hierarchical Multi-Agent System</h2>
+<blockquote>
+class CoordinatorAgent:
+    """Coordinates multiple agents for complex tasks."""
+    
+    def __init__(self):
+        self.llm = ChatVertexAI(model_name="gemini-1.5-pro")
+        self.research_agent = ResearchAgent()
+        self.analysis_agent = AnalysisAgent()
+        self.report_agent = ReportAgent()
+    
+    def execute_workflow(self, task: str) -> dict:
+        """Execute multi-agent workflow."""
+        
+        # Step 1: Plan the workflow
+        plan = self.create_plan(task)
+        
+        # Step 2: Execute each step with appropriate agent
+        results = {}
+        
+        for step in plan["steps"]:
+            if step["type"] == "research":
+                results[step["id"]] = self.research_agent.execute(step["query"])
+            elif step["type"] == "analysis":
+                results[step["id"]] = self.analysis_agent.execute(
+                    data=results[step["depends_on"]]
+                )
+            elif step["type"] == "report":
+                results[step["id"]] = self.report_agent.execute(
+                    findings=results[step["depends_on"]]
+                )
+        
+        return results
+    
+    def create_plan(self, task: str) -> dict:
+        """Create execution plan."""
+        prompt = f"""Create a step-by-step plan for this task: {task}
+        
+        Available agents:
+        - research: Gather information from documents and databases
+        - analysis: Analyze data and identify patterns
+        - report: Generate formatted reports
+        
+        Return a JSON plan with steps, types, and dependencies."""
+        
+        response = self.llm.invoke(prompt)
+        return json.loads(response.content)
+
+# Use coordinator
+coordinator = CoordinatorAgent()
+result = coordinator.execute_workflow(
+    "Analyze Q4 sales performance and create executive report"
+)
+</blockquote>
+
+<h2>Collaborative Agent Pattern</h2>
+<blockquote>
+class CollaborativeAgentSystem:
+    """Agents that collaborate and share information."""
+    
+    def __init__(self):
+        self.shared_memory = {}
+        self.agents = {
+            "data_collector": DataCollectorAgent(self.shared_memory),
+            "data_analyzer": DataAnalyzerAgent(self.shared_memory),
+            "insight_generator": InsightGeneratorAgent(self.shared_memory)
+        }
+    
+    def execute(self, task: str) -> str:
+        """Execute collaborative workflow."""
+        
+        # Agent 1: Collect data
+        self.agents["data_collector"].collect(task)
+        
+        # Agent 2: Analyze (uses data from shared memory)
+        self.agents["data_analyzer"].analyze()
+        
+        # Agent 3: Generate insights (uses analysis from shared memory)
+        insights = self.agents["insight_generator"].generate()
+        
+        return insights
+
+class DataCollectorAgent:
+    """Collects data and stores in shared memory."""
+    
+    def __init__(self, shared_memory):
+        self.memory = shared_memory
+        self.llm = ChatVertexAI(model_name="gemini-1.5-pro")
+    
+    def collect(self, query: str):
+        """Collect relevant data."""
+        data = search_databases(query)
+        self.memory["collected_data"] = data
+        self.memory["collection_timestamp"] = datetime.now()
+
+class DataAnalyzerAgent:
+    """Analyzes data from shared memory."""
+    
+    def __init__(self, shared_memory):
+        self.memory = shared_memory
+        self.llm = ChatVertexAI(model_name="gemini-1.5-pro")
+    
+    def analyze(self):
+        """Analyze collected data."""
+        data = self.memory.get("collected_data", [])
+        analysis = perform_analysis(data)
+        self.memory["analysis_results"] = analysis
+</blockquote>
+
+<h2>Consensus-Based Multi-Agent System</h2>
+<blockquote>
+class ConsensusSystem:
+    """Multiple agents vote on decisions."""
+    
+    def __init__(self):
+        self.agents = [
+            ChatVertexAI(model_name="gemini-1.5-pro", temperature=0.2),
+            ChatVertexAI(model_name="gemini-1.5-pro", temperature=0.5),
+            ChatVertexAI(model_name="gemini-1.5-pro", temperature=0.8)
+        ]
+    
+    def get_consensus(self, question: str, options: List[str]) -> str:
+        """Get consensus answer from multiple agents."""
+        
+        votes = {}
+        explanations = []
+        
+        # Each agent votes
+        for i, agent in enumerate(self.agents):
+            prompt = f"""Question: {question}
+            
+            Options:
+            {chr(10).join(f'{i+1}. {opt}' for i, opt in enumerate(options))}
+            
+            Choose the best option and explain why."""
+            
+            response = agent.invoke(prompt)
+            vote = self.extract_vote(response.content, options)
+            
+            votes[vote] = votes.get(vote, 0) + 1
+            explanations.append(f"Agent {i+1}: {response.content}")
+        
+        # Return majority vote
+        consensus = max(votes.items(), key=lambda x: x[1])[0]
+        
+        return {
+            "consensus": consensus,
+            "votes": votes,
+            "explanations": explanations
+        }
+    
+    def extract_vote(self, response: str, options: List[str]) -> str:
+        """Extract vote from agent response."""
+        for option in options:
+            if option.lower() in response.lower():
+                return option
+        return options[0]  # Default to first option
+
+# Use consensus system
+consensus_sys = ConsensusSystem()
+result = consensus_sys.get_consensus(
+    "Should we approve this refund request?",
+    ["Approve", "Deny", "Request More Information"]
+)
+print(f"Consensus: {result['consensus']}")
+</blockquote>
+
+<h2>Agent Communication Protocols</h2>
+
+<h3>Message Passing</h3>
+<blockquote>
+from dataclasses import dataclass
+from typing import Any
+from queue import Queue
+
+@dataclass
+class AgentMessage:
+    """Message format for inter-agent communication."""
+    sender: str
+    receiver: str
+    message_type: str
+    content: Any
+    timestamp: datetime
+
+class MessageBus:
+    """Central message bus for agent communication."""
+    
+    def __init__(self):
+        self.queues = {}
+    
+    def register_agent(self, agent_id: str):
+        """Register agent with message bus."""
+        self.queues[agent_id] = Queue()
+    
+    def send_message(self, message: AgentMessage):
+        """Send message to recipient agent."""
+        if message.receiver in self.queues:
+            self.queues[message.receiver].put(message)
+    
+    def receive_message(self, agent_id: str) -> AgentMessage:
+        """Receive message for agent."""
+        if agent_id in self.queues and not self.queues[agent_id].empty():
+            return self.queues[agent_id].get()
+        return None
+
+# Use message bus
+bus = MessageBus()
+bus.register_agent("agent_1")
+bus.register_agent("agent_2")
+
+# Agent 1 sends message to Agent 2
+message = AgentMessage(
+    sender="agent_1",
+    receiver="agent_2",
+    message_type="data_request",
+    content={"query": "Get sales data"},
+    timestamp=datetime.now()
+)
+bus.send_message(message)
+
+# Agent 2 receives message
+received = bus.receive_message("agent_2")
+</blockquote>
+
+<h2>Load Balancing Across Agents</h2>
+<blockquote>
+class LoadBalancedAgentPool:
+    """Pool of agents with load balancing."""
+    
+    def __init__(self, num_agents: int = 3):
+        self.agents = [
+            create_agent(f"agent_{i}") 
+            for i in range(num_agents)
+        ]
+        self.current_loads = [0] * num_agents
+    
+    def execute(self, task: str) -> str:
+        """Execute task on least loaded agent."""
+        
+        # Find agent with lowest load
+        min_load_idx = self.current_loads.index(min(self.current_loads))
+        agent = self.agents[min_load_idx]
+        
+        # Increment load
+        self.current_loads[min_load_idx] += 1
+        
+        try:
+            result = agent.query(input=task)
+            return result["output"]
+        finally:
+            # Decrement load after completion
+            self.current_loads[min_load_idx] -= 1
+
+# Use load-balanced pool
+agent_pool = LoadBalancedAgentPool(num_agents=5)
+
+# Distribute tasks across agents
+tasks = ["Task 1", "Task 2", "Task 3", "Task 4", "Task 5"]
+results = [agent_pool.execute(task) for task in tasks]
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Clear Responsibilities:</strong> Define specific roles for each agent</li>
+<li><strong>Communication Protocol:</strong> Establish standard message formats</li>
+<li><strong>Error Handling:</strong> Handle agent failures gracefully</li>
+<li><strong>Monitoring:</strong> Track performance of each agent individually</li>
+<li><strong>State Management:</strong> Use shared memory or databases for coordination</li>
+<li><strong>Avoid Loops:</strong> Prevent circular dependencies between agents</li>
+<li><strong>Testing:</strong> Test agent interactions thoroughly</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

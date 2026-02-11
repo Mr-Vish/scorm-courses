@@ -1,0 +1,371 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Function Calling and Tools</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Function Calling and Tools</h1>
+
+<h2>What is Function Calling?</h2>
+<p><strong>Function calling</strong> (also known as tool use) allows LLMs to invoke external functions and APIs to retrieve real-time data, perform calculations, or interact with external systems. This extends the LLM's capabilities beyond its training data.</p>
+
+<h2>How Function Calling Works</h2>
+<p>The process follows these steps:</p>
+<ol>
+    <li>User sends a query that requires external data</li>
+    <li>LLM determines which function(s) to call and with what parameters</li>
+    <li>LangChain4j executes the function(s) automatically</li>
+    <li>Function results are sent back to the LLM</li>
+    <li>LLM generates a natural language response incorporating the results</li>
+</ol>
+
+<h2>Creating a Simple Tool</h2>
+<p>Use the <strong>@Tool</strong> annotation to mark methods as callable functions:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.agent.tool.Tool;
+
+public class WeatherTools {
+    
+    @Tool("Get the current weather for a specific city")
+    public String getCurrentWeather(String city) {
+        // In production, call a real weather API
+        return String.format("The weather in %s is sunny, 22°C", city);
+    }
+    
+    @Tool("Get the weather forecast for the next 5 days")
+    public String getWeatherForecast(String city) {
+        return String.format("5-day forecast for %s: Sunny, Cloudy, Rainy, Sunny, Partly Cloudy", city);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Using Tools with AI Services</h2>
+<p>Register tools when creating an AI Service:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.service.AiServices;
+
+public interface WeatherAssistant {
+    String chat(String message);
+}
+
+// Create tools instance
+WeatherTools weatherTools = new WeatherTools();
+
+// Create AI Service with tools
+WeatherAssistant assistant = AiServices.builder(WeatherAssistant.class)
+    .chatLanguageModel(model)
+    .tools(weatherTools)
+    .build();
+
+// The LLM will automatically call the weather tool when needed
+String response = assistant.chat("What's the weather like in Paris?");
+System.out.println(response);
+// Output: The weather in Paris is sunny, 22°C
+</code></pre>
+</div>
+
+<h2>Multiple Tools Example</h2>
+<p>Combine multiple tool classes for comprehensive functionality:</p>
+
+<div class="code-block">
+<pre><code>public class DatabaseTools {
+    
+    @Tool("Search for users by name")
+    public List&lt;User&gt; searchUsers(String name) {
+        // Query database
+        return userRepository.findByNameContaining(name);
+    }
+    
+    @Tool("Get user details by ID")
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId).orElse(null);
+    }
+}
+
+public class EmailTools {
+    
+    @Tool("Send an email to a user")
+    public String sendEmail(String recipientEmail, String subject, String body) {
+        // Send email via SMTP
+        emailService.send(recipientEmail, subject, body);
+        return "Email sent successfully";
+    }
+}
+
+// Register multiple tools
+DatabaseTools dbTools = new DatabaseTools();
+EmailTools emailTools = new EmailTools();
+
+Assistant assistant = AiServices.builder(Assistant.class)
+    .chatLanguageModel(model)
+    .tools(dbTools, emailTools)
+    .build();
+
+// LLM can now use both database and email tools
+assistant.chat("Find user John Doe and send him a welcome email");
+</code></pre>
+</div>
+
+<h2>Tool Parameters and Types</h2>
+<p>Tools support various parameter types:</p>
+
+<div class="code-block">
+<pre><code>public class CalculatorTools {
+    
+    @Tool("Add two numbers")
+    public double add(double a, double b) {
+        return a + b;
+    }
+    
+    @Tool("Calculate compound interest")
+    public double calculateCompoundInterest(
+        double principal,
+        double rate,
+        int years,
+        int compoundingsPerYear
+    ) {
+        return principal * Math.pow(
+            1 + (rate / compoundingsPerYear),
+            compoundingsPerYear * years
+        );
+    }
+    
+    @Tool("Check if a number is prime")
+    public boolean isPrime(int number) {
+        if (number &lt;= 1) return false;
+        for (int i = 2; i &lt;= Math.sqrt(number); i++) {
+            if (number % i == 0) return false;
+        }
+        return true;
+    }
+}
+</code></pre>
+</div>
+
+<h2>Real-World Example: E-Commerce Assistant</h2>
+<div class="code-block">
+<pre><code>public class ECommerceTools {
+    
+    private final ProductRepository productRepository;
+    private final OrderService orderService;
+    
+    public ECommerceTools(ProductRepository productRepository, 
+                          OrderService orderService) {
+        this.productRepository = productRepository;
+        this.orderService = orderService;
+    }
+    
+    @Tool("Search for products by name or category")
+    public List&lt;Product&gt; searchProducts(String query) {
+        return productRepository.search(query);
+    }
+    
+    @Tool("Get product details including price and availability")
+    public Product getProductDetails(Long productId) {
+        return productRepository.findById(productId)
+            .orElseThrow(() -&gt; new ProductNotFoundException(productId));
+    }
+    
+    @Tool("Check product stock availability")
+    public int checkStock(Long productId) {
+        return productRepository.getStockLevel(productId);
+    }
+    
+    @Tool("Add product to shopping cart")
+    public String addToCart(Long userId, Long productId, int quantity) {
+        orderService.addToCart(userId, productId, quantity);
+        return "Product added to cart successfully";
+    }
+    
+    @Tool("Get current cart total for a user")
+    public double getCartTotal(Long userId) {
+        return orderService.calculateCartTotal(userId);
+    }
+}
+
+// Usage
+public interface ShoppingAssistant {
+    String chat(Long userId, String message);
+}
+
+ECommerceTools tools = new ECommerceTools(productRepo, orderService);
+
+ShoppingAssistant assistant = AiServices.builder(ShoppingAssistant.class)
+    .chatLanguageModel(model)
+    .tools(tools)
+    .build();
+
+// Natural language shopping
+String response = assistant.chat(123L, 
+    "I'm looking for wireless headphones under $100. " +
+    "Show me what's available and add the best one to my cart."
+);
+</code></pre>
+</div>
+
+<h2>Tool Execution Control</h2>
+<p>Implement custom tool execution logic:</p>
+
+<div class="code-block">
+<pre><code>import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.agent.tool.ToolExecutor;
+
+public class CustomToolExecutor implements ToolExecutor {
+    
+    @Override
+    public String execute(ToolExecutionRequest request, Object memoryId) {
+        // Add logging
+        System.out.println("Executing tool: " + request.name());
+        System.out.println("Arguments: " + request.arguments());
+        
+        // Add authentication checks
+        if (!isAuthorized(request)) {
+            return "Unauthorized tool access";
+        }
+        
+        // Add rate limiting
+        if (isRateLimited(request)) {
+            return "Rate limit exceeded";
+        }
+        
+        // Execute the actual tool
+        return executeActualTool(request);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Error Handling in Tools</h2>
+<p>Implement robust error handling:</p>
+
+<div class="code-block">
+<pre><code>public class RobustTools {
+    
+    @Tool("Fetch data from external API")
+    public String fetchExternalData(String endpoint) {
+        try {
+            HttpResponse response = httpClient.get(endpoint);
+            
+            if (response.statusCode() == 200) {
+                return response.body();
+            } else {
+                return String.format(
+                    "API returned error: %d - %s",
+                    response.statusCode(),
+                    response.statusText()
+                );
+            }
+        } catch (IOException e) {
+            return "Failed to connect to external API: " + e.getMessage();
+        } catch (Exception e) {
+            return "Unexpected error: " + e.getMessage();
+        }
+    }
+    
+    @Tool("Process payment")
+    public String processPayment(double amount, String cardNumber) {
+        // Validate inputs
+        if (amount &lt;= 0) {
+            return "Invalid amount: must be greater than zero";
+        }
+        
+        if (!isValidCardNumber(cardNumber)) {
+            return "Invalid card number format";
+        }
+        
+        try {
+            paymentGateway.charge(amount, cardNumber);
+            return "Payment processed successfully";
+        } catch (PaymentException e) {
+            return "Payment failed: " + e.getReason();
+        }
+    }
+}
+</code></pre>
+</div>
+
+<h2>Tool Descriptions Best Practices</h2>
+<p>Write clear, detailed tool descriptions to help the LLM choose correctly:</p>
+
+<table>
+    <tr>
+        <th>Bad Description</th>
+        <th>Good Description</th>
+    </tr>
+    <tr>
+        <td class="rowheader">@Tool("Get weather")</td>
+        <td>@Tool("Get the current weather conditions for a specific city, including temperature, conditions, and humidity")</td>
+    </tr>
+    <tr>
+        <td class="rowheader">@Tool("Search")</td>
+        <td>@Tool("Search the product database by name, category, or SKU. Returns a list of matching products with prices and availability")</td>
+    </tr>
+    <tr>
+        <td class="rowheader">@Tool("Send email")</td>
+        <td>@Tool("Send an email to a specified recipient with a subject line and message body. Returns confirmation when sent successfully")</td>
+    </tr>
+</table>
+
+<h2>Testing Tools</h2>
+<p>Create unit tests for your tools:</p>
+
+<div class="code-block">
+<pre><code>import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class WeatherToolsTest {
+    
+    @Test
+    void testGetCurrentWeather() {
+        WeatherTools tools = new WeatherTools();
+        String result = tools.getCurrentWeather("London");
+        
+        assertNotNull(result);
+        assertTrue(result.contains("London"));
+        assertTrue(result.contains("°C"));
+    }
+    
+    @Test
+    void testGetWeatherForecast() {
+        WeatherTools tools = new WeatherTools();
+        String forecast = tools.getWeatherForecast("Paris");
+        
+        assertNotNull(forecast);
+        assertTrue(forecast.contains("Paris"));
+        assertTrue(forecast.contains("forecast"));
+    }
+}
+</code></pre>
+</div>
+
+<h2>Performance Considerations</h2>
+<ul>
+    <li><strong>Caching:</strong> Cache tool results when appropriate to reduce API calls</li>
+    <li><strong>Timeouts:</strong> Set reasonable timeouts for external API calls</li>
+    <li><strong>Async Execution:</strong> Use async tools for long-running operations</li>
+    <li><strong>Rate Limiting:</strong> Implement rate limiting to prevent abuse</li>
+    <li><strong>Monitoring:</strong> Log tool executions for debugging and analytics</li>
+</ul>
+
+<h2>Security Best Practices</h2>
+<ul>
+    <li><strong>Input Validation:</strong> Always validate tool parameters</li>
+    <li><strong>Authorization:</strong> Check user permissions before executing sensitive tools</li>
+    <li><strong>Sanitization:</strong> Sanitize inputs to prevent injection attacks</li>
+    <li><strong>Audit Logging:</strong> Log all tool executions with user context</li>
+    <li><strong>Secrets Management:</strong> Never expose API keys or credentials in tool responses</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

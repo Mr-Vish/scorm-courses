@@ -1,0 +1,296 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Streaming and Async Operations</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Streaming and Async Operations</h1>
+
+<h2>Why Streaming Matters</h2>
+<p>Streaming responses provide immediate feedback to users, significantly improving the perceived performance of LLM applications. Instead of waiting for the entire response, users see output as it's generated, creating a more interactive experience.</p>
+
+<h2>Benefits of Streaming</h2>
+<ul>
+<li><strong>Improved UX:</strong> Users see results immediately, reducing perceived latency</li>
+<li><strong>Early Termination:</strong> Stop generation if the output isn't relevant</li>
+<li><strong>Real-time Feedback:</strong> Display progress for long-running operations</li>
+<li><strong>Resource Efficiency:</strong> Process output incrementally</li>
+</ul>
+
+<h2>Basic Streaming</h2>
+<blockquote>
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+model = ChatOpenAI(model="gpt-4o")
+prompt = ChatPromptTemplate.from_template("Write a story about {topic}.")
+
+chain = prompt | model
+
+# Stream the response
+for chunk in chain.stream({"topic": "a time-traveling scientist"}):
+    print(chunk.content, end="", flush=True)
+</blockquote>
+
+<h2>Streaming with Output Parsers</h2>
+<blockquote>
+from langchain_core.output_parsers import StrOutputParser
+
+parser = StrOutputParser()
+chain = prompt | model | parser
+
+# Stream parsed output
+for chunk in chain.stream({"topic": "artificial intelligence"}):
+    print(chunk, end="", flush=True)
+</blockquote>
+
+<h2>Async Operations</h2>
+<p>Asynchronous operations allow your application to handle multiple requests concurrently, improving throughput and responsiveness:</p>
+
+<blockquote>
+import asyncio
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+model = ChatOpenAI(model="gpt-4o")
+prompt = ChatPromptTemplate.from_template("Explain {topic} briefly.")
+chain = prompt | model
+
+async def process_query(topic: str):
+    """Process a single query asynchronously."""
+    result = await chain.ainvoke({"topic": topic})
+    return result.content
+
+# Run multiple queries concurrently
+async def main():
+    topics = ["quantum computing", "blockchain", "neural networks"]
+    results = await asyncio.gather(*[
+        process_query(topic) for topic in topics
+    ])
+    for topic, result in zip(topics, results):
+        print(f"\n{topic}:\n{result}\n")
+
+# Execute
+asyncio.run(main())
+</blockquote>
+
+<h2>Async Streaming</h2>
+<p>Combine async and streaming for maximum efficiency:</p>
+
+<blockquote>
+async def stream_response(topic: str):
+    """Stream a response asynchronously."""
+    print(f"\nStreaming response for: {topic}")
+    async for chunk in chain.astream({"topic": topic}):
+        print(chunk.content, end="", flush=True)
+    print("\n")
+
+async def main():
+    # Stream multiple responses concurrently
+    await asyncio.gather(
+        stream_response("machine learning"),
+        stream_response("cloud computing"),
+        stream_response("cybersecurity")
+    )
+
+asyncio.run(main())
+</blockquote>
+
+<h2>Streaming Events</h2>
+<p>Access detailed streaming events for fine-grained control:</p>
+
+<blockquote>
+async def stream_with_events():
+    """Stream with detailed event information."""
+    async for event in chain.astream_events(
+        {"topic": "deep learning"},
+        version="v1"
+    ):
+        kind = event["event"]
+        
+        if kind == "on_chat_model_stream":
+            # Model is streaming a chunk
+            chunk = event["data"]["chunk"]
+            print(chunk.content, end="", flush=True)
+        
+        elif kind == "on_chat_model_start":
+            # Model started processing
+            print("\n[Model started]")
+        
+        elif kind == "on_chat_model_end":
+            # Model finished processing
+            print("\n[Model finished]")
+
+asyncio.run(stream_with_events())
+</blockquote>
+
+<h2>Batch Processing</h2>
+<p>Process multiple inputs efficiently:</p>
+
+<blockquote>
+# Synchronous batch
+topics = ["AI", "ML", "DL", "NLP", "CV"]
+results = chain.batch([{"topic": t} for t in topics])
+
+for topic, result in zip(topics, results):
+    print(f"{topic}: {result.content[:50]}...")
+
+# Asynchronous batch
+async def batch_async():
+    results = await chain.abatch([{"topic": t} for t in topics])
+    return results
+
+results = asyncio.run(batch_async())
+</blockquote>
+
+<h2>Batch with Concurrency Control</h2>
+<blockquote>
+# Limit concurrent requests to avoid rate limits
+results = await chain.abatch(
+    [{"topic": t} for t in topics],
+    config={"max_concurrency": 5}
+)
+</blockquote>
+
+<h2>Streaming in Web Applications</h2>
+
+<h3>FastAPI Example</h3>
+<blockquote>
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+app = FastAPI()
+model = ChatOpenAI(model="gpt-4o")
+prompt = ChatPromptTemplate.from_template("Explain {topic}.")
+chain = prompt | model
+
+@app.get("/stream/{topic}")
+async def stream_endpoint(topic: str):
+    """Stream LLM response to client."""
+    async def generate():
+        async for chunk in chain.astream({"topic": topic}):
+            yield chunk.content
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/plain"
+    )
+</blockquote>
+
+<h3>Flask Example with Server-Sent Events</h3>
+<blockquote>
+from flask import Flask, Response
+import json
+
+app = Flask(__name__)
+
+@app.route('/stream/&lt;topic&gt;')
+def stream_endpoint(topic):
+    """Stream using Server-Sent Events."""
+    def generate():
+        for chunk in chain.stream({"topic": topic}):
+            data = json.dumps({"content": chunk.content})
+            yield f"data: {data}\n\n"
+    
+    return Response(
+        generate(),
+        mimetype='text/event-stream'
+    )
+</blockquote>
+
+<h2>Error Handling in Async Operations</h2>
+<blockquote>
+async def safe_process(topic: str):
+    """Process with error handling."""
+    try:
+        result = await chain.ainvoke({"topic": topic})
+        return {"success": True, "result": result.content}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def main():
+    topics = ["valid topic", "another topic"]
+    results = await asyncio.gather(*[
+        safe_process(topic) for topic in topics
+    ], return_exceptions=True)
+    
+    for topic, result in zip(topics, results):
+        if isinstance(result, Exception):
+            print(f"Error processing {topic}: {result}")
+        else:
+            print(f"{topic}: {result}")
+
+asyncio.run(main())
+</blockquote>
+
+<h2>Timeout Handling</h2>
+<blockquote>
+async def process_with_timeout(topic: str, timeout: int = 30):
+    """Process with timeout."""
+    try:
+        result = await asyncio.wait_for(
+            chain.ainvoke({"topic": topic}),
+            timeout=timeout
+        )
+        return result.content
+    except asyncio.TimeoutError:
+        return f"Request timed out after {timeout} seconds"
+
+result = asyncio.run(process_with_timeout("complex topic", timeout=10))
+</blockquote>
+
+<h2>Performance Comparison</h2>
+<table>
+<tr>
+<th>Method</th>
+<th>Use Case</th>
+<th>Latency</th>
+<th>Throughput</th>
+</tr>
+<tr>
+<td class="rowheader">Synchronous</td>
+<td>Simple scripts, single requests</td>
+<td>High (blocking)</td>
+<td>Low</td>
+</tr>
+<tr>
+<td class="rowheader">Async</td>
+<td>Multiple concurrent requests</td>
+<td>Low (non-blocking)</td>
+<td>High</td>
+</tr>
+<tr>
+<td class="rowheader">Streaming</td>
+<td>User-facing applications</td>
+<td>Low (perceived)</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td class="rowheader">Async + Streaming</td>
+<td>High-performance web apps</td>
+<td>Lowest</td>
+<td>Highest</td>
+</tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Use Streaming for UI:</strong> Always stream in user-facing applications</li>
+<li><strong>Async for Concurrency:</strong> Use async when handling multiple requests</li>
+<li><strong>Implement Timeouts:</strong> Prevent hanging requests</li>
+<li><strong>Handle Errors Gracefully:</strong> Catch and log exceptions properly</li>
+<li><strong>Monitor Performance:</strong> Track latency and throughput metrics</li>
+<li><strong>Rate Limit Protection:</strong> Implement backoff strategies</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

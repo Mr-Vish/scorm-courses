@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Experiment Design and Metrics</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Experiment Design and Metrics</h1>
+
+
+<h2>Why A/B Test GenAI Features?</h2>
+<p>GenAI features introduce unique uncertainty: different prompts, models, and configurations can produce dramatically different user experiences. A/B testing provides data-driven answers to questions like "Does GPT-4o produce better summaries than Claude?" or "Does adding RAG context improve user satisfaction?"</p>
+
+<h2>What to A/B Test in GenAI</h2>
+<table>
+    <tr><th>Variable</th><th>Variants to Test</th><th>Primary Metric</th></tr>
+    <tr><td>Model choice</td><td>GPT-4o vs Claude vs Gemini</td><td>User satisfaction, task completion</td></tr>
+    <tr><td>Prompt version</td><td>Prompt v1 vs v2 vs v3</td><td>Output quality score, user preference</td></tr>
+    <tr><td>Temperature</td><td>0.3 vs 0.7 vs 1.0</td><td>User preference, coherence</td></tr>
+    <tr><td>RAG configuration</td><td>Top-3 vs top-5 chunks, different chunk sizes</td><td>Answer accuracy, relevance</td></tr>
+    <tr><td>System prompt</td><td>Minimal vs detailed instructions</td><td>Output consistency, helpfulness</td></tr>
+    <tr><td>UI presentation</td><td>Streaming vs complete response</td><td>Perceived speed, satisfaction</td></tr>
+</table>
+
+<h2>Experiment Design</h2>
+<div class="code-block">
+<pre><code>import hashlib
+import json
+
+class ABExperiment:
+    '''A/B experiment framework for GenAI features.'''
+
+    def __init__(self, experiment_id: str, variants: list[dict], traffic_split: list[float]):
+        self.experiment_id = experiment_id
+        self.variants = variants
+        self.traffic_split = traffic_split  # e.g., [0.5, 0.5] for 50/50
+
+    def assign_variant(self, user_id: str) -&gt; dict:
+        '''Deterministically assign a user to a variant.'''
+        hash_input = f"{self.experiment_id}:{user_id}"
+        hash_value = int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)
+        bucket = (hash_value % 1000) / 1000.0
+
+        cumulative = 0
+        for i, split in enumerate(self.traffic_split):
+            cumulative += split
+            if bucket &lt; cumulative:
+                return self.variants[i]
+        return self.variants[-1]
+
+# Define experiment
+experiment = ABExperiment(
+    experiment_id="summarization-model-v2",
+    variants=[
+        {"name": "control", "model": "gpt-4o-mini", "prompt": "v1"},
+        {"name": "treatment", "model": "gpt-4o", "prompt": "v2"},
+    ],
+    traffic_split=[0.5, 0.5],
+)
+
+# Assign user
+variant = experiment.assign_variant(user_id="user-123")
+# Use variant["model"] and variant["prompt"] for this user's requests</code></pre>
+</div>
+
+<h2>GenAI-Specific Metrics</h2>
+<table>
+    <tr><th>Metric Category</th><th>Metrics</th><th>Collection Method</th></tr>
+    <tr><td>Quality</td><td>LLM-as-judge score, ROUGE, human rating</td><td>Automated evaluation pipeline</td></tr>
+    <tr><td>User behavior</td><td>Thumbs up/down, copy rate, edit rate</td><td>Frontend events</td></tr>
+    <tr><td>Engagement</td><td>Messages per session, return rate, session length</td><td>Analytics platform</td></tr>
+    <tr><td>Operational</td><td>Latency, token usage, cost per request</td><td>Backend instrumentation</td></tr>
+    <tr><td>Task completion</td><td>Did the user accomplish their goal?</td><td>Funnel analysis, surveys</td></tr>
+</table>
+
+<h2>Sample Size Calculation</h2>
+<div class="code-block">
+<pre><code>from scipy import stats
+import math
+
+def required_sample_size(
+    baseline_rate: float,
+    minimum_detectable_effect: float,
+    alpha: float = 0.05,
+    power: float = 0.80,
+) -&gt; int:
+    '''Calculate required sample size per variant.'''
+    p1 = baseline_rate
+    p2 = baseline_rate + minimum_detectable_effect
+    z_alpha = stats.norm.ppf(1 - alpha / 2)
+    z_beta = stats.norm.ppf(power)
+    p_avg = (p1 + p2) / 2
+
+    n = ((z_alpha * math.sqrt(2 * p_avg * (1 - p_avg)) +
+          z_beta * math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))) ** 2) /          (p2 - p1) ** 2
+
+    return math.ceil(n)
+
+# Example: detect a 5% improvement in satisfaction (from 70% to 75%)
+n = required_sample_size(0.70, 0.05)
+print(f"Need {n} users per variant")  # ~780 per variant</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

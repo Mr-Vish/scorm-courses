@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production RAG Systems</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production RAG Systems</h1>
+
+<h2>Production Architecture</h2>
+<p>A production-ready RAG system requires careful consideration of scalability, reliability, and performance:</p>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Development</th>
+        <th>Production</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Vector Database</td>
+        <td>In-memory (Chroma)</td>
+        <td>Managed service (Pinecone, Weaviate)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LLM Provider</td>
+        <td>Single provider</td>
+        <td>Fallback providers, load balancing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Caching</td>
+        <td>None</td>
+        <td>Redis, response caching</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Monitoring</td>
+        <td>Basic logging</td>
+        <td>Metrics, tracing, alerting</td>
+    </tr>
+</table>
+
+<h2>Error Handling and Retry Logic</h2>
+<div class="code-block">
+<pre><code>@Service
+public class ResilientRAGService {
+    
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+    
+    @Retryable(
+        value = {ApiException.class},
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
+    public String query(String question) {
+        try {
+            List&lt;Document&gt; docs = vectorStore.similaritySearch(
+                SearchRequest.query(question).withTopK(5)
+            );
+            
+            String context = docs.stream()
+                .map(Document::getContent)
+                .collect(Collectors.joining("\n\n"));
+            
+            return chatClient.prompt()
+                .user(buildPrompt(context, question))
+                .call()
+                .content();
+                
+        } catch (VectorStoreException e) {
+            log.error("Vector store error", e);
+            return fallbackResponse(question);
+        }
+    }
+    
+    private String fallbackResponse(String question) {
+        return "I'm experiencing technical difficulties. Please try again.";
+    }
+}
+</code></pre>
+</div>
+
+<h2>Response Caching</h2>
+<div class="code-block">
+<pre><code">@Configuration
+@EnableCaching
+public class CacheConfig {
+    
+    @Bean
+    public CacheManager cacheManager() {
+        return new ConcurrentMapCacheManager("rag-responses");
+    }
+}
+
+@Service
+public class CachedRAGService {
+    
+    @Cacheable(value = "rag-responses", key = "#question")
+    public String query(String question) {
+        // Expensive RAG operation
+        return performRAG(question);
+    }
+    
+    @CacheEvict(value = "rag-responses", allEntries = true)
+    public void clearCache() {
+        // Clear cache when documents are updated
+    }
+}
+</code></pre>
+</div>
+
+<h2>Rate Limiting</h2>
+<div class="code-block">
+<pre><code>@Component
+public class RateLimiter {
+    
+    private final Map&lt;String, AtomicInteger&gt; requestCounts = new ConcurrentHashMap&lt;&gt;();
+    private final int maxRequestsPerMinute = 60;
+    
+    public boolean allowRequest(String userId) {
+        AtomicInteger count = requestCounts.computeIfAbsent(
+            userId,
+            k -&gt; new AtomicInteger(0)
+        );
+        
+        if (count.get() &gt;= maxRequestsPerMinute) {
+            return false;
+        }
+        
+        count.incrementAndGet();
+        
+        // Reset counter after 1 minute
+        scheduleReset(userId);
+        
+        return true;
+    }
+}
+</code></pre>
+</div>
+
+<h2>Monitoring and Observability</h2>
+<div class="code-block">
+<pre><code>@Service
+public class MonitoredRAGService {
+    
+    private final MeterRegistry meterRegistry;
+    private final ChatClient chatClient;
+    
+    public String query(String question) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        
+        try {
+            String response = performRAG(question);
+            
+            sample.stop(meterRegistry.timer("rag.query.duration",
+                "status", "success"));
+            
+            meterRegistry.counter("rag.query.count",
+                "status", "success").increment();
+            
+            return response;
+            
+        } catch (Exception e) {
+            sample.stop(meterRegistry.timer("rag.query.duration",
+                "status", "error"));
+            
+            meterRegistry.counter("rag.query.count",
+                "status", "error").increment();
+            
+            throw e;
+        }
+    }
+}
+</code></pre>
+</div>
+
+<h2>Cost Optimization</h2>
+<ul>
+    <li><strong>Embedding Caching:</strong> Cache embeddings to avoid regeneration</li>
+    <li><strong>Model Selection:</strong> Use smaller models for simple queries</li>
+    <li><strong>Token Management:</strong> Limit context size to reduce costs</li>
+    <li><strong>Batch Processing:</strong> Process multiple queries together</li>
+    <li><strong>Response Caching:</strong> Cache identical queries</li>
+</ul>
+
+<h2>Security Considerations</h2>
+<table>
+    <tr>
+        <th>Concern</th>
+        <th>Mitigation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Privacy</td>
+        <td>Encrypt data at rest and in transit</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Access Control</td>
+        <td>Implement authentication and authorization</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompt Injection</td>
+        <td>Sanitize user inputs, use system boundaries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Leakage</td>
+        <td>Filter sensitive information from responses</td>
+    </tr>
+</table>
+
+<h2>Performance Optimization</h2>
+<div class="code-block">
+<pre><code>@Service
+public class OptimizedRAGService {
+    
+    private final ExecutorService executor = Executors.newFixedThreadPool(10);
+    
+    public CompletableFuture&lt;String&gt; queryAsync(String question) {
+        return CompletableFuture.supplyAsync(() -&gt; {
+            // Parallel retrieval and generation
+            CompletableFuture&lt;List&lt;Document&gt;&gt; retrievalFuture = 
+                CompletableFuture.supplyAsync(() -&gt; retrieveDocuments(question));
+            
+            List&lt;Document&gt; docs = retrievalFuture.join();
+            return generateResponse(docs, question);
+        }, executor);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Deployment Strategies</h2>
+<ul>
+    <li><strong>Containerization:</strong> Use Docker for consistent deployments</li>
+    <li><strong>Kubernetes:</strong> Orchestrate containers for scalability</li>
+    <li><strong>Load Balancing:</strong> Distribute traffic across instances</li>
+    <li><strong>Auto-scaling:</strong> Scale based on demand</li>
+    <li><strong>Blue-Green Deployment:</strong> Zero-downtime updates</li>
+</ul>
+
+<h2>Testing Strategies</h2>
+<div class="code-block">
+<pre><code>@SpringBootTest
+class RAGServiceTest {
+    
+    @MockBean
+    private VectorStore vectorStore;
+    
+    @MockBean
+    private ChatClient chatClient;
+    
+    @Autowired
+    private RAGService ragService;
+    
+    @Test
+    void testQueryWithMockedComponents() {
+        // Mock vector store response
+        when(vectorStore.similaritySearch(any()))
+            .thenReturn(List.of(new Document("Test content")));
+        
+        // Mock LLM response
+        when(chatClient.prompt().user(any()).call().content())
+            .thenReturn("Test answer");
+        
+        String result = ragService.query("Test question");
+        
+        assertNotNull(result);
+        assertEquals("Test answer", result);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Graceful Degradation:</strong> Provide fallback responses on failures</li>
+    <li><strong>Circuit Breakers:</strong> Prevent cascading failures</li>
+    <li><strong>Health Checks:</strong> Monitor system health continuously</li>
+    <li><strong>Logging:</strong> Log all queries and responses for debugging</li>
+    <li><strong>Version Control:</strong> Track prompt and configuration changes</li>
+    <li><strong>A/B Testing:</strong> Test different RAG configurations</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

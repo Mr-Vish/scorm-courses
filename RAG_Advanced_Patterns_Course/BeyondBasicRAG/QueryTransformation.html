@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Query Transformation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Query Transformation</h1>
+<div class="container">
+<h2>Query Transformation: Improving Retrieval by Rewriting</h2>
+<p>Sometimes, the user's original query is not the best "search term" for the retrieval engine. Users might be vague, use the wrong terminology, or ask a question that is too complex for a single search. Query Transformation is a set of patterns where an LLM is used to rewrite or decompose the user's query before the retrieval step.</p>
+
+<h3>Pattern 1: Query Expansion / Rewrite</h3>
+<p>The system uses an LLM to rewrite the user's query into one or more better search terms.
+<ul>
+    <li><strong>Multi-Query:</strong> "Generate 3 different ways to ask this question to maximize retrieval results." This helps overcome the "fragility" of vector search where a slightly different wording can lead to completely different documents.</li>
+    <li><strong>Step-Back Prompting:</strong> "First, identify the high-level concept behind this specific question, then search for both." (e.g., if the user asks about a specific error, the model also searches for the general system it belongs to).</li>
+</ul></p>
+
+<h3>Pattern 2: Hypothetical Document Embeddings (HyDE)</h3>
+<p>HyDE is a "mind-bending" but effective pattern. Instead of searching with the user's question, the system first asks an LLM to "Write a hypothetical answer to this question." It then uses the <strong>hypothetical answer</strong> to perform the vector search.
+<ul>
+    <li><strong>Why it works:</strong> In vector space, an "answer" is often closer to other "answers" than a "question" is. By searching with a (potentially hallucinated) answer, you are more likely to find real documents with similar content.</li>
+</ul></p>
+
+<h3>Pattern 3: Query Decomposition (Sub-Queries)</h3>
+<p>For complex questions that involve multiple parts, the model decomposes the query into several independent sub-queries.
+<ul>
+    <li><strong>Example:</strong> "How does the battery life of the iPhone 15 compare to the Samsung S24?"
+    <li><strong>Sub-query 1:</strong> "iPhone 15 battery life specs."
+    <li><strong>Sub-query 2:</strong> "Samsung S24 battery life specs."</li>
+    <li>The system executes both searches and then synthesizes the results.</li>
+</ul></p>
+
+<h3>Pattern 4: Self-Querying</h3>
+<p>In many cases, your knowledge base contains "Metadata" (e.g., Date, Author, Category). Self-querying is where the LLM parses the user's natural language request into a structured filter.
+<ul>
+    <li><strong>Request:</strong> "Find articles about AI from 2023."
+    <li><strong>Transformation:</strong> <code>Search: "AI", Filter: { "year": 2023 }</code></li>
+    <li>This is much more accurate than relying on the vector search to "understand" the concept of a year.</li>
+</ul></p>
+
+<h3>Pattern 5: Query Routing</h3>
+<p>If you have multiple different data sources (e.g., a documentation site, a GitHub repo, and a Slack history), Query Routing uses an LLM to decide which source is most relevant for a given query. This saves time and prevents the model from getting distracted by irrelevant data from the wrong source.</p>
+
+<h3>Use Case: Multi-Step Research Assistant</h3>
+<p>A user asks: "What are the latest developments in solid-state batteries and who are the leading companies?"
+The system:
+1. Decomposes the query into "latest solid-state battery tech" and "leading solid-state battery companies."
+2. Performs Multi-Query expansion on both.
+3. Routes the tech query to a scientific database and the company query to a business news API.
+4. Synthesizes everything into a final report.</p>
+
+<h3>Tradeoffs of Query Transformation</h3>
+<ul>
+    <li><strong>Latency:</strong> Every transformation step requires an additional call to an LLM, adding several seconds to the process.</li>
+    <li><strong>Cost:</strong> More LLM calls mean higher API costs.</li>
+    <li><strong>Complexity:</strong> Building and debugging a multi-step transformation pipeline is significantly harder than a simple RAG setup.</li>
+</ul>
+
+<h3>Summary</h3>
+<p>Query Transformation recognizes that retrieval is a "noisy" process and that the user's initial input is often just a starting point. By using the LLM's intelligence *before* the search, you can significantly improve the quality and relevance of the information you provide to the final generation step.</p>
+
+</div>
+</body>
+</html>

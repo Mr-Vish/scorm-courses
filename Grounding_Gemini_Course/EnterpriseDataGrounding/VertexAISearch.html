@@ -1,0 +1,337 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Vertex AI Search and Enterprise Data Stores</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Vertex AI Search and Enterprise Data Stores</h1>
+
+<h2>What is Enterprise Data Grounding?</h2>
+<p><strong>Enterprise data grounding</strong> connects Gemini to your organization's private data sources—internal documents, databases, knowledge bases, and proprietary information. Unlike Google Search grounding which accesses public web data, enterprise grounding ensures responses are based on your organization's specific knowledge and policies.</p>
+
+<blockquote>
+<strong>Key Benefit:</strong> Enterprise grounding enables Gemini to provide accurate, company-specific answers while maintaining data privacy and security. Your proprietary data never leaves your Google Cloud environment.
+</blockquote>
+
+<h2>Vertex AI Search Overview</h2>
+<p>Vertex AI Search (formerly Enterprise Search) is Google Cloud's solution for indexing and searching enterprise data. It provides:</p>
+
+<ul>
+    <li><strong>Multi-Source Indexing:</strong> Index data from Cloud Storage, BigQuery, databases, and third-party systems</li>
+    <li><strong>Semantic Search:</strong> Understand intent and context, not just keywords</li>
+    <li><strong>Access Control:</strong> Respect existing permissions and security policies</li>
+    <li><strong>Real-Time Updates:</strong> Keep indexes current as data changes</li>
+    <li><strong>Scalability:</strong> Handle terabytes of enterprise data</li>
+</ul>
+
+<h2>Supported Data Sources</h2>
+<p>Vertex AI Search can index data from multiple sources:</p>
+
+<table>
+    <tr>
+        <th>Source Type</th>
+        <th>Supported Formats</th>
+        <th>Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Cloud Storage</td>
+        <td>PDF, HTML, TXT, DOCX, PPTX, CSV</td>
+        <td>Documentation, reports, presentations</td>
+    </tr>
+    <tr>
+        <td class="rowheader">BigQuery</td>
+        <td>Structured tables</td>
+        <td>Analytics data, customer records, transactions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cloud SQL</td>
+        <td>Database records</td>
+        <td>Operational data, product catalogs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Websites</td>
+        <td>Crawled web pages</td>
+        <td>Internal wikis, intranet sites</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Third-Party</td>
+        <td>Confluence, Jira, SharePoint, Salesforce</td>
+        <td>Collaboration tools, CRM data</td>
+    </tr>
+</table>
+
+<h2>Creating a Data Store</h2>
+<p>The first step in enterprise grounding is creating a Vertex AI Search data store:</p>
+
+<blockquote>
+from google.cloud import discoveryengine_v1 as discoveryengine
+
+# Initialize client
+client = discoveryengine.DataStoreServiceClient()
+
+# Define parent resource
+parent = "projects/YOUR_PROJECT_ID/locations/global/collections/default_collection"
+
+# Create data store
+data_store = discoveryengine.DataStore(
+    display_name="Company Knowledge Base",
+    industry_vertical=discoveryengine.IndustryVertical.GENERIC,
+    content_config=discoveryengine.DataStore.ContentConfig.CONTENT_REQUIRED,
+    solution_types=[discoveryengine.SolutionType.SOLUTION_TYPE_SEARCH]
+)
+
+# Create the data store
+request = discoveryengine.CreateDataStoreRequest(
+    parent=parent,
+    data_store=data_store,
+    data_store_id="company-knowledge-base"
+)
+
+operation = client.create_data_store(request=request)
+print(f"Data store created: {operation.result().name}")
+</blockquote>
+
+<h2>Importing Data from Cloud Storage</h2>
+<p>Once your data store is created, import documents from Cloud Storage:</p>
+
+<blockquote>
+from google.cloud import discoveryengine_v1 as discoveryengine
+
+# Initialize document service client
+doc_client = discoveryengine.DocumentServiceClient()
+
+# Define parent (your data store)
+parent = "projects/YOUR_PROJECT_ID/locations/global/collections/default_collection/dataStores/company-knowledge-base/branches/default_branch"
+
+# Configure import from Cloud Storage
+gcs_source = discoveryengine.GcsSource(
+    input_uris=[
+        "gs://your-bucket/documents/*.pdf",
+        "gs://your-bucket/policies/*.docx"
+    ],
+    data_schema="document"  # or "custom" for structured data
+)
+
+import_config = discoveryengine.ImportDocumentsRequest(
+    parent=parent,
+    gcs_source=gcs_source,
+    reconciliation_mode=discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL
+)
+
+# Start import operation
+operation = doc_client.import_documents(request=import_config)
+print("Import started. This may take several minutes...")
+
+# Wait for completion
+result = operation.result()
+print(f"Import completed. Documents imported: {result.success_count}")
+print(f"Errors: {result.error_count}")
+</blockquote>
+
+<h2>Importing Structured Data from BigQuery</h2>
+<p>For structured data, import from BigQuery tables:</p>
+
+<blockquote>
+# Configure BigQuery source
+bigquery_source = discoveryengine.BigQuerySource(
+    project_id="YOUR_PROJECT_ID",
+    dataset_id="your_dataset",
+    table_id="your_table",
+    data_schema="custom"
+)
+
+# Define field mappings
+import_config = discoveryengine.ImportDocumentsRequest(
+    parent=parent,
+    bigquery_source=bigquery_source,
+    reconciliation_mode=discoveryengine.ImportDocumentsRequest.ReconciliationMode.FULL
+)
+
+operation = doc_client.import_documents(request=import_config)
+result = operation.result()
+print(f"BigQuery import completed: {result.success_count} records")
+</blockquote>
+
+<h2>Configuring Third-Party Connectors</h2>
+<p>Connect to popular enterprise systems:</p>
+
+<table>
+    <tr>
+        <th>System</th>
+        <th>Configuration</th>
+        <th>Sync Frequency</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Confluence</td>
+        <td>API token, space selection</td>
+        <td>Real-time or scheduled</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Jira</td>
+        <td>API token, project selection</td>
+        <td>Real-time or scheduled</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SharePoint</td>
+        <td>OAuth, site collection</td>
+        <td>Scheduled (hourly/daily)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Salesforce</td>
+        <td>OAuth, object selection</td>
+        <td>Real-time or scheduled</td>
+    </tr>
+</table>
+
+<blockquote>
+<strong>Note:</strong> Third-party connectors are typically configured through the Google Cloud Console UI rather than programmatically. Each connector requires specific authentication and permissions.
+</blockquote>
+
+<h2>Document Metadata and Enrichment</h2>
+<p>Enhance searchability by adding metadata to documents:</p>
+
+<blockquote>
+# Create document with metadata
+document = discoveryengine.Document(
+    id="policy-001",
+    struct_data={
+        "title": "Remote Work Policy",
+        "content": "Full policy text here...",
+        "department": "Human Resources",
+        "effective_date": "2024-01-01",
+        "document_type": "policy",
+        "tags": ["remote-work", "hr", "policy"]
+    }
+)
+
+# Create document in data store
+request = discoveryengine.CreateDocumentRequest(
+    parent=parent,
+    document=document,
+    document_id="policy-001"
+)
+
+created_doc = doc_client.create_document(request=request)
+print(f"Document created: {created_doc.name}")
+</blockquote>
+
+<h2>Search Configuration and Tuning</h2>
+<p>Configure search behavior for optimal results:</p>
+
+<blockquote>
+from google.cloud import discoveryengine_v1 as discoveryengine
+
+# Initialize search service client
+search_client = discoveryengine.SearchServiceClient()
+
+# Configure search request
+serving_config = f"{parent}/servingConfigs/default_config"
+
+search_request = discoveryengine.SearchRequest(
+    serving_config=serving_config,
+    query="What is our remote work policy?",
+    page_size=10,
+    # Enable semantic search
+    query_expansion_spec=discoveryengine.SearchRequest.QueryExpansionSpec(
+        condition=discoveryengine.SearchRequest.QueryExpansionSpec.Condition.AUTO
+    ),
+    # Boost recent documents
+    boost_spec=discoveryengine.SearchRequest.BoostSpec(
+        condition_boost_specs=[
+            discoveryengine.SearchRequest.BoostSpec.ConditionBoostSpec(
+                condition="effective_date > '2023-01-01'",
+                boost=2.0
+            )
+        ]
+    )
+)
+
+# Execute search
+response = search_client.search(request=search_request)
+
+print("Search Results:")
+for result in response.results:
+    doc = result.document
+    print(f"\nTitle: {doc.struct_data.get('title', 'N/A')}")
+    print(f"Score: {result.relevance_score:.2f}")
+    print(f"Snippet: {doc.derived_struct_data.get('snippets', [''])[0][:200]}...")
+</blockquote>
+
+<h2>Access Control and Security</h2>
+<p>Vertex AI Search respects document-level access controls:</p>
+
+<ul>
+    <li><strong>Identity-Based Access:</strong> Documents are filtered based on user identity</li>
+    <li><strong>Attribute-Based Access:</strong> Control access using document attributes (department, classification)</li>
+    <li><strong>Integration with IAM:</strong> Leverage Google Cloud IAM for authentication and authorization</li>
+    <li><strong>Audit Logging:</strong> Track all search queries and document access</li>
+</ul>
+
+<blockquote>
+# Create document with access control
+document = discoveryengine.Document(
+    id="confidential-001",
+    struct_data={
+        "title": "Q4 Financial Results",
+        "content": "Confidential financial data...",
+        "access_control": {
+            "allowed_users": ["user1@company.com", "user2@company.com"],
+            "allowed_groups": ["finance-team@company.com"],
+            "classification": "confidential"
+        }
+    }
+)
+
+# Only users in allowed_users or allowed_groups can retrieve this document
+</blockquote>
+
+<h2>Monitoring Data Store Health</h2>
+<p>Monitor your data store to ensure optimal performance:</p>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>What to Monitor</th>
+        <th>Action Threshold</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Index Size</td>
+        <td>Total documents indexed</td>
+        <td>Plan capacity when approaching limits</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Import Errors</td>
+        <td>Failed document imports</td>
+        <td>Investigate if error rate &gt; 5%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Search Latency</td>
+        <td>P95 search response time</td>
+        <td>Optimize if &gt; 500ms</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Index Freshness</td>
+        <td>Time since last update</td>
+        <td>Ensure updates occur as scheduled</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Structure Your Data:</strong> Add meaningful metadata to improve search relevance</li>
+    <li><strong>Regular Updates:</strong> Keep data stores synchronized with source systems</li>
+    <li><strong>Test Search Quality:</strong> Regularly test search with common queries</li>
+    <li><strong>Implement Access Controls:</strong> Ensure sensitive data is properly protected</li>
+    <li><strong>Monitor Performance:</strong> Track search latency and relevance metrics</li>
+    <li><strong>Document Taxonomy:</strong> Use consistent tagging and categorization</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

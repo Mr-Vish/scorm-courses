@@ -1,0 +1,369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Model Context Protocol (MCP) Integration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Model Context Protocol (MCP) Integration</h1>
+
+<h2>Understanding the Model Context Protocol</h2>
+<p>The Model Context Protocol (MCP) is an open standard developed by Anthropic that enables AI applications to securely connect to external data sources and tools. MCP solves a fundamental challenge in AI-assisted development: providing language models with access to real-time, contextually relevant information beyond their training data. For Claude Code CLI, MCP integration transforms the tool from a standalone assistant into a connected system that can interact with databases, APIs, documentation systems, and enterprise tools.</p>
+
+<h3>The Context Problem in AI Development</h3>
+<p>Traditional AI assistants face several limitations when working with real-world development environments:</p>
+
+<ul>
+    <li><strong>Static Knowledge:</strong> Models are trained on historical data and lack awareness of current information</li>
+    <li><strong>Isolated Operation:</strong> Cannot access proprietary codebases, internal documentation, or enterprise systems</li>
+    <li><strong>Limited Tool Access:</strong> Unable to interact with development tools, databases, or external services</li>
+    <li><strong>Context Fragmentation:</strong> Developers must manually provide context through copy-paste operations</li>
+</ul>
+
+<p>MCP addresses these limitations by providing a standardized protocol for AI applications to request and receive contextual information from external sources.</p>
+
+<h2>MCP Architecture and Components</h2>
+
+<h3>Core Architectural Elements</h3>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Role</th>
+        <th>Responsibilities</th>
+    </tr>
+    <tr>
+        <td class="rowheader">MCP Client</td>
+        <td>Consumer of context</td>
+        <td>Claude Code CLI acts as client, requesting context from servers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">MCP Server</td>
+        <td>Provider of context</td>
+        <td>Exposes data sources and tools through standardized interface</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Protocol Layer</td>
+        <td>Communication standard</td>
+        <td>Defines message formats, authentication, and data exchange</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Transport Layer</td>
+        <td>Connection mechanism</td>
+        <td>Handles network communication (HTTP, WebSocket, stdio)</td>
+    </tr>
+</table>
+
+<h3>MCP Server Types</h3>
+<p>MCP servers can provide different types of capabilities:</p>
+
+<ul>
+    <li><strong>Data Servers:</strong> Provide access to databases, file systems, or data repositories</li>
+    <li><strong>Tool Servers:</strong> Expose executable tools and services (search engines, calculators, APIs)</li>
+    <li><strong>Documentation Servers:</strong> Serve technical documentation, API references, or knowledge bases</li>
+    <li><strong>Integration Servers:</strong> Connect to third-party services (Jira, Slack, GitHub)</li>
+</ul>
+
+<h2>Configuring MCP Integration</h2>
+
+<h3>MCP Server Configuration</h3>
+<p>MCP servers are configured in Claude Code CLI's configuration file:</p>
+
+<blockquote>
+{
+  "mcp": {
+    "servers": {
+      "company-docs": {
+        "type": "documentation",
+        "url": "https://docs.company.internal/mcp",
+        "authentication": {
+          "type": "bearer",
+          "token": "${DOCS_API_TOKEN}"
+        },
+        "enabled": true
+      },
+      "database-access": {
+        "type": "data",
+        "url": "https://db-mcp.company.internal",
+        "authentication": {
+          "type": "oauth2",
+          "clientId": "${DB_CLIENT_ID}",
+          "clientSecret": "${DB_CLIENT_SECRET}"
+        },
+        "enabled": true,
+        "permissions": ["read"]
+      },
+      "jira-integration": {
+        "type": "tool",
+        "url": "https://jira.company.com/mcp",
+        "authentication": {
+          "type": "api-key",
+          "key": "${JIRA_API_KEY}"
+        },
+        "enabled": true
+      }
+    }
+  }
+}
+</blockquote>
+
+<h3>Configuration Parameters</h3>
+<ul>
+    <li><strong>type:</strong> Category of MCP server (documentation, data, tool, integration)</li>
+    <li><strong>url:</strong> Endpoint URL for the MCP server</li>
+    <li><strong>authentication:</strong> Authentication method and credentials</li>
+    <li><strong>enabled:</strong> Whether the server is active</li>
+    <li><strong>permissions:</strong> Access level restrictions (read, write, execute)</li>
+    <li><strong>timeout:</strong> Request timeout in milliseconds</li>
+    <li><strong>retryPolicy:</strong> Retry configuration for failed requests</li>
+</ul>
+
+<h2>MCP Use Cases in Development</h2>
+
+<h3>Enterprise Documentation Access</h3>
+<p>MCP enables Claude Code CLI to access internal documentation and knowledge bases:</p>
+
+<ul>
+    <li><strong>Architecture Documentation:</strong> Query system architecture diagrams and design decisions</li>
+    <li><strong>API References:</strong> Access internal API documentation and usage examples</li>
+    <li><strong>Coding Standards:</strong> Retrieve team-specific coding guidelines and best practices</li>
+    <li><strong>Runbooks:</strong> Access operational procedures and troubleshooting guides</li>
+    <li><strong>Historical Context:</strong> Understand past decisions through design documents and RFCs</li>
+</ul>
+
+<h3>Database and Data Source Integration</h3>
+<p>Connect Claude Code CLI to databases for schema understanding and data analysis:</p>
+
+<ul>
+    <li><strong>Schema Exploration:</strong> Query database schemas to understand data models</li>
+    <li><strong>Data Validation:</strong> Verify data integrity and relationships</li>
+    <li><strong>Query Generation:</strong> Generate SQL queries based on natural language descriptions</li>
+    <li><strong>Migration Planning:</strong> Analyze schema changes and plan migrations</li>
+    <li><strong>Performance Analysis:</strong> Identify slow queries and optimization opportunities</li>
+</ul>
+
+<h3>External Tool Integration</h3>
+<p>Integrate with development and project management tools:</p>
+
+<table>
+    <tr>
+        <th>Tool Category</th>
+        <th>Integration Examples</th>
+        <th>Capabilities</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Issue Tracking</td>
+        <td>Jira, Linear, GitHub Issues</td>
+        <td>Query issues, create tickets, update status</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Communication</td>
+        <td>Slack, Microsoft Teams</td>
+        <td>Send notifications, query conversations</td>
+    </tr>
+    <tr>
+        <td class="rowheader">CI/CD</td>
+        <td>Jenkins, GitHub Actions, GitLab CI</td>
+        <td>Trigger builds, check status, retrieve logs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Monitoring</td>
+        <td>Datadog, New Relic, Grafana</td>
+        <td>Query metrics, check alerts, analyze performance</td>
+    </tr>
+</table>
+
+<h3>Knowledge Base Integration</h3>
+<p>Connect to organizational knowledge repositories:</p>
+
+<ul>
+    <li><strong>Confluence/Wiki:</strong> Access team documentation and project information</li>
+    <li><strong>Stack Overflow Enterprise:</strong> Query internal Q&A and solutions</li>
+    <li><strong>Code Search:</strong> Search across multiple repositories and codebases</li>
+    <li><strong>Incident Reports:</strong> Learn from past incidents and resolutions</li>
+</ul>
+
+<h2>MCP Security and Access Control</h2>
+
+<h3>Authentication Methods</h3>
+<p>MCP supports multiple authentication mechanisms for secure access:</p>
+
+<ul>
+    <li><strong>API Keys:</strong> Simple token-based authentication for internal services</li>
+    <li><strong>OAuth 2.0:</strong> Delegated authorization for third-party services</li>
+    <li><strong>Bearer Tokens:</strong> JWT-based authentication with expiration</li>
+    <li><strong>Mutual TLS:</strong> Certificate-based authentication for high-security environments</li>
+    <li><strong>SAML/SSO:</strong> Enterprise single sign-on integration</li>
+</ul>
+
+<h3>Permission Management</h3>
+<p>Fine-grained permissions control what Claude Code CLI can access and modify:</p>
+
+<blockquote>
+{
+  "mcp": {
+    "servers": {
+      "production-db": {
+        "type": "data",
+        "url": "https://prod-db-mcp.company.internal",
+        "permissions": {
+          "read": true,
+          "write": false,
+          "execute": false,
+          "allowedSchemas": ["public", "analytics"],
+          "deniedTables": ["users.credentials", "payment.cards"]
+        }
+      }
+    }
+  }
+}
+</blockquote>
+
+<h3>Data Privacy and Compliance</h3>
+<p>MCP integration must respect data privacy and compliance requirements:</p>
+
+<ul>
+    <li><strong>Data Minimization:</strong> Request only necessary data for the task</li>
+    <li><strong>PII Protection:</strong> Automatically redact personally identifiable information</li>
+    <li><strong>Audit Logging:</strong> Log all MCP requests and data access for compliance</li>
+    <li><strong>Data Residency:</strong> Ensure data remains in compliant geographic regions</li>
+    <li><strong>Retention Policies:</strong> Respect data retention and deletion requirements</li>
+</ul>
+
+<h2>Building Custom MCP Servers</h2>
+
+<h3>MCP Server Implementation Concepts</h3>
+<p>Organizations can build custom MCP servers to expose proprietary data and tools:</p>
+
+<ul>
+    <li><strong>Protocol Compliance:</strong> Implement MCP specification for message formats and endpoints</li>
+    <li><strong>Resource Definition:</strong> Define available resources (documents, tools, data sources)</li>
+    <li><strong>Query Handling:</strong> Process requests and return formatted responses</li>
+    <li><strong>Authentication:</strong> Implement secure authentication and authorization</li>
+    <li><strong>Rate Limiting:</strong> Protect backend systems from excessive requests</li>
+</ul>
+
+<h3>Common Custom Server Scenarios</h3>
+
+<p><strong>Internal Documentation Server:</strong></p>
+<ul>
+    <li>Indexes company wikis, design docs, and technical specifications</li>
+    <li>Provides semantic search across documentation</li>
+    <li>Returns relevant context based on queries</li>
+    <li>Maintains access control based on user permissions</li>
+</ul>
+
+<p><strong>Legacy System Integration Server:</strong></p>
+<ul>
+    <li>Wraps legacy APIs in MCP-compliant interface</li>
+    <li>Translates between modern and legacy data formats</li>
+    <li>Provides safe, read-only access to critical systems</li>
+    <li>Implements caching to reduce load on legacy systems</li>
+</ul>
+
+<p><strong>Development Environment Server:</strong></p>
+<ul>
+    <li>Exposes local development databases and services</li>
+    <li>Provides access to test data and fixtures</li>
+    <li>Enables querying of local logs and metrics</li>
+    <li>Integrates with local development tools</li>
+</ul>
+
+<h2>MCP Performance Optimization</h2>
+
+<h3>Caching Strategies</h3>
+<p>Reduce latency and server load through intelligent caching:</p>
+
+<ul>
+    <li><strong>Response Caching:</strong> Cache frequently accessed data with appropriate TTL</li>
+    <li><strong>Query Result Caching:</strong> Store results of expensive queries</li>
+    <li><strong>Schema Caching:</strong> Cache database schemas and API definitions</li>
+    <li><strong>Negative Caching:</strong> Cache "not found" responses to prevent repeated lookups</li>
+</ul>
+
+<h3>Request Optimization</h3>
+<p>Minimize network overhead and improve response times:</p>
+
+<ul>
+    <li><strong>Batch Requests:</strong> Combine multiple queries into single requests</li>
+    <li><strong>Selective Fields:</strong> Request only needed fields, not entire documents</li>
+    <li><strong>Pagination:</strong> Retrieve large datasets in manageable chunks</li>
+    <li><strong>Compression:</strong> Use gzip or brotli compression for responses</li>
+    <li><strong>Connection Pooling:</strong> Reuse connections to reduce overhead</li>
+</ul>
+
+<h2>Troubleshooting MCP Integration</h2>
+
+<h3>Common Issues and Solutions</h3>
+
+<p><strong>Connection Failures:</strong></p>
+<ul>
+    <li>Verify server URL is correct and accessible</li>
+    <li>Check network connectivity and firewall rules</li>
+    <li>Validate SSL/TLS certificates</li>
+    <li>Ensure authentication credentials are valid</li>
+</ul>
+
+<p><strong>Authentication Errors:</strong></p>
+<ul>
+    <li>Verify API keys or tokens are current and not expired</li>
+    <li>Check that credentials have necessary permissions</li>
+    <li>Ensure OAuth tokens are properly refreshed</li>
+    <li>Validate authentication method matches server requirements</li>
+</ul>
+
+<p><strong>Performance Issues:</strong></p>
+<ul>
+    <li>Enable caching to reduce repeated requests</li>
+    <li>Implement request batching for multiple queries</li>
+    <li>Increase timeout values for slow servers</li>
+    <li>Monitor server response times and optimize queries</li>
+</ul>
+
+<h2>Best Practices</h2>
+
+<h3>Configuration Management</h3>
+<ul>
+    <li><strong>Environment Variables:</strong> Store sensitive credentials in environment variables, not config files</li>
+    <li><strong>Separate Configurations:</strong> Use different MCP servers for development, staging, and production</li>
+    <li><strong>Version Control:</strong> Commit MCP configuration templates, not actual credentials</li>
+    <li><strong>Documentation:</strong> Document available MCP servers and their purposes</li>
+</ul>
+
+<h3>Security Practices</h3>
+<ul>
+    <li><strong>Least Privilege:</strong> Grant minimum necessary permissions to MCP servers</li>
+    <li><strong>Regular Rotation:</strong> Rotate API keys and credentials periodically</li>
+    <li><strong>Audit Logging:</strong> Log all MCP access for security monitoring</li>
+    <li><strong>Network Segmentation:</strong> Isolate MCP servers in secure network zones</li>
+</ul>
+
+<h3>Operational Excellence</h3>
+<ul>
+    <li><strong>Monitoring:</strong> Track MCP server availability and performance</li>
+    <li><strong>Alerting:</strong> Set up alerts for connection failures or errors</li>
+    <li><strong>Fallback Mechanisms:</strong> Gracefully handle MCP server unavailability</li>
+    <li><strong>Documentation:</strong> Maintain runbooks for MCP troubleshooting</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>MCP enables Claude Code CLI to access external data sources, tools, and enterprise systems</li>
+    <li>MCP architecture consists of clients, servers, protocol layer, and transport mechanisms</li>
+    <li>Configuration defines available MCP servers with authentication and permissions</li>
+    <li>Use cases include documentation access, database integration, and tool connectivity</li>
+    <li>Security requires proper authentication, permission management, and data privacy controls</li>
+    <li>Custom MCP servers can expose proprietary systems and data to Claude Code CLI</li>
+    <li>Performance optimization through caching, batching, and connection management</li>
+    <li>Best practices emphasize security, monitoring, and graceful error handling</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

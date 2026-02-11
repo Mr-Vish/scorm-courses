@@ -1,0 +1,289 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Validation and Error Handling</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>Validation and Error Handling</h1>
+
+<h2>Why Validation Is Mandatory in LLM Systems</h2>
+<p>
+Large Language Models are probabilistic systems. Even when they appear deterministic,
+they generate outputs based on likelihood, not guarantees. This makes validation a
+non-negotiable requirement in any production-grade AI system.
+</p>
+
+<p>
+Unlike traditional software functions, LLMs can:
+</p>
+
+<ul>
+    <li>Hallucinate fields that were never requested</li>
+    <li>Omit required information</li>
+    <li>Return malformed or partially structured outputs</li>
+    <li>Contradict earlier instructions</li>
+    <li>Drift in behavior after prompt changes</li>
+</ul>
+
+<p>
+Validation acts as the boundary between probabilistic intelligence and deterministic
+software systems. Without it, failures propagate silently into downstream systems.
+</p>
+
+<h2>Validation vs Moderation vs Guardrails</h2>
+<p>
+Validation is often confused with moderation or guardrails, but they serve different roles.
+</p>
+
+<ul>
+    <li><strong>Validation:</strong> Ensures outputs conform to expected structure and constraints</li>
+    <li><strong>Moderation:</strong> Ensures outputs are safe and policy-compliant</li>
+    <li><strong>Guardrails:</strong> Constrain model behavior proactively</li>
+</ul>
+
+<p>
+All three are required for robust systems, but validation is the final enforcement layer
+before outputs are consumed.
+</p>
+
+<h2>Validating LLM Output</h2>
+<p>
+Even when using structured output modes or function calling, validation is essential.
+Structured outputs reduce errors, but they do not eliminate them.
+</p>
+
+<div class="code-block">
+<pre><code>from pydantic import BaseModel, validator, Field
+from typing import Literal
+from pydantic.error_wrappers import ValidationError
+
+class ExtractedEntity(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    entity_type: Literal["person", "company", "location", "product"]
+    confidence: float = Field(ge=0.0, le=1.0)
+
+    @validator("name")
+    def name_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Name cannot be empty or whitespace")
+        return v.strip()
+
+# Validate LLM output
+try:
+    entity = ExtractedEntity(**llm_output)
+except ValidationError as e:
+    print(f"Invalid LLM output: {e}")
+    # Retry or fallback
+</code></pre>
+</div>
+
+<p>
+This approach transforms loosely structured AI output into strongly typed data objects
+that downstream systems can trust.
+</p>
+
+<h2>Common Failure Modes in LLM Outputs</h2>
+<p>
+Understanding how LLMs fail helps design better validation strategies.
+</p>
+
+<ul>
+    <li>Missing required fields</li>
+    <li>Incorrect data types (string instead of number)</li>
+    <li>Out-of-range numeric values</li>
+    <li>Invalid enum or category values</li>
+    <li>Overly verbose or truncated outputs</li>
+    <li>Semantic errors that pass schema validation</li>
+</ul>
+
+<p>
+Validation should catch as many of these as possible before retrying or degrading gracefully.
+</p>
+
+<h2>Schema Design for Reliable Validation</h2>
+<p>
+Validation quality depends heavily on schema quality. Overly complex schemas increase
+failure rates and reduce reliability.
+</p>
+
+<p>
+Effective schemas:
+</p>
+
+<ul>
+    <li>Use flat or shallow nesting</li>
+    <li>Prefer enums over free-form strings</li>
+    <li>Define explicit numeric bounds</li>
+    <li>Mark optional fields clearly</li>
+</ul>
+
+<p>
+Every additional constraint improves reliability, but excessive constraints increase retries.
+Balance is key.
+</p>
+
+<h2>Retry Strategies</h2>
+<p>
+Retries are the primary mechanism for recovering from transient or correctable errors.
+However, retries must be applied deliberately to avoid infinite loops and cost overruns.
+</p>
+
+<table>
+    <tr><th>Strategy</th><th>When to Use</th><th>Implementation</th></tr>
+    <tr>
+        <td>Simple retry</td>
+        <td>Transient model instability</td>
+        <td>Retry the same prompt up to a fixed limit</td>
+    </tr>
+    <tr>
+        <td>Retry with error feedback</td>
+        <td>Schema or validation failures</td>
+        <td>Include validation error details in the prompt</td>
+    </tr>
+    <tr>
+        <td>Fallback model</td>
+        <td>Repeated failures</td>
+        <td>Switch to a larger or more reliable model</td>
+    </tr>
+    <tr>
+        <td>Graceful degradation</td>
+        <td>Optional fields</td>
+        <td>Use defaults or partial outputs</td>
+    </tr>
+</table>
+
+<h2>Retry with Error Feedback</h2>
+<p>
+One of the most effective retry patterns is feeding validation errors back to the model.
+This allows the LLM to self-correct.
+</p>
+
+<div class="code-block">
+<pre><code>def extract_with_retry(text, max_retries=3):
+    messages = [{"role": "user", "content": f"Extract entities from: {text}"}]
+
+    for attempt in range(max_retries):
+        response = call_llm(messages)
+        try:
+            return validate_output(response)
+        except ValidationError as e:
+            messages.append({"role": "assistant", "content": response})
+            messages.append({
+                "role": "user",
+                "content": f"Your output had validation errors: {e}. Please fix and try again."
+            })
+
+    raise Exception("Failed after max retries")
+</code></pre>
+</div>
+
+<p>
+This approach significantly improves success rates without manual intervention.
+</p>
+
+<h2>Fallback Strategies</h2>
+<p>
+Retries should not be infinite. When retries fail, fallback strategies prevent cascading
+failures.
+</p>
+
+<ul>
+    <li>Switch to a larger or more capable model</li>
+    <li>Switch to a rule-based or heuristic approach</li>
+    <li>Return partial results with confidence flags</li>
+    <li>Escalate to human review</li>
+</ul>
+
+<p>
+Fallbacks ensure system resilience under unpredictable conditions.
+</p>
+
+<h2>Graceful Degradation</h2>
+<p>
+Not all failures are equally severe. Systems should distinguish between critical and
+non-critical fields.
+</p>
+
+<p>
+For example, missing confidence scores may be acceptable, while missing entity names are not.
+Graceful degradation keeps systems usable even when outputs are imperfect.
+</p>
+
+<h2>Logging and Observability</h2>
+<p>
+Validation failures are valuable signals. Logging them enables:
+</p>
+
+<ul>
+    <li>Prompt improvement</li>
+    <li>Schema refinement</li>
+    <li>Model selection optimization</li>
+    <li>Cost and latency analysis</li>
+</ul>
+
+<p>
+Logs should include prompt versions, model versions, validation errors, and retry counts.
+</p>
+
+<h2>Validation in Regulated Environments</h2>
+<p>
+In regulated industries such as healthcare, finance, and legal, validation requirements
+are stricter.
+</p>
+
+<ul>
+    <li>Explicit rejection of uncertain outputs</li>
+    <li>Human-in-the-loop review</li>
+    <li>Audit trails for every decision</li>
+    <li>Deterministic fallback behavior</li>
+</ul>
+
+<p>
+Validation becomes part of compliance, not just engineering.
+</p>
+
+<h2>Best Practices Summary</h2>
+<ul>
+    <li>Always validate LLM outputs before use</li>
+    <li>Prefer structured outputs and tools</li>
+    <li>Keep schemas simple and explicit</li>
+    <li>Limit retries and monitor costs</li>
+    <li>Log validation failures systematically</li>
+    <li>Design fallbacks for every critical path</li>
+</ul>
+
+<h2>Further Reading</h2>
+<ul>
+    <li>
+        <a href="https://cloud.google.com/vertex-ai/docs/generative-ai/learn/structured-output" target="_blank">
+        Google Cloud – Structured Output and Validation
+        </a>
+    </li>
+    <li>
+        <a href="https://docs.pydantic.dev/latest/usage/models/" target="_blank">
+        Pydantic Documentation – Data Validation
+        </a>
+    </li>
+    <li>
+        <a href="https://www.promptingguide.ai/reliability" target="_blank">
+        Prompt Engineering Guide – Reliability and Validation
+        </a>
+    </li>
+    <li>
+        <a href="https://www.anthropic.com/research/constitutional-ai" target="_blank">
+        Anthropic – Constitutional AI and Guardrails
+        </a>
+    </li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

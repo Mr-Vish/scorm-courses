@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Model Card Components and Examples</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Model Card Components and Examples</h1>
+
+
+<h2>What is a Model Card?</h2>
+<p>A model card is a standardized document that describes a machine learning model's intended use, performance characteristics, limitations, and ethical considerations. Introduced by Google researchers in 2019, model cards are now an industry standard for AI transparency.</p>
+
+<h2>Model Card Sections</h2>
+<table>
+    <tr><th>Section</th><th>Purpose</th><th>Key Questions Answered</th></tr>
+    <tr><td>Model Details</td><td>Basic identification and versioning</td><td>What model? Who built it? When?</td></tr>
+    <tr><td>Intended Use</td><td>Approved and out-of-scope uses</td><td>What should it be used for? What not?</td></tr>
+    <tr><td>Training Data</td><td>Data sources and preprocessing</td><td>What was it trained on? Any known issues?</td></tr>
+    <tr><td>Evaluation</td><td>Performance metrics and benchmarks</td><td>How well does it perform? On what tasks?</td></tr>
+    <tr><td>Limitations</td><td>Known weaknesses and failure modes</td><td>When does it fail? What are the risks?</td></tr>
+    <tr><td>Ethical Considerations</td><td>Bias, fairness, and societal impact</td><td>Who might be harmed? What biases exist?</td></tr>
+</table>
+
+<h2>Model Card Template</h2>
+<div class="code-block">
+<pre><code># Model Card: Customer Intent Classifier v2.1
+
+## Model Details
+- **Name:** CustomerIntentClassifier-v2.1
+- **Type:** Fine-tuned BERT for multi-class text classification
+- **Version:** 2.1 (released 2025-01-15)
+- **Base model:** bert-base-uncased
+- **Owner:** AI Platform Team
+- **License:** Internal use only
+
+## Intended Use
+- **Primary use:** Classify customer support messages into intent categories
+- **Users:** Customer support routing system
+- **Out of scope:** General text classification, sentiment analysis, languages other than English
+
+## Training Data
+- **Source:** 50,000 labeled customer support messages (Jan 2023 - Dec 2024)
+- **Labels:** 15 intent categories (billing, technical, account, etc.)
+- **Preprocessing:** Lowercased, PII redacted, duplicates removed
+- **Known gaps:** Limited data for "compliance" and "partnership" intents
+
+## Performance
+- **Overall accuracy:** 94.2% (test set, n=5,000)
+- **Lowest class accuracy:** "compliance" at 78% (limited training data)
+- **Highest class accuracy:** "billing" at 98.1% (most training data)
+- **Latency:** p50=12ms, p99=45ms
+
+## Limitations
+- English only - does not support multilingual input
+- Accuracy drops below 85% for messages under 10 words
+- May misclassify when customers describe multiple issues
+- Not trained on emerging product categories</code></pre>
+</div>
+
+<h2>Hugging Face Model Cards</h2>
+<p>Hugging Face uses model cards as the standard documentation format for all models on the Hub. Every model repository includes a README.md that serves as its model card:</p>
+<ul>
+    <li>Displayed prominently on the model page</li>
+    <li>Supports rich markdown with tables, images, and widgets</li>
+    <li>Includes structured metadata (language, license, tags, datasets)</li>
+    <li>Community can raise issues and suggest improvements</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

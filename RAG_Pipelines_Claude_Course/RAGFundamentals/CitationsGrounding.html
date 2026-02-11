@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Citations and Grounding</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Citations and Grounding</h1>
+<div class="container">
+<h2>Citations and Grounding in Claude RAG</h2>
+<p>One of the most important requirements for a production-grade RAG system is "Grounding"—the ability of the model to prove that its answers are based on the provided documents. Claude is exceptionally good at this when prompted correctly, providing clear and accurate citations that allow users to verify the information.</p>
+
+<h3>The Importance of Grounding</h3>
+<p>Grounding serves two primary purposes:
+<ol>
+    <li><strong>Reducing Hallucinations:</strong> By forcing the model to cite its sources, you make it much harder for it to make up information. If it can't find a source, it shouldn't make a claim.</li>
+    <li><strong>Building User Trust:</strong> Users are much more likely to trust an AI's answer if they can see exactly where that information came from and verify it for themselves.</li>
+</ol></p>
+
+<h3>Prompting for Citations</h3>
+<p>To get high-quality citations from Claude, you should be very specific about the format. Simply asking to "cite your sources" is often not enough. Instead, use a structured instruction like this:</p>
+<blockquote>
+"Answer the question using ONLY the provided documents. For every claim you make, you MUST provide a citation in the format [Document ID]. If multiple documents support a claim, list them all, e.g., [1, 3]. If the answer is not in the documents, state that you do not have enough information."
+</blockquote>
+
+<h3>The 'Check Your Work' Pattern</h3>
+<p>For high-stakes applications, you can add a "self-reflection" step to the grounding process:
+"After you have drafted your answer, review it to ensure that every single sentence is supported by a citation. If you find a sentence without a citation, either find the source or remove the sentence."</p>
+
+<h3>Advanced Citations: Quotes and Page Numbers</h3>
+<p>If your documents are long, you can ask Claude to provide direct quotes or page numbers.
+"For each citation, include a short relevant quote from the source material. Format your citations as follows: [Document 1, Page 45: 'The primary cause was...']"</p>
+
+<h3>Handling Conflicts Between Sources</h3>
+<p>Sometimes, two retrieved documents might contradict each other. Claude's reasoning capabilities allow it to handle this gracefully if you tell it how.
+"If the provided documents contain conflicting information, acknowledge the conflict and present the different viewpoints, citing the specific documents for each."</p>
+
+<h3>The Role of Metadata in Citations</h3>
+<p>Including metadata like the document title or author in your XML tags allows Claude to provide more human-readable citations. Instead of [1], Claude can say, "According to the 2023 Marketing Strategy report..." This significantly improves the user experience.</p>
+
+<h3>Practical Exercise: Building a Citations Verifier</h3>
+<p>Imagine you have Claude's answer and the retrieved documents. How would you build a simple Python script to verify that the text quoted by Claude actually exists in the provided documents? This is a great way to add an extra layer of "automated grounding" to your pipeline.</p>
+
+<h3>Summary</h3>
+<p>Citations are the bridge between AI's creative generation and real-world facts. By mastering the art of prompting for citations and grounding, you can transform Claude from a simple chatbot into a reliable and transparent research assistant that your users can truly trust.</p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Conclusion and Shortcomings of RAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Conclusion and Shortcomings of RAG</h1>
+
+<p>RAG with Spring AI is a powerful and convenient pattern. However, the RAG approach itself, regardless of the framework, has inherent <strong>shortcomings</strong>:</p>
+
+<ol>
+    <li><strong>The &quot;Garbage In, Garbage Out&quot; Problem:</strong> The quality of the final answer is directly dependent on the <strong>quality of the retrieved documents</strong>. If the source documents are poorly structured, incomplete, or the chunking is sub-optimal, the LLM will still provide a poor or hallucinated answer.</li>
+    <li><em>Fix:</em> Requires a robust ETL pipeline for document cleaning and structured chunking.</li>
+    <li><strong>Need for Fine-Tuning Retrieval:</strong> Simple <strong>vector similarity search</strong> is not always enough. Advanced scenarios require:</li>
+    <li><strong>Re-ranking:</strong> Using a separate model to re-score the top-K retrieved documents for better relevance.</li>
+    <li><strong>Query Transformation:</strong> Using the LLM to rewrite the user&#x27;s question into multiple, more specific queries to boost recall (<strong>MultiQueryExpander</strong> in Spring AI).</li>
+    <li><strong>Hybrid Search:</strong> Combining vector search with traditional keyword search (lexical search) to cover more bases.</li>
+    <li><strong>Context Window Management:</strong> The retrieved documents must fit within the LLM&#x27;s <strong>context window</strong>. If too many relevant chunks are found, they must be truncated or summarized, which can lead to incomplete answers.</li>
+    <li><strong>Integration Complexity (Spring AI Specific):</strong> While simple RAG is easy, more complex <strong>agentic workflows</strong> or highly customized multi-step reasoning often require more explicit configuration than the high-level Advisor abstraction, potentially leading to more code than in a framework designed primarily for chaining (like LangChain4j).</li>
+</ol>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

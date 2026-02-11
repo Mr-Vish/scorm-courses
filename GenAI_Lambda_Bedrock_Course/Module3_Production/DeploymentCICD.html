@@ -1,0 +1,502 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Deployment and CI/CD</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Deployment and CI/CD</h1>
+
+<h2>Infrastructure as Code for GenAI</h2>
+<p>Managing GenAI applications requires Infrastructure as Code (IaC) to ensure consistent, repeatable deployments across environments. AWS provides two primary tools: SAM (Serverless Application Model) and CDK (Cloud Development Kit).</p>
+
+<h3>SAM vs CDK Comparison</h3>
+<table>
+    <tr><th>Feature</th><th>AWS SAM</th><th>AWS CDK</th></tr>
+    <tr><td class="rowheader">Learning Curve</td><td>Low (YAML-based)</td><td>Medium (programming language)</td></tr>
+    <tr><td class="rowheader">Flexibility</td><td>Serverless-focused</td><td>Full AWS service support</td></tr>
+    <tr><td class="rowheader">Best For</td><td>Pure serverless apps</td><td>Complex, multi-service architectures</td></tr>
+    <tr><td class="rowheader">Local Testing</td><td>Excellent (sam local)</td><td>Limited</td></tr>
+    <tr><td class="rowheader">Language</td><td>YAML/JSON</td><td>TypeScript, Python, Java, C#</td></tr>
+</table>
+
+<h2>AWS SAM Deployment</h2>
+<p>SAM simplifies serverless application deployment with a concise template format and built-in best practices.</p>
+
+<h3>SAM Template for GenAI Application</h3>
+<div class="code-block">
+<pre><code>AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: GenAI Application with Lambda and Bedrock
+
+Globals:
+  Function:
+    Timeout: 120
+    MemorySize: 1024
+    Runtime: python3.11
+    Environment:
+      Variables:
+        BEDROCK_REGION: us-east-1
+        LOG_LEVEL: INFO
+    Tracing: Active
+
+Resources:
+  # API Gateway
+  GenAIApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      TracingEnabled: true
+      Cors:
+        AllowMethods: "'POST, OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+      Auth:
+        ApiKeyRequired: true
+
+  # Lambda Function
+  ChatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: chat.lambda_handler
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+              - bedrock:InvokeModelWithResponseStream
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+            Resource: !GetAtt ConversationTable.Arn
+      Events:
+        ChatApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref GenAIApi
+            Path: /chat
+            Method: post
+
+  # DynamoDB Table
+  ConversationTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ConversationHistory
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: ttl
+
+  # CloudWatch Log Group
+  ChatFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ChatFunction}
+      RetentionInDays: 7
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${GenAIApi}.execute-api.${AWS::Region}.amazonaws.com/prod/chat
+  FunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt ChatFunction.Arn
+</code></pre>
+</div>
+
+<h3>SAM Deployment Commands</h3>
+<div class="code-block">
+<pre><code># Build the application
+sam build
+
+# Deploy to AWS
+sam deploy --guided
+
+# For subsequent deployments
+sam deploy
+
+# Local testing
+sam local start-api
+
+# Invoke function locally
+sam local invoke ChatFunction --event events/test-event.json
+
+# View logs
+sam logs -n ChatFunction --tail
+</code></pre>
+</div>
+
+<h2>AWS CDK Deployment</h2>
+<p>CDK provides programmatic infrastructure definition with the full power of programming languages.</p>
+
+<h3>CDK Stack in Python</h3>
+<div class="code-block">
+<pre><code>from aws_cdk import (
+    Stack,
+    aws_lambda as lambda_,
+    aws_apigateway as apigw,
+    aws_dynamodb as dynamodb,
+    aws_iam as iam,
+    Duration,
+    RemovalPolicy
+)
+from constructs import Construct
+
+class GenAIStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        
+        # DynamoDB Table
+        conversation_table = dynamodb.Table(
+            self, "ConversationHistory",
+            partition_key=dynamodb.Attribute(
+                name="sessionId",
+                type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="timestamp",
+                type=dynamodb.AttributeType.NUMBER
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            time_to_live_attribute="ttl",
+            removal_policy=RemovalPolicy.DESTROY
+        )
+        
+        # Lambda Function
+        chat_function = lambda_.Function(
+            self, "ChatFunction",
+            runtime=lambda_.Runtime.PYTHON_3_11,
+            handler="chat.lambda_handler",
+            code=lambda_.Code.from_asset("src"),
+            timeout=Duration.seconds(120),
+            memory_size=1024,
+            tracing=lambda_.Tracing.ACTIVE,
+            environment={
+                "TABLE_NAME": conversation_table.table_name,
+                "BEDROCK_REGION": "us-east-1"
+            }
+        )
+        
+        # Grant permissions
+        conversation_table.grant_read_write_data(chat_function)
+        
+        chat_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream"
+                ],
+                resources=["*"]
+            )
+        )
+        
+        # API Gateway
+        api = apigw.RestApi(
+            self, "GenAIApi",
+            rest_api_name="GenAI Service",
+            deploy_options=apigw.StageOptions(
+                tracing_enabled=True,
+                logging_level=apigw.MethodLoggingLevel.INFO
+            )
+        )
+        
+        chat_resource = api.root.add_resource("chat")
+        chat_integration = apigw.LambdaIntegration(chat_function)
+        chat_resource.add_method("POST", chat_integration)
+</code></pre>
+</div>
+
+<h3>CDK Deployment Commands</h3>
+<div class="code-block">
+<pre><code># Install dependencies
+pip install -r requirements.txt
+
+# Synthesize CloudFormation template
+cdk synth
+
+# Deploy stack
+cdk deploy
+
+# Deploy with approval bypass
+cdk deploy --require-approval never
+
+# Destroy stack
+cdk destroy
+
+# Diff against deployed stack
+cdk diff
+</code></pre>
+</div>
+
+<h2>CI/CD Pipeline with GitHub Actions</h2>
+<p>Automate testing and deployment with continuous integration and delivery pipelines.</p>
+
+<h3>GitHub Actions Workflow</h3>
+<div class="code-block">
+<pre><code>name: Deploy GenAI Application
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  SAM_TEMPLATE: template.yaml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov moto
+      
+      - name: Run unit tests
+        run: pytest tests/unit --cov=src --cov-report=xml
+      
+      - name: Run integration tests
+        run: pytest tests/integration
+  
+  deploy-staging:
+    needs: test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: aws-actions/setup-sam@v2
+      
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: SAM Build
+        run: sam build
+      
+      - name: SAM Deploy to Staging
+        run: |
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
+            --stack-name genai-app-staging \
+            --parameter-overrides Environment=staging
+  
+  deploy-production:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: aws-actions/setup-sam@v2
+      
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: SAM Build
+        run: sam build
+      
+      - name: SAM Deploy to Production
+        run: |
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
+            --stack-name genai-app-prod \
+            --parameter-overrides Environment=production
+</code></pre>
+</div>
+
+<h2>Testing Strategies</h2>
+<p>Comprehensive testing ensures GenAI applications work correctly before deployment.</p>
+
+<h3>Unit Testing with Moto</h3>
+<div class="code-block">
+<pre><code>import pytest
+from moto import mock_dynamodb, mock_bedrock
+import boto3
+from src.chat import lambda_handler
+
+@mock_dynamodb
+@mock_bedrock
+def test_chat_handler():
+    # Setup mock DynamoDB
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    table = dynamodb.create_table(
+        TableName='ConversationHistory',
+        KeySchema=[
+            {'AttributeName': 'sessionId', 'KeyType': 'HASH'},
+            {'AttributeName': 'timestamp', 'KeyType': 'RANGE'}
+        ],
+        AttributeDefinitions=[
+            {'AttributeName': 'sessionId', 'AttributeType': 'S'},
+            {'AttributeName': 'timestamp', 'AttributeType': 'N'}
+        ],
+        BillingMode='PAY_PER_REQUEST'
+    )
+    
+    # Test event
+    event = {
+        'body': '{"message": "Hello", "session_id": "test-123"}'
+    }
+    
+    # Invoke handler
+    response = lambda_handler(event, None)
+    
+    # Assertions
+    assert response['statusCode'] == 200
+    assert 'response' in json.loads(response['body'])
+</code></pre>
+</div>
+
+<h3>Integration Testing</h3>
+<div class="code-block">
+<pre><code>import requests
+import pytest
+
+@pytest.fixture
+def api_endpoint():
+    return "https://your-api-id.execute-api.us-east-1.amazonaws.com/prod"
+
+def test_chat_endpoint(api_endpoint):
+    """Test actual API endpoint"""
+    response = requests.post(
+        f"{api_endpoint}/chat",
+        json={"message": "What is AWS Lambda?"},
+        headers={"x-api-key": "your-test-api-key"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert 'response' in data
+    assert len(data['response']) > 0
+
+def test_conversation_history(api_endpoint):
+    """Test conversation context is maintained"""
+    session_id = "test-session-123"
+    
+    # First message
+    response1 = requests.post(
+        f"{api_endpoint}/chat",
+        json={
+            "message": "My name is Alice",
+            "session_id": session_id
+        }
+    )
+    assert response1.status_code == 200
+    
+    # Second message referencing first
+    response2 = requests.post(
+        f"{api_endpoint}/chat",
+        json={
+            "message": "What is my name?",
+            "session_id": session_id
+        }
+    )
+    assert response2.status_code == 200
+    assert "Alice" in response2.json()['response']
+</code></pre>
+</div>
+
+<h2>Blue/Green Deployments</h2>
+<p>Minimize deployment risk with blue/green deployment strategies.</p>
+
+<div class="code-block">
+<pre><code># SAM Template with Deployment Preferences
+ChatFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    # ... other properties ...
+    AutoPublishAlias: live
+    DeploymentPreference:
+      Type: Canary10Percent5Minutes
+      Alarms:
+        - !Ref CanaryErrorsAlarm
+      Hooks:
+        PreTraffic: !Ref PreTrafficHook
+        PostTraffic: !Ref PostTrafficHook
+
+# Deployment types:
+# - Canary10Percent30Minutes: 10% traffic for 30 min, then 100%
+# - Canary10Percent5Minutes: 10% traffic for 5 min, then 100%
+# - Linear10PercentEvery10Minutes: +10% every 10 min
+# - AllAtOnce: Immediate 100% traffic shift
+</code></pre>
+</div>
+
+<h2>Environment Management</h2>
+<p>Manage multiple environments (dev, staging, production) with parameter overrides.</p>
+
+<div class="code-block">
+<pre><code># parameters.json for different environments
+{
+  "dev": {
+    "MemorySize": "512",
+    "Timeout": "60",
+    "LogLevel": "DEBUG"
+  },
+  "staging": {
+    "MemorySize": "1024",
+    "Timeout": "120",
+    "LogLevel": "INFO"
+  },
+  "production": {
+    "MemorySize": "2048",
+    "Timeout": "120",
+    "LogLevel": "WARN"
+  }
+}
+
+# Deploy command with parameters
+sam deploy --parameter-overrides \
+  Environment=production \
+  MemorySize=2048 \
+  Timeout=120
+</code></pre>
+</div>
+
+<h2>Deployment Best Practices</h2>
+<ul>
+    <li><strong>Version Control:</strong> Store all IaC templates in Git</li>
+    <li><strong>Automated Testing:</strong> Run tests before every deployment</li>
+    <li><strong>Gradual Rollouts:</strong> Use canary or linear deployments for production</li>
+    <li><strong>Rollback Plan:</strong> Test rollback procedures regularly</li>
+    <li><strong>Environment Parity:</strong> Keep staging as close to production as possible</li>
+    <li><strong>Secrets Management:</strong> Use AWS Secrets Manager or Parameter Store</li>
+    <li><strong>Monitoring:</strong> Set up alarms before deploying to production</li>
+    <li><strong>Documentation:</strong> Document deployment procedures and architecture</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

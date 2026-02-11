@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Tool Integration and Custom Tools</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Tool Integration and Custom Tools</h1>
+
+<h2>Understanding Tools in LangChain</h2>
+<p>Tools are interfaces that agents use to interact with external systems, APIs, databases, and services. They extend the capabilities of language models beyond text generation, enabling actions like web searches, calculations, database queries, and API calls.</p>
+
+<h2>Built-in Tool Categories</h2>
+<table>
+<tr>
+<th>Category</th>
+<th>Examples</th>
+<th>Use Cases</th>
+</tr>
+<tr>
+<td class="rowheader">Search</td>
+<td>DuckDuckGo, Google, Tavily, Bing</td>
+<td>Web search, current information retrieval</td>
+</tr>
+<tr>
+<td class="rowheader">Code Execution</td>
+<td>Python REPL, Shell, E2B Code Interpreter</td>
+<td>Running code, calculations, data processing</td>
+</tr>
+<tr>
+<td class="rowheader">Data Access</td>
+<td>SQL Database, CSV, Pandas, JSON</td>
+<td>Structured data queries and analysis</td>
+</tr>
+<tr>
+<td class="rowheader">APIs</td>
+<td>Requests, OpenAPI, REST</td>
+<td>External service integration</td>
+</tr>
+<tr>
+<td class="rowheader">File Operations</td>
+<td>File Read/Write, Directory Listing</td>
+<td>Local file system interactions</td>
+</tr>
+</table>
+
+<h2>Creating Custom Tools with @tool Decorator</h2>
+<blockquote>
+from langchain_core.tools import tool
+
+@tool
+def get_word_length(word: str) -> int:
+    """Returns the length of a word."""
+    return len(word)
+
+@tool
+def multiply_numbers(a: int, b: int) -> int:
+    """Multiply two numbers together."""
+    return a * b
+
+# Tool automatically gets name, description, and schema from function
+print(get_word_length.name)  # "get_word_length"
+print(get_word_length.description)  # "Returns the length of a word."
+</blockquote>
+
+<h2>Custom Tools with Pydantic Models</h2>
+<p>For complex tools with multiple parameters and validation:</p>
+
+<blockquote>
+from langchain_core.tools import tool
+from pydantic import BaseModel, Field
+
+class SearchInput(BaseModel):
+    """Input schema for search tool."""
+    query: str = Field(description="The search query")
+    max_results: int = Field(default=5, description="Maximum number of results")
+    language: str = Field(default="en", description="Language code")
+
+@tool(args_schema=SearchInput)
+def advanced_search(query: str, max_results: int = 5, language: str = "en") -> str:
+    """Perform an advanced web search with filters."""
+    # Implementation here
+    return f"Searching for '{query}' with max {max_results} results in {language}"
+
+# The tool now has full schema validation
+</blockquote>
+
+<h2>Tool with Error Handling</h2>
+<blockquote>
+@tool
+def safe_divide(a: float, b: float) -> str:
+    """Safely divide two numbers, handling division by zero."""
+    try:
+        if b == 0:
+            return "Error: Cannot divide by zero"
+        result = a / b
+        return f"Result: {result}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+</blockquote>
+
+<h2>Async Tools</h2>
+<p>Create asynchronous tools for I/O-bound operations:</p>
+
+<blockquote>
+import aiohttp
+from langchain_core.tools import tool
+
+@tool
+async def fetch_url(url: str) -> str:
+    """Fetch content from a URL asynchronously."""
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.text()
+
+# Use with async agent execution
+result = await agent_executor.ainvoke({"input": "Fetch https://example.com"})
+</blockquote>
+
+<h2>Database Query Tool</h2>
+<blockquote>
+from langchain_community.utilities import SQLDatabase
+from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
+
+# Connect to database
+db = SQLDatabase.from_uri("sqlite:///example.db")
+
+# Create query tool
+query_tool = QuerySQLDataBaseTool(db=db)
+
+# Use in agent
+tools = [query_tool]
+agent = create_tool_calling_agent(model, tools, prompt)
+</blockquote>
+
+<h2>API Integration Tool</h2>
+<blockquote>
+import requests
+from langchain_core.tools import tool
+
+@tool
+def get_weather(city: str) -> str:
+    """Get current weather for a city using OpenWeatherMap API."""
+    api_key = "your_api_key"
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        
+        temp = data["main"]["temp"] - 273.15  # Convert Kelvin to Celsius
+        description = data["weather"][0]["description"]
+        
+        return f"Weather in {city}: {temp:.1f}°C, {description}"
+    except Exception as e:
+        return f"Error fetching weather: {str(e)}"
+</blockquote>
+
+<h2>File System Tools</h2>
+<blockquote>
+from pathlib import Path
+
+@tool
+def read_file(file_path: str) -> str:
+    """Read contents of a text file."""
+    try:
+        path = Path(file_path)
+        if not path.exists():
+            return f"Error: File {file_path} does not exist"
+        return path.read_text()
+    except Exception as e:
+        return f"Error reading file: {str(e)}"
+
+@tool
+def list_directory(directory_path: str) -> str:
+    """List all files in a directory."""
+    try:
+        path = Path(directory_path)
+        if not path.is_dir():
+            return f"Error: {directory_path} is not a directory"
+        files = [f.name for f in path.iterdir()]
+        return f"Files: {', '.join(files)}"
+    except Exception as e:
+        return f"Error listing directory: {str(e)}"
+</blockquote>
+
+<h2>Tool Return Types</h2>
+<p>Tools can return different types of data:</p>
+
+<blockquote>
+from langchain_core.tools import tool
+
+@tool
+def get_user_data(user_id: int) -> dict:
+    """Retrieve user data as a dictionary."""
+    return {
+        "id": user_id,
+        "name": "John Doe",
+        "email": "john@example.com"
+    }
+
+@tool
+def generate_report(data: str) -> str:
+    """Generate a formatted report from data."""
+    return f"=== Report ===\n{data}\n=============="
+</blockquote>
+
+<h2>Tool with State Management</h2>
+<blockquote>
+class Counter:
+    def __init__(self):
+        self.count = 0
+    
+    @tool
+    def increment(self) -> str:
+        """Increment the counter and return current value."""
+        self.count += 1
+        return f"Counter: {self.count}"
+    
+    @tool
+    def reset(self) -> str:
+        """Reset the counter to zero."""
+        self.count = 0
+        return "Counter reset to 0"
+
+counter = Counter()
+tools = [counter.increment, counter.reset]
+</blockquote>
+
+<h2>Combining Multiple Tools</h2>
+<blockquote>
+from langchain_community.tools import DuckDuckGoSearchResults
+
+# Built-in tool
+search = DuckDuckGoSearchResults()
+
+# Custom tools
+@tool
+def summarize_text(text: str) -> str:
+    """Summarize a long text into key points."""
+    # Use LLM to summarize
+    summary_chain = prompt | model | parser
+    return summary_chain.invoke({"text": text})
+
+@tool
+def save_to_file(content: str, filename: str) -> str:
+    """Save content to a file."""
+    Path(filename).write_text(content)
+    return f"Saved to {filename}"
+
+# Combine all tools
+tools = [search, summarize_text, save_to_file]
+
+# Agent can now search, summarize, and save results
+agent = create_tool_calling_agent(model, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+</blockquote>
+
+<h2>Tool Testing</h2>
+<blockquote>
+# Test tool independently before adding to agent
+@tool
+def calculate_percentage(value: float, total: float) -> str:
+    """Calculate percentage of value relative to total."""
+    if total == 0:
+        return "Error: Total cannot be zero"
+    percentage = (value / total) * 100
+    return f"{percentage:.2f}%"
+
+# Test the tool
+result = calculate_percentage.invoke({"value": 25, "total": 100})
+print(result)  # "25.00%"
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Clear Descriptions:</strong> Write detailed docstrings explaining what the tool does</li>
+<li><strong>Input Validation:</strong> Use Pydantic models for complex parameter validation</li>
+<li><strong>Error Handling:</strong> Always handle exceptions and return meaningful error messages</li>
+<li><strong>Type Hints:</strong> Use proper type hints for parameters and return values</li>
+<li><strong>Idempotency:</strong> Design tools to be safe to call multiple times</li>
+<li><strong>Security:</strong> Validate and sanitize inputs, especially for file/database operations</li>
+<li><strong>Testing:</strong> Test tools independently before integrating with agents</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

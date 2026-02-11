@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to Spring AI RAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Introduction to Spring AI RAG</h1>
+<div class="container">
+<h2>Introduction to RAG with Spring AI</h2>
+<p>Spring AI is a powerful framework designed to bring the familiar Spring programming model to the world of Artificial Intelligence. It provides a set of high-level abstractions for interacting with Large Language Models (LLMs), Vector Stores, and Embedding models, making it significantly easier for Java developers to build sophisticated RAG (Retrieval-Augmented Generation) applications.</p>
+
+<h3>The Philosophy of Spring AI</h3>
+<p>Spring AI is built on the same principles as the rest of the Spring ecosystem: <strong>Portability</strong> and <strong>Inversion of Control</strong>.
+<ul>
+    <li><strong>Portability:</strong> You can write your RAG logic once and easily switch between different LLM providers (OpenAI, Anthropic, Ollama) or Vector Stores (PGVector, Neo4j, Pinecone) just by changing a few configuration properties.</li>
+    <li><strong>Modular Design:</strong> The framework is divided into clear components for Embeddings, Vector Stores, Chat Clients, and Document processing, allowing you to customize any part of the pipeline.</li>
+</ul></p>
+
+<h3>Key Components of a Spring AI RAG Pipeline</h3>
+<ol>
+    <li><strong>ChatClient:</strong> The primary interface for interacting with LLMs. It handles the prompt generation and response parsing.</li>
+    <li><strong>EmbeddingModel:</strong> Responsible for turning text into the numerical vectors (embeddings) used for semantic search.</li>
+    <li><strong>VectorStore:</strong> The database where your document embeddings are stored and searched.</li>
+    <li><strong>Resource:</strong> Spring's standard abstraction for files, URLs, or any other data source containing your knowledge base.</li>
+    <li><strong>ETL Pipeline:</strong> A structured process for Reading, Transforming (chunking), and Loading your documents into the Vector Store.</li>
+</ol>
+
+<h3>Why Spring for AI?</h3>
+<p>For enterprise developers, Spring AI offers several unique advantages:
+<ul>
+    <li><strong>Dependency Injection:</strong> Easily manage your AI components alongside your existing database, security, and web services.</li>
+    <li><strong>Auto-Configuration:</strong> Get up and running in minutes with sane defaults and properties-based configuration.</li>
+    <li><strong>Strong Typing:</strong> Leverage Java's type safety to prevent common errors in prompt construction and response handling.</li>
+    <li><strong>Ecosystem Integration:</strong> Seamlessly integrate with Spring Boot, Spring Security, and Spring Data.</li>
+</ul></p>
+
+<h3>The 'ChatClient' API: The Heart of the App</h3>
+<p>The <code>ChatClient</code> in Spring AI is more than just a wrapper around an API. It provides a fluent, builder-style API for constructing complex prompts, managing chat history, and—most importantly—integrating retrieval logic directly into the conversation flow.</p>
+
+<h3>Practical Exercise: Exploring the Spring AI Starters</h3>
+<p>Look at a <code>pom.xml</code> file for a Spring AI project. Identify the 'starters' for Anthropic and PGVector. How does Spring Boot use these starters to automatically create the <code>ChatClient</code> and <code>VectorStore</code> beans for you?</p>
+
+<h3>Summary</h3>
+<p>Spring AI brings the power and reliability of the Spring ecosystem to AI development. By providing a consistent, portable, and developer-friendly way to build RAG pipelines, it enables Java developers to create production-grade AI applications with the same tools and patterns they use for their standard enterprise software.</p>
+
+</div>
+</body>
+</html>

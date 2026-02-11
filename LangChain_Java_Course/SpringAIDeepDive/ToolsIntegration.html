@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Spring AI Tools and Integration</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring AI Tools and Integration</h1>
+
+<h2>Function Calling in Spring AI</h2>
+<p>Spring AI uses the <strong>@Tool</strong> annotation to expose Java methods as callable functions for LLMs:</p>
+
+<div class="code-block">
+<pre><code>@Component
+public class DatabaseTools {
+    
+    private final UserRepository userRepository;
+    
+    public DatabaseTools(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+    
+    @Tool(description = "Search for users by name in the database")
+    public List&lt;User&gt; searchUsers(String name) {
+        return userRepository.findByNameContaining(name);
+    }
+    
+    @Tool(description = "Get user by ID")
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Registering Tools with ChatClient</h2>
+<div class="code-block">
+<pre><code>@RestController
+public class ToolController {
+    
+    private final ChatClient chatClient;
+    
+    public ToolController(ChatClient.Builder builder, DatabaseTools dbTools) {
+        this.chatClient = builder
+            .defaultFunctions("searchUsers", "getUserById")
+            .build();
+    }
+    
+    @PostMapping("/query")
+    public String query(@RequestBody String question) {
+        return chatClient.prompt()
+            .user(question)
+            .call()
+            .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Output Converters</h2>
+<p>Convert LLM responses to structured data:</p>
+
+<div class="code-block">
+<pre><code>public record Product(String name, double price, String category) {}
+
+@Service
+public class ProductService {
+    
+    private final ChatClient chatClient;
+    
+    public ProductService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+    
+    public List&lt;Product&gt; extractProducts(String text) {
+        return chatClient.prompt()
+            .user("Extract all products from: " + text)
+            .call()
+            .entity(new ParameterizedTypeReference&lt;List&lt;Product&gt;&gt;() {});
+    }
+}
+</code></pre>
+</div>
+
+<h2>Integration with Spring Boot Features</h2>
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Integration</th>
+        <th>Benefit</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Spring Security</td>
+        <td>Secure AI endpoints</td>
+        <td>Authentication and authorization</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Spring Data</td>
+        <td>Tools access repositories</td>
+        <td>Database integration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Spring Cache</td>
+        <td>Cache AI responses</td>
+        <td>Reduce API costs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Spring Actuator</td>
+        <td>Monitor AI metrics</td>
+        <td>Observability</td>
+    </tr>
+</table>
+
+<h2>Error Handling</h2>
+<div class="code-block">
+<pre><code>@RestControllerAdvice
+public class AIExceptionHandler {
+    
+    @ExceptionHandler(OpenAiApiException.class)
+    public ResponseEntity&lt;String&gt; handleOpenAiError(OpenAiApiException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body("AI service temporarily unavailable");
+    }
+    
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity&lt;String&gt; handleRateLimit(RateLimitException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+            .body("Rate limit exceeded. Please try again later.");
+    }
+}
+</code></pre>
+</div>
+
+<h2>Caching Strategies</h2>
+<div class="code-block">
+<pre><code>@Service
+public class CachedAIService {
+    
+    private final ChatClient chatClient;
+    
+    public CachedAIService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+    
+    @Cacheable(value = "ai-responses", key = "#question")
+    public String getCachedResponse(String question) {
+        return chatClient.prompt()
+            .user(question)
+            .call()
+            .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Async Processing</h2>
+<div class="code-block">
+<pre><code>@Service
+public class AsyncAIService {
+    
+    private final ChatClient chatClient;
+    
+    public AsyncAIService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+    
+    @Async
+    public CompletableFuture&lt;String&gt; processAsync(String message) {
+        String response = chatClient.prompt()
+            .user(message)
+            .call()
+            .content();
+        return CompletableFuture.completedFuture(response);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Dependency Injection:</strong> Use Spring's DI for all AI components</li>
+    <li><strong>Configuration Management:</strong> Externalize all API keys and settings</li>
+    <li><strong>Error Handling:</strong> Implement global exception handlers</li>
+    <li><strong>Caching:</strong> Cache responses for identical queries</li>
+    <li><strong>Monitoring:</strong> Track token usage and response times</li>
+    <li><strong>Testing:</strong> Mock AI services in unit tests</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

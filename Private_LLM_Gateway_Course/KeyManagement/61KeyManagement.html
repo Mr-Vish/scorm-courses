@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 6: Secure API Key Management and Secrets</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 6: Secure API Key Management and Secrets</h1>
+
+<p>Your master API keys for providers like OpenAI and Anthropic are the "keys to the kingdom." If compromised, an attacker can consume your entire AI budget and potentially access your fine-tuned models and data. A Private LLM Gateway must provide a robust and secure way to manage these secrets.</p>
+
+<h2>6.1 The Principle of "Zero Master Key Access"</h2>
+<p>In a mature AI architecture, no human developer or individual application should ever have access to the master API keys. The keys should only be accessible to the gateway service itself, running in a secure VPC.</p>
+
+<h2>6.2 Using Enterprise Secret Managers</h2>
+<p>Master keys should NEVER be stored in code, configuration files, or local environment variables. Instead, use a dedicated secret management service:
+<ul>
+    <li><strong>AWS Secrets Manager / Azure Key Vault / Google Cloud Secret Manager:</strong> Cloud-native services that provide encryption, access logging, and automatic rotation.</li>
+    <li><strong>HashiCorp Vault:</strong> A popular platform-agnostic choice for enterprise secret management.</li>
+</ul>
+<p>The gateway fetches the necessary keys from these services at startup or on-demand, ensuring that the keys are only ever held in memory.</p>
+
+<h2>6.3 Automatic Key Rotation</h2>
+<p>To minimize the impact of a potential key compromise, you should implement automatic key rotation. The secret manager generates a new key and updates the gateway's configuration without any downtime or manual intervention.</p>
+
+<h2>6.4 "Virtual" Keys for Internal Use</h2>
+<p>As discussed in previous modules, the gateway should issue unique "Virtual Keys" to internal applications and users.
+<ul>
+    <li><strong>Abstraction:</strong> Applications only know their virtual key; they never see the master provider key.</li>
+    <li><strong>Isolation:</strong> If one virtual key is compromised, it can be revoked instantly without affecting any other part of the system.</li>
+    <li><strong>Scoping:</strong> A virtual key can be restricted to specific models, budget limits, and even IP ranges.</li>
+</ul></p>
+
+<h2>6.5 Securing Communication to Upstream Providers</h2>
+<p>All communication between the gateway and the AI provider must be encrypted using TLS 1.2 or higher. For even higher security, some providers support "Private Link" or "VPC Peering," which allows the gateway to communicate with the AI API without ever sending traffic over the public internet.</p>
+
+<p>By implementing a "Secure-by-Design" approach to key management, you protect your organization's most sensitive credentials and ensure that your AI infrastructure is resilient against credential theft and misuse.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

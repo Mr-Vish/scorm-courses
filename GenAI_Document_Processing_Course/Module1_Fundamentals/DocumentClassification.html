@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Document Classification Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Document Classification Strategies</h1>
+
+<h2>Why Classification Matters</h2>
+<p>Accurate document classification is the foundation of effective IDP. Different document types require different extraction schemas, validation rules, and downstream processing.</p>
+
+<h2>Classification Approaches</h2>
+<table>
+    <tr>
+        <th>Approach</th>
+        <th>Accuracy</th>
+        <th>Speed</th>
+        <th>Cost</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Rule-Based</td>
+        <td>70-85%</td>
+        <td>Very Fast</td>
+        <td>Very Low</td>
+        <td>Known formats with clear indicators</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Fine-Tuned Classifier</td>
+        <td>90-95%</td>
+        <td>Fast</td>
+        <td>Low</td>
+        <td>High volume, stable document types</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vision Model (GenAI)</td>
+        <td>95-99%</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Variable formats, new document types</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hybrid</td>
+        <td>95-99%</td>
+        <td>Fast-Medium</td>
+        <td>Low-Medium</td>
+        <td>Production systems with mixed volumes</td>
+    </tr>
+</table>
+
+<h2>Rule-Based Classification</h2>
+<p>Use document characteristics to determine type:</p>
+<blockquote>
+Classification Rules:
+
+IF contains "INVOICE" in header AND has "Total Amount" field
+  → Document Type: Invoice
+
+IF contains "AGREEMENT" AND "Party A" AND "Party B"
+  → Document Type: Contract
+
+IF contains form fields AND checkboxes
+  → Document Type: Form
+
+Advantages: Fast, cheap, deterministic
+Limitations: Breaks with format variations, requires maintenance
+</blockquote>
+
+<h2>GenAI Classification with Claude</h2>
+<blockquote>
+import anthropic
+import base64
+
+client = anthropic.Anthropic()
+
+with open("document.pdf", "rb") as f:
+    pdf_data = base64.b64encode(f.read()).decode()
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=256,
+    messages=[{
+        "role": "user",
+        "content": [
+            {
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "media_type": "application/pdf",
+                    "data": pdf_data
+                }
+            },
+            {
+                "type": "text",
+                "text": """Classify this document into ONE of these categories:
+                - Invoice
+                - Purchase Order
+                - Contract
+                - Receipt
+                - Form
+                - Other
+                
+                Respond with ONLY the category name."""
+            }
+        ]
+    }]
+)
+
+document_type = response.content[0].text.strip()
+</blockquote>
+
+<h2>Multi-Level Classification</h2>
+<p>For complex document sets, use hierarchical classification:</p>
+
+<blockquote>
+Level 1: Document Category
+- Financial Documents
+- Legal Documents
+- Forms
+- Correspondence
+
+Level 2: Document Type
+Financial → Invoice, Receipt, Purchase Order, Statement
+Legal → Contract, Agreement, NDA, Terms of Service
+Forms → Application, Survey, Registration, Claim
+
+Level 3: Document Subtype
+Invoice → Standard Invoice, Credit Note, Proforma Invoice
+Contract → Employment Contract, Service Agreement, Lease Agreement
+
+Benefits:
+- More accurate extraction schema selection
+- Better routing to specialized processors
+- Improved validation rule application
+</blockquote>
+
+<h2>Confidence Scoring</h2>
+<p>Always include confidence scores in classification:</p>
+
+<table>
+    <tr>
+        <th>Confidence Range</th>
+        <th>Action</th>
+        <th>Typical Accuracy</th>
+    </tr>
+    <tr>
+        <td class="rowheader">&gt; 95%</td>
+        <td>Auto-process with selected schema</td>
+        <td>99%+</td>
+    </tr>
+    <tr>
+        <td class="rowheader">85-95%</td>
+        <td>Process with validation checks</td>
+        <td>95-98%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">70-85%</td>
+        <td>Human verification of classification</td>
+        <td>90-95%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">&lt; 70%</td>
+        <td>Manual classification required</td>
+        <td>Variable</td>
+    </tr>
+</table>
+
+<h2>Handling Edge Cases</h2>
+<ul>
+    <li><strong>Multi-Document Files:</strong> PDF contains both invoice and receipt → Split and classify separately</li>
+    <li><strong>Hybrid Documents:</strong> Invoice with attached contract → Classify as primary type, flag secondary</li>
+    <li><strong>Poor Quality:</strong> Blurry or damaged documents → Request re-upload or manual classification</li>
+    <li><strong>Unknown Types:</strong> Document doesn't match any category → Route to "Other" queue for review</li>
+    <li><strong>Ambiguous Documents:</strong> Could be multiple types → Use secondary indicators or human review</li>
+</ul>
+
+<h2>Classification Prompt Engineering</h2>
+<blockquote>
+Effective Classification Prompt Structure:
+
+1. Clear Instructions:
+   "Classify this document into exactly ONE category"
+
+2. Explicit Categories:
+   List all possible categories with examples
+
+3. Output Format:
+   "Respond with ONLY the category name, no explanation"
+
+4. Confidence Indicator:
+   "If uncertain, respond with 'UNCERTAIN: [best guess]'"
+
+5. Edge Case Handling:
+   "If document contains multiple types, classify by primary purpose"
+
+Example Output:
+"Invoice" (high confidence)
+"UNCERTAIN: Contract" (low confidence)
+</blockquote>
+
+<h2>Performance Optimization</h2>
+<ul>
+    <li><strong>Cache Classifications:</strong> Store results for identical documents (hash-based)</li>
+    <li><strong>Batch Processing:</strong> Classify multiple documents in single API call</li>
+    <li><strong>Tiered Approach:</strong> Try rule-based first, fall back to GenAI if uncertain</li>
+    <li><strong>Model Selection:</strong> Use faster models (Haiku) for simple classification</li>
+    <li><strong>Parallel Processing:</strong> Classify and extract simultaneously for speed</li>
+</ul>
+
+<h2>Monitoring Classification Accuracy</h2>
+<blockquote>
+Key Metrics to Track:
+
+1. Classification Accuracy: % correctly classified
+   Target: &gt; 95%
+
+2. Confidence Distribution: % in each confidence band
+   Target: &gt; 80% in high confidence band
+
+3. Manual Override Rate: % requiring human reclassification
+   Target: &lt; 5%
+
+4. Processing Time: Average time per classification
+   Target: &lt; 2 seconds
+
+5. Cost per Classification: API costs
+   Target: &lt; $0.01 per document
+
+Review monthly and adjust prompts/rules as needed
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

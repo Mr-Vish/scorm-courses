@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Retrieval-Augmented Generation Fundamentals</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Retrieval-Augmented Generation Fundamentals</h1>
+
+<h2>What is RAG?</h2>
+<p>Retrieval-Augmented Generation (RAG) is an architectural pattern that enhances Large Language Model (LLM) responses by retrieving relevant information from external knowledge bases before generating answers. This approach addresses key limitations of standalone LLMs: hallucinations, outdated knowledge, and lack of domain-specific information.</p>
+
+<h2>The Problem RAG Solves</h2>
+<table>
+    <tr>
+        <th>LLM Limitation</th>
+        <th>Impact</th>
+        <th>RAG Solution</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Knowledge Cutoff</td>
+        <td>Cannot answer questions about recent events</td>
+        <td>Retrieve up-to-date information from knowledge base</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hallucinations</td>
+        <td>Generates plausible but incorrect information</td>
+        <td>Ground responses in retrieved factual content</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Domain Specificity</td>
+        <td>Lacks specialized knowledge (company docs, technical specs)</td>
+        <td>Access proprietary or domain-specific documents</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Attribution</td>
+        <td>Cannot cite sources for claims</td>
+        <td>Provide source documents with responses</td>
+    </tr>
+</table>
+
+<h2>RAG Architecture Components</h2>
+<blockquote>
+<strong>1. Document Ingestion:</strong> Process and chunk documents into manageable pieces
+
+<strong>2. Embedding Generation:</strong> Convert chunks into vector embeddings
+
+<strong>3. Vector Storage:</strong> Index embeddings in Vertex AI Vector Search
+
+<strong>4. Query Processing:</strong> Convert user questions into embeddings
+
+<strong>5. Retrieval:</strong> Find most relevant document chunks
+
+<strong>6. Context Assembly:</strong> Combine retrieved chunks into context
+
+<strong>7. Generation:</strong> LLM generates response using retrieved context
+
+<strong>8. Response Delivery:</strong> Return answer with source citations
+</blockquote>
+
+<h2>RAG vs Fine-Tuning</h2>
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>RAG</th>
+        <th>Fine-Tuning</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Knowledge Updates</td>
+        <td>Real-time, just update index</td>
+        <td>Requires retraining model</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost</td>
+        <td>Lower (inference + retrieval)</td>
+        <td>Higher (training compute)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Transparency</td>
+        <td>Can cite sources</td>
+        <td>Black box</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Use Case</td>
+        <td>Dynamic knowledge, Q&A systems</td>
+        <td>Task-specific behavior, style adaptation</td>
+    </tr>
+</table>
+
+<h2>Basic RAG Implementation</h2>
+<div class="code-block">
+<pre><code>from vertexai.language_models import TextEmbeddingModel
+from vertexai.generative_models import GenerativeModel
+from google.cloud import aiplatform
+
+# Initialize models
+embedding_model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+llm = GenerativeModel("gemini-1.5-pro")
+
+# Get endpoint
+endpoint = aiplatform.MatchingEngineIndexEndpoint(
+    index_endpoint_name="projects/123/locations/us-central1/indexEndpoints/456"
+)
+
+def rag_query(user_question, num_context_chunks=5):
+    """Simple RAG implementation"""
+    
+    # Step 1: Convert question to embedding
+    query_embedding = embedding_model.get_embeddings([user_question])[0].values
+    
+    # Step 2: Retrieve relevant chunks
+    results = endpoint.find_neighbors(
+        deployed_index_id="docs_v1",
+        queries=[query_embedding],
+        num_neighbors=num_context_chunks
+    )
+    
+    # Step 3: Fetch full text for retrieved chunks
+    context_chunks = []
+    for neighbor in results[0]:
+        chunk_text = fetch_document_chunk(neighbor.id)  # Your storage
+        context_chunks.append(chunk_text)
+    
+    # Step 4: Assemble context
+    context = "\n\n".join(context_chunks)
+    
+    # Step 5: Create prompt with context
+    prompt = f"""Answer the question based on the provided context. If the answer is not in the context, say "I don't have enough information to answer that."
+
+Context:
+{context}
+
+Question: {user_question}
+
+Answer:"""
+    
+    # Step 6: Generate response
+    response = llm.generate_content(prompt)
+    
+    return {
+        "answer": response.text,
+        "sources": [neighbor.id for neighbor in results[0]]
+    }
+
+# Example usage
+result = rag_query("How do I deploy a model to Vertex AI?")
+print(f"Answer: {result['answer']}")
+print(f"Sources: {result['sources']}")
+</code></pre>
+</div>
+
+<h2>Document Chunking Strategies</h2>
+<p>Effective chunking is critical for RAG performance:</p>
+
+<h3>Fixed-Size Chunking</h3>
+<div class="code-block">
+<pre><code>def chunk_by_tokens(text, chunk_size=512, overlap=50):
+    """Split text into fixed-size chunks with overlap"""
+    tokens = text.split()  # Simplified tokenization
+    chunks = []
+    
+    for i in range(0, len(tokens), chunk_size - overlap):
+        chunk = " ".join(tokens[i:i + chunk_size])
+        chunks.append(chunk)
+    
+    return chunks
+
+# Pros: Simple, predictable chunk sizes
+# Cons: May split mid-sentence or mid-concept
+</code></pre>
+</div>
+
+<h3>Semantic Chunking</h3>
+<div class="code-block">
+<pre><code>def chunk_by_paragraphs(text, max_chunk_size=512):
+    """Split by paragraphs, combining small ones"""
+    paragraphs = text.split("\n\n")
+    chunks = []
+    current_chunk = []
+    current_size = 0
+    
+    for para in paragraphs:
+        para_size = len(para.split())
+        
+        if current_size + para_size > max_chunk_size and current_chunk:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [para]
+            current_size = para_size
+        else:
+            current_chunk.append(para)
+            current_size += para_size
+    
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+    
+    return chunks
+
+# Pros: Preserves semantic boundaries
+# Cons: Variable chunk sizes
+</code></pre>
+</div>
+
+<h2>Chunk Size Recommendations</h2>
+<table>
+    <tr>
+        <th>Chunk Size</th>
+        <th>Use Case</th>
+        <th>Pros</th>
+        <th>Cons</th>
+    </tr>
+    <tr>
+        <td class="rowheader">128-256 tokens</td>
+        <td>Precise fact retrieval</td>
+        <td>High precision, fast</td>
+        <td>May lack context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">512-768 tokens</td>
+        <td>General Q&A (recommended)</td>
+        <td>Good balance</td>
+        <td>Standard approach</td>
+    </tr>
+    <tr>
+        <td class="rowheader">1024-2048 tokens</td>
+        <td>Long-form content</td>
+        <td>Rich context</td>
+        <td>Slower, may include noise</td>
+    </tr>
+</table>
+
+<h2>Metadata Enrichment</h2>
+<p>Add metadata to chunks for better filtering and attribution:</p>
+
+<div class="code-block">
+<pre><code>def create_enriched_chunks(document):
+    """Create chunks with metadata"""
+    chunks = chunk_by_paragraphs(document['content'])
+    
+    enriched_chunks = []
+    for i, chunk in enumerate(chunks):
+        enriched_chunks.append({
+            "id": f"{document['id']}_chunk_{i}",
+            "text": chunk,
+            "metadata": {
+                "document_id": document['id'],
+                "title": document['title'],
+                "author": document['author'],
+                "publish_date": document['date'],
+                "category": document['category'],
+                "chunk_index": i,
+                "total_chunks": len(chunks)
+            }
+        })
+    
+    return enriched_chunks
+
+# Use metadata for filtering and attribution
+results = endpoint.find_neighbors(
+    deployed_index_id="docs_v1",
+    queries=[query_embedding],
+    num_neighbors=10,
+    filter=[
+        Namespace(name="category", allow_tokens=["technical-docs"]),
+        NumericNamespace(name="publish_date", value_int=20230101, op="GREATER_EQUAL")
+    ]
+)
+</code></pre>
+</div>
+
+<h2>RAG Evaluation Metrics</h2>
+<ul>
+<li><strong>Retrieval Precision:</strong> Percentage of retrieved chunks that are relevant</li>
+<li><strong>Retrieval Recall:</strong> Percentage of relevant chunks that were retrieved</li>
+<li><strong>Answer Accuracy:</strong> Correctness of generated answers (human evaluation)</li>
+<li><strong>Answer Groundedness:</strong> Degree to which answer is supported by retrieved context</li>
+<li><strong>Latency:</strong> End-to-end response time (target: &lt;2 seconds)</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>RAG enhances LLM responses by retrieving relevant information from external knowledge bases</li>
+<li>RAG addresses LLM limitations: knowledge cutoff, hallucinations, and lack of domain-specific information</li>
+<li>Effective document chunking (512-768 tokens recommended) is critical for retrieval quality</li>
+<li>Metadata enrichment enables filtering and source attribution</li>
+<li>RAG is more cost-effective and flexible than fine-tuning for dynamic knowledge</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Custom Model Aliasing and Versioning</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Custom Model Aliasing: Decoupling Code from Providers</h1>
+
+<p>One of the most powerful features of the LiteLLM Proxy is <strong>Model Aliasing</strong>. This allows you to define a stable, custom name for a model (like "smart-assistant") in your application code, while the proxy handles the mapping to the actual underlying model and provider (like "anthropic/claude-3-5-sonnet").</p>
+
+<h2>2.9 Why use Aliasing?</h2>
+<ul>
+    <li><strong>Seamless Upgrades:</strong> When a new version of a model is released (e.g., GPT-5 replaces GPT-4), you only need to update the proxy configuration. Your application code remains unchanged.</li>
+    <li><strong>A/B Testing:</strong> You can route a percentage of traffic for "smart-assistant" to a new model to test its performance and accuracy without redeploying your apps.</li>
+    <li><strong>Simplified Development:</strong> Developers can use simple, descriptive names for models rather than long, complex provider IDs.</li>
+    <li><strong>Provider Agnostic Code:</strong> Your application never knows (or cares) if it's talking to OpenAI, Azure, or a self-hosted Llama instance.</li>
+</ul>
+
+<h2>2.10 Configuring Aliases in config.yaml</h2>
+<p>You can define aliases directly in the <code>model_list</code> section of your LiteLLM configuration:
+<pre><code>model_list:
+  - model_name: smart-assistant
+    litellm_params:
+      model: anthropic/claude-3-5-sonnet-20241022
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: fast-classifier
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY</code></pre>
+</p>
+
+<h2>2.11 Managing Model Versions</h2>
+<p>By using aliases, you can implement a robust versioning strategy for your AI models:
+<ul>
+    <li><code>smart-assistant-v1</code> -> mapped to Claude 3 Haiku</li>
+    <li><code>smart-assistant-v2</code> -> mapped to Claude 3.5 Sonnet</li>
+    <li><code>smart-assistant-latest</code> -> dynamically mapped to the best current model</li>
+</ul>
+<p>This allows different parts of your organization to upgrade at their own pace while maintaining a single, consistent API.</p>
+
+<h2>2.12 The "Alias-First" Development Culture</h2>
+<p>Encourage your development teams to *never* use provider-specific model IDs in their code. By strictly using aliases defined in the central LiteLLM Proxy, you ensure that your organization remains agile, resilient, and always capable of leveraging the latest advancements in AI with minimal effort.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

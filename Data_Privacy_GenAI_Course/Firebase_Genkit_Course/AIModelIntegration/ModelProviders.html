@@ -1,0 +1,342 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>AI Model Providers and Configuration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AI Model Providers and Configuration</h1>
+
+<h2>Multi-Provider Support</h2>
+<p>Genkit's provider-agnostic architecture allows you to integrate multiple AI model providers in a single application. This flexibility enables you to choose the best model for each task, compare outputs, or implement fallback strategies.</p>
+
+<h2>Supported AI Providers</h2>
+
+<h3>Google AI (Gemini)</h3>
+<div class="code-block">
+<pre><code>import { googleAI, gemini15Flash, gemini15Pro, gemini20Flash } from '@genkit-ai/googleai';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: gemini15Flash
+});
+
+// Use different Gemini models
+const flashResult = await ai.generate({
+  model: gemini15Flash,  // Fast, cost-effective
+  prompt: 'Quick summary needed'
+});
+
+const proResult = await ai.generate({
+  model: gemini15Pro,    // More capable, higher quality
+  prompt: 'Complex analysis required'
+});
+</code></pre>
+</div>
+
+<h3>OpenAI</h3>
+<div class="code-block">
+<pre><code>import { openAI, gpt4, gpt4Turbo, gpt35Turbo } from '@genkit-ai/openai';
+
+const ai = genkit({
+  plugins: [
+    openAI({ apiKey: process.env.OPENAI_API_KEY })
+  ]
+});
+
+const result = await ai.generate({
+  model: gpt4Turbo,
+  prompt: 'Analyze this data...'
+});
+</code></pre>
+</div>
+
+<h3>Anthropic (Claude)</h3>
+<div class="code-block">
+<pre><code>import { anthropic, claude3Opus, claude3Sonnet, claude3Haiku } from '@genkit-ai/anthropic';
+
+const ai = genkit({
+  plugins: [
+    anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  ]
+});
+
+// Claude excels at long-context tasks
+const result = await ai.generate({
+  model: claude3Opus,
+  prompt: 'Analyze this 50-page document...'
+});
+</code></pre>
+</div>
+
+<h3>Ollama (Local Models)</h3>
+<div class="code-block">
+<pre><code>import { ollama, llama3, mistral } from '@genkit-ai/ollama';
+
+const ai = genkit({
+  plugins: [
+    ollama({ serverAddress: 'http://localhost:11434' })
+  ]
+});
+
+// Run models locally for privacy and cost savings
+const result = await ai.generate({
+  model: llama3,
+  prompt: 'Process sensitive data locally'
+});
+</code></pre>
+</div>
+
+<h2>Using Multiple Providers</h2>
+<div class="code-block">
+<pre><code>import { genkit } from 'genkit';
+import { googleAI, gemini15Flash } from '@genkit-ai/googleai';
+import { openAI, gpt4 } from '@genkit-ai/openai';
+import { anthropic, claude3Sonnet } from '@genkit-ai/anthropic';
+
+const ai = genkit({
+  plugins: [
+    googleAI(),
+    openAI({ apiKey: process.env.OPENAI_API_KEY }),
+    anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  ],
+  model: gemini15Flash // Default model
+});
+
+// Use different models for different tasks
+const summaryFlow = ai.defineFlow({
+  name: 'summarize',
+  inputSchema: z.object({ text: z.string() }),
+  outputSchema: z.object({ summary: z.string() })
+}, async (input) => {
+  const { output } = await ai.generate({
+    model: gemini15Flash, // Fast and cheap for summaries
+    prompt: `Summarize: ${input.text}`,
+    output: { schema: z.object({ summary: z.string() }) }
+  });
+  return output;
+});
+
+const analysisFlow = ai.defineFlow({
+  name: 'deepAnalysis',
+  inputSchema: z.object({ text: z.string() }),
+  outputSchema: z.object({ analysis: z.string() })
+}, async (input) => {
+  const { output } = await ai.generate({
+    model: gpt4, // More capable for complex analysis
+    prompt: `Provide deep analysis: ${input.text}`,
+    output: { schema: z.object({ analysis: z.string() }) }
+  });
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Model Configuration Options</h2>
+
+<h3>Temperature</h3>
+<p>Controls randomness in output (0.0 = deterministic, 2.0 = very creative):</p>
+<div class="code-block">
+<pre><code>// Factual, consistent output
+const factual = await ai.generate({
+  model: gemini15Flash,
+  prompt: 'What is the capital of France?',
+  config: { temperature: 0.0 }
+});
+
+// Creative, varied output
+const creative = await ai.generate({
+  model: gemini15Flash,
+  prompt: 'Write a creative story',
+  config: { temperature: 1.5 }
+});
+</code></pre>
+</div>
+
+<h3>Max Output Tokens</h3>
+<div class="code-block">
+<pre><code>const result = await ai.generate({
+  model: gemini15Flash,
+  prompt: 'Write a brief summary',
+  config: {
+    maxOutputTokens: 100, // Limit response length
+    temperature: 0.7
+  }
+});
+</code></pre>
+</div>
+
+<h3>Top-P (Nucleus Sampling)</h3>
+<div class="code-block">
+<pre><code>const result = await ai.generate({
+  model: gpt4,
+  prompt: 'Generate product description',
+  config: {
+    topP: 0.9, // Consider top 90% probability mass
+    temperature: 0.8
+  }
+});
+</code></pre>
+</div>
+
+<h3>Stop Sequences</h3>
+<div class="code-block">
+<pre><code>const result = await ai.generate({
+  model: gemini15Flash,
+  prompt: 'List three items:',
+  config: {
+    stopSequences: ['\n\n', 'END'] // Stop generation at these sequences
+  }
+});
+</code></pre>
+</div>
+
+<h2>Model Selection Strategy</h2>
+<table>
+    <tr>
+        <th>Use Case</th>
+        <th>Recommended Model</th>
+        <th>Reason</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Quick summaries</td>
+        <td>Gemini 1.5 Flash</td>
+        <td>Fast, cost-effective, good quality</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Complex reasoning</td>
+        <td>GPT-4, Claude 3 Opus</td>
+        <td>Superior reasoning capabilities</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Long documents</td>
+        <td>Claude 3, Gemini 1.5 Pro</td>
+        <td>Large context windows (200K+ tokens)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Code generation</td>
+        <td>GPT-4, Gemini 1.5 Pro</td>
+        <td>Strong coding capabilities</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Privacy-sensitive</td>
+        <td>Ollama (local models)</td>
+        <td>Data stays on your infrastructure</td>
+    </tr>
+    <tr>
+        <td class="rowheader">High-volume, low-cost</td>
+        <td>Gemini 1.5 Flash, GPT-3.5</td>
+        <td>Optimized for cost efficiency</td>
+    </tr>
+</table>
+
+<h2>Fallback Strategies</h2>
+<p>Implement fallbacks to handle provider outages or rate limits:</p>
+
+<div class="code-block">
+<pre><code>const robustGenerateFlow = ai.defineFlow({
+  name: 'robustGenerate',
+  inputSchema: z.object({ prompt: z.string() }),
+  outputSchema: z.object({ result: z.string() })
+}, async (input) => {
+  const models = [gemini15Flash, gpt4, claude3Sonnet];
+  
+  for (const model of models) {
+    try {
+      const { output } = await ai.generate({
+        model,
+        prompt: input.prompt,
+        output: { schema: z.object({ result: z.string() }) },
+        config: { timeout: 10000 }
+      });
+      return output;
+    } catch (error) {
+      logger.warn(`Model ${model.name} failed, trying next`, { error });
+      continue;
+    }
+  }
+  
+  throw new Error('All models failed');
+});
+</code></pre>
+</div>
+
+<h2>Cost Optimization</h2>
+
+<h3>Token Usage Tracking</h3>
+<div class="code-block">
+<pre><code>const costAwareFlow = ai.defineFlow({
+  name: 'costAware',
+  inputSchema: z.object({ text: z.string() }),
+  outputSchema: z.object({ summary: z.string(), cost: z.number() })
+}, async (input) => {
+  const { output, usage } = await ai.generate({
+    model: gemini15Flash,
+    prompt: `Summarize: ${input.text}`,
+    output: { schema: z.object({ summary: z.string() }) },
+    returnUsage: true
+  });
+  
+  // Calculate cost (example rates)
+  const inputCost = usage.inputTokens * 0.00001;
+  const outputCost = usage.outputTokens * 0.00003;
+  const totalCost = inputCost + outputCost;
+  
+  return {
+    summary: output.summary,
+    cost: totalCost
+  };
+});
+</code></pre>
+</div>
+
+<h3>Caching Strategies</h3>
+<div class="code-block">
+<pre><code>import { createCache } from '@genkit-ai/core';
+
+const cache = createCache({ ttl: 3600000 }); // 1 hour TTL
+
+const cachedFlow = ai.defineFlow({
+  name: 'cachedFlow',
+  inputSchema: z.object({ query: z.string() }),
+  outputSchema: z.object({ result: z.string() })
+}, async (input) => {
+  const cacheKey = `query:${input.query}`;
+  const cached = await cache.get(cacheKey);
+  
+  if (cached) {
+    logger.info('Cache hit', { query: input.query });
+    return cached;
+  }
+  
+  const { output } = await ai.generate({
+    model: gemini15Flash,
+    prompt: input.query,
+    output: { schema: z.object({ result: z.string() }) }
+  });
+  
+  await cache.set(cacheKey, output);
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Start with Fast Models:</strong> Use Gemini Flash or GPT-3.5 for prototyping</li>
+    <li><strong>Match Model to Task:</strong> Don't use expensive models for simple tasks</li>
+    <li><strong>Implement Fallbacks:</strong> Ensure reliability with multiple providers</li>
+    <li><strong>Monitor Costs:</strong> Track token usage and set budgets</li>
+    <li><strong>Cache Aggressively:</strong> Reduce costs by caching common queries</li>
+    <li><strong>Test Across Providers:</strong> Different models excel at different tasks</li>
+    <li><strong>Use Local Models:</strong> Consider Ollama for development and privacy</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

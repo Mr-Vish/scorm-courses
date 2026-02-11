@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Caching: Speed and Efficiency</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Caching: Speed and Efficiency</h1>
+<div class="container">
+<h2>Optimizing Performance with Prompt Caching</h2>
+<p>Prompt Caching is a relatively new but highly impactful feature in the Claude API. It allows developers to cache frequently used parts of a prompt, significantly reducing both latency and cost for repetitive tasks. This is particularly useful for applications with large system prompts or those that refer to the same set of documents across many user queries.</p>
+
+<h3>How Prompt Caching Works</h3>
+<p>When you send a prompt to Claude, you can mark specific points in the prompt as "cache breakpoints." Anthropic's infrastructure then caches the prefix of the prompt up to that breakpoint. If a subsequent request shares the exact same prefix up to that breakpoint, Claude can reuse the cached computations, skipping the initial processing phase.</p>
+
+<h3>The Benefits of Caching</h3>
+<p>Implementing prompt caching offers three primary advantages:</p>
+<ol>
+    <li><strong>Reduced Latency:</strong> By skipping the processing of large amounts of text, Claude can start generating its response much faster. This leads to a snappier user experience.</li>
+    <li><strong>Lower Costs:</strong> You are typically charged a much lower rate for "cache hits" (tokens that were found in the cache) compared to "cache misses" (tokens that had to be processed from scratch).</li>
+    <li><strong>Improved Throughput:</strong> Because less computation is required for cached prompts, your application can handle a higher volume of requests.</li>
+</ol>
+
+<h3>Ideal Use Cases for Caching</h3>
+<p>Prompt caching is most effective in scenarios where a significant portion of the prompt remains static across multiple calls:</p>
+<ul>
+    <li><strong>Large System Prompts:</strong> If your system prompt is thousands of tokens long (e.g., containing detailed brand guidelines, personas, or complex instructions), caching it can provide immediate benefits.</li>
+    <li><strong>Reference Documents:</strong> In RAG applications, if you frequently refer to the same set of "gold standard" documents, you can cache those documents.</li>
+    <li><strong>Few-Shot Examples:</strong> If you provide many examples of desired output in your prompt, caching them ensures they don't have to be re-processed every time.</li>
+    <li><strong>Chat History:</strong> For long conversations, you can cache the earlier parts of the history, only processing the newest messages.</li>
+</ul>
+
+<h3>Best Practices for Implementing Caching</h3>
+<p>To maximize the efficiency of your cache, follow these guidelines:</p>
+<ul>
+    <li><strong>Order Matters:</strong> Place the static, cacheable content at the beginning of your prompt. Anything that changes (like the user's current query) must come after the cache breakpoints.</li>
+    <li><strong>Strategic Breakpoints:</strong> Don't just place a breakpoint at the very end of the static content. If you have several layers of static content (e.g., System Prompt -> Guidelines -> Reference Doc), place breakpoints after each major section.</li>
+    <li><strong>Monitor Cache Hit Rates:</strong> Use the metadata returned by the API to track how often your cache is being hit. This can help you identify opportunities for further optimization.</li>
+    <li><strong>Be Mindful of TTL:</strong> Cached content has a "Time To Live" (TTL). If a cached prefix isn't used for a certain period, it will be evicted. Caching is most effective for frequently used content.</li>
+</ul>
+
+<h3>Practical Exercise: Caching a Technical Manual</h3>
+<p>Imagine a support bot for a complex piece of industrial machinery. The bot needs to refer to a 50,000-token technical manual for every query. Without caching, every user question requires re-processing the entire 50,000 tokens. By placing a cache breakpoint after the manual, only the first query pays the full price and latency. Every subsequent query from any user that uses the same manual will be processed significantly faster and cheaper.</p>
+
+<h3>Cost Analysis</h3>
+<p>While the exact pricing can vary, cache hits are often 90% cheaper than cache misses. For a high-traffic application, this can translate into thousands of dollars in savings per month. Furthermore, the latency reduction (often several seconds for very large prompts) can be the difference between a tool that feels "magical" and one that feels "slow."</p>
+
+<h3>Future of Caching</h3>
+<p>As context windows grow even larger, caching will become even more critical. It enables "infinite" memory for agents without the traditional performance penalties. We may see more granular caching controls and longer-lived caches in the future.</p>
+
+<p>In conclusion, Prompt Caching is an essential tool for any developer building production-grade applications with Claude. It's a rare "win-win" that improves performance while simultaneously lowering costs.</p>
+
+</div>
+</body>
+</html>

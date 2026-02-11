@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Intent Classification and Conversation Management</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Intent Classification and Conversation Management</h1>
+
+<h2>Intent Classification Strategies</h2>
+<p>Intent classification is the first critical step in routing customer queries effectively:</p>
+
+<table>
+    <tr>
+        <th>Approach</th>
+        <th>Use Case</th>
+        <th>Accuracy</th>
+        <th>Latency</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Zero-shot Classification</td>
+        <td>Dynamic categories, rapid deployment</td>
+        <td>70-80%</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Few-shot Learning</td>
+        <td>Limited training data available</td>
+        <td>75-85%</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Fine-tuned Models</td>
+        <td>High-volume, stable categories</td>
+        <td>85-95%</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hybrid (Rules + ML)</td>
+        <td>Critical paths requiring certainty</td>
+        <td>90-98%</td>
+        <td>Low</td>
+    </tr>
+</table>
+
+<h2>Common Intent Categories</h2>
+<ul>
+    <li><strong>Billing & Payments:</strong> Invoice questions, payment issues, refund requests</li>
+    <li><strong>Technical Support:</strong> Product troubleshooting, bug reports, feature questions</li>
+    <li><strong>Account Management:</strong> Password resets, profile updates, subscription changes</li>
+    <li><strong>Product Information:</strong> Features, pricing, compatibility questions</li>
+    <li><strong>Order Status:</strong> Tracking, delivery, returns, exchanges</li>
+    <li><strong>General Inquiry:</strong> Company info, policies, hours of operation</li>
+</ul>
+
+<h2>Multi-Intent Handling</h2>
+<p>Real customer queries often contain multiple intents. Your system should:</p>
+<blockquote>
+Example: "I want to cancel my subscription and get a refund for last month"
+
+Detected Intents:
+1. Account Management → Cancel subscription (Primary)
+2. Billing & Payments → Process refund (Secondary)
+
+Handling Strategy:
+- Address intents sequentially
+- Maintain context between intent resolutions
+- Confirm completion of each intent before proceeding
+</blockquote>
+
+<h2>Conversation State Management</h2>
+<p>Effective conversation management requires tracking multiple state dimensions:</p>
+
+<ul>
+    <li><strong>Session State:</strong> Current conversation ID, start time, channel</li>
+    <li><strong>User Context:</strong> Customer ID, account status, previous interactions</li>
+    <li><strong>Conversation History:</strong> Last N messages for context window</li>
+    <li><strong>Intent State:</strong> Current intent, sub-intents, completion status</li>
+    <li><strong>Action State:</strong> Pending actions, completed operations, failures</li>
+</ul>
+
+<h2>Context Window Management</h2>
+<blockquote>
+Strategy for managing LLM context limits:
+
+1. Summarization Approach:
+   - Keep last 3-5 messages verbatim
+   - Summarize older messages
+   - Preserve critical information (customer ID, issue details)
+
+2. Selective Retention:
+   - Keep user messages in full
+   - Summarize assistant responses
+   - Retain action results and confirmations
+
+3. Context Compression:
+   - Remove pleasantries and filler
+   - Extract key facts and decisions
+   - Maintain chronological order
+</blockquote>
+
+<h2>Conversation Flow Patterns</h2>
+<table>
+    <tr>
+        <th>Stage</th>
+        <th>Actions</th>
+        <th>Validation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">1. Greeting</td>
+        <td>Identify customer, set context</td>
+        <td>Authentication status</td>
+    </tr>
+    <tr>
+        <td class="rowheader">2. Intent Detection</td>
+        <td>Classify query, route to handler</td>
+        <td>Confidence threshold &gt; 70%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">3. Information Gathering</td>
+        <td>Ask clarifying questions</td>
+        <td>Required fields collected</td>
+    </tr>
+    <tr>
+        <td class="rowheader">4. Resolution</td>
+        <td>Execute actions, provide answers</td>
+        <td>Action success confirmation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">5. Confirmation</td>
+        <td>Verify issue resolved</td>
+        <td>Customer acknowledgment</td>
+    </tr>
+    <tr>
+        <td class="rowheader">6. Feedback</td>
+        <td>Collect satisfaction rating</td>
+        <td>Rating received</td>
+    </tr>
+</table>
+
+<h2>Handling Conversation Breaks</h2>
+<p>Customers may pause or switch topics mid-conversation:</p>
+<ul>
+    <li><strong>Topic Switching:</strong> Detect new intent, save current state, start new flow</li>
+    <li><strong>Long Pauses:</strong> Send reminder after 5 minutes, timeout after 30 minutes</li>
+    <li><strong>Return to Previous Topic:</strong> Allow customers to resume saved conversations</li>
+    <li><strong>Conversation Handoff:</strong> Seamlessly transfer context to human agents</li>
+</ul>
+
+<h2>Sentiment-Aware Responses</h2>
+<blockquote>
+Sentiment Analysis Integration:
+
+Positive Sentiment (Happy, Satisfied):
+→ Standard helpful tone, offer additional assistance
+
+Neutral Sentiment (Informational):
+→ Clear, concise responses, focus on efficiency
+
+Negative Sentiment (Frustrated, Angry):
+→ Empathetic tone, prioritize resolution, offer escalation
+
+Critical Sentiment (Very Angry, Threatening):
+→ Immediate human escalation, log for review
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

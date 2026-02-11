@@ -1,0 +1,315 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hardware Requirements and Optimization</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Hardware, Performance & Best Practices</h1>
+<h2>Hardware Requirements and Optimization</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will:</p>
+<ul>
+    <li>Understand hardware requirements for different model sizes and use cases</li>
+    <li>Evaluate CPU vs GPU trade-offs for local LLM inference</li>
+    <li>Analyze performance optimization techniques and their impact</li>
+    <li>Implement best practices for production deployment and operational excellence</li>
+</ul>
+
+<h2>Hardware Components and Their Roles</h2>
+<p>Local LLM deployment performance depends on the interplay of several hardware components, each contributing differently to overall system capability. Understanding these roles enables informed hardware selection and optimization decisions.</p>
+
+<h3>Central Processing Unit (CPU)</h3>
+<p>The CPU serves as the primary coordinator for LLM inference, handling tokenization, orchestration, and—when no GPU is available—model computation itself.</p>
+
+<h4>CPU Characteristics for LLM Workloads</h4>
+<table>
+    <tr>
+        <th>Characteristic</th>
+        <th>Impact on LLM Performance</th>
+        <th>Optimization Considerations</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Core Count</td>
+        <td>Enables parallel processing of multiple requests</td>
+        <td>8+ cores recommended for production deployments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Clock Speed</td>
+        <td>Affects single-request latency</td>
+        <td>Higher frequencies benefit interactive applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cache Size</td>
+        <td>Reduces memory access latency</td>
+        <td>Larger L3 cache improves inference efficiency</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SIMD Support</td>
+        <td>Accelerates vector operations</td>
+        <td>AVX2/AVX-512 instructions significantly boost performance</td>
+    </tr>
+</table>
+
+<h3>Graphics Processing Unit (GPU)</h3>
+<p>GPUs dramatically accelerate LLM inference through massive parallelism and high memory bandwidth. The GPU's architecture is inherently suited to the matrix operations that dominate neural network computation.</p>
+
+<h4>GPU Specifications and LLM Performance</h4>
+<table>
+    <tr>
+        <th>Specification</th>
+        <th>Significance</th>
+        <th>Recommended Minimum</th>
+    </tr>
+    <tr>
+        <td class="rowheader">VRAM Capacity</td>
+        <td>Determines maximum model size</td>
+        <td>8GB for 7-8B models, 24GB for 70B models</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Memory Bandwidth</td>
+        <td>Primary performance determinant</td>
+        <td>400+ GB/s for optimal performance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">CUDA Cores / Stream Processors</td>
+        <td>Parallel computation capacity</td>
+        <td>3000+ for consumer GPUs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Tensor Cores</td>
+        <td>Accelerates matrix operations</td>
+        <td>Present in NVIDIA RTX series</td>
+    </tr>
+</table>
+
+<h3>System Memory (RAM)</h3>
+<p>RAM serves multiple critical functions in local LLM deployment, including model storage when GPU VRAM is insufficient, operating system operations, and application overhead.</p>
+
+<h4>RAM Requirements by Deployment Scenario</h4>
+<ul>
+    <li><strong>Development Workstation:</strong> 16GB minimum, 32GB recommended</li>
+    <li><strong>Production Server (Single Model):</strong> 32GB minimum, 64GB recommended</li>
+    <li><strong>Production Server (Multiple Models):</strong> 64GB minimum, 128GB+ for flexibility</li>
+    <li><strong>CPU-Only Inference:</strong> Model size + 8GB overhead (e.g., 12GB for 4GB model)</li>
+</ul>
+
+<h2>Hardware Configuration Strategies</h2>
+
+<h3>Budget-Conscious Configuration</h3>
+<p><strong>Target:</strong> Development and experimentation with limited investment</p>
+<ul>
+    <li><strong>CPU:</strong> Intel i5/AMD Ryzen 5 (6-8 cores)</li>
+    <li><strong>RAM:</strong> 16-32GB DDR4</li>
+    <li><strong>GPU:</strong> Optional—NVIDIA GTX 1660 or RTX 3060 (6-8GB VRAM)</li>
+    <li><strong>Storage:</strong> 256GB SSD for models</li>
+    <li><strong>Suitable Models:</strong> Phi-3, Gemma 2B, Llama 3 8B (Q4)</li>
+    <li><strong>Expected Performance:</strong> 5-20 tokens/second depending on GPU</li>
+</ul>
+
+<h3>Balanced Performance Configuration</h3>
+<p><strong>Target:</strong> Production-ready deployment for moderate workloads</p>
+<ul>
+    <li><strong>CPU:</strong> Intel i7/AMD Ryzen 7 (8-12 cores)</li>
+    <li><strong>RAM:</strong> 32-64GB DDR4/DDR5</li>
+    <li><strong>GPU:</strong> NVIDIA RTX 3080/4070 Ti (12-16GB VRAM)</li>
+    <li><strong>Storage:</strong> 512GB-1TB NVMe SSD</li>
+    <li><strong>Suitable Models:</strong> Llama 3 8B/13B, Mistral 7B, CodeLlama 13B</li>
+    <li><strong>Expected Performance:</strong> 40-70 tokens/second</li>
+</ul>
+
+<h3>High-Performance Configuration</h3>
+<p><strong>Target:</strong> Enterprise deployment with demanding requirements</p>
+<ul>
+    <li><strong>CPU:</strong> AMD Threadripper/Intel Xeon (16+ cores)</li>
+    <li><strong>RAM:</strong> 128-256GB DDR4/DDR5 ECC</li>
+    <li><strong>GPU:</strong> NVIDIA RTX 4090/A6000 (24-48GB VRAM)</li>
+    <li><strong>Storage:</strong> 2TB+ NVMe SSD in RAID configuration</li>
+    <li><strong>Suitable Models:</strong> Llama 3 70B, Mixtral 8x7B, multiple concurrent models</li>
+    <li><strong>Expected Performance:</strong> 30-80 tokens/second for large models</li>
+</ul>
+
+<h2>CPU vs GPU Performance Analysis</h2>
+<p>The decision between CPU-only and GPU-accelerated inference involves multiple trade-offs beyond raw performance:</p>
+
+<h3>Comparative Performance Metrics</h3>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>CPU (Intel i7)</th>
+        <th>Consumer GPU (RTX 3080)</th>
+        <th>High-End GPU (RTX 4090)</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Llama 3 8B Q4 Speed</td>
+        <td>5-8 tokens/sec</td>
+        <td>50-70 tokens/sec</td>
+        <td>90-120 tokens/sec</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Llama 3 70B Q4 Speed</td>
+        <td>Not feasible</td>
+        <td>Not feasible (VRAM limit)</td>
+        <td>25-40 tokens/sec</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Power Consumption</td>
+        <td>65-125W</td>
+        <td>320W</td>
+        <td>450W</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Initial Cost</td>
+        <td>$300-500</td>
+        <td>$700-1000</td>
+        <td>$1600-2000</td>
+    </tr>
+</table>
+
+<h3>Decision Criteria</h3>
+<p>Choose CPU-only inference when:</p>
+<ul>
+    <li>Budget constraints prohibit GPU investment</li>
+    <li>Inference frequency is low (occasional use)</li>
+    <li>Response time requirements are relaxed (5-10 seconds acceptable)</li>
+    <li>Model size is small (3-7B parameters)</li>
+    <li>Power consumption must be minimized</li>
+</ul>
+
+<p>Choose GPU-accelerated inference when:</p>
+<ul>
+    <li>Interactive response times are required (sub-second to 2 seconds)</li>
+    <li>High request volume necessitates throughput</li>
+    <li>Larger models (13B+) are needed for quality</li>
+    <li>Multiple concurrent users will access the system</li>
+    <li>Budget allows for GPU investment</li>
+</ul>
+
+<h2>Memory Bandwidth: The Critical Bottleneck</h2>
+<p>LLM inference is fundamentally memory-bandwidth bound, meaning performance is limited by how quickly the system can transfer model parameters from memory to processing units. This characteristic explains several counterintuitive performance behaviors.</p>
+
+<h3>Bandwidth Comparison</h3>
+<table>
+    <tr>
+        <th>Memory Type</th>
+        <th>Typical Bandwidth</th>
+        <th>Impact on LLM Inference</th>
+    </tr>
+    <tr>
+        <td class="rowheader">DDR4 System RAM</td>
+        <td>25-50 GB/s</td>
+        <td>Limits CPU inference to 5-10 tokens/sec</td>
+    </tr>
+    <tr>
+        <td class="rowheader">DDR5 System RAM</td>
+        <td>50-80 GB/s</td>
+        <td>Modest improvement for CPU inference</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GDDR6 GPU Memory</td>
+        <td>400-600 GB/s</td>
+        <td>Enables 40-80 tokens/sec for 8B models</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GDDR6X GPU Memory</td>
+        <td>800-1000 GB/s</td>
+        <td>Supports 80-120 tokens/sec for 8B models</td>
+    </tr>
+    <tr>
+        <td class="rowheader">HBM2e (Data Center)</td>
+        <td>1600-2000 GB/s</td>
+        <td>Maximum performance for large models</td>
+    </tr>
+</table>
+
+<h3>Implications for Hardware Selection</h3>
+<p>The memory bandwidth bottleneck means:</p>
+<ul>
+    <li>GPU memory bandwidth matters more than compute capability</li>
+    <li>Older GPUs with high bandwidth can outperform newer GPUs with less bandwidth</li>
+    <li>CPU inference improvements from faster processors are limited</li>
+    <li>Quantization reduces bandwidth requirements, improving performance</li>
+</ul>
+
+<h2>Storage Considerations</h2>
+<p>While often overlooked, storage performance impacts model loading times and multi-model deployments:</p>
+
+<h3>Storage Requirements</h3>
+<ul>
+    <li><strong>Model Storage:</strong> 2-40GB per model depending on size and quantization</li>
+    <li><strong>Operating System:</strong> 50-100GB</li>
+    <li><strong>Application and Dependencies:</strong> 10-20GB</li>
+    <li><strong>Working Space:</strong> 50-100GB for temporary files and logs</li>
+    <li><strong>Recommended Total:</strong> 500GB-2TB SSD</li>
+</ul>
+
+<h3>Storage Performance Impact</h3>
+<table>
+    <tr>
+        <th>Storage Type</th>
+        <th>Model Load Time (8B Q4)</th>
+        <th>Suitability</th>
+    </tr>
+    <tr>
+        <td class="rowheader">HDD (7200 RPM)</td>
+        <td>30-60 seconds</td>
+        <td>Not recommended—slow loading</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SATA SSD</td>
+        <td>5-10 seconds</td>
+        <td>Acceptable for single-model deployments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">NVMe SSD (PCIe 3.0)</td>
+        <td>2-4 seconds</td>
+        <td>Recommended for most deployments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">NVMe SSD (PCIe 4.0/5.0)</td>
+        <td>1-2 seconds</td>
+        <td>Optimal for frequent model switching</td>
+    </tr>
+</table>
+
+<h2>Thermal Management and Reliability</h2>
+<p>Sustained LLM inference generates significant heat, particularly with GPU acceleration. Proper thermal management ensures consistent performance and hardware longevity.</p>
+
+<h3>Thermal Considerations</h3>
+<ul>
+    <li><strong>GPU Cooling:</strong> Adequate case airflow or liquid cooling for sustained loads</li>
+    <li><strong>CPU Cooling:</strong> Tower cooler or AIO for multi-core processors</li>
+    <li><strong>Case Ventilation:</strong> Positive pressure with filtered intake</li>
+    <li><strong>Ambient Temperature:</strong> Maintain room temperature below 25°C (77°F)</li>
+    <li><strong>Monitoring:</strong> Track temperatures and throttling events</li>
+</ul>
+
+<h3>Reliability Factors</h3>
+<ul>
+    <li><strong>ECC Memory:</strong> Error-correcting RAM for mission-critical deployments</li>
+    <li><strong>Redundant Power:</strong> UPS for graceful shutdown during outages</li>
+    <li><strong>Component Quality:</strong> Enterprise-grade components for 24/7 operation</li>
+    <li><strong>Maintenance Schedule:</strong> Regular cleaning and thermal paste replacement</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Hardware requirements scale with model size—8B models need 8-16GB VRAM, 70B models need 24GB+</li>
+    <li>GPU memory bandwidth is the primary performance determinant for LLM inference</li>
+    <li>CPU inference is viable for small models and low-frequency use cases</li>
+    <li>System RAM requirements depend on deployment model—32GB minimum for production</li>
+    <li>NVMe SSD storage significantly reduces model loading times</li>
+    <li>Thermal management is critical for sustained performance and hardware longevity</li>
+    <li>Hardware configuration should align with use case requirements and budget constraints</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

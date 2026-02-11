@@ -1,0 +1,258 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>AI Audit Processes and Methodologies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AI Audit Processes and Methodologies</h1>
+
+<h2>Purpose of AI Audits</h2>
+<p>AI audits verify that systems operate as intended, comply with policies and regulations, and don't cause unintended harms. Regular audits are essential for maintaining trust and accountability.</p>
+
+<table>
+    <tr><th>Audit Type</th><th>Frequency</th><th>Scope</th><th>Conducted By</th></tr>
+    <tr><td>Self-Assessment</td><td>Continuous</td><td>Model owner reviews metrics and incidents</td><td>Model Owner</td></tr>
+    <tr><td>Internal Audit</td><td>Quarterly</td><td>Governance compliance, risk controls</td><td>AI Risk Manager</td></tr>
+    <tr><td>Independent Audit</td><td>Annually</td><td>Comprehensive review of all AI systems</td><td>Internal Audit Team</td></tr>
+    <tr><td>External Audit</td><td>As required</td><td>Regulatory compliance, certification</td><td>Third-party Auditor</td></tr>
+    <tr><td>Incident Audit</td><td>After P0/P1</td><td>Root cause analysis, lessons learned</td><td>Cross-functional Team</td></tr>
+</table>
+
+<h2>AI Audit Framework</h2>
+<div class="code-block">
+<pre><code># Six-Phase AI Audit Process
+
+Phase 1: PLANNING
+- Define audit scope and objectives
+- Identify AI systems to audit
+- Assemble audit team
+- Develop audit plan and timeline
+
+Phase 2: INVENTORY
+- Catalog all AI systems in scope
+- Verify documentation completeness
+- Map data flows and dependencies
+- Identify stakeholders
+
+Phase 3: DOCUMENTATION REVIEW
+- Review model cards and risk assessments
+- Verify approval records and compliance
+- Check policy adherence
+- Assess documentation quality
+
+Phase 4: TECHNICAL TESTING
+- Test accuracy and performance
+- Conduct bias and fairness analysis
+- Perform security testing
+- Validate monitoring and logging
+
+Phase 5: STAKEHOLDER INTERVIEWS
+- Interview model owners and users
+- Gather feedback from affected parties
+- Assess governance effectiveness
+- Identify improvement opportunities
+
+Phase 6: REPORTING
+- Document findings and severity
+- Provide recommendations
+- Track remediation commitments
+- Report to governance board</code></pre>
+</div>
+
+<h2>Audit Checklist</h2>
+<p>Comprehensive checklist covering all governance dimensions:</p>
+
+<table>
+    <tr><th>Category</th><th>Audit Item</th><th>Evidence Required</th><th>Pass Criteria</th></tr>
+    <tr><td rowspan="3">Documentation</td><td>Model card exists and is current</td><td>Model card document, version history</td><td>Updated within last 90 days</td></tr>
+    <tr><td>Risk assessment completed</td><td>Risk assessment form, approval</td><td>Completed before deployment</td></tr>
+    <tr><td>Data sheet for training data</td><td>Data sheet document</td><td>All sections completed</td></tr>
+    <tr><td rowspan="3">Governance</td><td>Appropriate approval obtained</td><td>Approval records by tier</td><td>Matches risk tier requirements</td></tr>
+    <tr><td>Model owner assigned</td><td>RACI matrix, contact info</td><td>Owner identified and trained</td></tr>
+    <tr><td>Acceptable use policy followed</td><td>Use case description</td><td>No prohibited uses</td></tr>
+    <tr><td rowspan="4">Technical</td><td>Accuracy meets threshold</td><td>Test results, metrics dashboard</td><td>≥95% on validation set</td></tr>
+    <tr><td>Bias metrics within tolerance</td><td>Fairness audit report</td><td>Disparate impact ≤1.25</td></tr>
+    <tr><td>Security controls implemented</td><td>Security scan results</td><td>No high/critical vulnerabilities</td></tr>
+    <tr><td>PII detection enabled</td><td>Configuration, test results</td><td>Detects 95%+ of PII</td></tr>
+    <tr><td rowspan="3">Monitoring</td><td>Metrics tracked and alerted</td><td>Dashboard, alert configuration</td><td>Key metrics monitored 24/7</td></tr>
+    <tr><td>Logging enabled and retained</td><td>Log samples, retention policy</td><td>90-day retention minimum</td></tr>
+    <tr><td>Incident response plan exists</td><td>IR plan document</td><td>Plan tested in last 12 months</td></tr>
+    <tr><td rowspan="2">Compliance</td><td>Regulatory requirements met</td><td>Compliance mapping</td><td>All requirements addressed</td></tr>
+    <tr><td>Data handling compliant</td><td>DPA, privacy review</td><td>GDPR/CCPA compliant</td></tr>
+</table>
+
+<h2>Bias Audit Methodology</h2>
+<p>Bias audits are critical for fairness and compliance:</p>
+
+<div class="code-block">
+<pre><code># Bias Audit Process
+
+Step 1: Define Protected Attributes
+- Identify legally protected characteristics (race, gender, age, etc.)
+- Determine which attributes are relevant to the use case
+- Assess data availability for testing
+
+Step 2: Select Fairness Metrics
+Common metrics:
+- Demographic Parity: P(positive|group A) ≈ P(positive|group B)
+- Equalized Odds: Equal TPR and FPR across groups
+- Disparate Impact: Ratio of positive rates ≥ 0.8 (80% rule)
+- Equal Opportunity: Equal TPR across groups
+
+Step 3: Prepare Test Data
+- Ensure representative samples for each demographic group
+- Minimum 100 samples per group for statistical significance
+- Include edge cases and challenging examples
+
+Step 4: Run Fairness Tests
+- Calculate metrics for each protected attribute
+- Compare performance across demographic groups
+- Identify statistically significant disparities
+
+Step 5: Analyze Results
+- Determine root causes of bias (data, model, or both)
+- Assess severity and potential harms
+- Prioritize mitigation efforts
+
+Step 6: Document and Report
+- Create bias audit report with findings
+- Recommend mitigations (retraining, post-processing, etc.)
+- Track remediation progress</code></pre>
+</div>
+
+<h2>Bias Audit Example</h2>
+<table>
+    <tr><th>Demographic Group</th><th>Sample Size</th><th>Accuracy</th><th>False Positive Rate</th><th>Disparate Impact</th></tr>
+    <tr><td>Overall</td><td>10,000</td><td>96.5%</td><td>2.1%</td><td>-</td></tr>
+    <tr><td>Male</td><td>5,200</td><td>96.8%</td><td>2.0%</td><td>1.00 (baseline)</td></tr>
+    <tr><td>Female</td><td>4,800</td><td>96.2%</td><td>2.2%</td><td>0.99 ✓</td></tr>
+    <tr><td>Age 18-34</td><td>3,500</td><td>97.1%</td><td>1.8%</td><td>1.03 ✓</td></tr>
+    <tr><td>Age 35-54</td><td>4,000</td><td>96.5%</td><td>2.1%</td><td>1.00 ✓</td></tr>
+    <tr><td>Age 55+</td><td>2,500</td><td>95.2%</td><td>2.8%</td><td>0.94 ✓</td></tr>
+    <tr><td>English</td><td>9,500</td><td>96.7%</td><td>2.0%</td><td>1.00 (baseline)</td></tr>
+    <tr><td>Spanish</td><td>500</td><td>93.8%</td><td>3.5%</td><td>0.97 ✓</td></tr>
+</table>
+<p><strong>Finding:</strong> Spanish language performance is 2.9% lower than English. Recommendation: Increase Spanish training data and conduct targeted improvements.</p>
+
+<h2>Security Audit - OWASP Top 10 for LLM</h2>
+<p>Test AI systems against common vulnerabilities:</p>
+
+<table>
+    <tr><th>Vulnerability</th><th>Test Method</th><th>Pass Criteria</th></tr>
+    <tr><td>LLM01: Prompt Injection</td><td>Attempt to override instructions with adversarial prompts</td><td>Injection attempts blocked or ineffective</td></tr>
+    <tr><td>LLM02: Insecure Output Handling</td><td>Test for XSS, SQL injection in outputs</td><td>Outputs properly sanitized</td></tr>
+    <tr><td>LLM03: Training Data Poisoning</td><td>Review data provenance and validation</td><td>Data sources verified, quality checks passed</td></tr>
+    <tr><td>LLM04: Model Denial of Service</td><td>Send resource-intensive requests</td><td>Rate limiting and timeouts prevent DoS</td></tr>
+    <tr><td>LLM05: Supply Chain Vulnerabilities</td><td>Review third-party dependencies</td><td>Dependencies scanned, no critical CVEs</td></tr>
+    <tr><td>LLM06: Sensitive Information Disclosure</td><td>Attempt to extract training data or system prompts</td><td>PII detection blocks leakage</td></tr>
+    <tr><td>LLM07: Insecure Plugin Design</td><td>Test plugin authentication and authorization</td><td>Plugins follow security best practices</td></tr>
+    <tr><td>LLM08: Excessive Agency</td><td>Test if AI can perform unauthorized actions</td><td>Permissions properly scoped</td></tr>
+    <tr><td>LLM09: Overreliance</td><td>Review user guidance and disclaimers</td><td>Limitations clearly communicated</td></tr>
+    <tr><td>LLM10: Model Theft</td><td>Attempt to extract model via API</td><td>Rate limiting prevents extraction</td></tr>
+</table>
+
+<h2>Audit Findings Classification</h2>
+<div class="code-block">
+<pre><code># Finding Severity Levels
+
+CRITICAL (P0)
+- Active data breach or PII leakage
+- Prohibited use case in production
+- Regulatory violation with material impact
+- Safety risk causing immediate harm
+→ Action: Disable system immediately, escalate to executive leadership
+
+HIGH (P1)
+- Bias exceeding tolerance thresholds
+- Missing required approvals or documentation
+- Security vulnerability (high severity)
+- Accuracy below minimum threshold
+→ Action: Remediate within 30 days, weekly status updates
+
+MEDIUM (P2)
+- Documentation incomplete or outdated
+- Monitoring gaps or missing alerts
+- Process deviations from policy
+- Minor bias or performance issues
+→ Action: Remediate within 90 days, monthly status updates
+
+LOW (P3)
+- Best practice recommendations
+- Documentation improvements
+- Process optimization opportunities
+→ Action: Remediate within 180 days or accept risk</code></pre>
+</div>
+
+<h2>Audit Report Template</h2>
+<div class="code-block">
+<pre><code># AI Audit Report
+
+## Executive Summary
+- Audit scope and objectives
+- Key findings summary
+- Overall risk rating
+- Critical recommendations
+
+## Audit Details
+- Systems audited: [List]
+- Audit period: [Dates]
+- Audit team: [Names and roles]
+- Methodology: [Framework used]
+
+## Findings
+### Critical Findings (P0)
+[None / List with details]
+
+### High Findings (P1)
+Finding 1: [Title]
+- Description: [What was found]
+- Impact: [Potential harm]
+- Evidence: [Supporting data]
+- Recommendation: [How to fix]
+- Owner: [Responsible party]
+- Due Date: [Remediation deadline]
+
+### Medium Findings (P2)
+[Similar format]
+
+### Low Findings (P3)
+[Similar format]
+
+## Positive Observations
+- [Areas of strong performance]
+- [Best practices observed]
+
+## Recommendations
+1. [Priority recommendation]
+2. [Next priority]
+...
+
+## Remediation Tracking
+[Table with finding, owner, due date, status]
+
+## Next Audit
+- Scheduled date: [Date]
+- Focus areas: [Based on findings]</code></pre>
+</div>
+
+<h2>Continuous Auditing</h2>
+<p>Shift from periodic to continuous audit using automation:</p>
+
+<ul>
+    <li><strong>Automated Checks:</strong> Daily scans for policy compliance, documentation completeness</li>
+    <li><strong>Real-time Monitoring:</strong> Alerts for accuracy drops, bias spikes, security events</li>
+    <li><strong>Sampling:</strong> Random daily samples of interactions for quality review</li>
+    <li><strong>Dashboards:</strong> Real-time visibility into governance metrics</li>
+    <li><strong>Anomaly Detection:</strong> ML-based detection of unusual patterns</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Code Transformation and Modernization</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Advanced Features and Enterprise Adoption</h1>
+
+<h2>Lesson 2: Code Transformation and Modernization</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand Amazon Q's code transformation capabilities for language upgrades</li>
+    <li>Identify appropriate scenarios for automated code transformation</li>
+    <li>Master the transformation workflow from analysis to deployment</li>
+    <li>Recognize risks and mitigation strategies for large-scale transformations</li>
+</ul>
+
+<h2>Introduction to Code Transformation</h2>
+<p>Legacy code represents a significant challenge for organizations. Applications written in older language versions or using deprecated frameworks accumulate technical debt, security vulnerabilities, and maintenance costs. Manual modernization is time-consuming, error-prone, and expensive. Amazon Q Developer's code transformation feature automates the process of upgrading language versions and migrating frameworks, dramatically reducing the effort required for modernization projects.</p>
+
+<p>The transformation engine analyzes entire codebases, identifies upgrade opportunities, generates modernized code, and provides comprehensive reports on changes made. This capability enables organizations to maintain current technology stacks without dedicating months of developer time to manual refactoring.</p>
+
+<h2>Supported Transformations</h2>
+
+<h3>Java Version Upgrades</h3>
+<p>Amazon Q supports automated Java upgrades:</p>
+
+<h4>Java 8 to Java 11</h4>
+<ul>
+    <li>Module system migration</li>
+    <li>Deprecated API replacement</li>
+    <li>New language feature adoption (var, enhanced switch)</li>
+    <li>JVM optimization opportunities</li>
+</ul>
+
+<h4>Java 8/11 to Java 17</h4>
+<ul>
+    <li>Records and sealed classes introduction</li>
+    <li>Pattern matching adoption</li>
+    <li>Text blocks conversion</li>
+    <li>Enhanced instanceof usage</li>
+    <li>Stream API improvements</li>
+</ul>
+
+<h3>Python Version Upgrades</h3>
+<p>Python 2 to Python 3 migration:</p>
+<ul>
+    <li>Print statement to function conversion</li>
+    <li>Unicode string handling updates</li>
+    <li>Integer division corrections</li>
+    <li>Exception syntax modernization</li>
+    <li>Iterator and generator updates</li>
+</ul>
+
+<h3>Framework Migrations</h3>
+<p>Upgrading framework versions:</p>
+<ul>
+    <li>Spring Framework version upgrades</li>
+    <li>React class components to hooks</li>
+    <li>Angular version migrations</li>
+    <li>Express.js modernization</li>
+</ul>
+
+<h2>Transformation Workflow</h2>
+
+<h3>Phase 1: Pre-Transformation Analysis</h3>
+
+<h4>Codebase Assessment</h4>
+<p>Before transformation, Amazon Q analyzes:</p>
+<ul>
+    <li><strong>Current Version:</strong> Identifies language/framework versions in use</li>
+    <li><strong>Upgrade Candidates:</strong> Determines which files can be transformed</li>
+    <li><strong>Complexity Analysis:</strong> Estimates transformation difficulty</li>
+    <li><strong>Dependency Check:</strong> Identifies third-party library compatibility</li>
+    <li><strong>Risk Assessment:</strong> Highlights potential transformation challenges</li>
+</ul>
+
+<h4>Transformation Plan</h4>
+<p>Amazon Q generates a detailed plan:</p>
+<ul>
+    <li>Number of files to be transformed</li>
+    <li>Estimated time for transformation</li>
+    <li>Potential breaking changes</li>
+    <li>Manual intervention requirements</li>
+    <li>Testing recommendations</li>
+</ul>
+
+<h3>Phase 2: Automated Transformation</h3>
+
+<h4>Code Analysis and Rewriting</h4>
+<p>The transformation engine:</p>
+<ul>
+    <li><strong>Parses Code:</strong> Builds abstract syntax trees (AST) of source files</li>
+    <li><strong>Identifies Patterns:</strong> Recognizes deprecated APIs and old patterns</li>
+    <li><strong>Applies Transformations:</strong> Rewrites code using modern equivalents</li>
+    <li><strong>Preserves Logic:</strong> Ensures functional equivalence</li>
+    <li><strong>Maintains Style:</strong> Keeps existing code formatting where possible</li>
+</ul>
+
+<h4>Transformation Categories</h4>
+<table>
+    <tr>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">API Replacement</td>
+        <td>Deprecated APIs replaced with modern equivalents</td>
+        <td>Date → LocalDate, StringBuffer → StringBuilder</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Syntax Modernization</td>
+        <td>Old syntax updated to new language features</td>
+        <td>Anonymous classes → Lambda expressions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Type System Updates</td>
+        <td>Type declarations modernized</td>
+        <td>Raw types → Generic types</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Library Upgrades</td>
+        <td>Third-party library usage updated</td>
+        <td>JUnit 4 → JUnit 5</td>
+    </tr>
+</table>
+
+<h3>Phase 3: Review and Validation</h3>
+
+<h4>Transformation Report</h4>
+<p>Amazon Q provides comprehensive reporting:</p>
+<ul>
+    <li><strong>Change Summary:</strong> Overview of all modifications</li>
+    <li><strong>File-by-File Details:</strong> Specific changes in each file</li>
+    <li><strong>Before/After Comparison:</strong> Side-by-side code comparison</li>
+    <li><strong>Manual Action Items:</strong> Changes requiring human review</li>
+    <li><strong>Testing Recommendations:</strong> Suggested test scenarios</li>
+</ul>
+
+<h4>Code Review Process</h4>
+<p>Critical review steps:</p>
+<ul>
+    <li>Review transformation report thoroughly</li>
+    <li>Examine high-risk changes first</li>
+    <li>Verify business logic preservation</li>
+    <li>Check for unintended side effects</li>
+    <li>Validate error handling remains intact</li>
+</ul>
+
+<h3>Phase 4: Testing and Deployment</h3>
+
+<h4>Testing Strategy</h4>
+<p>Comprehensive testing is essential:</p>
+<ul>
+    <li><strong>Unit Tests:</strong> Run existing test suite</li>
+    <li><strong>Integration Tests:</strong> Verify component interactions</li>
+    <li><strong>Regression Tests:</strong> Ensure no functionality lost</li>
+    <li><strong>Performance Tests:</strong> Validate performance improvements</li>
+    <li><strong>Security Tests:</strong> Confirm security posture maintained</li>
+</ul>
+
+<h4>Deployment Approach</h4>
+<p>Recommended deployment strategy:</p>
+<ul>
+    <li><strong>Incremental Rollout:</strong> Transform and deploy modules incrementally</li>
+    <li><strong>Canary Deployment:</strong> Deploy to subset of users first</li>
+    <li><strong>Monitoring:</strong> Enhanced monitoring during initial deployment</li>
+    <li><strong>Rollback Plan:</strong> Maintain ability to revert if issues arise</li>
+</ul>
+
+<h2>Best Practices for Code Transformation</h2>
+
+<h3>Preparation</h3>
+<ul>
+    <li><strong>Comprehensive Test Coverage:</strong> Ensure robust test suite before transformation</li>
+    <li><strong>Version Control:</strong> Create dedicated branch for transformation</li>
+    <li><strong>Backup:</strong> Maintain complete backup of original code</li>
+    <li><strong>Documentation:</strong> Document current system behavior</li>
+    <li><strong>Dependency Audit:</strong> Verify all dependencies support target version</li>
+</ul>
+
+<h3>During Transformation</h3>
+<ul>
+    <li><strong>Incremental Approach:</strong> Transform in manageable chunks</li>
+    <li><strong>Continuous Testing:</strong> Run tests after each transformation batch</li>
+    <li><strong>Code Review:</strong> Have multiple developers review changes</li>
+    <li><strong>Documentation Updates:</strong> Update documentation to reflect changes</li>
+</ul>
+
+<h3>Post-Transformation</h3>
+<ul>
+    <li><strong>Performance Benchmarking:</strong> Compare performance before and after</li>
+    <li><strong>Security Scanning:</strong> Run security scans on transformed code</li>
+    <li><strong>User Acceptance Testing:</strong> Validate from user perspective</li>
+    <li><strong>Knowledge Transfer:</strong> Train team on new language features</li>
+</ul>
+
+<h2>Common Transformation Scenarios</h2>
+
+<h3>Legacy System Modernization</h3>
+<p>Upgrading aging applications:</p>
+<ul>
+    <li><strong>Challenge:</strong> Java 8 application with 500,000+ lines of code</li>
+    <li><strong>Approach:</strong> Incremental transformation to Java 17</li>
+    <li><strong>Benefits:</strong> Performance improvements, security updates, modern language features</li>
+    <li><strong>Timeline:</strong> 2-3 months vs. 12+ months manual effort</li>
+</ul>
+
+<h3>Framework Upgrade</h3>
+<p>Updating to current framework versions:</p>
+<ul>
+    <li><strong>Challenge:</strong> Spring Boot 1.x to Spring Boot 3.x</li>
+    <li><strong>Approach:</strong> Automated API migration with manual configuration review</li>
+    <li><strong>Benefits:</strong> Latest features, better performance, continued support</li>
+    <li><strong>Considerations:</strong> Breaking changes in configuration</li>
+</ul>
+
+<h3>Cloud Migration Preparation</h3>
+<p>Modernizing before cloud migration:</p>
+<ul>
+    <li><strong>Challenge:</strong> On-premises Java 8 application moving to AWS</li>
+    <li><strong>Approach:</strong> Upgrade to Java 17, then containerize</li>
+    <li><strong>Benefits:</strong> Better cloud compatibility, reduced costs</li>
+    <li><strong>Integration:</strong> Combine with AWS service adoption</li>
+</ul>
+
+<h2>Handling Complex Transformations</h2>
+
+<h3>Manual Intervention Requirements</h3>
+<p>Scenarios requiring human judgment:</p>
+<ul>
+    <li><strong>Custom Frameworks:</strong> Internal frameworks may need manual updates</li>
+    <li><strong>Complex Business Logic:</strong> Domain-specific code requires careful review</li>
+    <li><strong>Performance-Critical Code:</strong> Optimizations may need manual tuning</li>
+    <li><strong>Security-Sensitive Code:</strong> Authentication/authorization requires extra scrutiny</li>
+</ul>
+
+<h3>Dealing with Transformation Failures</h3>
+<p>When automated transformation encounters issues:</p>
+<ul>
+    <li><strong>Partial Transformation:</strong> Some files transform successfully, others don't</li>
+    <li><strong>Compilation Errors:</strong> Transformed code doesn't compile</li>
+    <li><strong>Runtime Issues:</strong> Code compiles but fails at runtime</li>
+    <li><strong>Resolution:</strong> Manual fixes guided by transformation report</li>
+</ul>
+
+<h2>Measuring Transformation Success</h2>
+
+<h3>Success Metrics</h3>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Measurement</th>
+        <th>Target</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Automation Rate</td>
+        <td>Percentage of code automatically transformed</td>
+        <td>85-95%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Time Savings</td>
+        <td>Time vs. manual transformation</td>
+        <td>70-90% reduction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Test Pass Rate</td>
+        <td>Percentage of tests passing post-transformation</td>
+        <td>100%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Bug Introduction</td>
+        <td>New bugs introduced by transformation</td>
+        <td>Minimal to none</td>
+    </tr>
+</table>
+
+<h3>Business Impact</h3>
+<ul>
+    <li><strong>Cost Reduction:</strong> Reduced developer time for modernization</li>
+    <li><strong>Risk Mitigation:</strong> Staying current with security patches</li>
+    <li><strong>Performance Gains:</strong> Leveraging modern runtime optimizations</li>
+    <li><strong>Developer Productivity:</strong> Access to modern language features</li>
+    <li><strong>Competitive Advantage:</strong> Faster adoption of new technologies</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Amazon Q Developer automates code transformation for language upgrades and framework migrations</li>
+    <li>Transformation workflow includes analysis, automated rewriting, review, and testing phases</li>
+    <li>Supported transformations include Java 8→17, Python 2→3, and various framework upgrades</li>
+    <li>Comprehensive testing is critical before and after transformation</li>
+    <li>Incremental approach reduces risk compared to big-bang transformations</li>
+    <li>85-95% of code can typically be automatically transformed</li>
+    <li>Manual intervention required for complex business logic and custom frameworks</li>
+    <li>Transformation can reduce modernization time by 70-90% compared to manual effort</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

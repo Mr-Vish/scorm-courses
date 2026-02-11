@@ -1,0 +1,362 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Configuring Guardrails for Responsible AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Configuring Guardrails for Responsible AI</h1>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand the importance of AI safety and content filtering</li>
+    <li>Learn how to configure Bedrock Guardrails for various use cases</li>
+    <li>Master different guardrail types and their applications</li>
+    <li>Apply best practices for responsible AI implementation</li>
+</ul>
+
+<h3>The Need for AI Guardrails</h3>
+
+<p>While foundation models are powerful tools, they can generate content that is inappropriate, harmful, biased, or inconsistent with organizational policies. <strong>Guardrails</strong> provide a safety layer that filters both user inputs and model outputs, ensuring AI applications operate within acceptable boundaries. This is critical for enterprise deployments where brand reputation, regulatory compliance, and user safety are paramount concerns.</p>
+
+<p>Without guardrails, AI applications face several risks: generating offensive or harmful content, exposing sensitive information, providing advice in regulated domains without appropriate disclaimers, or engaging with malicious prompts designed to manipulate model behavior. Guardrails mitigate these risks through configurable policies that intercept and filter problematic content before it reaches users.</p>
+
+<h3>Bedrock Guardrails Architecture</h3>
+
+<p>Bedrock Guardrails operate as an intermediary layer between users and foundation models, evaluating content against configured policies in real-time. When a guardrail detects policy violations, it can block the content, mask sensitive information, or return a custom intervention message.</p>
+
+<h4>Guardrail Components</h4>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Purpose</th>
+        <th>Application</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Content Filters</td>
+        <td>Block harmful or inappropriate content</td>
+        <td>Hate speech, violence, sexual content, misconduct</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Denied Topics</td>
+        <td>Prevent discussion of specific subjects</td>
+        <td>Competitor products, political topics, financial advice</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Word Filters</td>
+        <td>Block specific words or phrases</td>
+        <td>Profanity, brand names, proprietary terms</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Sensitive Information Filters</td>
+        <td>Detect and mask PII</td>
+        <td>SSNs, credit cards, emails, phone numbers, addresses</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Contextual Grounding</td>
+        <td>Detect hallucinations and ensure factual accuracy</td>
+        <td>Verify responses are grounded in provided context</td>
+    </tr>
+</table>
+
+<h3>Content Filters</h3>
+
+<p>Content filters evaluate text against predefined categories of harmful content, assigning confidence scores and blocking content that exceeds configured thresholds.</p>
+
+<h4>Filter Categories</h4>
+
+<ul>
+    <li><strong>Hate:</strong> Content promoting hatred, discrimination, or violence against individuals or groups based on protected characteristics</li>
+    <li><strong>Insults:</strong> Derogatory, humiliating, or mocking content targeting individuals or groups</li>
+    <li><strong>Sexual:</strong> Sexually explicit or suggestive content</li>
+    <li><strong>Violence:</strong> Content depicting, glorifying, or encouraging violence or physical harm</li>
+    <li><strong>Misconduct:</strong> Content promoting illegal activities, self-harm, or dangerous behaviors</li>
+</ul>
+
+<h4>Threshold Configuration</h4>
+
+<p>Each category supports configurable thresholds determining sensitivity:</p>
+
+<table>
+    <tr>
+        <th>Threshold</th>
+        <th>Sensitivity</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">NONE</td>
+        <td>No filtering</td>
+        <td>Internal tools, research applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LOW</td>
+        <td>Blocks only egregious violations</td>
+        <td>Adult audiences, creative applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">MEDIUM</td>
+        <td>Balanced filtering</td>
+        <td>General business applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">HIGH</td>
+        <td>Strict filtering</td>
+        <td>Public-facing applications, youth audiences</td>
+    </tr>
+</table>
+
+<p><strong>Example Configuration:</strong></p>
+<blockquote>
+Content Filters:
+- Hate: HIGH (strict filtering for brand safety)
+- Insults: MEDIUM (allow some informal language)
+- Sexual: HIGH (family-friendly application)
+- Violence: MEDIUM (news/gaming context may require discussion)
+- Misconduct: HIGH (prevent harmful advice)
+</blockquote>
+
+<h3>Denied Topics</h3>
+
+<p>Denied topics allow you to define specific subjects the model should refuse to discuss, regardless of how the question is phrased. This is particularly useful for preventing discussions about competitors, regulated topics, or areas outside the application's scope.</p>
+
+<h4>Defining Denied Topics</h4>
+
+<p>Each denied topic includes:</p>
+<ul>
+    <li><strong>Topic Name:</strong> Identifier for the topic</li>
+    <li><strong>Definition:</strong> Clear description of what constitutes the topic</li>
+    <li><strong>Examples:</strong> Sample phrases or questions related to the topic</li>
+    <li><strong>Type:</strong> DENY (block completely)</li>
+</ul>
+
+<p><strong>Example: Financial Advice</strong></p>
+<blockquote>
+Topic Name: Financial Investment Advice
+Definition: Requests for specific investment recommendations, stock picks, or personalized financial planning advice
+Examples:
+- "Should I invest in Tesla stock?"
+- "What stocks should I buy for retirement?"
+- "Is now a good time to invest in cryptocurrency?"
+- "How should I allocate my 401k?"
+
+Intervention Message: "I cannot provide personalized financial advice. Please consult with a licensed financial advisor for investment recommendations."
+</blockquote>
+
+<p><strong>Example: Competitor Discussion</strong></p>
+<blockquote>
+Topic Name: Competitor Products
+Definition: Questions comparing our products to competitor offerings or asking about competitor features
+Examples:
+- "How does your product compare to [Competitor X]?"
+- "Why should I choose you over [Competitor Y]?"
+- "Does [Competitor Z] have better features?"
+
+Intervention Message: "I focus on explaining our products and their benefits. For comparisons, I recommend reviewing independent product reviews or contacting our sales team."
+</blockquote>
+
+<h3>Word Filters</h3>
+
+<p>Word filters block or mask specific words and phrases in both inputs and outputs. This provides granular control over language use.</p>
+
+<h4>Use Cases</h4>
+<ul>
+    <li><strong>Profanity Filtering:</strong> Block offensive language in customer-facing applications</li>
+    <li><strong>Brand Protection:</strong> Prevent mention of competitor brand names</li>
+    <li><strong>Proprietary Terms:</strong> Mask internal codenames or confidential terminology</li>
+    <li><strong>Regulatory Compliance:</strong> Block terms that could create legal liability</li>
+</ul>
+
+<p><strong>Configuration Options:</strong></p>
+<ul>
+    <li><strong>Exact Match:</strong> Block only exact word matches</li>
+    <li><strong>Partial Match:</strong> Block words containing the specified string</li>
+    <li><strong>Case Sensitivity:</strong> Whether matching is case-sensitive</li>
+</ul>
+
+<h3>Sensitive Information Filters (PII Detection)</h3>
+
+<p>Sensitive information filters automatically detect and mask personally identifiable information (PII) to prevent data exposure and ensure privacy compliance.</p>
+
+<h4>Supported PII Types</h4>
+
+<table>
+    <tr>
+        <th>PII Type</th>
+        <th>Examples</th>
+        <th>Action</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Email Addresses</td>
+        <td>user@example.com</td>
+        <td>Mask or block</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Phone Numbers</td>
+        <td>(555) 123-4567</td>
+        <td>Mask or block</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Social Security Numbers</td>
+        <td>123-45-6789</td>
+        <td>Mask or block</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Credit Card Numbers</td>
+        <td>4532-1234-5678-9010</td>
+        <td>Mask or block</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Physical Addresses</td>
+        <td>123 Main St, City, State</td>
+        <td>Mask or block</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Names</td>
+        <td>John Smith</td>
+        <td>Mask or block</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Driver's License Numbers</td>
+        <td>D1234567</td>
+        <td>Mask or block</td>
+    </tr>
+</table>
+
+<h4>Masking vs. Blocking</h4>
+
+<p><strong>Masking:</strong> Replaces PII with placeholder (e.g., [EMAIL], [PHONE])</p>
+<blockquote>
+Input: "My email is john@example.com"
+Masked: "My email is [EMAIL]"
+</blockquote>
+
+<p><strong>Blocking:</strong> Rejects the entire request or response containing PII</p>
+<blockquote>
+Input: "My SSN is 123-45-6789"
+Response: "I cannot process requests containing sensitive personal information."
+</blockquote>
+
+<h3>Contextual Grounding Check</h3>
+
+<p>Contextual grounding detects when model responses contain information not supported by provided context, helping prevent hallucinations in RAG applications.</p>
+
+<h4>How It Works</h4>
+<ol>
+    <li>Model generates response based on retrieved context</li>
+    <li>Guardrail compares response against source documents</li>
+    <li>Assigns grounding score indicating how well response is supported</li>
+    <li>Blocks responses below configured threshold</li>
+</ol>
+
+<h4>Configuration</h4>
+<ul>
+    <li><strong>Grounding Threshold:</strong> Minimum score (0.0-1.0) required for response approval</li>
+    <li><strong>Relevance Threshold:</strong> How relevant retrieved context must be to the query</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+Context: "Our refund policy allows returns within 30 days of purchase for unused items."
+Query: "What is your refund policy?"
+Good Response: "We accept returns within 30 days of purchase for unused items." (High grounding score)
+Bad Response: "We offer lifetime returns on all products." (Low grounding score - blocked)
+</blockquote>
+
+<h3>Implementing Guardrails</h3>
+
+<h4>Creating a Guardrail</h4>
+
+<ol>
+    <li>Navigate to Bedrock Guardrails in AWS Console</li>
+    <li>Click "Create guardrail"</li>
+    <li>Configure content filters with appropriate thresholds</li>
+    <li>Define denied topics with examples</li>
+    <li>Add word filters if needed</li>
+    <li>Configure PII detection and masking</li>
+    <li>Set up contextual grounding if using RAG</li>
+    <li>Define custom intervention messages</li>
+    <li>Test guardrail with sample inputs</li>
+    <li>Deploy and attach to models or agents</li>
+</ol>
+
+<h4>Attaching Guardrails</h4>
+
+<p><strong>To Models:</strong></p>
+<blockquote>
+response = bedrock_runtime.invoke_model(
+    modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+    body=json.dumps(request_body),
+    guardrailIdentifier='guardrail-id',
+    guardrailVersion='1'
+)
+</blockquote>
+
+<p><strong>To Agents:</strong></p>
+<p>Select guardrail during agent creation or update in the Bedrock console.</p>
+
+<h3>Testing and Validation</h3>
+
+<h4>Test Cases</h4>
+<p>Develop comprehensive test cases covering:</p>
+<ul>
+    <li>Benign inputs that should pass</li>
+    <li>Obvious violations that should be blocked</li>
+    <li>Edge cases and subtle violations</li>
+    <li>False positives (legitimate content incorrectly blocked)</li>
+    <li>Attempts to circumvent filters</li>
+</ul>
+
+<h4>Monitoring</h4>
+<ul>
+    <li>Track guardrail invocations and block rates</li>
+    <li>Review blocked content to identify patterns</li>
+    <li>Analyze false positives and adjust thresholds</li>
+    <li>Monitor for emerging attack patterns</li>
+</ul>
+
+<h3>Best Practices</h3>
+
+<h4>Balanced Configuration</h4>
+<ul>
+    <li>Start with moderate thresholds and adjust based on observed behavior</li>
+    <li>Avoid overly restrictive settings that block legitimate use</li>
+    <li>Consider application context when setting sensitivity levels</li>
+    <li>Test thoroughly with diverse inputs before production deployment</li>
+</ul>
+
+<h4>User Experience</h4>
+<ul>
+    <li>Provide clear, helpful intervention messages explaining why content was blocked</li>
+    <li>Avoid generic error messages that frustrate users</li>
+    <li>Offer guidance on how to rephrase requests</li>
+    <li>Consider logging blocked attempts for review and improvement</li>
+</ul>
+
+<h4>Compliance and Governance</h4>
+<ul>
+    <li>Document guardrail configurations and rationale</li>
+    <li>Establish review processes for guardrail updates</li>
+    <li>Maintain audit logs of blocked content</li>
+    <li>Regularly review and update policies based on new requirements</li>
+</ul>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Guardrails provide essential safety controls for enterprise AI applications</li>
+    <li>Content filters block harmful content across categories like hate, violence, and sexual content</li>
+    <li>Denied topics prevent discussion of specific subjects regardless of phrasing</li>
+    <li>PII detection automatically masks or blocks sensitive personal information</li>
+    <li>Contextual grounding checks prevent hallucinations in RAG applications</li>
+    <li>Effective guardrails balance safety with usability through appropriate threshold configuration</li>
+    <li>Regular testing, monitoring, and iteration ensure guardrails remain effective</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

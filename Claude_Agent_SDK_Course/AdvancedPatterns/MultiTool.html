@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Multi-Tool Orchestration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Multi-Tool Orchestration</h1>
+
+<h2>Module Objectives</h2>
+<p>In this lesson, you will:</p>
+<ul>
+    <li>Understand how agents orchestrate multiple tools</li>
+    <li>Learn patterns for parallel and sequential tool execution</li>
+    <li>Explore tool dependency management</li>
+    <li>Handle complex multi-tool workflows</li>
+</ul>
+
+<h2>What is Multi-Tool Orchestration?</h2>
+<p>Multi-tool orchestration is the agent's ability to intelligently select, sequence, and execute multiple tools to accomplish complex tasks. Claude can:</p>
+
+<ul>
+    <li>Call multiple tools in a single turn (parallel execution)</li>
+    <li>Chain tool calls based on previous results (sequential execution)</li>
+    <li>Decide which tools to use based on context</li>
+    <li>Handle dependencies between tool calls</li>
+    <li>Recover from tool failures and try alternatives</li>
+</ul>
+
+<h2>Parallel Tool Execution</h2>
+<p>Claude can request multiple tool calls simultaneously when they don't depend on each other:</p>
+
+<blockquote>
+User: "Get weather for New York and London"
+
+Claude requests:
+- get_weather(location="New York")
+- get_weather(location="London")
+
+Both execute in parallel, results returned together
+</blockquote>
+
+<h3>Benefits of Parallel Execution</h3>
+<ul>
+    <li><strong>Reduced Latency:</strong> Multiple operations complete simultaneously</li>
+    <li><strong>Efficiency:</strong> Fewer round trips to Claude</li>
+    <li><strong>Better UX:</strong> Faster response times for users</li>
+</ul>
+
+<h3>When Parallel Execution Happens</h3>
+<ul>
+    <li>Tools are independent (no data dependencies)</li>
+    <li>All required information is available</li>
+    <li>Tools can safely execute concurrently</li>
+</ul>
+
+<h2>Sequential Tool Execution</h2>
+<p>When tool calls depend on previous results, Claude executes them sequentially:</p>
+
+<blockquote>
+User: "Find the most expensive product and check its inventory"
+
+Turn 1: search_products(sort_by="price", order="desc", limit=1)
+Result: Product ID 789
+
+Turn 2: check_inventory(product_id=789)
+Result: 15 units in stock
+
+Turn 3: Claude responds with final answer
+</blockquote>
+
+<h3>Sequential Execution Patterns</h3>
+<ul>
+    <li><strong>Search then Retrieve:</strong> Find items, then get details</li>
+    <li><strong>Validate then Act:</strong> Check conditions, then perform action</li>
+    <li><strong>Calculate then Apply:</strong> Compute values, then use results</li>
+    <li><strong>Query then Transform:</strong> Get data, then process it</li>
+</ul>
+
+<h2>Tool Dependency Management</h2>
+
+<table>
+    <tr>
+        <th>Dependency Type</th>
+        <th>Description</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Dependency</td>
+        <td>Tool B needs output from Tool A</td>
+        <td>get_user_id → get_user_orders</td>
+    </tr>
+    <tr>
+        <td class="rowheader">State Dependency</td>
+        <td>Tool B requires Tool A to complete first</td>
+        <td>create_account → send_welcome_email</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Conditional Dependency</td>
+        <td>Tool B only runs if Tool A meets criteria</td>
+        <td>check_balance → process_payment (if sufficient)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">No Dependency</td>
+        <td>Tools can run independently</td>
+        <td>get_weather + get_news (parallel)</td>
+    </tr>
+</table>
+
+<h2>Complex Workflow Example</h2>
+
+<p><strong>Task:</strong> "Book a flight and hotel for my trip to Paris next week"</p>
+
+<p><strong>Agent Workflow:</strong></p>
+
+<blockquote>
+Turn 1: Parallel execution
+- search_flights(destination="Paris", date="next week")
+- search_hotels(location="Paris", date="next week")
+
+Turn 2: Present options to user
+"I found 3 flights and 5 hotels. Which would you prefer?"
+
+Turn 3: After user selection
+- book_flight(flight_id=123)
+- book_hotel(hotel_id=456)
+
+Turn 4: Sequential execution
+- send_confirmation_email(booking_details)
+- add_to_calendar(trip_details)
+
+Turn 5: Final response
+"Your trip is booked! Confirmation sent to your email."
+</blockquote>
+
+<h2>Tool Orchestration Strategies</h2>
+
+<h3>1. Breadth-First Approach</h3>
+<p>Execute all independent tools first, then process results:</p>
+<ul>
+    <li>Gather all available information simultaneously</li>
+    <li>Make decisions based on complete data</li>
+    <li>Useful for comparison or aggregation tasks</li>
+</ul>
+
+<h3>2. Depth-First Approach</h3>
+<p>Follow one path completely before exploring alternatives:</p>
+<ul>
+    <li>Complete one workflow before starting another</li>
+    <li>Useful when early results determine next steps</li>
+    <li>Reduces unnecessary tool calls</li>
+</ul>
+
+<h3>3. Adaptive Approach</h3>
+<p>Adjust strategy based on intermediate results:</p>
+<ul>
+    <li>Start with parallel exploration</li>
+    <li>Switch to sequential when dependencies emerge</li>
+    <li>Most flexible but requires careful prompt design</li>
+</ul>
+
+<h2>Handling Tool Failures in Multi-Tool Workflows</h2>
+
+<h3>Failure Isolation</h3>
+<p>When one tool fails in parallel execution:</p>
+<ul>
+    <li>Other tools continue executing</li>
+    <li>Agent receives partial results</li>
+    <li>Agent decides whether to retry, use alternatives, or proceed with available data</li>
+</ul>
+
+<h3>Cascading Failures</h3>
+<p>When a tool failure blocks dependent tools:</p>
+<ul>
+    <li>Agent recognizes the dependency chain is broken</li>
+    <li>Attempts alternative approaches if available</li>
+    <li>Informs user if task cannot be completed</li>
+</ul>
+
+<h3>Retry Strategies</h3>
+<blockquote>
+If tool fails:
+1. Check if error is transient (network, timeout)
+2. Retry once with same parameters
+3. If still fails, try alternative tool or approach
+4. If no alternatives, escalate to user
+</blockquote>
+
+<h2>Optimizing Multi-Tool Performance</h2>
+
+<h3>Minimize Round Trips</h3>
+<ul>
+    <li>Design tools to return comprehensive data</li>
+    <li>Avoid chatty interfaces requiring many small calls</li>
+    <li>Use batch operations when possible</li>
+</ul>
+
+<h3>Cache Tool Results</h3>
+<ul>
+    <li>Store results that may be reused</li>
+    <li>Avoid redundant tool calls</li>
+    <li>Implement appropriate cache invalidation</li>
+</ul>
+
+<h3>Set Appropriate Timeouts</h3>
+<ul>
+    <li>Fast tools: 1-5 seconds</li>
+    <li>Medium tools: 5-15 seconds</li>
+    <li>Slow tools: 15-30 seconds</li>
+    <li>Fail fast rather than blocking indefinitely</li>
+</ul>
+
+<h2>Tool Composition Patterns</h2>
+
+<h3>Pipeline Pattern</h3>
+<p>Output of one tool feeds directly into next:</p>
+<blockquote>
+search_products → get_product_details → calculate_shipping → generate_quote
+</blockquote>
+
+<h3>Fan-Out/Fan-In Pattern</h3>
+<p>One tool triggers multiple parallel tools, results aggregated:</p>
+<blockquote>
+get_user_id → [get_orders, get_reviews, get_wishlist] → aggregate_user_profile
+</blockquote>
+
+<h3>Conditional Branch Pattern</h3>
+<p>Tool selection based on conditions:</p>
+<blockquote>
+check_inventory → 
+  if in_stock: process_order
+  else: notify_backorder
+</blockquote>
+
+<h2>Best Practices for Multi-Tool Orchestration</h2>
+
+<ul>
+    <li><strong>Design Independent Tools:</strong> Minimize dependencies to enable parallelization</li>
+    <li><strong>Return Rich Data:</strong> Include related information to reduce follow-up calls</li>
+    <li><strong>Handle Partial Failures:</strong> Design workflows that can proceed with incomplete data</li>
+    <li><strong>Provide Clear Errors:</strong> Help agent understand what went wrong and why</li>
+    <li><strong>Document Dependencies:</strong> Make tool relationships explicit in descriptions</li>
+    <li><strong>Test Complex Workflows:</strong> Verify multi-tool scenarios work as expected</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Claude can orchestrate multiple tools through parallel and sequential execution</li>
+    <li>Parallel execution reduces latency for independent operations</li>
+    <li>Sequential execution handles data dependencies between tools</li>
+    <li>Agents adapt orchestration strategy based on task requirements and intermediate results</li>
+    <li>Proper error handling and retry logic ensure robust multi-tool workflows</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building MCP Servers with TypeScript</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building MCP Servers with TypeScript</h1>
+
+<h2>Module Objectives</h2>
+<p>By the end of this module, you will be able to:</p>
+<ul>
+    <li>Set up a TypeScript MCP server project with proper dependencies</li>
+    <li>Implement tools, resources, and prompts using the MCP SDK</li>
+    <li>Handle errors and validate inputs effectively</li>
+    <li>Test and debug MCP servers using available tools</li>
+    <li>Deploy servers for use with MCP-compatible hosts</li>
+</ul>
+
+<h2>Why TypeScript for MCP Servers?</h2>
+
+<p>TypeScript offers several advantages for MCP server development:</p>
+
+<ul>
+    <li><strong>Type Safety:</strong> Catch errors at compile time rather than runtime</li>
+    <li><strong>IDE Support:</strong> Excellent autocomplete and refactoring tools</li>
+    <li><strong>Official SDK:</strong> Anthropic provides first-class TypeScript support</li>
+    <li><strong>Ecosystem:</strong> Access to npm packages for any integration need</li>
+    <li><strong>Async/Await:</strong> Natural support for asynchronous operations</li>
+</ul>
+
+<h2>Project Setup</h2>
+
+<h3>Initialize the Project</h3>
+
+<blockquote>
+mkdir my-mcp-server
+cd my-mcp-server
+npm init -y
+npm install @modelcontextprotocol/sdk zod
+npm install --save-dev typescript @types/node
+npx tsc --init
+</blockquote>
+
+<h3>Configure TypeScript</h3>
+
+<p>Update tsconfig.json for MCP development:</p>
+
+<blockquote>
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true
+  }
+}
+</blockquote>
+
+<h2>Basic Server Structure</h2>
+
+<p>A minimal MCP server consists of:</p>
+
+<ul>
+    <li>Server initialization with name and version</li>
+    <li>Tool, resource, or prompt definitions</li>
+    <li>Transport configuration (stdio or SSE)</li>
+    <li>Connection and lifecycle management</li>
+</ul>
+
+<h3>Minimal Server Example</h3>
+
+<blockquote>
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+
+const server = new Server({
+  name: "example-server",
+  version: "1.0.0"
+}, {
+  capabilities: {
+    tools: {}
+  }
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+</blockquote>
+
+<h2>Implementing Tools</h2>
+
+<p>Tools are the primary way AI interacts with your server. Each tool needs a name, description, and input schema.</p>
+
+<h3>Tool Definition Pattern</h3>
+
+<blockquote>
+import { z } from "zod";
+
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [{
+    name: "get_weather",
+    description: "Get current weather for a city",
+    inputSchema: {
+      type: "object",
+      properties: {
+        city: {
+          type: "string",
+          description: "City name"
+        },
+        units: {
+          type: "string",
+          enum: ["celsius", "fahrenheit"],
+          description: "Temperature units"
+        }
+      },
+      required: ["city"]
+    }
+  }]
+}));
+</blockquote>
+
+<h3>Tool Execution Handler</h3>
+
+<blockquote>
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (request.params.name === "get_weather") {
+    const { city, units = "celsius" } = request.params.arguments;
+    
+    const weather = await fetchWeatherData(city);
+    const temp = units === "fahrenheit" 
+      ? celsiusToFahrenheit(weather.temp)
+      : weather.temp;
+    
+    return {
+      content: [{
+        type: "text",
+        text: `Weather in ${city}: ${temp}°${units === "fahrenheit" ? "F" : "C"}`
+      }]
+    };
+  }
+  
+  throw new Error(`Unknown tool: ${request.params.name}`);
+});
+</blockquote>
+
+<h2>Implementing Resources</h2>
+
+<p>Resources provide contextual data to the AI. They are identified by URIs and have MIME types.</p>
+
+<h3>Resource Listing</h3>
+
+<blockquote>
+server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+  resources: [{
+    uri: "config://app/settings",
+    name: "Application Settings",
+    description: "Current application configuration",
+    mimeType: "application/json"
+  }]
+}));
+</blockquote>
+
+<h3>Resource Reading</h3>
+
+<blockquote>
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const uri = request.params.uri;
+  
+  if (uri === "config://app/settings") {
+    const config = await loadConfiguration();
+    return {
+      contents: [{
+        uri: uri,
+        mimeType: "application/json",
+        text: JSON.stringify(config, null, 2)
+      }]
+    };
+  }
+  
+  throw new Error(`Unknown resource: ${uri}`);
+});
+</blockquote>
+
+<h2>Error Handling</h2>
+
+<p>Proper error handling is critical for production servers:</p>
+
+<ul>
+    <li>Validate all inputs before processing</li>
+    <li>Return descriptive error messages</li>
+    <li>Log errors for debugging (to stderr)</li>
+    <li>Handle async errors with try-catch</li>
+</ul>
+
+<h3>Error Handling Pattern</h3>
+
+<blockquote>
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  try {
+    // Validate input
+    if (!request.params.arguments.city) {
+      throw new Error("City parameter is required");
+    }
+    
+    // Execute tool logic
+    const result = await performOperation(request.params.arguments);
+    
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify(result)
+      }]
+    };
+  } catch (error) {
+    console.error("Tool execution error:", error);
+    throw new Error(`Failed to execute tool: ${error.message}`);
+  }
+});
+</blockquote>
+
+<h2>Input Validation with Zod</h2>
+
+<p>Use Zod for runtime type validation:</p>
+
+<blockquote>
+import { z } from "zod";
+
+const WeatherArgsSchema = z.object({
+  city: z.string().min(1),
+  units: z.enum(["celsius", "fahrenheit"]).optional()
+});
+
+// In tool handler
+const args = WeatherArgsSchema.parse(request.params.arguments);
+</blockquote>
+
+<h2>Server Configuration</h2>
+
+<p>Configure your server for use with MCP hosts by adding to the host's configuration file:</p>
+
+<blockquote>
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+</blockquote>
+
+<h2>Best Practices</h2>
+
+<ul>
+    <li>Use descriptive tool names that indicate their purpose</li>
+    <li>Provide comprehensive descriptions to guide AI usage</li>
+    <li>Validate all inputs with schemas</li>
+    <li>Handle errors gracefully with clear messages</li>
+    <li>Log to stderr, never to stdout</li>
+    <li>Keep tools focused on single responsibilities</li>
+    <li>Return structured, parseable results</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>TypeScript provides type safety and excellent tooling for MCP development</li>
+    <li>The MCP SDK handles protocol details, letting you focus on business logic</li>
+    <li>Tools, resources, and prompts each have specific implementation patterns</li>
+    <li>Input validation and error handling are critical for production quality</li>
+    <li>Server configuration connects your implementation to MCP hosts</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

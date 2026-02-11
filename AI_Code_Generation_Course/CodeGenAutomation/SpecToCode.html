@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>From Specification to Code</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>From Specification to Code</h1>
+
+
+<h2>AI Code Generation Pipeline</h2>
+<p>Modern AI code generation goes beyond autocomplete. Full pipelines transform specifications into working code with tests and documentation.</p>
+
+<h2>Pipeline Stages</h2>
+<ol>
+    <li><strong>Specification Parsing:</strong> Extract requirements from specs, tickets, or natural language</li>
+    <li><strong>Architecture Planning:</strong> Determine file structure, patterns, and dependencies</li>
+    <li><strong>Code Generation:</strong> Generate implementation code across multiple files</li>
+    <li><strong>Test Generation:</strong> Create unit tests, integration tests, and edge case tests</li>
+    <li><strong>Review and Validation:</strong> AI reviews its own output for bugs and style</li>
+    <li><strong>Documentation:</strong> Generate inline docs and API documentation</li>
+</ol>
+
+<h2>Spec-to-Code with Claude</h2>
+<div class="code-block">
+<pre><code># Using Claude Code for spec-driven development
+claude "Implement the following user story:
+
+As a user, I want to reset my password via email so that I can
+regain access to my account.
+
+Acceptance Criteria:
+- POST /api/auth/forgot-password accepts email
+- Sends reset link with JWT token (expires in 1 hour)
+- POST /api/auth/reset-password accepts token + new password
+- Invalidates token after use
+- Returns appropriate error messages
+
+Use Express.js, TypeScript, and Nodemailer."</code></pre>
+</div>
+
+<h2>Test Generation Patterns</h2>
+<table>
+    <tr><th>Pattern</th><th>Description</th><th>When to Use</th></tr>
+    <tr><td>Happy Path</td><td>Test expected behavior</td><td>Always</td></tr>
+    <tr><td>Edge Cases</td><td>Boundary values, empty inputs</td><td>Always</td></tr>
+    <tr><td>Error Cases</td><td>Invalid input, missing data</td><td>Always</td></tr>
+    <tr><td>Integration</td><td>Component interactions</td><td>API endpoints, database ops</td></tr>
+    <tr><td>Property-Based</td><td>Invariants that must hold</td><td>Data transformations</td></tr>
+</table>
+
+<h2>Quality Gates</h2>
+<ul>
+    <li>Generated code must pass linting (ESLint, Pylint)</li>
+    <li>Generated tests must achieve minimum coverage threshold</li>
+    <li>Type checking must pass (TypeScript, mypy)</li>
+    <li>Security scanning must find no critical issues</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

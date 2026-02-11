@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>BM25 + Vector Search and RRF</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hybrid Search Fundamentals: BM25 + Vector Search and RRF</h1>
+
+<h2>The Search Landscape Challenge</h2>
+<p>Modern applications require search systems that can handle diverse query types: from precise technical terms and product IDs to natural language questions and semantic concepts. No single search approach can excel at all these scenarios, which is why hybrid search has become the industry standard for production systems.</p>
+
+<h2>Why Hybrid Search?</h2>
+<p>Neither keyword search nor vector search alone is sufficient for production applications. Each approach has distinct strengths and weaknesses that complement each other:</p>
+
+<table>
+    <tr><th>Scenario</th><th>Best Approach</th><th>Why</th></tr>
+    <tr><td>"Find document JIRA-1234"</td><td>BM25 (Keyword)</td><td>Exact term matching for IDs and codes</td></tr>
+    <tr><td>"How do I handle errors in async code?"</td><td>Vector (Semantic)</td><td>Understands intent, not just keywords</td></tr>
+    <tr><td>"Python 3.12 release notes"</td><td>Hybrid</td><td>Combines exact version match with semantic understanding</td></tr>
+    <tr><td>"Best practices for authentication"</td><td>Vector (Semantic)</td><td>Matches conceptually similar content</td></tr>
+    <tr><td>"Error code E404"</td><td>BM25 (Keyword)</td><td>Precise alphanumeric matching</td></tr>
+</table>
+
+<p><strong>Key Insight:</strong> Keyword search (BM25) excels at exact matching but misses semantic similarity. Vector search captures meaning but can miss specific terms. Hybrid search combines both for the best results.</p>
+
+<h2>Deep Dive: BM25 vs Vector Search</h2>
+<table>
+    <tr><th>Feature</th><th>BM25 (Keyword)</th><th>Vector (Semantic)</th></tr>
+    <tr><td>Query: "Python 3.12 release"</td><td>Finds exact mentions of "Python 3.12"</td><td>Also finds "latest Python version update"</td></tr>
+    <tr><td>Acronyms / IDs</td><td>Excellent - matches "JIRA-1234" exactly</td><td>Poor - may match unrelated IDs</td></tr>
+    <tr><td>Synonyms</td><td>Poor - "car" does not match "automobile"</td><td>Excellent - understands meaning</td></tr>
+    <tr><td>Speed</td><td>Very fast (inverted index)</td><td>Fast (ANN algorithms)</td></tr>
+    <tr><td>Training Required</td><td>No (statistical method)</td><td>Yes (requires embedding model)</td></tr>
+    <tr><td>Storage</td><td>Compact (inverted index)</td><td>Large (dense vectors, typically 384-1536 dimensions)</td></tr>
+    <tr><td>Multilingual</td><td>Language-specific (requires stemming)</td><td>Excellent (cross-lingual embeddings)</td></tr>
+    <tr><td>Typo Tolerance</td><td>Poor (exact matching)</td><td>Good (semantic similarity)</td></tr>
+</table>
+
+<h2>How BM25 Works</h2>
+<p>BM25 (Best Matching 25) is a probabilistic ranking function that scores documents based on term frequency and inverse document frequency:</p>
+<ul>
+    <li><strong>Term Frequency (TF):</strong> How often a query term appears in a document (with diminishing returns)</li>
+    <li><strong>Inverse Document Frequency (IDF):</strong> Rare terms are weighted higher than common terms</li>
+    <li><strong>Document Length Normalization:</strong> Prevents bias toward longer documents</li>
+</ul>
+<p>BM25 uses an inverted index data structure, making it extremely fast even on large corpora.</p>
+
+<h2>How Vector Search Works</h2>
+<p>Vector search converts text into dense numerical representations (embeddings) that capture semantic meaning:</p>
+<ul>
+    <li><strong>Embedding Models:</strong> Neural networks (e.g., sentence-transformers) encode text into vectors</li>
+    <li><strong>Similarity Metrics:</strong> Cosine similarity or dot product measures semantic closeness</li>
+    <li><strong>Approximate Nearest Neighbor (ANN):</strong> Algorithms like HNSW enable fast similarity search</li>
+    <li><strong>Semantic Understanding:</strong> Captures context, synonyms, and conceptual relationships</li>
+</ul>
+<p>Vector search excels when users express queries in natural language or when exact keyword matches are insufficient.</p>
+
+<h2>Reciprocal Rank Fusion (RRF): The Gold Standard</h2>
+<p>RRF is the most popular method for combining results from multiple search systems. It merges ranked lists without needing score normalization, making it robust and easy to implement:</p>
+
+<h3>Why RRF Works</h3>
+<ul>
+    <li><strong>Score-Independent:</strong> Works with any scoring system without calibration</li>
+    <li><strong>Rank-Based:</strong> Uses position in result lists, not raw scores</li>
+    <li><strong>Promotes Consensus:</strong> Documents appearing in multiple result sets rank higher</li>
+    <li><strong>Configurable:</strong> The k parameter controls how much weight to give top-ranked items</li>
+</ul>
+
+<h3>RRF Formula</h3>
+<p>For each document, the RRF score is calculated as:</p>
+<blockquote>
+RRF_score(d) = Σ (1 / (k + rank_i(d)))
+
+Where:
+- d is the document
+- rank_i(d) is the rank of document d in result list i
+- k is a constant (typically 60) to prevent top results from dominating
+- Σ sums across all result lists containing document d
+</blockquote>
+<div class="code-block">
+<pre><code>def reciprocal_rank_fusion(result_lists, k=60):
+    '''Combine multiple ranked result lists using RRF.
+
+    Args:
+        result_lists: List of ranked result lists, each containing doc IDs
+        k: Constant to prevent high-ranked items from dominating (default 60)
+
+    Returns:
+        List of (doc_id, rrf_score) tuples sorted by score descending.
+    '''
+    scores = {}
+    for results in result_lists:
+        for rank, doc_id in enumerate(results, start=1):
+            if doc_id not in scores:
+                scores[doc_id] = 0
+            scores[doc_id] += 1.0 / (k + rank)
+
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+# Example: combine BM25 and vector results
+bm25_results = ["doc_3", "doc_1", "doc_7", "doc_5"]
+vector_results = ["doc_1", "doc_5", "doc_3", "doc_9"]
+
+fused = reciprocal_rank_fusion([bm25_results, vector_results])
+# doc_1 and doc_3 rank high in both, so they appear at the top</code></pre>
+</div>
+
+<h2>Implementation with Elasticsearch</h2>
+<p>Elasticsearch 8.0+ provides native support for hybrid search, combining BM25 and kNN (k-Nearest Neighbors) vector search in a single query:</p>
+<div class="code-block">
+<pre><code># Elasticsearch supports both BM25 and kNN in a single query
+hybrid_query = {
+    "query": {
+        "bool": {
+            "should": [
+                {
+                    # BM25 keyword search
+                    "match": {
+                        "content": {
+                            "query": "Python async programming",
+                            "boost": 0.3,  # Weight for keyword search
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "knn": {
+        # Vector search component
+        "field": "content_embedding",
+        "query_vector": query_embedding,  # Generated from embedding model
+        "k": 10,  # Number of nearest neighbors
+        "num_candidates": 100,  # Candidates to consider before filtering
+        "boost": 0.7,  # Weight for vector search
+    },
+    "size": 10,  # Final number of results to return
+}
+
+# Elasticsearch automatically combines scores using a weighted sum
+# You can also implement custom RRF by retrieving separate results</code></pre>
+</div>
+
+<h3>Alternative: Manual RRF Implementation</h3>
+<p>For more control or when using search engines without native hybrid support:</p>
+<div class="code-block">
+<pre><code>from elasticsearch import Elasticsearch
+
+es = Elasticsearch(["http://localhost:9200"])
+
+def hybrid_search_with_rrf(query_text, query_embedding, index="documents"):
+    '''Perform hybrid search using manual RRF fusion.'''
+    
+    # Step 1: BM25 keyword search
+    bm25_results = es.search(
+        index=index,
+        body={
+            "query": {"match": {"content": query_text}},
+            "size": 20
+        }
+    )
+    bm25_doc_ids = [hit["_id"] for hit in bm25_results["hits"]["hits"]]
+    
+    # Step 2: Vector search
+    vector_results = es.search(
+        index=index,
+        body={
+            "knn": {
+                "field": "content_embedding",
+                "query_vector": query_embedding,
+                "k": 20,
+                "num_candidates": 100
+            }
+        }
+    )
+    vector_doc_ids = [hit["_id"] for hit in vector_results["hits"]["hits"]]
+    
+    # Step 3: Apply RRF
+    fused_results = reciprocal_rank_fusion([bm25_doc_ids, vector_doc_ids])
+    
+    # Step 4: Retrieve full documents for top results
+    top_doc_ids = [doc_id for doc_id, score in fused_results[:10]]
+    final_docs = es.mget(index=index, body={"ids": top_doc_ids})
+    
+    return final_docs["docs"]</code></pre>
+</div>
+
+<h2>Fusion Strategies Comparison</h2>
+<table>
+    <tr><th>Strategy</th><th>How It Works</th><th>Pros</th><th>Cons</th><th>Best For</th></tr>
+    <tr>
+        <td class="rowheader">RRF</td>
+        <td>Rank-based fusion, no score calibration needed</td>
+        <td>Simple, robust, no tuning required</td>
+        <td>Ignores score magnitudes</td>
+        <td>Default choice for most applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Weighted Sum</td>
+        <td>Normalize scores and combine with weights (e.g., 0.7 * vector + 0.3 * BM25)</td>
+        <td>Fine-grained control over contribution</td>
+        <td>Requires score calibration and tuning</td>
+        <td>When you have domain-specific knowledge</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Re-ranking</td>
+        <td>Get candidates from both, then re-rank with a cross-encoder</td>
+        <td>Highest quality results</td>
+        <td>Highest computational cost</td>
+        <td>High-value queries, small result sets</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cascade</td>
+        <td>Use BM25 for initial recall, then vector search on BM25 results</td>
+        <td>Fast and effective</td>
+        <td>May miss results not in BM25 top-k</td>
+        <td>Large-scale systems with latency constraints</td>
+    </tr>
+</table>
+
+<h2>Choosing the Right Fusion Strategy</h2>
+<ul>
+    <li><strong>Start with RRF:</strong> It's the best default choice - simple, effective, and requires no tuning</li>
+    <li><strong>Use Weighted Sum:</strong> When you have specific requirements (e.g., prioritize exact matches for technical docs)</li>
+    <li><strong>Add Re-ranking:</strong> For critical queries where quality matters more than latency</li>
+    <li><strong>Consider Cascade:</strong> For very large corpora (millions+ documents) where latency is critical</li>
+</ul>
+
+<h2>Real-World Example: E-commerce Search</h2>
+<div class="code-block">
+<pre><code>def ecommerce_hybrid_search(query, user_context):
+    '''Hybrid search optimized for e-commerce.'''
+    
+    # Generate query embedding
+    query_embedding = embedding_model.encode(query)
+    
+    # BM25 search - good for exact product names, SKUs
+    bm25_results = search_engine.bm25_search(
+        query=query,
+        fields=["product_name", "sku", "brand"],
+        top_k=20
+    )
+    
+    # Vector search - good for natural language queries
+    vector_results = search_engine.vector_search(
+        query_vector=query_embedding,
+        field="product_description_embedding",
+        top_k=20
+    )
+    
+    # Apply RRF fusion
+    fused_results = reciprocal_rank_fusion(
+        [bm25_results, vector_results],
+        k=60
+    )
+    
+    # Apply business logic filters
+    filtered_results = apply_filters(
+        fused_results,
+        in_stock=True,
+        user_location=user_context["location"]
+    )
+    
+    # Re-rank top 20 with cross-encoder for final quality boost
+    if len(filtered_results) > 0:
+        top_candidates = filtered_results[:20]
+        reranked = cross_encoder_rerank(query, top_candidates)
+        return reranked[:10]
+    
+    return []</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

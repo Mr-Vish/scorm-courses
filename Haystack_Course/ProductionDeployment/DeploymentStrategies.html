@@ -1,0 +1,431 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Deployment Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production Deployment Strategies</h1>
+
+<h2>Deploying Haystack to Production</h2>
+<p>Moving from development to production requires careful planning around scalability, reliability, security, and cost. This section covers proven strategies for deploying Haystack applications in production environments.</p>
+
+<h2>Deployment Architecture Options</h2>
+<table>
+    <tr>
+        <th>Architecture</th>
+        <th>Description</th>
+        <th>Best For</th>
+        <th>Complexity</th>
+    </tr>
+    <tr>
+        <td class="rowheader">REST API</td>
+        <td>Expose pipelines as HTTP endpoints</td>
+        <td>Web applications, mobile apps</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Microservices</td>
+        <td>Separate services for indexing and querying</td>
+        <td>Large-scale applications</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Serverless</td>
+        <td>Deploy as cloud functions</td>
+        <td>Variable workloads, cost optimization</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Container Orchestration</td>
+        <td>Kubernetes-based deployment</td>
+        <td>Enterprise, high availability</td>
+        <td>High</td>
+    </tr>
+</table>
+
+<h2>REST API Deployment with FastAPI</h2>
+<p>The most common deployment pattern uses FastAPI to expose Haystack pipelines:</p>
+
+<div class="code-block">
+<pre><code>from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from haystack import Pipeline
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(title="Haystack RAG API", version="1.0.0")
+
+# Load pipeline at startup
+rag_pipeline = None
+
+@app.on_event("startup")
+async def startup_event():
+    """Load pipeline when application starts."""
+    global rag_pipeline
+    try:
+        rag_pipeline = Pipeline.load("rag_pipeline.yaml")
+        logger.info("Pipeline loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load pipeline: {str(e)}")
+        raise
+
+# Request/Response models
+class QueryRequest(BaseModel):
+    question: str
+    top_k: int = 5
+    filters: dict = None
+
+class QueryResponse(BaseModel):
+    answer: str
+    sources: list
+    confidence: float
+
+@app.post("/query", response_model=QueryResponse)
+async def query_endpoint(request: QueryRequest):
+    """Process user query and return answer."""
+    try:
+        result = rag_pipeline.run({
+            "embedder": {"text": request.question},
+            "prompt_builder": {"query": request.question}
+        })
+        
+        answer = result["generator"]["replies"][0]
+        documents = result["retriever"]["documents"]
+        
+        sources = [
+            {
+                "content": doc.content[:200],
+                "source": doc.meta.get("source", "Unknown"),
+                "score": doc.score
+            }
+            for doc in documents
+        ]
+        
+        return QueryResponse(
+            answer=answer,
+            sources=sources,
+            confidence=documents[0].score if documents else 0.0
+        )
+        
+    except Exception as e:
+        logger.error(f"Query failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Query processing failed")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    return {"status": "healthy", "pipeline_loaded": rag_pipeline is not None}
+
+# Run with: uvicorn app:app --host 0.0.0.0 --port 8000
+</code></pre>
+</div>
+
+<h2>Containerization with Docker</h2>
+<p>Package your application in a Docker container for consistent deployment:</p>
+
+<div class="code-block">
+<pre><code># Dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Download models at build time (optional)
+RUN python -c "from sentence_transformers import SentenceTransformer; \
+    SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
+
+# Expose port
+EXPOSE 8000
+
+# Run application
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+</code></pre>
+</div>
+
+<div class="code-block">
+<pre><code># docker-compose.yml
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  haystack_api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+</code></pre>
+</div>
+
+<h2>Environment Configuration</h2>
+<p>Use environment variables for configuration management:</p>
+
+<div class="code-block">
+<pre><code># config.py
+import os
+from pydantic import BaseSettings
+
+class Settings(BaseSettings):
+    # API Configuration
+    api_title: str = "Haystack RAG API"
+    api_version: str = "1.0.0"
+    
+    # Document Store
+    qdrant_url: str = os.getenv("QDRANT_URL", "http://localhost:6333")
+    qdrant_api_key: str = os.getenv("QDRANT_API_KEY", "")
+    qdrant_index: str = os.getenv("QDRANT_INDEX", "documents")
+    
+    # LLM Configuration
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    
+    # Retrieval Configuration
+    default_top_k: int = int(os.getenv("DEFAULT_TOP_K", "5"))
+    embedding_model: str = os.getenv("EMBEDDING_MODEL", 
+                                     "sentence-transformers/all-MiniLM-L6-v2")
+    
+    # Performance
+    max_concurrent_requests: int = int(os.getenv("MAX_CONCURRENT_REQUESTS", "10"))
+    request_timeout: int = int(os.getenv("REQUEST_TIMEOUT", "30"))
+    
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+</code></pre>
+</div>
+
+<h2>Caching for Performance</h2>
+<p>Implement caching to reduce latency and costs:</p>
+
+<div class="code-block">
+<pre><code>from functools import lru_cache
+import hashlib
+import json
+
+# In-memory cache for embeddings
+@lru_cache(maxsize=1000)
+def get_cached_embedding(text: str):
+    """Cache query embeddings to avoid recomputation."""
+    embedder = SentenceTransformersTextEmbedder(
+        model="sentence-transformers/all-MiniLM-L6-v2"
+    )
+    result = embedder.run(text=text)
+    return result["embedding"]
+
+# Redis cache for complete responses
+import redis
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+def get_cached_response(question: str):
+    """Check if response is cached."""
+    cache_key = hashlib.md5(question.encode()).hexdigest()
+    cached = redis_client.get(cache_key)
+    if cached:
+        return json.loads(cached)
+    return None
+
+def cache_response(question: str, response: dict, ttl: int = 3600):
+    """Cache response for future requests."""
+    cache_key = hashlib.md5(question.encode()).hexdigest()
+    redis_client.setex(cache_key, ttl, json.dumps(response))
+
+# Usage in endpoint
+@app.post("/query")
+async def query_endpoint(request: QueryRequest):
+    # Check cache first
+    cached = get_cached_response(request.question)
+    if cached:
+        return cached
+    
+    # Process query
+    result = rag_pipeline.run(...)
+    
+    # Cache result
+    cache_response(request.question, result)
+    
+    return result
+</code></pre>
+</div>
+
+<h2>Rate Limiting and Throttling</h2>
+<div class="code-block">
+<pre><code>from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.post("/query")
+@limiter.limit("10/minute")  # 10 requests per minute per IP
+async def query_endpoint(request: Request, query: QueryRequest):
+    # Process query
+    pass
+</code></pre>
+</div>
+
+<h2>Monitoring and Observability</h2>
+<p>Implement comprehensive monitoring for production systems:</p>
+
+<div class="code-block">
+<pre><code>from prometheus_client import Counter, Histogram, generate_latest
+import time
+
+# Metrics
+query_counter = Counter('rag_queries_total', 'Total number of queries')
+query_duration = Histogram('rag_query_duration_seconds', 'Query processing time')
+error_counter = Counter('rag_errors_total', 'Total number of errors')
+
+@app.post("/query")
+async def query_endpoint(request: QueryRequest):
+    query_counter.inc()
+    start_time = time.time()
+    
+    try:
+        result = rag_pipeline.run(...)
+        query_duration.observe(time.time() - start_time)
+        return result
+    except Exception as e:
+        error_counter.inc()
+        raise
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint."""
+    return Response(generate_latest(), media_type="text/plain")
+</code></pre>
+</div>
+
+<h2>Scaling Strategies</h2>
+<h3>Horizontal Scaling</h3>
+<ul>
+    <li><strong>Load Balancer:</strong> Distribute requests across multiple API instances</li>
+    <li><strong>Stateless Design:</strong> Ensure API servers don't maintain session state</li>
+    <li><strong>Shared Document Store:</strong> All instances connect to same vector database</li>
+    <li><strong>Auto-scaling:</strong> Scale based on CPU, memory, or request queue length</li>
+</ul>
+
+<h3>Vertical Scaling</h3>
+<ul>
+    <li><strong>GPU Acceleration:</strong> Use GPUs for embedding generation</li>
+    <li><strong>Increased Memory:</strong> Cache more embeddings and models</li>
+    <li><strong>Faster CPUs:</strong> Improve processing throughput</li>
+</ul>
+
+<h2>Security Best Practices</h2>
+<table>
+    <tr>
+        <th>Area</th>
+        <th>Practice</th>
+        <th>Implementation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Authentication</td>
+        <td>API key or OAuth2</td>
+        <td>Require valid credentials for all requests</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Input Validation</td>
+        <td>Sanitize user input</td>
+        <td>Validate query length, format, content</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Rate Limiting</td>
+        <td>Prevent abuse</td>
+        <td>Limit requests per user/IP</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Secrets Management</td>
+        <td>Never hardcode credentials</td>
+        <td>Use environment variables or secret managers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">HTTPS</td>
+        <td>Encrypt data in transit</td>
+        <td>Use TLS certificates</td>
+    </tr>
+</table>
+
+<h2>Cost Optimization</h2>
+<ul>
+    <li><strong>Cache Aggressively:</strong> Reduce LLM API calls for repeated queries</li>
+    <li><strong>Batch Processing:</strong> Process multiple queries together when possible</li>
+    <li><strong>Model Selection:</strong> Use smaller models (GPT-3.5) for simple queries</li>
+    <li><strong>Token Limits:</strong> Set appropriate max_tokens to avoid waste</li>
+    <li><strong>Monitoring:</strong> Track token usage and identify expensive queries</li>
+</ul>
+
+<h2>Disaster Recovery</h2>
+<div class="code-block">
+<pre><code># Backup document store regularly
+def backup_document_store():
+    """Create backup of vector database."""
+    # Implementation depends on document store
+    # For Qdrant: use snapshots API
+    # For Elasticsearch: use snapshot and restore
+    pass
+
+# Implement circuit breaker for external services
+from circuitbreaker import circuit
+
+@circuit(failure_threshold=5, recovery_timeout=60)
+def call_llm_api(prompt):
+    """Call LLM with circuit breaker protection."""
+    return openai_generator.run(prompt=prompt)
+</code></pre>
+</div>
+
+<h2>Deployment Checklist</h2>
+<ul>
+    <li>✓ Environment variables configured</li>
+    <li>✓ Document store populated and tested</li>
+    <li>✓ API authentication implemented</li>
+    <li>✓ Rate limiting configured</li>
+    <li>✓ Monitoring and logging enabled</li>
+    <li>✓ Error handling comprehensive</li>
+    <li>✓ Caching strategy implemented</li>
+    <li>✓ Load testing completed</li>
+    <li>✓ Backup and recovery procedures documented</li>
+    <li>✓ Security audit performed</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

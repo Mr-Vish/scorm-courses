@@ -1,0 +1,282 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Agent Architecture and Core Concepts</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Agent Architecture and Core Concepts</h1>
+
+<h2>What is an AI Agent?</h2>
+<p>An AI agent is an autonomous system that uses a large language model (LLM) as its reasoning engine to perceive its environment, make decisions, and take actions to achieve specific goals. Unlike traditional chatbots that simply respond to queries, agents can:</p>
+<ul>
+<li>Break down complex tasks into manageable steps</li>
+<li>Use external tools and APIs to gather information or perform actions</li>
+<li>Maintain context and memory across interactions</li>
+<li>Adapt their behavior based on feedback and results</li>
+<li>Chain multiple operations together to accomplish objectives</li>
+</ul>
+
+<h2>Core Agent Components</h2>
+<table>
+<tr>
+<th>Component</th>
+<th>Purpose</th>
+<th>Example</th>
+</tr>
+<tr>
+<td class="rowheader">Reasoning Engine</td>
+<td>LLM that processes inputs and decides actions</td>
+<td>Gemini 1.5 Pro, GPT-4</td>
+</tr>
+<tr>
+<td class="rowheader">Tools</td>
+<td>Functions the agent can invoke</td>
+<td>Search API, Calculator, Database Query</td>
+</tr>
+<tr>
+<td class="rowheader">Memory</td>
+<td>Stores conversation history and context</td>
+<td>Short-term buffer, Vector store</td>
+</tr>
+<tr>
+<td class="rowheader">Planning Module</td>
+<td>Breaks tasks into steps</td>
+<td>ReAct, Plan-and-Execute</td>
+</tr>
+<tr>
+<td class="rowheader">Execution Loop</td>
+<td>Orchestrates reasoning and action cycles</td>
+<td>AgentExecutor, Custom loop</td>
+</tr>
+</table>
+
+<h2>Vertex AI Agent Architecture</h2>
+<p>Vertex AI Agent Builder provides a managed architecture with five key components:</p>
+
+<blockquote>
+<strong>1. Agent:</strong> The top-level entity powered by Gemini models
+- Handles natural language understanding
+- Performs reasoning and decision-making
+- Manages conversation flow and context
+
+<strong>2. Tools:</strong> Capabilities the agent can invoke
+- Function calling for custom logic
+- API integrations for external services
+- Code execution for computations
+
+<strong>3. Data Stores:</strong> Knowledge sources for grounding
+- Vertex AI Search for unstructured data
+- BigQuery for structured data
+- Cloud Storage for documents
+
+<strong>4. Extensions:</strong> Pre-built and custom integrations
+- Google Workspace (Docs, Sheets, Gmail)
+- Code Interpreter for Python execution
+- Custom OpenAPI specifications
+
+<strong>5. Playbooks:</strong> Structured workflows
+- Step-by-step instructions for scenarios
+- Conditional logic and branching
+- Error handling and fallbacks
+</blockquote>
+
+<h2>Agent Reasoning Patterns</h2>
+
+<h3>ReAct (Reasoning + Acting)</h3>
+<p>The ReAct pattern interleaves reasoning and action steps:</p>
+<blockquote>
+1. <strong>Thought:</strong> Agent reasons about what to do next
+2. <strong>Action:</strong> Agent selects and executes a tool
+3. <strong>Observation:</strong> Agent receives the result
+4. <strong>Repeat:</strong> Continue until task is complete
+
+Example flow:
+Thought: "I need to find the current weather in San Francisco"
+Action: call_weather_api(city="San Francisco")
+Observation: {"temp": 65, "condition": "partly cloudy"}
+Thought: "Now I have the weather information"
+Final Answer: "The current weather in San Francisco is 65°F and partly cloudy"
+</blockquote>
+
+<h3>Plan-and-Execute</h3>
+<p>This pattern separates planning from execution:</p>
+<blockquote>
+<strong>Planning Phase:</strong>
+- Analyze the user's request
+- Break down into subtasks
+- Create execution plan
+
+<strong>Execution Phase:</strong>
+- Execute each subtask sequentially
+- Collect results from each step
+- Synthesize final response
+
+Best for: Complex multi-step tasks, research queries, data analysis
+</blockquote>
+
+<h2>Agent Types in Vertex AI</h2>
+
+<h3>Conversational Agents</h3>
+<blockquote>
+from vertexai.preview import reasoning_engines
+
+agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[search_tool, calculator_tool],
+    agent_executor_kwargs={
+        "return_intermediate_steps": True,
+        "max_iterations": 5
+    }
+)
+
+response = agent.query(
+    input="What's the population of Tokyo and how does it compare to New York?"
+)
+</blockquote>
+
+<h3>Task-Oriented Agents</h3>
+<blockquote>
+# Agent specialized for specific tasks
+booking_agent = reasoning_engines.LangchainAgent(
+    model="gemini-1.5-pro",
+    tools=[
+        search_flights_tool,
+        check_availability_tool,
+        book_flight_tool,
+        send_confirmation_tool
+    ],
+    system_instruction="""You are a flight booking assistant.
+    Always confirm details before booking.
+    Provide clear pricing information.
+    Send confirmation emails after successful bookings."""
+)
+</blockquote>
+
+<h2>Memory and Context Management</h2>
+
+<h3>Short-Term Memory</h3>
+<blockquote>
+from langchain.memory import ConversationBufferMemory
+
+memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    return_messages=True,
+    output_key="output"
+)
+
+# Memory automatically tracks conversation
+agent = create_agent_with_memory(
+    llm=llm,
+    tools=tools,
+    memory=memory
+)
+</blockquote>
+
+<h3>Long-Term Memory with Vector Stores</h3>
+<blockquote>
+from langchain_google_vertexai import VertexAIEmbeddings
+from langchain.vectorstores import MatchingEngine
+
+embeddings = VertexAIEmbeddings(model_name="textembedding-gecko@003")
+
+vector_store = MatchingEngine.from_components(
+    project_id="my-project",
+    region="us-central1",
+    index_id="agent-memory-index",
+    embedding=embeddings
+)
+
+# Store important information
+vector_store.add_texts([
+    "User prefers morning flights",
+    "User has TSA PreCheck",
+    "User's frequent flyer number: ABC123"
+])
+
+# Retrieve relevant context
+relevant_memories = vector_store.similarity_search(
+    "book a flight for the user",
+    k=3
+)
+</blockquote>
+
+<h2>Agent Execution Flow</h2>
+<blockquote>
+1. <strong>Input Processing:</strong>
+   - Receive user query
+   - Load relevant context from memory
+   - Prepare system instructions
+
+2. <strong>Reasoning Loop:</strong>
+   - LLM analyzes input and context
+   - Decides on next action (tool call or final answer)
+   - If tool call: execute and observe result
+   - If final answer: proceed to response
+
+3. <strong>Tool Execution:</strong>
+   - Parse tool name and parameters
+   - Validate inputs
+   - Execute tool function
+   - Return structured result
+
+4. <strong>Response Generation:</strong>
+   - Synthesize information from all steps
+   - Format response appropriately
+   - Update memory with interaction
+   - Return to user
+
+5. <strong>Error Handling:</strong>
+   - Catch tool execution failures
+   - Retry with corrected parameters
+   - Fallback to alternative approaches
+   - Provide helpful error messages
+</blockquote>
+
+<h2>Gemini Models for Agents</h2>
+<table>
+<tr>
+<th>Model</th>
+<th>Context Window</th>
+<th>Best For</th>
+<th>Function Calling</th>
+</tr>
+<tr>
+<td class="rowheader">Gemini 1.5 Pro</td>
+<td>2M tokens</td>
+<td>Complex reasoning, long context</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td class="rowheader">Gemini 1.5 Flash</td>
+<td>1M tokens</td>
+<td>Fast responses, high throughput</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td class="rowheader">Gemini 1.0 Pro</td>
+<td>32K tokens</td>
+<td>General purpose, cost-effective</td>
+<td>Yes</td>
+</tr>
+</table>
+
+<h2>Best Practices for Agent Design</h2>
+<ul>
+<li><strong>Clear Instructions:</strong> Provide detailed system prompts that define agent behavior and constraints</li>
+<li><strong>Tool Selection:</strong> Limit tools to relevant capabilities to reduce confusion and improve performance</li>
+<li><strong>Error Handling:</strong> Implement robust error handling and fallback strategies</li>
+<li><strong>Context Management:</strong> Balance context window usage with relevant information</li>
+<li><strong>Iteration Limits:</strong> Set maximum iterations to prevent infinite loops</li>
+<li><strong>Validation:</strong> Validate tool inputs and outputs to ensure data quality</li>
+<li><strong>Monitoring:</strong> Track agent performance, costs, and user satisfaction</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Getting Started - First Application</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Creating Your First Spring Boot Application</h1>
+
+<h2>Step 1: Generate Project</h2>
+<p>Visit <strong>start.spring.io</strong> and configure your project:</p>
+<ul>
+    <li><strong>Project:</strong> Maven Project</li>
+    <li><strong>Language:</strong> Java</li>
+    <li><strong>Spring Boot Version:</strong> Latest stable version</li>
+    <li><strong>Group:</strong> com.example</li>
+    <li><strong>Artifact:</strong> demo</li>
+    <li><strong>Dependencies:</strong> Spring Web</li>
+</ul>
+
+<h2>Step 2: Main Application Class</h2>
+<p>The main class is the entry point of your Spring Boot application:</p>
+<blockquote>
+@SpringBootApplication<br/>
+public class DemoApplication {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public static void main(String[] args) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SpringApplication.run(DemoApplication.class, args);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Step 3: Create a Controller</h2>
+<p>Create a simple REST controller:</p>
+<blockquote>
+@RestController<br/>
+public class HelloController {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@GetMapping("/hello")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public String hello() {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return "Hello, Spring Boot!";<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Step 4: Run the Application</h2>
+<p>Run your application using:</p>
+<ul>
+    <li><strong>IDE:</strong> Right-click and run the main class</li>
+    <li><strong>Maven:</strong> mvn spring-boot:run</li>
+    <li><strong>Java:</strong> java -jar target/demo-0.0.1-SNAPSHOT.jar</li>
+</ul>
+
+<h2>Step 5: Test Your Application</h2>
+<p>Open your browser and navigate to:</p>
+<blockquote>http://localhost:8080/hello</blockquote>
+<p>You should see "Hello, Spring Boot!" displayed.</p>
+
+<h2>Understanding the Magic</h2>
+<p>Spring Boot automatically:</p>
+<ul>
+    <li>Configured an embedded Tomcat server</li>
+    <li>Set up Spring MVC</li>
+    <li>Configured JSON serialization</li>
+    <li>Enabled component scanning</li>
+</ul>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

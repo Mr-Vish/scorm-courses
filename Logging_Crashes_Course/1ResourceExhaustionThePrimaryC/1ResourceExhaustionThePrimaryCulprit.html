@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>1. Resource Exhaustion: The Primary Culprit</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>1. Resource Exhaustion: The Primary Culprit</h1>
+
+<p>The most frequent way logging leads to an application crash is by <strong>exhausting system resources</strong>.</p>
+
+<h3>A. Disk Space Depletion (Rolling File Appenders)</h3>
+
+<p>If your application uses a <strong>file appender</strong> (e.g., RollingFileAppender) and is running with a high logging level (like DEBUG or TRACE) under heavy load, it can generate enormous amounts of log data rapidly.</p>
+
+<ul>
+    <li><strong>The Problem:</strong> If no log rotation or size/time capping is configured, or if the configured limits are too high, the log files will consume all available disk space on the server.</li>
+    <li><strong>The Crash:</strong> Once the disk is 100% full, the JVM (Java Virtual Machine) and the Spring Boot application may crash or hang because they can no longer write new log entries or perform internal operations requiring temporary disk space.</li>
+    <li><strong>Safeguard:</strong> Use <strong>size- and time-based rolling policies</strong> and ensure an <strong>appropriate maximum file size/count</strong> is set.</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

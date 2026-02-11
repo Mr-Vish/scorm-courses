@@ -1,0 +1,451 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Redaction Strategies and Trade-offs</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Redaction Strategies and Trade-offs</h1>
+
+<h2>Overview of Anonymization Approaches</h2>
+<p>Once PII is detected, you must decide how to handle it. Different strategies offer varying levels of privacy protection, utility preservation, and reversibility:</p>
+
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Privacy Level</th>
+        <th>Utility Preserved</th>
+        <th>Reversible</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Redaction</td>
+        <td>High</td>
+        <td>Low</td>
+        <td>No</td>
+        <td>Compliance logging, public datasets</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Masking</td>
+        <td>Medium-High</td>
+        <td>Medium</td>
+        <td>No</td>
+        <td>Customer service, partial visibility</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Tokenization</td>
+        <td>High</td>
+        <td>High</td>
+        <td>Yes (with key)</td>
+        <td>Analytics, testing, reversible workflows</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Pseudonymization</td>
+        <td>Medium-High</td>
+        <td>High</td>
+        <td>Partially</td>
+        <td>Research, consistent identifiers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Synthetic Replacement</td>
+        <td>High</td>
+        <td>Very High</td>
+        <td>No</td>
+        <td>Testing, demos, training data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Encryption</td>
+        <td>Very High</td>
+        <td>None (encrypted)</td>
+        <td>Yes (with key)</td>
+        <td>Secure storage, transmission</td>
+    </tr>
+</table>
+
+<h2>Strategy 1: Complete Redaction</h2>
+<p>Replace PII with generic placeholders, removing all identifying information.</p>
+
+<div class="code-block">
+<pre><code>from presidio_anonymizer import AnonymizerEngine
+from presidio_anonymizer.entities import OperatorConfig
+
+anonymizer = AnonymizerEngine()
+
+text = "Contact John Smith at john.smith@email.com or call 555-123-4567"
+results = analyzer.analyze(text=text, language="en")
+
+# Replace with generic placeholders
+anonymized = anonymizer.anonymize(
+    text=text,
+    analyzer_results=results,
+    operators={
+        "PERSON": OperatorConfig("replace", {"new_value": "[PERSON]"}),
+        "EMAIL_ADDRESS": OperatorConfig("replace", {"new_value": "[EMAIL]"}),
+        "PHONE_NUMBER": OperatorConfig("replace", {"new_value": "[PHONE]"}),
+    }
+)
+
+print(anonymized.text)
+# Output: "Contact [PERSON] at [EMAIL] or call [PHONE]"
+
+# Pros:
+# - Maximum privacy protection
+# - Simple to implement
+# - No risk of re-identification
+
+# Cons:
+# - Loss of semantic meaning
+# - Cannot distinguish between different individuals
+# - May break LLM context understanding
+</code></pre>
+</div>
+
+<h2>Strategy 2: Partial Masking</h2>
+<p>Show partial information while hiding sensitive portions.</p>
+
+<div class="code-block">
+<pre><code># Mask operator - show first/last characters
+anonymized = anonymizer.anonymize(
+    text=text,
+    analyzer_results=results,
+    operators={
+        "EMAIL_ADDRESS": OperatorConfig("mask", {
+            "masking_char": "*",
+            "chars_to_mask": 10,
+            "from_end": False
+        }),
+        "PHONE_NUMBER": OperatorConfig("mask", {
+            "masking_char": "X",
+            "chars_to_mask": 7,
+            "from_end": True
+        }),
+        "CREDIT_CARD": OperatorConfig("mask", {
+            "masking_char": "*",
+            "chars_to_mask": 12,
+            "from_end": False
+        })
+    }
+)
+
+# Examples:
+# Email: john.smith@email.com → **********@email.com
+# Phone: 555-123-4567 → 555-XXX-XXXX
+# Credit Card: 4532-1234-5678-9010 → ****-****-****-9010
+
+# Pros:
+# - Maintains some context (domain, last 4 digits)
+# - Useful for customer verification
+# - Better UX than complete redaction
+
+# Cons:
+# - Still reveals partial information
+# - May not meet strict compliance requirements
+# - Inconsistent masking can leak information
+</code></pre>
+</div>
+
+<h2>Strategy 3: Hash-Based Pseudonymization</h2>
+<p>Replace PII with consistent hashed values for analytics while preserving uniqueness.</p>
+
+<div class="code-block">
+<pre><code>import hashlib
+from presidio_anonymizer.entities import OperatorConfig
+
+def hash_value(text: str, salt: str = "secret_salt") -> str:
+    """Generate consistent hash for a value"""
+    combined = f"{text}{salt}"
+    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
+# Custom hash operator
+anonymized = anonymizer.anonymize(
+    text=text,
+    analyzer_results=results,
+    operators={
+        "PERSON": OperatorConfig("hash", {"hash_type": "sha256"}),
+        "EMAIL_ADDRESS": OperatorConfig("hash", {"hash_type": "sha256"}),
+    }
+)
+
+# Example:
+# "John Smith" → "a3f5e8d2c1b4f6e9"
+# "John Smith" (again) → "a3f5e8d2c1b4f6e9" (same hash)
+# "Jane Doe" → "7c2e9f1a5d8b3c6e" (different hash)
+
+# Pros:
+# - Consistent mapping (same input = same output)
+# - Enables analytics on anonymized data
+# - One-way transformation (cannot reverse without rainbow tables)
+
+# Cons:
+# - Vulnerable to dictionary attacks
+# - Same person always has same hash (linkability)
+# - Requires secure salt management
+</code></pre>
+</div>
+
+<h2>Strategy 4: Tokenization with Reversibility</h2>
+<p>Replace PII with tokens that can be reversed using a secure mapping.</p>
+
+<div class="code-block">
+<pre><code>import uuid
+from typing import Dict
+
+class TokenizationEngine:
+    """Reversible tokenization for PII"""
+    
+    def __init__(self):
+        self.token_map: Dict[str, str] = {}  # token -> original value
+        self.reverse_map: Dict[str, str] = {}  # original -> token
+    
+    def tokenize(self, value: str, entity_type: str) -> str:
+        """Replace value with a token"""
+        if value in self.reverse_map:
+            return self.reverse_map[value]
+        
+        token = f"{entity_type}_{uuid.uuid4().hex[:8]}"
+        self.token_map[token] = value
+        self.reverse_map[value] = token
+        return token
+    
+    def detokenize(self, token: str) -> str:
+        """Restore original value from token"""
+        return self.token_map.get(token, token)
+    
+    def anonymize_text(self, text: str, entities: list) -> str:
+        """Tokenize all detected entities"""
+        result = text
+        # Process in reverse order to maintain positions
+        for entity in sorted(entities, key=lambda e: e.start, reverse=True):
+            original = text[entity.start:entity.end]
+            token = self.tokenize(original, entity.entity_type)
+            result = result[:entity.start] + token + result[entity.end:]
+        return result
+    
+    def deanonymize_text(self, text: str) -> str:
+        """Restore original values"""
+        result = text
+        for token, original in self.token_map.items():
+            result = result.replace(token, original)
+        return result
+
+# Usage
+tokenizer = TokenizationEngine()
+
+text = "John Smith's email is john@example.com"
+results = analyzer.analyze(text=text, language="en")
+
+tokenized = tokenizer.anonymize_text(text, results)
+print(f"Tokenized: {tokenized}")
+# Output: "PERSON_a3f5e8d2's email is EMAIL_ADDRESS_7c2e9f1a"
+
+# Later, restore original
+restored = tokenizer.deanonymize_text(tokenized)
+print(f"Restored: {restored}")
+# Output: "John Smith's email is john@example.com"
+
+# Pros:
+# - Fully reversible with secure key storage
+# - Maintains data utility for processing
+# - Enables secure data sharing
+
+# Cons:
+# - Requires secure token storage
+# - Token map is a single point of failure
+# - Tokens may leak if not properly secured
+</code></pre>
+</div>
+
+<h2>Strategy 5: Synthetic Data Replacement</h2>
+<p>Replace real PII with realistic but fake data.</p>
+
+<div class="code-block">
+<pre><code>from faker import Faker
+
+fake = Faker()
+
+# Generate synthetic replacements
+synthetic_operators = {
+    "PERSON": OperatorConfig("replace", {"new_value": fake.name()}),
+    "EMAIL_ADDRESS": OperatorConfig("replace", {"new_value": fake.email()}),
+    "PHONE_NUMBER": OperatorConfig("replace", {"new_value": fake.phone_number()}),
+    "LOCATION": OperatorConfig("replace", {"new_value": fake.address()}),
+}
+
+anonymized = anonymizer.anonymize(
+    text=text,
+    analyzer_results=results,
+    operators=synthetic_operators
+)
+
+# Example:
+# Original: "John Smith lives at 123 Main St, john@email.com"
+# Synthetic: "Michael Johnson lives at 456 Oak Ave, michael.j@example.org"
+
+# Pros:
+# - Maintains realistic data structure
+# - Excellent for testing and demos
+# - Preserves data format and patterns
+
+# Cons:
+# - May accidentally generate real PII
+# - Not suitable for production data
+# - Loses original semantic relationships
+</code></pre>
+</div>
+
+<h2>Choosing the Right Strategy</h2>
+
+<h3>Decision Framework</h3>
+<div class="code-block">
+<pre><code>def choose_anonymization_strategy(
+    entity_type: str,
+    use_case: str,
+    compliance_requirement: str
+) -> str:
+    """
+    Select appropriate anonymization strategy based on context
+    """
+    
+    # Critical PII - always redact for third-party APIs
+    if entity_type in ["US_SSN", "CREDIT_CARD", "US_PASSPORT"]:
+        if use_case == "third_party_api":
+            return "redact"
+        elif use_case == "internal_analytics":
+            return "tokenize"
+    
+    # Healthcare data - HIPAA requirements
+    if compliance_requirement == "HIPAA":
+        if use_case == "third_party_api":
+            return "block"  # Don't send at all
+        else:
+            return "encrypt"
+    
+    # Names and contact info - context dependent
+    if entity_type in ["PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER"]:
+        if use_case == "customer_service":
+            return "mask"  # Show partial info
+        elif use_case == "analytics":
+            return "pseudonymize"  # Consistent hashing
+        elif use_case == "testing":
+            return "synthetic"  # Fake data
+    
+    # Default: redact
+    return "redact"
+
+# Example usage
+strategy = choose_anonymization_strategy(
+    entity_type="EMAIL_ADDRESS",
+    use_case="customer_service",
+    compliance_requirement="GDPR"
+)
+print(f"Use strategy: {strategy}")  # Output: "mask"
+</code></pre>
+</div>
+
+<h2>Trade-off Analysis</h2>
+
+<h3>Privacy vs. Utility</h3>
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Privacy Need</th>
+        <th>Utility Need</th>
+        <th>Recommended Strategy</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Public dataset release</td>
+        <td>Maximum</td>
+        <td>Low</td>
+        <td>Complete redaction or synthetic</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Internal analytics</td>
+        <td>High</td>
+        <td>High</td>
+        <td>Pseudonymization or tokenization</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Customer service display</td>
+        <td>Medium</td>
+        <td>Medium</td>
+        <td>Partial masking</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Testing environment</td>
+        <td>High</td>
+        <td>Very High</td>
+        <td>Synthetic data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Audit logging</td>
+        <td>High</td>
+        <td>Low</td>
+        <td>Redaction with metadata</td>
+    </tr>
+</table>
+
+<h3>Performance Considerations</h3>
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Processing Speed</th>
+        <th>Storage Overhead</th>
+        <th>Complexity</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Redaction</td>
+        <td>Fast</td>
+        <td>None</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Masking</td>
+        <td>Fast</td>
+        <td>None</td>
+        <td>Low</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hashing</td>
+        <td>Medium</td>
+        <td>None</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Tokenization</td>
+        <td>Medium</td>
+        <td>High (token map)</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Synthetic</td>
+        <td>Slow</td>
+        <td>None</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Encryption</td>
+        <td>Medium-Slow</td>
+        <td>Low</td>
+        <td>High</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Layer strategies:</strong> Use different strategies for different entity types in the same text</li>
+    <li><strong>Document decisions:</strong> Maintain clear records of which strategy is used where and why</li>
+    <li><strong>Test reversibility:</strong> If using tokenization, regularly test detokenization processes</li>
+    <li><strong>Secure token storage:</strong> Store token maps in encrypted databases with access controls</li>
+    <li><strong>Consider context:</strong> Same entity type may need different strategies in different contexts</li>
+    <li><strong>Monitor effectiveness:</strong> Track re-identification attempts and adjust strategies accordingly</li>
+    <li><strong>Plan for key rotation:</strong> If using encryption or hashing, have a key rotation strategy</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

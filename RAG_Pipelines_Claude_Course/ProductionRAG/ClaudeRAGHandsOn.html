@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on: Claude RAG Pipeline</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on: Claude RAG Pipeline</h1>
+<div class="container">
+<h2>Hands-on: Building a Claude-Optimized RAG Pipeline</h2>
+<p>In this final exercise, you will apply all the patterns we've discussed to design a robust, high-performance RAG pipeline specifically optimized for Claude. Your task is to design the architecture and the prompts for a "Technical Support Research Assistant."</p>
+
+<h3>The Goal</h3>
+<p>Build an agent that can help developers troubleshoot complex issues by searching across:
+1. Product Documentation (Long-form text).
+2. GitHub Issues (Structured data with metadata).
+3. Stack Overflow (Short snippets with ratings).</p>
+
+<h3>Step 1: The Multi-Stage Retrieval Architecture</h3>
+<p>Design a pipeline that uses a "Query Transformation" step to decide which data source to search.
+- If the user asks about a bug, search GitHub Issues.
+- If they ask a "How-to" question, search the Documentation.
+- If they have a specific error code, search both the Docs and Stack Overflow using Hybrid Search.</p>
+
+<h3>Step 2: Designing the XML Context</h3>
+<p>Create an XML structure that can handle these different data types. Use attributes to store metadata like 'stars', 'date', and 'status'.</p>
+<blockquote>
+&lt;retrieved_data&gt;<br/>
+&lt;doc type="github_issue" id="452" status="open" stars="12"&gt;...&lt;/doc&gt;<br/>
+&lt;doc type="manual" section="Troubleshooting"&gt;...&lt;/doc&gt;<br/>
+&lt;/retrieved_data&gt;
+</blockquote>
+
+<h3>Step 3: Crafting the System Prompt</h3>
+<p>Write a system prompt for Claude 3.5 Sonnet. It should:
+<ul>
+    <li>Define a "Senior Technical Support Engineer" persona.</li>
+    <li>Provide instructions for using the metadata (e.g., "Give more weight to documentation than to Stack Overflow snippets").</li>
+    <li>Enforce strict citations: "Every claim must cite the document type and ID."</li>
+    <li>Request the final troubleshooting guide as a Markdown Artifact.</li>
+</ul></p>
+
+<h3>Step 4: Implementing Prompt Caching</h3>
+<p>Identify the best place for a cache breakpoint. Hint: Since the documentation is the largest and most static part of the search results, place the breakpoint after the documentation blocks have been retrieved and formatted.</p>
+
+<h3>Step 5: Evaluation with RAGAS</h3>
+<p>How would you evaluate the success of this pipeline?
+- <strong>Faithfulness:</strong> Does the troubleshooting guide only suggest steps found in the documentation or GitHub issues?
+- <strong>Answer Relevance:</strong> Does the guide actually address the user's specific error code?
+- <strong>Context Precision:</strong> Did the system retrieve relevant GitHub issues, or just random ones?</p>
+
+<h3>The Final Challenge</h3>
+<p>Once your pipeline is designed, consider how you would add a "Self-Correction" step. If Claude identifies a contradiction between a GitHub issue (saying it's a bug) and the Documentation (saying it's a feature), how should it handle it? Prompt Claude to identify these "Conflict Zones" explicitly in the final report.</p>
+
+<h3>Reflect and Iterate</h3>
+<p>AI development is iterative. Based on your evaluation, what would be the first thing you'd change? Would you add a Reranking step? Would you improve the chunking of the documentation? Use the data from your RAGAS scores to guide your next move.</p>
+
+<p>Congratulations! You have now designed a professional-grade, Claude-optimized RAG system. You are ready to build applications that are more accurate, more transparent, and more powerful than ever before.</p>
+
+</div>
+</body>
+</html>

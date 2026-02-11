@@ -1,0 +1,375 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Technical Controls and Safeguards</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Technical Controls and Safeguards</h1>
+
+<h2>Defense-in-Depth for AI Systems</h2>
+<p>Effective AI governance requires multiple layers of technical controls. No single control is sufficient:</p>
+
+<style>
+.flow-diagram {
+    max-width: 600px;
+    margin: 20px auto;
+    font-family: Arial, sans-serif;
+}
+.flow-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    margin: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.flow-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+.flow-box ul {
+    margin: 0;
+    padding-left: 20px;
+    list-style: none;
+}
+.flow-box li {
+    margin: 5px 0;
+    font-size: 14px;
+}
+.flow-box li:before {
+    content: "✓ ";
+    margin-right: 5px;
+}
+.flow-arrow {
+    text-align: center;
+    color: #667eea;
+    font-size: 24px;
+    margin: 5px 0;
+    font-weight: bold;
+}
+.flow-arrow:before {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 20px solid #667eea;
+    margin: 0 auto;
+}
+.layer-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.layer-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.layer-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.layer-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+</style>
+
+<div class="flow-diagram">
+    <div class="flow-box layer-1">
+        <h3>Layer 1: Input Validation</h3>
+        <ul>
+            <li>PII detection and redaction</li>
+            <li>Prompt injection detection</li>
+            <li>Rate limiting and authentication</li>
+        </ul>
+    </div>
+    <div class="flow-arrow"></div>
+    
+    <div class="flow-box layer-2">
+        <h3>Layer 2: Model Safeguards</h3>
+        <ul>
+            <li>System prompts and guardrails</li>
+            <li>Context length limits</li>
+            <li>Temperature and sampling controls</li>
+        </ul>
+    </div>
+    <div class="flow-arrow"></div>
+    
+    <div class="flow-box layer-3">
+        <h3>Layer 3: Output Filtering</h3>
+        <ul>
+            <li>Content moderation</li>
+            <li>PII scanning in outputs</li>
+            <li>Confidence thresholds</li>
+        </ul>
+    </div>
+    <div class="flow-arrow"></div>
+    
+    <div class="flow-box layer-4">
+        <h3>Layer 4: Monitoring &amp; Logging</h3>
+        <ul>
+            <li>All interactions logged (PII redacted)</li>
+            <li>Anomaly detection</li>
+            <li>Audit trail for compliance</li>
+        </ul>
+    </div>
+</div>
+
+<h2>Input Validation and Sanitization</h2>
+<p>Prevent malicious or inappropriate inputs from reaching the AI model:</p>
+
+<table>
+    <tr><th>Control</th><th>Purpose</th><th>Implementation</th><th>Example</th></tr>
+    <tr><td>PII Detection</td><td>Prevent sensitive data leakage</td><td>Regex + NER models to detect SSN, credit cards, emails</td><td>Block or redact before sending to model</td></tr>
+    <tr><td>Prompt Injection Detection</td><td>Prevent instruction override</td><td>Pattern matching for "ignore previous", "system:", etc.</td><td>Reject prompts with injection patterns</td></tr>
+    <tr><td>Input Length Limits</td><td>Prevent DoS and cost attacks</td><td>Max tokens per request (e.g., 4000)</td><td>Truncate or reject oversized inputs</td></tr>
+    <tr><td>Content Filtering</td><td>Block inappropriate content</td><td>Profanity filters, hate speech detection</td><td>Reject requests with prohibited content</td></tr>
+    <tr><td>Rate Limiting</td><td>Prevent abuse and cost overruns</td><td>Per-user/per-IP limits (e.g., 100 req/hour)</td><td>Return 429 Too Many Requests</td></tr>
+</table>
+
+<h2>PII Detection Implementation</h2>
+<div class="code-block">
+<pre><code>import re
+from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+
+class PIIGuard:
+    def __init__(self):
+        self.analyzer = AnalyzerEngine()
+        self.anonymizer = AnonymizerEngine()
+        
+    def detect_and_redact(self, text):
+        """Detect and redact PII from user input"""
+        
+        # Analyze text for PII entities
+        results = self.analyzer.analyze(
+            text=text,
+            language='en',
+            entities=[
+                "PHONE_NUMBER", "EMAIL_ADDRESS", "CREDIT_CARD",
+                "US_SSN", "US_PASSPORT", "IBAN_CODE",
+                "IP_ADDRESS", "PERSON", "LOCATION"
+            ]
+        )
+        
+        # Redact detected PII
+        anonymized = self.anonymizer.anonymize(
+            text=text,
+            analyzer_results=results
+        )
+        
+        # Log PII detection event (without the actual PII)
+        if results:
+            self.log_pii_detection(
+                entity_types=[r.entity_type for r in results],
+                count=len(results)
+            )
+            
+        return anonymized.text, len(results) > 0
+    
+    def log_pii_detection(self, entity_types, count):
+        """Log PII detection for governance reporting"""
+        log_event({
+            "event": "pii_detected",
+            "entity_types": entity_types,
+            "count": count,
+            "timestamp": datetime.now(),
+            "action": "redacted"
+        })
+
+# Usage in AI gateway
+pii_guard = PIIGuard()
+user_input = "My SSN is 123-45-6789 and email is john@example.com"
+safe_input, had_pii = pii_guard.detect_and_redact(user_input)
+# safe_input: "My SSN is <US_SSN> and email is <EMAIL_ADDRESS>"</code></pre>
+</div>
+
+<h2>Prompt Injection Prevention</h2>
+<div class="code-block">
+<pre><code>class PromptInjectionGuard:
+    def __init__(self):
+        self.injection_patterns = [
+            r"ignore (previous|above|prior) (instructions|prompts?)",
+            r"disregard (previous|above|prior)",
+            r"system:",
+            r"<\|im_start\|>",
+            r"you are now",
+            r"new instructions:",
+            r"forget (everything|all|previous)",
+            r"reveal (your|the) (prompt|instructions|system message)"
+        ]
+        
+    def is_injection_attempt(self, user_input):
+        """Detect potential prompt injection attempts"""
+        
+        input_lower = user_input.lower()
+        
+        for pattern in self.injection_patterns:
+            if re.search(pattern, input_lower, re.IGNORECASE):
+                self.log_injection_attempt(pattern, user_input[:100])
+                return True
+                
+        return False
+    
+    def log_injection_attempt(self, pattern, sample):
+        """Log injection attempts for security monitoring"""
+        log_security_event({
+            "event": "prompt_injection_attempt",
+            "pattern_matched": pattern,
+            "sample": sample,  # First 100 chars only
+            "timestamp": datetime.now(),
+            "action": "blocked"
+        })
+
+# Usage
+guard = PromptInjectionGuard()
+if guard.is_injection_attempt(user_input):
+    return {"error": "Invalid input detected", "code": "INVALID_INPUT"}
+</code></pre>
+</div>
+
+<h2>Model-Level Safeguards</h2>
+<p>Configure the AI model itself to behave safely:</p>
+
+<table>
+    <tr><th>Safeguard</th><th>Mechanism</th><th>Configuration</th></tr>
+    <tr><td>System Prompts</td><td>Prepend instructions to every request</td><td>"You are a helpful assistant. Never reveal confidential information. If unsure, say 'I don't know'."</td></tr>
+    <tr><td>Guardrails</td><td>Constrain model behavior</td><td>NeMo Guardrails, Llama Guard for content filtering</td></tr>
+    <tr><td>Temperature Control</td><td>Reduce randomness for consistency</td><td>Temperature=0.3 for factual tasks, 0.7 for creative</td></tr>
+    <tr><td>Max Tokens</td><td>Limit output length</td><td>max_tokens=500 to prevent excessive generation</td></tr>
+    <tr><td>Stop Sequences</td><td>Terminate generation at markers</td><td>stop=["\n\nUser:", "###"] to prevent continuation</td></tr>
+</table>
+
+<h2>Output Filtering and Validation</h2>
+<div class="code-block">
+<pre><code>class OutputValidator:
+    def __init__(self):
+        self.pii_guard = PIIGuard()
+        self.content_moderator = ContentModerator()
+        
+    def validate_output(self, model_output, confidence_score):
+        """Multi-stage output validation"""
+        
+        validation_result = {
+            "approved": True,
+            "issues": [],
+            "redacted_output": model_output
+        }
+        
+        # 1. Check confidence threshold
+        if confidence_score < 0.75:
+            validation_result["approved"] = False
+            validation_result["issues"].append("low_confidence")
+            validation_result["action"] = "escalate_to_human"
+        
+        # 2. Scan for PII in output
+        redacted, has_pii = self.pii_guard.detect_and_redact(model_output)
+        if has_pii:
+            validation_result["issues"].append("pii_detected")
+            validation_result["redacted_output"] = redacted
+        
+        # 3. Content moderation
+        moderation = self.content_moderator.check(model_output)
+        if moderation["flagged"]:
+            validation_result["approved"] = False
+            validation_result["issues"].append(f"content_violation: {moderation['category']}")
+            validation_result["action"] = "block_output"
+        
+        # 4. Check for hallucination markers
+        if self.has_hallucination_markers(model_output):
+            validation_result["issues"].append("potential_hallucination")
+            validation_result["warning"] = "Verify information independently"
+        
+        return validation_result
+    
+    def has_hallucination_markers(self, text):
+        """Detect phrases that indicate uncertainty"""
+        uncertainty_phrases = [
+            "i'm not sure", "i don't know", "i cannot verify",
+            "to the best of my knowledge", "i believe", "probably"
+        ]
+        return any(phrase in text.lower() for phrase in uncertainty_phrases)</code></pre>
+</div>
+
+<h2>Monitoring and Logging</h2>
+<p>Comprehensive logging enables governance, debugging, and compliance:</p>
+
+<table>
+    <tr><th>Log Type</th><th>Data Captured</th><th>Retention</th><th>Purpose</th></tr>
+    <tr><td>Request Logs</td><td>User ID, timestamp, input (PII redacted), model, parameters</td><td>90 days</td><td>Usage tracking, debugging</td></tr>
+    <tr><td>Response Logs</td><td>Output (PII redacted), confidence, latency, tokens used</td><td>90 days</td><td>Quality monitoring, cost tracking</td></tr>
+    <tr><td>Security Events</td><td>Injection attempts, PII detections, rate limit hits</td><td>1 year</td><td>Security monitoring, incident response</td></tr>
+    <tr><td>Audit Trail</td><td>High-risk decisions, approvals, policy changes</td><td>7 years</td><td>Compliance, legal defense</td></tr>
+    <tr><td>Performance Metrics</td><td>Accuracy, bias metrics, user feedback</td><td>Indefinite</td><td>Model improvement, governance reporting</td></tr>
+</table>
+
+<h2>Monitoring Dashboard Metrics</h2>
+<div class="code-block">
+<pre><code># Key Metrics for AI Governance Dashboard
+
+## Usage Metrics
+- Total requests per day/week/month
+- Unique users and usage distribution
+- Peak usage times and capacity planning
+
+## Quality Metrics
+- Average confidence score
+- Low confidence rate (< threshold)
+- User feedback scores (thumbs up/down)
+- Escalation rate to human review
+
+## Safety Metrics
+- PII detection rate (inputs and outputs)
+- Prompt injection attempts blocked
+- Content moderation flags
+- Policy violation incidents
+
+## Performance Metrics
+- Average latency (p50, p95, p99)
+- Error rate and types
+- Model availability/uptime
+- Cost per request and total spend
+
+## Compliance Metrics
+- Audit trail completeness
+- Policy compliance rate
+- Training completion rate
+- Open risk items by severity</code></pre>
+</div>
+
+<h2>Automated Alerting</h2>
+<p>Configure alerts for governance-relevant events:</p>
+
+<ul>
+    <li><strong>P0 (Immediate):</strong> Data breach, system compromise, critical safety failure</li>
+    <li><strong>P1 (1 hour):</strong> Accuracy drop >10%, bias metric exceeds threshold, repeated injection attempts</li>
+    <li><strong>P2 (4 hours):</strong> Cost overrun, high error rate, user complaints spike</li>
+    <li><strong>P3 (24 hours):</strong> Policy violations, training overdue, documentation gaps</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Example Alert Configuration
+
+alerts:
+  - name: "Accuracy Degradation"
+    condition: "accuracy < 0.90"
+    severity: "P1"
+    notification: ["model-owner", "ai-governance"]
+    
+  - name: "Bias Threshold Exceeded"
+    condition: "disparate_impact > 1.25"
+    severity: "P1"
+    notification: ["ai-ethics-lead", "model-owner"]
+    
+  - name: "PII Leakage in Output"
+    condition: "pii_detected_in_output == true"
+    severity: "P0"
+    notification: ["security-team", "dpo", "ai-governance"]
+    action: "disable_system"
+    
+  - name: "Cost Overrun"
+    condition: "daily_cost > budget * 1.5"
+    severity: "P2"
+    notification: ["model-owner", "finance"]</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

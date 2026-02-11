@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Bias Detection and Mitigation in AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Bias Detection and Mitigation</h1>
+
+<div class="content-section">
+<h2>1. What is Bias in AI?</h2>
+<p>In the context of AI, <strong>Bias</strong> refers to systematic errors in the output of a model that result in unfair treatment of certain individuals or groups. Bias can manifest in many forms, from simple stereotypes to systemic exclusion. Because models are trained on human-generated data, they often inherit and amplify the historical and societal biases present in that data.</p>
+
+<h2>2. Sources of Bias</h2>
+<p>Understanding where bias comes from is the first step in detecting it:</p>
+<ul>
+    <li><strong>Sampling Bias:</strong> When the training data is not representative of the population it will serve. For example, a facial recognition system trained primarily on lighter-skinned individuals will perform poorly on darker-skinned individuals.</li>
+    <li><strong>Label Bias:</strong> When the ground truth labels in a dataset reflect the biases of the human annotators.</li>
+    <li><strong>Historical Bias:</strong> When the data accurately reflects a biased reality. For example, a model predicting "future leaders" based on historical data may favor men simply because women were historically excluded from leadership roles.</li>
+    <li><strong>Algorithmic Bias:</strong> When the mathematical objective of the model itself inadvertently creates unfair outcomes (e.g., optimizing for clicks can lead to the promotion of sensationalist or polarizing content).</li>
+</ul>
+
+<h2>3. Detecting Bias: Methods and Metrics</h2>
+<p>Bias detection should be a continuous process throughout the development lifecycle.</p>
+
+<h3>Quantitative Metrics</h3>
+<ul>
+    <li><strong>Disparate Impact:</strong> Comparing the "success rate" of different groups (e.g., the rate at which loans are approved for men vs. women).</li>
+    <li><strong>Equalized Odds:</strong> Ensuring the model has similar True Positive Rates and False Positive Rates across different demographic groups.</li>
+    <li><strong>Counterfactual Fairness:</strong> Testing if the model's output changes if a single sensitive attribute (like race or gender) is changed while keeping all other variables constant.</li>
+</ul>
+
+<h3>Qualitative Evaluation</h3>
+<ul>
+    <li><strong>Red Teaming:</strong> Specifically trying to prompt the model to generate biased or offensive content.</li>
+    <li><strong>Bias Benchmarks:</strong> Using datasets like <strong>HELM (Holistic Evaluation of Language Models)</strong> or <strong>BQ (BiasQuestions)</strong> to measure stereotypical associations in LLMs.</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Conceptual Counterfactual Bias Test
+def test_bias(model, prompt_template):
+    # Version A
+    prompt_a = prompt_template.format(gender="he")
+    response_a = model.generate(prompt_a)
+
+    # Version B
+    prompt_b = prompt_template.format(gender="she")
+    response_b = model.generate(prompt_b)
+
+    # Analyze if the sentiment or tone changed significantly
+    if sentiment(response_a) != sentiment(response_b):
+        print("Potential bias detected!")</code></pre>
+</div>
+
+<h2>4. Mitigation Strategies</h2>
+<p>Once bias is detected, it must be mitigated. Mitigation can occur at different stages:</p>
+
+<h3>Pre-processing (Data Level)</h3>
+<ul>
+    <li><strong>Data Augmentation:</strong> Adding more examples of underrepresented groups to the training set.</li>
+    <li><strong>Re-weighting:</strong> Giving more "importance" to samples from underrepresented groups during the training process.</li>
+    <li><strong>Sanitization:</strong> Removing sensitive attributes or biased language from the training data.</li>
+</ul>
+
+<h3>In-processing (Model Level)</h3>
+<ul>
+    <li><strong>Adversarial Debiasing:</strong> Training a second model (an "adversary") to try and guess the sensitive attribute from the first model's predictions. The first model is then penalized if the adversary is successful.</li>
+    <li><strong>Constrained Optimization:</strong> Adding fairness constraints directly into the loss function of the model.</li>
+</ul>
+
+<h3>Post-processing (Output Level)</h3>
+<ul>
+    <li><strong>Calibration:</strong> Adjusting the output probabilities to ensure fairness across groups.</li>
+    <li><strong>Rejection/Override:</strong> Using a secondary safety layer to block or modify biased outputs before they reach the user.</li>
+</ul>
+
+<h2>5. The Challenge of "Fairness"</h2>
+<p>One of the most difficult aspects of bias mitigation is that there is no single, universally agreed-upon definition of "Fairness." Sometimes, different fairness metrics are mathematically impossible to satisfy simultaneously. This requires human judgment and a clear understanding of the social context in which the AI will operate.</p>
+
+<h2>Conclusion</h2>
+<p>Bias detection and mitigation is not a one-time task but a core part of Responsible AI. It requires a combination of rigorous mathematical metrics, creative red teaming, and a deep commitment to social justice. In the next module, we will explore the broader Governance Frameworks that help organizations manage these complex trade-offs.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

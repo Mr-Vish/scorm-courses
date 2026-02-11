@@ -1,0 +1,314 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Design and Model Tuning</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>Prompt Design and Model Tuning</h1>
+
+<h2>Why Prompt Design Matters</h2>
+<p>
+Prompt design is the primary control mechanism for large language models in production systems.
+Unlike traditional software, LLMs do not follow deterministic logic paths. Instead, they
+generate outputs probabilistically based on input context. The prompt defines that context.
+</p>
+
+<p>
+A well-designed prompt can dramatically improve output quality, consistency, and safety
+without changing the underlying model. Conversely, poorly designed prompts lead to
+hallucinations, inconsistent responses, excessive verbosity, or failure to follow instructions.
+</p>
+
+<p>
+In Vertex AI, prompt design is not a one-off activity. It is an iterative process that
+connects experimentation, evaluation, and eventual deployment.
+</p>
+
+<h2>Prompt Design vs Model Tuning</h2>
+<p>
+Prompt design and model tuning are complementary techniques, not competing ones.
+Understanding when to use each is critical for cost-effective AI systems.
+</p>
+
+<ul>
+    <li><strong>Prompt design:</strong> Fast, cheap, flexible, no training required</li>
+    <li><strong>Model tuning:</strong> Persistent behavior change, higher cost, more setup</li>
+</ul>
+
+<p>
+In practice, teams should exhaust prompt design options before investing in model tuning.
+Only when prompt engineering reaches diminishing returns should tuning be considered.
+</p>
+
+<h2>Vertex AI Studio Prompt Designer</h2>
+<p>
+Vertex AI Studio provides a visual environment for designing, testing, and refining prompts.
+It allows rapid experimentation without writing code, making it accessible to engineers,
+product managers, and domain experts.
+</p>
+
+<p>
+The prompt designer supports multiple interaction modes, each suited to different tasks.
+</p>
+
+<h3>Freeform Prompting</h3>
+<p>
+Freeform prompting is the simplest interaction style. The user provides a single prompt,
+and the model generates a response.
+</p>
+
+<p>
+This mode is ideal for:
+</p>
+
+<ul>
+    <li>Exploratory experimentation</li>
+    <li>Brainstorming and ideation</li>
+    <li>Understanding baseline model behavior</li>
+</ul>
+
+<p>
+Freeform prompts are flexible but can be unpredictable. They rely heavily on clear
+instruction and contextual framing.
+</p>
+
+<h3>Structured Prompting</h3>
+<p>
+Structured prompting introduces explicit input and output fields. This enables few-shot
+learning by providing examples of desired behavior.
+</p>
+
+<p>
+In structured mode, prompts often include:
+</p>
+
+<ul>
+    <li>Input columns describing the task context</li>
+    <li>Output columns showing expected responses</li>
+    <li>Multiple examples to guide behavior</li>
+</ul>
+
+<p>
+Structured prompts significantly improve consistency and are well-suited for tasks such as
+classification, extraction, and transformation.
+</p>
+
+<h3>Chat Prompting</h3>
+<p>
+Chat prompting simulates multi-turn conversations. The model maintains conversational state
+across turns, allowing more natural interactions.
+</p>
+
+<p>
+This mode is essential for:
+</p>
+
+<ul>
+    <li>Customer support agents</li>
+    <li>Assistants and copilots</li>
+    <li>Task-oriented dialogue systems</li>
+</ul>
+
+<p>
+Chat prompts require careful system-level instruction to prevent drift over long conversations.
+</p>
+
+<h2>Prompt Design Best Practices</h2>
+<p>
+Effective prompt design follows several well-established principles.
+</p>
+
+<ul>
+    <li><strong>Be explicit:</strong> Do not rely on the model to infer intent</li>
+    <li><strong>Constrain scope:</strong> Narrow tasks reduce hallucination</li>
+    <li><strong>Specify format:</strong> Structure improves reliability</li>
+    <li><strong>Use examples:</strong> Demonstrate expected behavior</li>
+    <li><strong>Iterate:</strong> Test and refine continuously</li>
+</ul>
+
+<p>
+Prompts should be treated as versioned artifacts, not ad-hoc strings.
+</p>
+
+<h2>Temperature and Sampling Controls</h2>
+<p>
+Prompt design is closely tied to generation parameters such as temperature, top-k, and
+top-p sampling.
+</p>
+
+<p>
+Lower temperatures produce more deterministic outputs, while higher temperatures increase
+creativity and diversity.
+</p>
+
+<p>
+In production systems, conservative sampling settings are preferred to ensure predictable
+behavior.
+</p>
+
+<h2>Model Tuning Overview</h2>
+<p>
+When prompt design alone cannot achieve the desired behavior, model tuning becomes necessary.
+Vertex AI provides multiple tuning strategies, each with different cost and complexity
+profiles.
+</p>
+
+<h2>Prompt Tuning</h2>
+<p>
+Prompt tuning adjusts a small set of learned parameters that influence model behavior without
+updating the full model weights.
+</p>
+
+<p>
+Characteristics of prompt tuning:
+</p>
+
+<ul>
+    <li>Requires relatively small datasets</li>
+    <li>Low computational cost</li>
+    <li>Fast training cycles</li>
+    <li>Limited expressiveness compared to full fine-tuning</li>
+</ul>
+
+<p>
+Prompt tuning is ideal for narrow, well-defined tasks.
+</p>
+
+<h2>Supervised Fine-Tuning</h2>
+<p>
+Supervised fine-tuning updates model weights using labeled examples. This enables deeper
+behavioral changes and domain adaptation.
+</p>
+
+<p>
+Fine-tuning is appropriate when:
+</p>
+
+<ul>
+    <li>Tasks require specialized domain knowledge</li>
+    <li>Consistent output style is critical</li>
+    <li>Prompt-only approaches fail</li>
+</ul>
+
+<p>
+However, fine-tuning is more expensive and requires careful dataset curation.
+</p>
+
+<h2>Distillation</h2>
+<p>
+Distillation transfers knowledge from a larger, more capable model into a smaller one.
+The larger model generates outputs that are used to train the smaller model.
+</p>
+
+<p>
+This approach is useful when:
+</p>
+
+<ul>
+    <li>Latency constraints require smaller models</li>
+    <li>Cost optimization is a priority</li>
+    <li>Deployment environments are resource-constrained</li>
+</ul>
+
+<h2>Reinforcement Learning from Human Feedback (RLHF)</h2>
+<p>
+RLHF aligns models with human preferences by training on ranked or comparative outputs.
+It is the most powerful but also the most expensive tuning method.
+</p>
+
+<p>
+RLHF is typically reserved for:
+</p>
+
+<ul>
+    <li>Large-scale consumer applications</li>
+    <li>Safety-critical systems</li>
+    <li>Highly interactive assistants</li>
+</ul>
+
+<h2>Choosing the Right Tuning Method</h2>
+<p>
+Selecting a tuning strategy requires balancing cost, complexity, and benefit.
+</p>
+
+<table>
+    <tr><th>Method</th><th>Data Required</th><th>Cost</th><th>Best For</th></tr>
+    <tr><td>Prompt tuning</td><td>10–100 examples</td><td>Low</td><td>Narrow tasks</td></tr>
+    <tr><td>Fine-tuning</td><td>100–10K+ examples</td><td>Medium</td><td>Domain specialization</td></tr>
+    <tr><td>Distillation</td><td>Unlabeled data</td><td>Medium</td><td>Model compression</td></tr>
+    <tr><td>RLHF</td><td>Preference pairs</td><td>High</td><td>Alignment and safety</td></tr>
+</table>
+
+<h2>Using the Vertex AI Python SDK</h2>
+<p>
+While Vertex AI Studio supports no-code experimentation, production systems typically use
+the Python SDK for integration.
+</p>
+
+<div class="code-block">
+<pre><code>
+from google.cloud import aiplatform
+import vertexai
+from vertexai.generative_models import GenerativeModel
+
+vertexai.init(project="my-project", location="us-central1")
+
+model = GenerativeModel("gemini-1.5-flash")
+response = model.generate_content(
+    "Explain Kubernetes pods in simple terms",
+    generation_config={
+        "temperature": 0.2,
+        "max_output_tokens": 512
+    }
+)
+
+print(response.text)
+</code></pre>
+</div>
+
+<p>
+The SDK enables fine-grained control over parameters, authentication, and deployment.
+</p>
+
+<h2>Operational Best Practices</h2>
+<p>
+Prompt and tuning changes should follow disciplined operational practices.
+</p>
+
+<ul>
+    <li>Version prompts and tuning artifacts</li>
+    <li>Test changes in staging environments</li>
+    <li>Monitor output quality in production</li>
+    <li>Track cost and latency impact</li>
+</ul>
+
+<h2>Additional Readings</h2>
+<ul>
+    <li>
+        <a href="https://cloud.google.com/vertex-ai/docs/generative-ai/learn/prompts" target="_blank">
+        Google Cloud – Prompt Design on Vertex AI
+        </a>
+    </li>
+    <li>
+        <a href="https://cloud.google.com/vertex-ai/docs/generative-ai/models/tune-models" target="_blank">
+        Google Cloud – Model Tuning Options
+        </a>
+    </li>
+    <li>
+        <a href="https://www.promptingguide.ai/techniques" target="_blank">
+        Prompt Engineering Guide – Techniques
+        </a>
+    </li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

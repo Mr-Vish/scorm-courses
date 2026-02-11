@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Personalization and User Profiles</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Personalization and User Profiles</h1>
+
+
+<h2>User Profile Schema</h2>
+<div class="code-block">
+<pre><code>{
+    "user_id": "user_123",
+    "name": "Alice",
+    "preferences": {
+        "communication_style": "technical",
+        "response_length": "concise",
+        "language": "en"
+    },
+    "facts": [
+        "Works on Spring Boot microservices",
+        "Prefers PostgreSQL over MySQL",
+        "Uses IntelliJ IDEA"
+    ],
+    "conversation_count": 47,
+    "last_active": "2025-01-15"
+}</code></pre>
+</div>
+
+<h2>Dynamic Personalization</h2>
+<ul>
+    <li><strong>Extract facts:</strong> After each conversation, extract new user facts using an LLM</li>
+    <li><strong>Update preferences:</strong> Track implicit preferences from user behavior</li>
+    <li><strong>Inject context:</strong> Include relevant user facts in the system prompt</li>
+    <li><strong>Adapt tone:</strong> Adjust formality and detail level based on user profile</li>
+</ul>
+
+<h2>Privacy Considerations</h2>
+<table>
+    <tr><th>Principle</th><th>Implementation</th></tr>
+    <tr><td>Consent</td><td>Ask users before storing personal information</td></tr>
+    <tr><td>Minimization</td><td>Only store facts necessary for better service</td></tr>
+    <tr><td>Deletion</td><td>Provide "forget me" functionality</td></tr>
+    <tr><td>Transparency</td><td>Let users view and edit their stored profile</td></tr>
+    <tr><td>Security</td><td>Encrypt stored profiles, restrict access</td></tr>
+</table>
+
+<h2>Combining Memory Types</h2>
+<p>Production chatbots typically combine multiple memory types: <strong>buffer memory</strong> for the current session, <strong>summary memory</strong> for long conversations, and <strong>long-term memory</strong> for user preferences and facts that persist across sessions.</p>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

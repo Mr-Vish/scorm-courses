@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Strategies for Long Conversations</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Strategies for Long Conversations</h1>
+
+
+<h2>Conversation Management Strategies</h2>
+<table>
+    <tr><th>Strategy</th><th>How It Works</th><th>Best For</th></tr>
+    <tr><td>Sliding Window</td><td>Keep only the last N messages</td><td>Simple chatbots</td></tr>
+    <tr><td>Summarization</td><td>Periodically summarize old messages</td><td>Long conversations</td></tr>
+    <tr><td>Compression</td><td>Remove low-value content from history</td><td>Mixed-priority content</td></tr>
+    <tr><td>RAG on History</td><td>Store history in vector DB, retrieve relevant parts</td><td>Very long histories</td></tr>
+    <tr><td>Tiered Memory</td><td>Recent (full) + Summary + Long-term facts</td><td>Production assistants</td></tr>
+</table>
+
+<h2>Implementing Conversation Summarization</h2>
+<div class="code-block">
+<pre><code>def manage_conversation(messages, max_tokens=100000):
+    total_tokens = count_tokens(messages)
+
+    if total_tokens &gt; max_tokens:
+        # Summarize older messages
+        cutoff = len(messages) // 2
+        old_messages = messages[:cutoff]
+        recent_messages = messages[cutoff:]
+
+        summary = call_llm(
+            f"Summarize this conversation concisely:
+{format_messages(old_messages)}"
+        )
+
+        # Replace old messages with summary
+        messages = [
+            {"role": "system", "content": f"Previous conversation summary:
+{summary}"}
+        ] + recent_messages
+
+    return messages</code></pre>
+</div>
+
+<h2>Token Budgeting</h2>
+<p>Allocate your context window budget across competing needs:</p>
+<ul>
+    <li><strong>System prompt:</strong> 500-2000 tokens (reserve first)</li>
+    <li><strong>Retrieved context (RAG):</strong> 2000-10000 tokens</li>
+    <li><strong>Conversation history:</strong> Variable, manage dynamically</li>
+    <li><strong>Current user message:</strong> Variable</li>
+    <li><strong>Output reservation:</strong> Reserve tokens for the response (max_tokens)</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li>Always count tokens before sending requests</li>
+    <li>Implement graceful degradation when approaching limits</li>
+    <li>Use shorter models for summarization to save cost</li>
+    <li>Cache summaries to avoid re-summarizing unchanged history</li>
+    <li>Test with edge cases: very long messages, rapid back-and-forth</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

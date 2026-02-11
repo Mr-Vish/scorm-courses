@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Evaluation and Deployment of Fine-Tuned Models</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Model Evaluation and Production Deployment</h1>
+
+<div class="content-section">
+<h2>1. Beyond the Training Loss</h2>
+<p>While the training loss (the difference between the model's prediction and the ground truth) is a useful metric during fine-tuning, it doesn't tell the whole story. A model can have a very low loss but still produce repetitive, boring, or slightly inaccurate text. Real-world evaluation of fine-tuned LLMs requires a multi-faceted approach.</p>
+
+<h2>2. Quantitative Evaluation: SageMaker Clarify</h2>
+<p><strong>SageMaker Clarify</strong> provides tools to detect bias in your datasets and evaluate the quality of your LLM outputs. For LLMs, this involves comparing the model's generated text against a reference set of "gold standard" answers using various NLP metrics:</p>
+<ul>
+    <li><strong>ROUGE (Recall-Oriented Understudy for Gisting Evaluation):</strong> Measures word overlap, particularly useful for summarization tasks.</li>
+    <li><strong>BLEU (Bilingual Evaluation Understudy):</strong> Common for translation and general text generation.</li>
+    <li><strong>Meteor:</strong> Similar to BLEU but accounts for synonyms and stemming, often correlating better with human judgment.</li>
+    <li><strong>Perplexity:</strong> A measure of how "surprised" the model is by a new set of data. Lower perplexity generally indicates a better-tuned model.</li>
+</ul>
+
+<h2>3. Qualitative Evaluation and LLM-as-a-Judge</h2>
+<p>As discussed in previous courses, the modern gold standard for evaluation is using a stronger model (like GPT-4) to grade the outputs of your fine-tuned model. You can automate this process within SageMaker by setting up an evaluation pipeline that calls a "judge model" for every output in your test set.</p>
+
+<h2>4. Deploying to SageMaker Endpoints</h2>
+<p>Once you are satisfied with your model's performance, it's time to move to production. SageMaker offers several deployment options:</p>
+
+<h3>Real-Time Inference</h3>
+<p>Ideal for low-latency applications like chatbots. Your model stays loaded in GPU memory and responds to requests instantly. You can use <strong>Multi-Model Endpoints (MME)</strong> to host multiple fine-tuned models on a single instance to save costs.</p>
+
+<h3>Asynchronous Inference</h3>
+<p>Best for tasks that take a long time to process (e.g., summarizing a 100-page PDF). SageMaker queues the requests and processes them as resources become available, notifying you via SNS when the result is ready.</p>
+
+<h3>Serverless Inference</h3>
+<p>Perfect for applications with intermittent traffic. You don't pay for idle time; you only pay for the exact duration of the inference. This is excellent for low-volume background tasks.</p>
+
+<div class="code-block">
+<pre><code># Deploying a fine-tuned model with the SageMaker SDK
+from sagemaker.huggingface import HuggingFaceModel
+
+huggingface_model = HuggingFaceModel(
+    model_data="s3://my-bucket/model.tar.gz",  # Path to your fine-tuned weights
+    role=role,
+    transformers_version="4.28",
+    pytorch_version="2.0",
+    py_version="py310",
+)
+
+# Deploy to a g5.2xlarge instance
+predictor = huggingface_model.deploy(
+    initial_instance_count=1,
+    instance_type="ml.g5.2xlarge"
+)</code></pre>
+</div>
+
+<h2>5. Optimizing Inference: DJL and DeepSpeed-MII</h2>
+<p>For high-performance LLM serving, AWS recommends using the <strong>Deep Java Library (DJL)</strong> Serving container, which integrates with libraries like <strong>DeepSpeed-Inference</strong> and <strong>Hugging Face Accelerate</strong>. These tools use techniques like <strong>Tensor Parallelism</strong> to split a large model across multiple GPUs on a single instance, dramatically reducing latency.</p>
+
+<h2>6. Model Monitoring and Drift Detection</h2>
+<p>A fine-tuned model's performance can degrade over time as real-world data drifts away from your training set. <strong>SageMaker Model Monitor</strong> allows you to capture a percentage of the inputs and outputs from your endpoint and automatically check them for:</p>
+<ul>
+    <li><strong>Data Quality:</strong> Missing values or schema changes.</li>
+    <li><strong>Bias Drift:</strong> Changes in the model's fairness metrics over time.</li>
+    <li><strong>Feature Attribution Drift:</strong> Changes in which parts of the input are most influential in the model's decisions.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>Fine-tuning is only half the battle; deploying and monitoring your model in production is what ensures long-term success. By using SageMaker's robust evaluation and deployment infrastructure, you can build AI applications that are not only accurate but also scalable, secure, and reliable. In the next module, we'll dive into the advanced techniques of Parameter-Efficient Fine-Tuning (PEFT).</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

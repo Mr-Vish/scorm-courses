@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding Bias in AI Systems</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Bias Detection and Fairness</h1>
+<h2>Understanding Bias in AI Systems</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will:</p>
+<ul>
+    <li>Understand different types of bias that can affect AI systems</li>
+    <li>Learn how bias enters AI systems at various stages of development</li>
+    <li>Explore methods for detecting and measuring bias</li>
+    <li>Understand fairness metrics and their trade-offs</li>
+    <li>Learn strategies for bias mitigation and fairness improvement</li>
+</ul>
+
+<h3>What is Bias in AI?</h3>
+<p><strong>Bias</strong> in AI systems refers to systematic and unfair discrimination against certain individuals or groups. Unlike random errors that affect all groups equally, bias creates disparate impacts where some groups consistently receive less accurate predictions, less favorable outcomes, or are systematically excluded.</p>
+
+<p>Bias is not always intentional—it often emerges from historical inequalities in data, unexamined assumptions in system design, or the complex interactions between algorithms and real-world contexts.</p>
+
+<h3>Why Bias Matters</h3>
+
+<h4>1. Ethical Imperative</h4>
+<p>AI systems that exhibit bias can perpetuate and amplify existing societal inequalities. When these systems make decisions about credit, employment, healthcare, or criminal justice, biased outcomes can have profound impacts on people's lives.</p>
+
+<h4>2. Legal and Regulatory Risk</h4>
+<p>Many jurisdictions have anti-discrimination laws that apply to AI systems:</p>
+<ul>
+    <li><strong>US:</strong> Equal Credit Opportunity Act, Fair Housing Act, Title VII (employment discrimination)</li>
+    <li><strong>EU:</strong> GDPR Article 22 (automated decision-making), EU AI Act (bias assessment requirements)</li>
+    <li><strong>UK:</strong> Equality Act 2010</li>
+</ul>
+
+<h4>3. Business Impact</h4>
+<p>Biased AI systems can lead to:</p>
+<ul>
+    <li>Reputational damage and loss of customer trust</li>
+    <li>Legal liability and regulatory fines</li>
+    <li>Reduced market reach by excluding potential customers</li>
+    <li>Poor business decisions based on skewed data</li>
+</ul>
+
+<h3>Types of Bias in AI Systems</h3>
+
+<h4>1. Historical Bias</h4>
+<p><strong>Definition:</strong> Bias that exists in the world and is reflected in training data, even when data collection is perfect.</p>
+
+<p><strong>Example:</strong> A hiring model trained on historical hiring data may learn that certain roles were predominantly filled by one gender, not because of qualifications but due to past discrimination. The model then perpetuates this pattern.</p>
+
+<p><strong>Source:</strong> Societal inequalities, historical discrimination, systemic barriers</p>
+
+<table>
+    <tr>
+        <th>Domain</th>
+        <th>Historical Bias Example</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Employment</td>
+        <td>Tech industry historically male-dominated</td>
+        <td>Resume screening models favor male candidates</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Criminal Justice</td>
+        <td>Disproportionate policing in certain neighborhoods</td>
+        <td>Predictive policing models over-target those areas</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Healthcare</td>
+        <td>Clinical trials historically underrepresent women and minorities</td>
+        <td>Diagnostic models less accurate for underrepresented groups</td>
+    </tr>
+</table>
+
+<h4>2. Representation Bias</h4>
+<p><strong>Definition:</strong> When the training data does not adequately represent the population the model will serve.</p>
+
+<p><strong>Example:</strong> A facial recognition system trained primarily on images of lighter-skinned individuals performs poorly on darker-skinned faces. A 2018 study found error rates of 0.8% for light-skinned males but 34.7% for dark-skinned females.</p>
+
+<p><strong>Source:</strong> Sampling methods, data availability, collection practices</p>
+
+<p><strong>Common Manifestations:</strong></p>
+<ul>
+    <li><strong>Demographic underrepresentation:</strong> Certain age, gender, or ethnic groups missing or underrepresented</li>
+    <li><strong>Geographic bias:</strong> Data primarily from certain regions or countries</li>
+    <li><strong>Socioeconomic bias:</strong> Overrepresentation of certain income or education levels</li>
+    <li><strong>Temporal bias:</strong> Data from specific time periods that may not reflect current reality</li>
+</ul>
+
+<h4>3. Measurement Bias</h4>
+<p><strong>Definition:</strong> Bias introduced by how features are chosen, measured, or proxied.</p>
+
+<p><strong>Example:</strong> Using zip code as a proxy for creditworthiness may introduce racial bias because residential segregation means zip codes correlate with race. The model learns discriminatory patterns without explicitly using race as a feature.</p>
+
+<p><strong>Source:</strong> Feature selection, proxy variables, measurement methods</p>
+
+<p><strong>Subtle Forms:</strong></p>
+<ul>
+    <li><strong>Proxy discrimination:</strong> Using features that correlate with protected attributes</li>
+    <li><strong>Measurement quality differences:</strong> More accurate measurements for some groups than others</li>
+    <li><strong>Label bias:</strong> Ground truth labels that reflect biased human decisions</li>
+</ul>
+
+<h4>4. Aggregation Bias</h4>
+<p><strong>Definition:</strong> Bias that occurs when a single model is used for groups with different conditional distributions.</p>
+
+<p><strong>Example:</strong> A diabetes risk model that doesn't account for different baseline risk levels across ethnic groups may underestimate risk for some populations and overestimate for others.</p>
+
+<p><strong>Source:</strong> One-size-fits-all modeling approaches</p>
+
+<h4>5. Evaluation Bias</h4>
+<p><strong>Definition:</strong> Bias in how model performance is measured and reported.</p>
+
+<p><strong>Example:</strong> Reporting only overall accuracy without disaggregated metrics hides the fact that the model performs poorly for certain subgroups.</p>
+
+<p><strong>Source:</strong> Benchmark selection, metric choice, incomplete reporting</p>
+
+<h4>6. Deployment Bias</h4>
+<p><strong>Definition:</strong> Bias that emerges when a model is used in a context different from its intended use or training context.</p>
+
+<p><strong>Example:</strong> A model trained on hospital data from urban academic medical centers is deployed in rural community clinics, where patient populations and disease presentations differ.</p>
+
+<p><strong>Source:</strong> Context mismatch, scope creep, inappropriate generalization</p>
+
+<h3>The Bias Pipeline: How Bias Enters AI Systems</h3>
+
+<p>Bias can enter at multiple stages of the AI development lifecycle:</p>
+
+<table>
+    <tr>
+        <th>Stage</th>
+        <th>Bias Entry Points</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Problem Formulation</td>
+        <td>Framing the problem in ways that disadvantage certain groups</td>
+        <td>Defining "good employee" based on traits that correlate with dominant group</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Collection</td>
+        <td>Sampling methods, access barriers, collection context</td>
+        <td>Collecting training data only from smartphone users excludes lower-income populations</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Labeling</td>
+        <td>Annotator bias, ambiguous guidelines, cultural assumptions</td>
+        <td>Labeling "professional attire" reflects cultural norms of annotators</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Feature Engineering</td>
+        <td>Feature selection, proxy variables, transformations</td>
+        <td>Using "years of experience" disadvantages career-break takers (often women)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Training</td>
+        <td>Algorithm choice, optimization objectives, regularization</td>
+        <td>Optimizing for overall accuracy may sacrifice minority group performance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Evaluation</td>
+        <td>Test set composition, metric selection, incomplete analysis</td>
+        <td>Testing only on majority group hides performance disparities</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Deployment</td>
+        <td>Context mismatch, feedback loops, unintended uses</td>
+        <td>Model predictions influence future data, amplifying initial biases</td>
+    </tr>
+</table>
+
+<h3>Intersectionality and Compound Bias</h3>
+<p>Bias often affects individuals at the intersection of multiple identities more severely than single-axis analysis would suggest.</p>
+
+<p><strong>Example:</strong> A facial recognition system might perform:</p>
+<ul>
+    <li>95% accuracy for white males</li>
+    <li>92% accuracy for white females</li>
+    <li>90% accuracy for Black males</li>
+    <li>78% accuracy for Black females (compound effect)</li>
+</ul>
+
+<p>Intersectional analysis examines how multiple dimensions of identity (race, gender, age, disability, etc.) combine to create unique experiences of bias.</p>
+
+<h3>Feedback Loops and Bias Amplification</h3>
+<p>AI systems can create feedback loops that amplify initial biases:</p>
+
+<h4>Example: Predictive Policing</h4>
+<ol>
+    <li>Historical data shows more arrests in certain neighborhoods (due to over-policing)</li>
+    <li>Model predicts higher crime in those neighborhoods</li>
+    <li>Police allocate more resources to those areas</li>
+    <li>More policing leads to more arrests</li>
+    <li>New data reinforces the pattern, amplifying the initial bias</li>
+</ol>
+
+<h4>Example: Content Recommendation</h4>
+<ol>
+    <li>Recommendation system shows certain content to certain demographic groups</li>
+    <li>Users engage with recommended content</li>
+    <li>System learns that those groups prefer that content</li>
+    <li>System increasingly shows similar content, limiting exposure to diverse perspectives</li>
+    <li>User preferences become more polarized, reinforcing the pattern</li>
+</ol>
+
+<h3>The Impossibility of Perfect Fairness</h3>
+<p>Research has shown that certain fairness criteria are mathematically incompatible—it's impossible to satisfy all fairness definitions simultaneously. This means trade-offs are inevitable, and stakeholders must make explicit choices about which fairness criteria to prioritize.</p>
+
+<p><strong>Key Insight:</strong> There is no single "correct" definition of fairness. Different contexts and values lead to different fairness priorities. Transparency about these choices is essential.</p>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Bias in AI refers to systematic unfair discrimination, not random errors</li>
+    <li>Multiple types of bias exist: historical, representation, measurement, aggregation, evaluation, and deployment</li>
+    <li>Bias can enter at any stage of the AI development lifecycle</li>
+    <li>Intersectionality reveals compound effects of bias across multiple identity dimensions</li>
+    <li>Feedback loops can amplify initial biases over time</li>
+    <li>Perfect fairness is mathematically impossible; trade-offs must be made explicitly</li>
+    <li>Understanding bias types and sources is the first step toward mitigation</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

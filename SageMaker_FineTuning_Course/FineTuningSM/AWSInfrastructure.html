@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>AWS Infrastructure for AI - GPUs and Accelerators</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AWS Infrastructure: Choosing the Right Hardware for Fine-Tuning</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>Fine-tuning Large Language Models is a compute-intensive task that requires specialized hardware. Amazon SageMaker provides access to a wide variety of instance types, each optimized for different stages of the AI lifecycle. Choosing the right hardware is not just about speed; it's about balancing performance, memory requirements, and cost.</p>
+
+<h2>2. NVIDIA GPU Instances</h2>
+<p>NVIDIA GPUs are the most common hardware used for fine-tuning due to their extensive software ecosystem (CUDA) and support for libraries like PyTorch and TensorFlow.</p>
+
+<h3>P-Series Instances (Performance)</h3>
+<ul>
+    <li><strong>P3 (NVIDIA V100):</strong> While older, P3 instances (like <code>ml.p3.2xlarge</code>) are still widely used for medium-sized models. However, they lack the mixed-precision (FP16/BF16) performance of newer generations.</li>
+    <li><strong>P4d (NVIDIA A100):</strong> The previous gold standard. These instances provide 40GB of VRAM per GPU and high-speed NVLink interconnects, making them ideal for full fine-tuning and large-scale distributed training.</li>
+    <li><strong>P5 (NVIDIA H100):</strong> The current state-of-the-art. P5 instances provide massive leaps in performance (up to 6x faster than P4d) and are designed for training the world's largest foundation models.</li>
+</ul>
+
+<h3>G-Series Instances (Versatility and Cost)</h3>
+<ul>
+    <li><strong>G4dn (NVIDIA T4):</strong> Best for small-scale fine-tuning and high-efficiency inference. They are very cheap but have limited VRAM (16GB).</li>
+    <li><strong>G5 (NVIDIA A10G):</strong> The "sweet spot" for many PEFT (LoRA) tasks. With 24GB of VRAM and high performance, instances like <code>ml.g5.2xlarge</code> or <code>ml.g5.12xlarge</code> (which has 4 GPUs) are excellent for tuning 7B to 70B parameter models using QLoRA.</li>
+</ul>
+
+<h2>3. AWS Silicon: Trainium and Inferentia</h2>
+<p>To reduce dependence on specialized GPUs and lower costs for customers, AWS has developed its own AI-specific silicon.</p>
+
+<h3>AWS Trainium (Trn1)</h3>
+<p>Trainium is optimized specifically for training Transformers. A <code>trn1.32xlarge</code> instance features 16 Trainium chips and 512GB of high-bandwidth memory. It is designed to offer up to 50% savings on training costs compared to equivalent GPU instances. The <strong>Neuron SDK</strong> allows you to use your existing PyTorch or Hugging Face code with minimal modification.</p>
+
+<h3>AWS Inferentia (Inf2)</h3>
+<p>Once a model is fine-tuned, Inferentia is the most cost-effective hardware for high-throughput, low-latency inference. <code>inf2</code> instances support Large Language Models and provide features like hardware-accelerated stochastic rounding and custom data types to maintain accuracy at lower precision.</p>
+
+<h2>4. Understanding Memory: VRAM and Sharding</h2>
+<p>The biggest bottleneck in fine-tuning is <strong>VRAM (Video RAM)</strong>.
+    <ul>
+        <li><strong>Model Weights:</strong> A 7B model in FP16 takes ~14GB of VRAM just to load.</li>
+        <li><strong>Gradients:</strong> Take another 14GB.</li>
+        <li><strong>Optimizer States:</strong> Using AdamW takes ~28GB (for FP32 states).</li>
+        <li><strong>Total for Full Fine-Tuning:</strong> ~56GB of VRAM for a 7B model.</li>
+    </ul>
+</p>
+<p>If your model is larger than the VRAM of a single GPU, you must use <strong>Sharding</strong> (like FSDP or DeepSpeed ZeRO), which splits these components across multiple GPUs in a cluster. SageMaker handles the networking required for this sharding through its high-speed Elastic Fabric Adapter (EFA).</p>
+
+<h2>5. Local Storage: NVMe and FSx for Lustre</h2>
+<p>Training requires fast access to datasets.
+    <ul>
+        <li><strong>Instance Storage:</strong> Many SageMaker instances come with local NVMe SSDs for fast temporary storage of data and checkpoints.</li>
+        <li><strong>Amazon FSx for Lustre:</strong> For very large datasets or distributed training, SageMaker can mount an FSx filesystem. This provides sub-millisecond latency and hundreds of gigabytes per second of throughput, ensuring your GPUs are never waiting for data.</li>
+    </ul>
+</p>
+
+<h2>6. Decision Matrix: Which Instance to Choose?</h2>
+<table>
+    <tr><th>Task</th><th>Model Size</th><th>Recommended Instance</th></tr>
+    <tr><td>Small Experiment / PEFT</td><td>< 13B</td><td>ml.g5.2xlarge</td></tr>
+    <tr><td>Medium Fine-Tuning / QLoRA</td><td>13B - 70B</td><td>ml.g5.12xlarge</td></tr>
+    <tr><td>Full Fine-Tuning / Large Scale</td><td>> 70B</td><td>ml.p4d.24xlarge</td></tr>
+    <tr><td>Cost-Optimized Training</td><td>Any</td><td>trn1.32xlarge</td></tr>
+    <tr><td>High-Throughput Inference</td><td>Any</td><td>inf2.48xlarge</td></tr>
+</table>
+
+<h2>Conclusion</h2>
+<p>Hardware selection is a critical lever for optimizing your fine-tuning projects. By understanding the trade-offs between P-series, G-series, and AWS Silicon, you can ensure that your AI infrastructure is both powerful enough for your models and efficient enough for your budget. In our next module, we'll explore specific Cost Optimization Strategies to further reduce your AWS bill.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

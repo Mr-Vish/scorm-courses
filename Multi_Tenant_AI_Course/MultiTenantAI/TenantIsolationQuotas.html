@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Tenant Isolation and Quotas</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>1.1 Tenant Isolation and Resource Quotas</h1>
+
+<p>Isolation is the bedrock of multi-tenancy. In an AI system, isolation must be enforced at multiple layers of the stack to prevent unauthorized data access and ensure fair resource distribution.</p>
+
+<h2>The Multi-layered Isolation Stack</h2>
+<ol>
+    <li><strong>Application Layer:</strong> Using robust authentication (like JWTs) and authorization (RBAC/ABAC) to ensure a user only sees data belonging to their tenant. Every API request must be scoped by a <code>tenant_id</code>.</li>
+    <li><strong>Data Layer:</strong> Ensuring that database queries and vector searches are strictly filtered. In a shared database (Pool model), this means every table has a <code>tenant_id</code> column and every <code>WHERE</code> clause includes it. In a Silo model, this means using separate database instances or schemas.</li>
+    <li><strong>Compute Layer:</strong> Managing shared GPU resources. Modern inference engines like vLLM use sophisticated scheduling to ensure that one tenant's heavy workload doesn't starve others of compute time.</li>
+    <li><strong>Context Layer:</strong> When interacting with LLMs, it is vital to clear the session state and context between requests from different tenants. "Prompt leakage"—where information from one tenant's prompt is visible to another—is a major security risk.</li>
+</ol>
+
+<h2>Implementing Resource Quotas</h2>
+<p>To maintain system stability and predictable costs, you must implement strict quotas for each tenant. Quotas are typically defined at different granularities:</p>
+
+<h3>1. Request-based Quotas (RPM)</h3>
+<p>Limiting the number of **Requests Per Minute**. This protects your infrastructure from being overwhelmed by a high frequency of small requests (e.g., a "brute-force" or "denial-of-service" attack).</p>
+
+<h3>2. Token-based Quotas (TPM)</h3>
+<p>Limiting the number of **Tokens Per Minute**. Since the cost and compute time of an LLM request are proportional to the number of tokens processed (both input and output), this is a more accurate measure of resource consumption. A single request with a very large context can be just as taxing as hundreds of small requests.</p>
+
+<h3>3. Concurrent Request Limits</h3>
+<p>Limiting the number of requests a tenant can have "in-flight" at any given moment. This prevents a single tenant from hogging all the available inference workers or GPU memory slots.</p>
+
+<h2>Dynamic Quota Management</h2>
+<p>A sophisticated multi-tenant system should support dynamic quotas:
+<ul>
+    <li><strong>Tier-based Quotas:</strong> "Free" tier users get 10 RPM / 10,000 TPM, while "Enterprise" users get 500 RPM / 1,000,000 TPM.</li>
+    <li><strong>Bursting:</strong> Allowing tenants to temporarily exceed their quotas if the system has excess capacity, while still maintaining a "guaranteed" base level.</li>
+    <li><strong>Soft vs. Hard Limits:</strong> A "soft" limit triggers a warning or an alert, while a "hard" limit blocks any further requests until the window resets.</li>
+</ul></p>
+
+<h2>Best Practice: The "Quota-First" Design</h2>
+<p>By building quota checks into your AI gateway from day one, you ensure that your system is resilient, fair, and ready to scale as you add more tenants and more diverse workloads.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

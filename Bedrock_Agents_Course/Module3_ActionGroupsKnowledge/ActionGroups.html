@@ -1,0 +1,329 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Action Groups and API Integration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Action Groups and API Integration</h1>
+
+<h2>Module Objectives</h2>
+<p>In this section, you will:</p>
+<ul>
+    <li>Understand how action groups enable agents to perform real-world actions</li>
+    <li>Learn to design and implement OpenAPI schemas for action groups</li>
+    <li>Explore Lambda function patterns for action group execution</li>
+    <li>Understand error handling and response formatting</li>
+</ul>
+
+<h2>What Are Action Groups?</h2>
+<p>Action groups are the mechanism through which Bedrock Agents interact with external systems, databases, and APIs. They transform agents from passive information providers into active systems capable of executing tasks, modifying data, and orchestrating workflows.</p>
+
+<p>An action group consists of three primary components:</p>
+<ul>
+    <li><strong>OpenAPI Schema:</strong> Defines the contract—what operations are available, what parameters they require, and what responses they return</li>
+    <li><strong>Lambda Function:</strong> Implements the business logic that executes when the agent invokes an action</li>
+    <li><strong>Description:</strong> Helps the agent understand when and how to use the action group</li>
+</ul>
+
+<h2>OpenAPI Schema Design</h2>
+<p>The OpenAPI specification serves as the interface between the agent and your business logic. The agent uses this schema to understand what actions it can perform and how to invoke them.</p>
+
+<h3>Basic Schema Structure</h3>
+<div class="code-block">
+<pre><code>openapi: 3.0.0
+info:
+  title: Customer Service Actions
+  version: 1.0.0
+  description: Actions for customer account management
+
+paths:
+  /account/{accountId}:
+    get:
+      summary: Retrieve customer account details
+      description: Get account information including subscription, billing, and contact details
+      operationId: getAccountDetails
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique customer account identifier
+      responses:
+        '200':
+          description: Account details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: string
+                  customerName:
+                    type: string
+                  subscriptionTier:
+                    type: string
+                  billingStatus:
+                    type: string</code></pre>
+</div>
+
+<h3>Schema Design Principles</h3>
+
+<h4>1. Clear Operation IDs</h4>
+<p>Use descriptive operationId values that clearly indicate what the action does. The agent uses these to understand available actions.</p>
+<ul>
+    <li><strong>Good:</strong> getAccountDetails, processRefund, scheduleCallback</li>
+    <li><strong>Poor:</strong> action1, doThing, execute</li>
+</ul>
+
+<h4>2. Comprehensive Descriptions</h4>
+<p>Provide detailed descriptions for operations and parameters. These guide the agent's decision-making about when to use each action.</p>
+
+<div class="code-block">
+<pre><code>description: |
+  Process a refund for a customer order. Use this action when:
+  - Customer requests refund for defective product
+  - Order was cancelled before shipping
+  - Billing error resulted in overcharge
+  
+  Do NOT use for:
+  - Refunds over $1000 (escalate to supervisor)
+  - Orders older than 90 days (outside refund window)
+  - Subscription cancellations (use cancelSubscription instead)</code></pre>
+</div>
+
+<h4>3. Appropriate Parameter Types</h4>
+<p>Use correct data types and validation constraints:</p>
+<table>
+    <tr>
+        <th>Type</th>
+        <th>Use Case</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">string</td>
+        <td>Text, IDs, enums</td>
+        <td>accountId, email, status</td>
+    </tr>
+    <tr>
+        <td class="rowheader">integer</td>
+        <td>Counts, quantities</td>
+        <td>quantity, daysUntilExpiration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">number</td>
+        <td>Decimals, currency</td>
+        <td>refundAmount, discountPercentage</td>
+    </tr>
+    <tr>
+        <td class="rowheader">boolean</td>
+        <td>Flags, toggles</td>
+        <td>sendConfirmationEmail, isUrgent</td>
+    </tr>
+    <tr>
+        <td class="rowheader">array</td>
+        <td>Lists, collections</td>
+        <td>orderIds, tags</td>
+    </tr>
+    <tr>
+        <td class="rowheader">object</td>
+        <td>Complex structures</td>
+        <td>address, paymentMethod</td>
+    </tr>
+</table>
+
+<h4>4. Required vs. Optional Parameters</h4>
+<p>Clearly mark which parameters are required. The agent will ensure required parameters are provided before invoking the action.</p>
+
+<div class="code-block">
+<pre><code>parameters:
+  - name: accountId
+    required: true  # Agent must provide this
+  - name: includeHistory
+    required: false  # Agent can omit this
+    schema:
+      type: boolean
+      default: false</code></pre>
+</div>
+
+<h2>Lambda Function Implementation</h2>
+<p>Lambda functions execute the actual business logic when agents invoke actions. They receive structured input from the agent and return structured responses.</p>
+
+<h3>Input Event Structure</h3>
+<p>When an agent invokes an action, the Lambda function receives an event with this structure:</p>
+
+<div class="code-block">
+<pre><code>{
+  "messageVersion": "1.0",
+  "agent": {
+    "name": "CustomerServiceAgent",
+    "id": "AGENT123",
+    "alias": "PROD",
+    "version": "1"
+  },
+  "sessionId": "session-abc-123",
+  "sessionAttributes": {
+    "customerId": "CUST456"
+  },
+  "promptSessionAttributes": {},
+  "inputText": "Look up account details for customer 12345",
+  "apiPath": "/account/{accountId}",
+  "httpMethod": "GET",
+  "parameters": [
+    {
+      "name": "accountId",
+      "type": "string",
+      "value": "12345"
+    }
+  ]
+}</code></pre>
+</div>
+
+<h3>Lambda Function Pattern</h3>
+<div class="code-block">
+<pre><code>import json
+
+def lambda_handler(event, context):
+    # Extract action details
+    api_path = event['apiPath']
+    http_method = event['httpMethod']
+    parameters = {p['name']: p['value'] for p in event.get('parameters', [])}
+    
+    # Route to appropriate handler
+    if api_path == '/account/{accountId}' and http_method == 'GET':
+        return get_account_details(parameters)
+    elif api_path == '/refund' and http_method == 'POST':
+        return process_refund(parameters)
+    else:
+        return error_response(f"Unknown action: {http_method} {api_path}")
+
+def get_account_details(params):
+    account_id = params.get('accountId')
+    
+    # Business logic here - query database, call API, etc.
+    account_data = fetch_from_database(account_id)
+    
+    if not account_data:
+        return error_response(f"Account {account_id} not found", 404)
+    
+    return success_response({
+        'accountId': account_data['id'],
+        'customerName': account_data['name'],
+        'subscriptionTier': account_data['tier'],
+        'billingStatus': account_data['billing_status']
+    })
+
+def success_response(body):
+    return {
+        'messageVersion': '1.0',
+        'response': {
+            'actionGroup': event['actionGroup'],
+            'apiPath': event['apiPath'],
+            'httpMethod': event['httpMethod'],
+            'httpStatusCode': 200,
+            'responseBody': {
+                'application/json': {
+                    'body': json.dumps(body)
+                }
+            }
+        }
+    }
+
+def error_response(message, status_code=400):
+    return {
+        'messageVersion': '1.0',
+        'response': {
+            'actionGroup': event['actionGroup'],
+            'apiPath': event['apiPath'],
+            'httpMethod': event['httpMethod'],
+            'httpStatusCode': status_code,
+            'responseBody': {
+                'application/json': {
+                    'body': json.dumps({'error': message})
+                }
+            }
+        }
+    }</code></pre>
+</div>
+
+<h2>Error Handling Strategies</h2>
+<p>Robust error handling ensures agents can gracefully handle failures and provide meaningful feedback to users.</p>
+
+<h3>Error Categories</h3>
+<ul>
+    <li><strong>Validation Errors (400):</strong> Invalid parameters, missing required fields</li>
+    <li><strong>Authentication Errors (401/403):</strong> Insufficient permissions, invalid credentials</li>
+    <li><strong>Not Found Errors (404):</strong> Requested resource doesn't exist</li>
+    <li><strong>Server Errors (500):</strong> Database failures, external API timeouts</li>
+</ul>
+
+<h3>Error Response Best Practices</h3>
+<ul>
+    <li>Return appropriate HTTP status codes</li>
+    <li>Provide clear, actionable error messages</li>
+    <li>Include relevant context (what failed, why, what to do next)</li>
+    <li>Log errors for debugging but don't expose sensitive details to users</li>
+</ul>
+
+<h2>Action Group Configuration</h2>
+<p>When adding an action group to an agent:</p>
+
+<h3>1. Upload OpenAPI Schema</h3>
+<p>Provide the schema either inline or via S3 bucket. Bedrock validates the schema during agent preparation.</p>
+
+<h3>2. Configure Lambda Function</h3>
+<p>Specify the Lambda function ARN and ensure proper IAM permissions allow the agent to invoke it.</p>
+
+<h3>3. Add Action Group Description</h3>
+<p>Provide high-level guidance about when to use this action group:</p>
+<div class="code-block">
+<pre><code>"Use this action group for customer account operations including 
+retrieving account details, updating contact information, and 
+processing refunds up to $1000. For refunds over $1000 or contract 
+changes, escalate to human agent."</code></pre>
+</div>
+
+<h3>4. Test Action Invocation</h3>
+<p>Use the console test interface or programmatic invocation to verify actions work correctly.</p>
+
+<h2>Advanced Action Group Patterns</h2>
+
+<h3>Return of Control</h3>
+<p>Instead of executing actions directly, agents can return control to your application with action details. Your application then executes the action and returns results. This pattern is useful for:</p>
+<ul>
+    <li>Actions requiring human approval</li>
+    <li>Integration with existing workflow systems</li>
+    <li>Complex orchestration across multiple systems</li>
+</ul>
+
+<h3>Conditional Action Availability</h3>
+<p>Use session attributes to control which actions are available based on context:</p>
+<div class="code-block">
+<pre><code># In Lambda function
+user_role = event['sessionAttributes'].get('userRole')
+
+if user_role != 'ADMIN' and api_path == '/users/delete':
+    return error_response("Insufficient permissions", 403)</code></pre>
+</div>
+
+<h3>Action Chaining</h3>
+<p>Agents can invoke multiple actions in sequence to complete complex tasks. Design actions to be composable and return data that can be used by subsequent actions.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Action groups enable agents to perform real-world actions through OpenAPI schemas and Lambda functions</li>
+    <li>OpenAPI schemas should have clear operation IDs, comprehensive descriptions, and appropriate parameter types</li>
+    <li>Lambda functions receive structured input and must return properly formatted responses</li>
+    <li>Robust error handling with appropriate status codes and messages is essential</li>
+    <li>Advanced patterns include return of control, conditional availability, and action chaining</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

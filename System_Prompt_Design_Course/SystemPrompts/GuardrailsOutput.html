@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Guardrails and Output Control</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>Guardrails and Output Control</h1>
+
+<h2>Why Guardrails Are Necessary</h2>
+<p>
+Large language models are probabilistic systems. They generate responses based on learned
+patterns rather than deterministic rules. While this flexibility enables creativity and
+generalization, it also introduces risk.
+</p>
+
+<p>
+Guardrails exist to reduce this risk. They constrain model behavior so that outputs remain
+safe, compliant, relevant, and aligned with product goals.
+</p>
+
+<h2>Defense in Depth</h2>
+<p>
+No single guardrail is sufficient. Robust systems use multiple layers of defense:
+</p>
+
+<ul>
+    <li>System prompt constraints</li>
+    <li>User input validation</li>
+    <li>Output validation</li>
+    <li>Post-processing filters</li>
+    <li>Human review when necessary</li>
+</ul>
+
+<p>
+System prompts form the first and most important layer.
+</p>
+
+<h2>Topic Restrictions</h2>
+<p>
+Topic restriction limits the domain of discussion. This is especially important for
+narrow-purpose assistants.
+</p>
+
+<p>
+Explicit topic boundaries reduce hallucination and off-domain responses.
+</p>
+
+<h2>Output Validation Rules</h2>
+<p>
+Output validation forces the model to self-check its response before finalizing it.
+</p>
+
+<p>
+These checks can include:
+</p>
+
+<ul>
+    <li>Safety constraints</li>
+    <li>Compliance requirements</li>
+    <li>Formatting validation</li>
+    <li>Factual grounding</li>
+</ul>
+
+<p>
+Although models can still fail, validation rules significantly reduce error rates.
+</p>
+
+<h2>Format Control Techniques</h2>
+<p>
+Format control ensures consistency and enables automation.
+</p>
+
+<table>
+<tr><th>Technique</th><th>Purpose</th></tr>
+<tr><td>JSON schemas</td><td>Machine-readable output</td></tr>
+<tr><td>Length limits</td><td>Prevent verbosity</td></tr>
+<tr><td>Section headers</td><td>Human readability</td></tr>
+<tr><td>Language constraints</td><td>Localization</td></tr>
+</table>
+
+<h2>Prefilling and Partial Responses</h2>
+<p>
+Prefilling is a powerful technique where the assistant’s response is partially provided
+to force structure.
+</p>
+
+<p>
+This is particularly effective for JSON outputs and structured documents.
+</p>
+
+<h2>Handling Adversarial Inputs</h2>
+<p>
+Users may intentionally or unintentionally attempt to bypass guardrails.
+</p>
+
+<p>
+Common attack patterns include:
+</p>
+
+<ul>
+    <li>Prompt injection</li>
+    <li>Role confusion</li>
+    <li>Instruction reversal</li>
+    <li>Obfuscation</li>
+</ul>
+
+<p>
+Strong system prompts anticipate these patterns and define safe fallback behaviors.
+</p>
+
+<h2>Testing Guardrails</h2>
+<p>
+Guardrails must be tested continuously.
+</p>
+
+<ul>
+    <li>Adversarial testing</li>
+    <li>Edge-case inputs</li>
+    <li>Regression testing</li>
+    <li>Real user monitoring</li>
+</ul>
+
+<p>
+Testing should be automated where possible.
+</p>
+
+<h2>Balancing Safety and Usefulness</h2>
+<p>
+Overly restrictive guardrails can make systems unusable. Under-restrictive systems can
+cause harm.
+</p>
+
+<p>
+The goal is calibrated constraint: enough restriction to prevent harm, enough freedom
+to remain useful.
+</p>
+
+<h2>Guardrails in Regulated Industries</h2>
+<p>
+Healthcare, finance, and legal domains require stricter controls, including disclaimers,
+escalation paths, and audit logs.
+</p>
+
+<h2>Operational Monitoring</h2>
+<p>
+Even the best guardrails will fail occasionally. Monitoring and logging are essential for
+detecting issues early.
+</p>
+
+<h2>Additional Readings</h2>
+<ul>
+    <li>
+        <a href="https://www.anthropic.com/safety" target="_blank">
+        Anthropic – AI Safety Principles
+        </a>
+    </li>
+    <li>
+        <a href="https://platform.openai.com/docs/guides/safety" target="_blank">
+        OpenAI – Safety Best Practices
+        </a>
+    </li>
+    <li>
+        <a href="https://arxiv.org/abs/2302.12173" target="_blank">
+        Prompt Injection Attacks Against LLMs (ArXiv)
+        </a>
+    </li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

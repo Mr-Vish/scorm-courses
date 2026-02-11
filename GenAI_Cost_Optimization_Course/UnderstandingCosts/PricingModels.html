@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>GenAI Pricing Models</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>GenAI Pricing Models</h1>
+
+
+<h2>Token-Based Pricing</h2>
+<p>Most GenAI services charge per <strong>token</strong> (roughly 4 characters or 0.75 words). Costs differ between input and output tokens.</p>
+<table>
+    <tr><th>Model</th><th>Input (per 1M tokens)</th><th>Output (per 1M tokens)</th></tr>
+    <tr><td>Claude 3.5 Sonnet</td><td>$3.00</td><td>$15.00</td></tr>
+    <tr><td>Claude 3.5 Haiku</td><td>$0.80</td><td>$4.00</td></tr>
+    <tr><td>Claude 3 Opus</td><td>$15.00</td><td>$75.00</td></tr>
+    <tr><td>Titan Text Express</td><td>$0.20</td><td>$0.60</td></tr>
+</table>
+
+<h2>Hidden Cost Drivers</h2>
+<ul>
+    <li><strong>System prompts:</strong> Long system prompts are sent with every request</li>
+    <li><strong>Conversation history:</strong> Growing message history increases input tokens</li>
+    <li><strong>RAG context:</strong> Retrieved documents add to input token count</li>
+    <li><strong>Retries:</strong> Failed requests still consume tokens on the provider side</li>
+    <li><strong>Extended thinking:</strong> Thinking tokens billed at output rates</li>
+</ul>
+
+<h2>Cost Estimation Formula</h2>
+<div class="code-block">
+<pre><code>monthly_cost = (
+    daily_requests *
+    avg_input_tokens * input_price_per_token +
+    daily_requests *
+    avg_output_tokens * output_price_per_token
+) * 30</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building Intelligent Bedrock Agents</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Advanced Bedrock Features</h1>
+<h2>Building Intelligent Bedrock Agents</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand the architecture and capabilities of Bedrock Agents</li>
+    <li>Learn how to design and implement action groups for external system integration</li>
+    <li>Master agent orchestration patterns and multi-step workflows</li>
+    <li>Apply best practices for agent design and deployment</li>
+</ul>
+
+<h3>Understanding Bedrock Agents</h3>
+
+<p>Bedrock Agents represent a significant evolution beyond simple prompt-response interactions with foundation models. An agent is an <strong>autonomous AI system</strong> capable of understanding complex user requests, breaking them down into actionable steps, invoking external APIs and tools, and synthesizing results into coherent responses. This orchestration capability transforms foundation models from passive responders into active problem-solvers that can interact with enterprise systems and execute multi-step workflows.</p>
+
+<p>Traditional chatbot implementations require developers to explicitly code every possible conversation flow, decision tree, and integration point. Bedrock Agents leverage the reasoning capabilities of foundation models to dynamically determine which actions to take based on user intent, eliminating the need for rigid, pre-programmed logic. This flexibility enables agents to handle novel scenarios and adapt to changing requirements without code modifications.</p>
+
+<h3>Agent Architecture Components</h3>
+
+<h4>1. Foundation Model (The Brain)</h4>
+<p>The foundation model serves as the agent's reasoning engine, responsible for:</p>
+<ul>
+    <li><strong>Intent Understanding:</strong> Interpreting user requests and extracting key information</li>
+    <li><strong>Task Planning:</strong> Breaking complex requests into sequential steps</li>
+    <li><strong>Decision Making:</strong> Determining which actions to invoke and in what order</li>
+    <li><strong>Response Synthesis:</strong> Combining action results into natural language responses</li>
+</ul>
+
+<p>You can select from available Bedrock models based on your agent's complexity requirements. More sophisticated agents handling complex reasoning benefit from advanced models like Claude 3.5 Sonnet, while simpler agents can use efficient models like Claude 3 Haiku.</p>
+
+<h4>2. Instructions (System Prompt)</h4>
+<p>Instructions define the agent's role, behavior, and operational guidelines. Well-crafted instructions are critical for agent performance and include:</p>
+
+<ul>
+    <li><strong>Role Definition:</strong> "You are a customer service agent for an e-commerce platform..."</li>
+    <li><strong>Capabilities:</strong> What the agent can and cannot do</li>
+    <li><strong>Behavioral Guidelines:</strong> Tone, style, and interaction patterns</li>
+    <li><strong>Constraints:</strong> Boundaries and limitations</li>
+    <li><strong>Error Handling:</strong> How to respond when information is unavailable</li>
+</ul>
+
+<p><strong>Example Instructions:</strong></p>
+<blockquote>
+You are an intelligent IT support agent for a cloud infrastructure company. Your role is to help users troubleshoot technical issues, provide configuration guidance, and access system information.
+
+Capabilities:
+- Look up user account details and service status
+- Retrieve system logs and error messages
+- Create support tickets for complex issues
+- Provide step-by-step troubleshooting guidance
+
+Guidelines:
+- Always verify user identity before accessing sensitive information
+- Provide clear, technical explanations appropriate for IT professionals
+- If you cannot resolve an issue, create a support ticket and provide the ticket number
+- Never make assumptions about system configurations; always verify through available tools
+
+When you don't have sufficient information to answer a question, explicitly state what additional information you need.
+</blockquote>
+
+<h4>3. Action Groups (Tools and Integrations)</h4>
+<p>Action groups connect agents to external systems through AWS Lambda functions. Each action group defines a set of related APIs that the agent can invoke to perform specific tasks.</p>
+
+<p><strong>Action Group Components:</strong></p>
+<ul>
+    <li><strong>API Schema:</strong> OpenAPI specification defining available operations, parameters, and responses</li>
+    <li><strong>Lambda Function:</strong> Backend logic that executes the actual operations</li>
+    <li><strong>Description:</strong> Natural language explanation helping the agent understand when to use each action</li>
+</ul>
+
+<p><strong>Example Action Group Schema (OpenAPI):</strong></p>
+<blockquote>
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Order Management API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/orders/{orderId}": {
+      "get": {
+        "summary": "Retrieve order details by order ID",
+        "description": "Returns comprehensive information about a specific order including status, items, and shipping details",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {"type": "string"},
+                    "status": {"type": "string"},
+                    "items": {"type": "array"},
+                    "totalAmount": {"type": "number"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+</blockquote>
+
+<p><strong>Corresponding Lambda Function:</strong></p>
+<blockquote>
+import json
+import boto3
+
+dynamodb = boto3.resource('dynamodb')
+orders_table = dynamodb.Table('Orders')
+
+def lambda_handler(event, context):
+    # Extract action group information
+    action_group = event.get('actionGroup', '')
+    api_path = event.get('apiPath', '')
+    http_method = event.get('httpMethod', '')
+    parameters = event.get('parameters', [])
+    
+    # Extract orderId from parameters
+    order_id = next((p['value'] for p in parameters if p['name'] == 'orderId'), None)
+    
+    if not order_id:
+        return {
+            'actionGroup': action_group,
+            'apiPath': api_path,
+            'httpMethod': http_method,
+            'httpStatusCode': 400,
+            'responseBody': {
+                'application/json': {
+                    'body': json.dumps({'error': 'orderId is required'})
+                }
+            }
+        }
+    
+    # Query DynamoDB for order
+    try:
+        response = orders_table.get_item(Key={'orderId': order_id})
+        
+        if 'Item' in response:
+            order = response['Item']
+            return {
+                'actionGroup': action_group,
+                'apiPath': api_path,
+                'httpMethod': http_method,
+                'httpStatusCode': 200,
+                'responseBody': {
+                    'application/json': {
+                        'body': json.dumps(order)
+                    }
+                }
+            }
+        else:
+            return {
+                'actionGroup': action_group,
+                'apiPath': api_path,
+                'httpMethod': http_method,
+                'httpStatusCode': 404,
+                'responseBody': {
+                    'application/json': {
+                        'body': json.dumps({'error': 'Order not found'})
+                    }
+                }
+            }
+    except Exception as e:
+        return {
+            'actionGroup': action_group,
+            'apiPath': api_path,
+            'httpMethod': http_method,
+            'httpStatusCode': 500,
+            'responseBody': {
+                'application/json': {
+                    'body': json.dumps({'error': str(e)})
+                }
+            }
+        }
+</blockquote>
+
+<h4>4. Knowledge Bases (Optional)</h4>
+<p>Agents can be connected to Knowledge Bases for Retrieval-Augmented Generation (RAG), enabling them to ground responses in organizational documents and data. This integration is covered in detail in the next section.</p>
+
+<h4>5. Guardrails (Optional)</h4>
+<p>Guardrails provide content filtering and safety controls, ensuring agent outputs comply with organizational policies. This is covered in a dedicated section later in this module.</p>
+
+<h3>Agent Invocation Flow</h3>
+
+<p>Understanding how agents process requests is essential for effective design:</p>
+
+<ol>
+    <li><strong>User Input Reception:</strong> Agent receives natural language request</li>
+    <li><strong>Intent Analysis:</strong> Foundation model analyzes request to understand user intent and extract key information</li>
+    <li><strong>Task Planning:</strong> Model determines which actions are needed and in what sequence</li>
+    <li><strong>Action Execution:</strong> Agent invokes action groups (Lambda functions) with appropriate parameters</li>
+    <li><strong>Result Processing:</strong> Model receives action results and determines if additional actions are needed</li>
+    <li><strong>Response Generation:</strong> Model synthesizes all information into a coherent natural language response</li>
+    <li><strong>User Response:</strong> Final response is returned to the user</li>
+</ol>
+
+<p><strong>Example Flow:</strong></p>
+<p>User Request: "What's the status of my order #12345 and when will it arrive?"</p>
+
+<ol>
+    <li>Agent analyzes request, identifies need for order information</li>
+    <li>Agent invokes getOrderDetails action with orderId=12345</li>
+    <li>Lambda function queries database, returns order data</li>
+    <li>Agent processes response, extracts status and delivery date</li>
+    <li>Agent formulates response: "Your order #12345 is currently in transit. The estimated delivery date is March 15, 2024. You can track your shipment using tracking number XYZ789."</li>
+</ol>
+
+<h3>Designing Effective Action Groups</h3>
+
+<h4>Granularity Considerations</h4>
+<p>Action groups should be designed with appropriate granularity:</p>
+
+<ul>
+    <li><strong>Too Granular:</strong> Many small actions increase complexity and latency (e.g., separate actions for getOrderStatus, getOrderItems, getOrderShipping)</li>
+    <li><strong>Too Coarse:</strong> Large, multi-purpose actions reduce flexibility and clarity (e.g., single doEverything action)</li>
+    <li><strong>Optimal:</strong> Cohesive actions representing logical operations (e.g., getOrderDetails, updateOrderStatus, cancelOrder)</li>
+</ul>
+
+<h4>API Description Best Practices</h4>
+<p>Clear, detailed descriptions help the agent understand when and how to use each action:</p>
+
+<ul>
+    <li><strong>Be Specific:</strong> "Retrieve complete order information including status, items, pricing, and shipping details" vs. "Get order"</li>
+    <li><strong>Include Use Cases:</strong> "Use this action when the user asks about order status, delivery dates, or order contents"</li>
+    <li><strong>Specify Parameters:</strong> Clearly describe what each parameter represents and any format requirements</li>
+    <li><strong>Document Responses:</strong> Explain what information will be returned and how to interpret it</li>
+</ul>
+
+<h3>Multi-Step Workflows and Orchestration</h3>
+
+<p>Agents excel at orchestrating complex, multi-step workflows that would require extensive coding in traditional applications.</p>
+
+<p><strong>Example Scenario: Travel Booking Agent</strong></p>
+
+<p>User Request: "Book me a round-trip flight from New York to London next month, and find a hotel near the airport."</p>
+
+<p>Agent Orchestration:</p>
+<ol>
+    <li>Extract travel details (origin, destination, dates)</li>
+    <li>Invoke searchFlights action with parameters</li>
+    <li>Present flight options to user, get selection</li>
+    <li>Invoke bookFlight action with selected flight</li>
+    <li>Extract arrival airport from booking confirmation</li>
+    <li>Invoke searchHotels action with location near airport</li>
+    <li>Present hotel options to user</li>
+    <li>Invoke bookHotel action with user selection</li>
+    <li>Provide comprehensive booking summary with confirmation numbers</li>
+</ol>
+
+<p>This workflow demonstrates the agent's ability to chain actions, maintain context across multiple turns, and adapt based on intermediate results—all without explicit workflow programming.</p>
+
+<h3>Session Management and Context</h3>
+
+<p>Agents maintain conversation context across multiple interactions within a session:</p>
+
+<ul>
+    <li><strong>Session State:</strong> Bedrock automatically manages conversation history</li>
+    <li><strong>Context Window:</strong> Recent conversation history is included in each model invocation</li>
+    <li><strong>Session Attributes:</strong> Custom key-value pairs can store session-specific data</li>
+    <li><strong>Session Timeout:</strong> Configurable timeout for inactive sessions</li>
+</ul>
+
+<h3>Testing and Debugging Agents</h3>
+
+<h4>Console Testing</h4>
+<p>The Bedrock console provides an interactive testing interface where you can:</p>
+<ul>
+    <li>Send test queries and observe agent responses</li>
+    <li>View the agent's reasoning trace showing which actions were invoked</li>
+    <li>Inspect action group invocations and responses</li>
+    <li>Identify issues with intent understanding or action selection</li>
+</ul>
+
+<h4>Trace Analysis</h4>
+<p>Agent traces provide detailed visibility into the decision-making process:</p>
+<ul>
+    <li><strong>Pre-Processing:</strong> How the agent interpreted the user input</li>
+    <li><strong>Orchestration:</strong> Which actions the agent decided to invoke and why</li>
+    <li><strong>Action Invocation:</strong> Parameters sent to Lambda functions and responses received</li>
+    <li><strong>Post-Processing:</strong> How the agent synthesized results into the final response</li>
+</ul>
+
+<h3>Production Considerations</h3>
+
+<h4>Error Handling</h4>
+<ul>
+    <li>Implement robust error handling in Lambda functions</li>
+    <li>Return meaningful error messages that help the agent understand what went wrong</li>
+    <li>Include fallback instructions in agent instructions for common error scenarios</li>
+    <li>Monitor Lambda function errors and agent failures</li>
+</ul>
+
+<h4>Performance Optimization</h4>
+<ul>
+    <li>Minimize action group invocations by designing efficient APIs</li>
+    <li>Optimize Lambda function cold start times</li>
+    <li>Use appropriate foundation models balancing capability and latency</li>
+    <li>Implement caching for frequently accessed data</li>
+</ul>
+
+<h4>Security</h4>
+<ul>
+    <li>Validate all inputs in Lambda functions to prevent injection attacks</li>
+    <li>Implement proper IAM roles with least-privilege access</li>
+    <li>Use VPC endpoints for private connectivity</li>
+    <li>Encrypt sensitive data in transit and at rest</li>
+    <li>Audit agent interactions through CloudWatch Logs</li>
+</ul>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Bedrock Agents are autonomous AI systems that can plan, execute multi-step tasks, and interact with external systems</li>
+    <li>Agents consist of a foundation model, instructions, action groups, and optionally knowledge bases and guardrails</li>
+    <li>Action groups connect agents to external systems through Lambda functions defined by OpenAPI schemas</li>
+    <li>Effective agent design requires clear instructions, well-described actions, and appropriate granularity</li>
+    <li>Agents can orchestrate complex multi-step workflows without explicit programming of conversation flows</li>
+    <li>Trace analysis provides visibility into agent decision-making for debugging and optimization</li>
+    <li>Production agents require robust error handling, performance optimization, and security measures</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

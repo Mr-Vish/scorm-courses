@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Local RAG with Ollama</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Local RAG with Ollama</h1>
+<div class="container">
+<h2>Local RAG Development with Ollama and Spring AI</h2>
+<p>While cloud-based models like Anthropic and OpenAI are powerful, many developers prefer to build and test their RAG applications locally. This is especially important for handling sensitive data, reducing costs during development, and working offline. <strong>Ollama</strong>, combined with Spring AI, makes local RAG development incredibly easy.</p>
+
+<h3>What is Ollama?</h3>
+<p>Ollama is a lightweight, open-source tool that allows you to run Large Language Models (like Llama 3, Mistral, and Gemma) directly on your own computer. It handles the complexity of model management and provides a simple REST API that Spring AI can interact with.</p>
+
+<h3>Setting Up Spring AI with Ollama</h3>
+<p>To use Ollama in your Spring AI project, you simply add the <code>spring-ai-ollama-spring-boot-starter</code> and configure the base URL in your <code>application.properties</code>:
+<blockquote>
+spring.ai.ollama.base-url=http://localhost:11434<br/>
+spring.ai.ollama.chat.model=llama3<br/>
+spring.ai.ollama.embedding.model=all-minilm
+</blockquote></p>
+
+<h3>The Benefits of Local RAG</h3>
+<ul>
+    <li><strong>Zero Cost:</strong> Run as many queries as you want without paying per-token.</li>
+    <li><strong>Data Privacy:</strong> Your sensitive documents never leave your machine.</li>
+    <li><strong>Speed:</strong> No network latency (if your local hardware is fast enough).</li>
+    <li><strong>Experimentation:</strong> Easily swap between different local models to see which one performs best for your specific retrieval task.</li>
+</ul>
+
+<h3>Local Embeddings with Ollama</h3>
+<p>Ollama isn't just for chat; it can also generate embeddings. By using a local embedding model (like <code>all-minilm</code>), you can index your entire knowledge base locally. This is perfect for building a private search engine for your personal notes or local files.</p>
+
+<h3>A Typical Local RAG Workflow</h3>
+<ol>
+    <li><strong>Start Ollama:</strong> Run <code>ollama serve</code> on your machine.</li>
+    <li><strong>Pull Models:</strong> Download the models you need (e.g., <code>ollama pull llama3</code> and <code>ollama pull all-minilm</code>).</li>
+    <li><strong>Spring Boot App:</strong> Run your Spring AI application. It will automatically connect to Ollama to generate embeddings, search the local <code>VectorStore</code> (like PGVector), and generate responses.</li>
+</ol>
+
+<h3>Performance Considerations</h3>
+<p>Running LLMs locally requires significant RAM and a good GPU (or Apple Silicon).
+<ul>
+    <li><strong>8B models (Llama 3):</strong> Typically require at least 8GB of VRAM/RAM.</li>
+    <li><strong>70B models:</strong> Require 48GB+ and are often too slow for real-time chat on standard consumer hardware.</li>
+    <li><strong>Quantization:</strong> Ollama uses quantized models (usually 4-bit) by default to ensure they fit on local hardware while maintaining good intelligence.</li>
+</ul></p>
+
+<h3>Practical Exercise: Comparing Local vs. Cloud</h3>
+<p>Run the same RAG query through your local Ollama setup and through a cloud provider (like Anthropic). Compare the results based on:
+1. Accuracy and Reasoning.
+2. Latency (Time to first token).
+3. Cost (Free vs. $0.01).
+At which point does the cloud model become "worth it" for your specific use case?</p>
+
+<h3>Summary</h3>
+<p>Ollama and Spring AI provide a powerful combination for private, low-cost, and flexible AI development. By mastering the local RAG workflow, you can build and iterate on your applications faster and with more confidence, knowing that your data remains under your control.</p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Tokenization and Pseudonymization in Practice</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Tokenization and Pseudonymization in Practice</h1>
+
+<h2>Understanding the Difference</h2>
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Tokenization</th>
+        <th>Pseudonymization</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Definition</td>
+        <td>Replace PII with random tokens</td>
+        <td>Replace PII with consistent pseudonyms</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Reversibility</td>
+        <td>Yes, with token vault</td>
+        <td>Difficult without additional data</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Consistency</td>
+        <td>Same value → same token</td>
+        <td>Same value → same pseudonym</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GDPR Status</td>
+        <td>Not considered anonymization</td>
+        <td>Not considered anonymization</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Use Case</td>
+        <td>Payment processing, secure storage</td>
+        <td>Research, analytics, testing</td>
+    </tr>
+</table>
+
+<h2>Production-Grade Tokenization System</h2>
+<div class="code-block">
+<pre><code>import secrets
+import hashlib
+from typing import Dict, Optional
+from datetime import datetime, timedelta
+
+class SecureTokenVault:
+    """Enterprise-grade tokenization with expiration and audit logging"""
+    
+    def __init__(self, encryption_key: str):
+        self.encryption_key = encryption_key
+        self.token_store: Dict[str, dict] = {}
+        self.reverse_index: Dict[str, str] = {}
+        self.audit_log = []
+    
+    def tokenize(
+        self,
+        value: str,
+        entity_type: str,
+        ttl_hours: Optional[int] = None
+    ) -> str:
+        """Create a secure token for a value"""
+        
+        # Check if value already tokenized
+        if value in self.reverse_index:
+            token = self.reverse_index[value]
+            self._log_access("tokenize_existing", token, entity_type)
+            return token
+        
+        # Generate cryptographically secure token
+        token = f"{entity_type}_{secrets.token_urlsafe(16)}"
+        
+        # Calculate expiration
+        expiration = None
+        if ttl_hours:
+            expiration = datetime.now() + timedelta(hours=ttl_hours)
+        
+        # Store token metadata
+        self.token_store[token] = {
+            "value": self._encrypt(value),
+            "entity_type": entity_type,
+            "created_at": datetime.now(),
+            "expires_at": expiration,
+            "access_count": 0
+        }
+        
+        self.reverse_index[value] = token
+        self._log_access("tokenize_new", token, entity_type)
+        
+        return token
+    
+    def detokenize(self, token: str) -> Optional[str]:
+        """Retrieve original value from token"""
+        
+        if token not in self.token_store:
+            self._log_access("detokenize_not_found", token, "UNKNOWN")
+            return None
+        
+        metadata = self.token_store[token]
+        
+        # Check expiration
+        if metadata["expires_at"] and datetime.now() > metadata["expires_at"]:
+            self._log_access("detokenize_expired", token, metadata["entity_type"])
+            return None
+        
+        # Increment access counter
+        metadata["access_count"] += 1
+        
+        # Decrypt and return
+        value = self._decrypt(metadata["value"])
+        self._log_access("detokenize_success", token, metadata["entity_type"])
+        
+        return value
+    
+    def _encrypt(self, value: str) -> str:
+        """Encrypt value (simplified - use proper encryption in production)"""
+        combined = f"{value}{self.encryption_key}"
+        return hashlib.sha256(combined.encode()).hexdigest()
+    
+    def _decrypt(self, encrypted: str) -> str:
+        """Decrypt value (simplified)"""
+        # In production, use proper symmetric encryption (AES-256)
+        return encrypted  # Placeholder
+    
+    def _log_access(self, action: str, token: str, entity_type: str):
+        """Audit logging for compliance"""
+        self.audit_log.append({
+            "timestamp": datetime.now(),
+            "action": action,
+            "token": token,
+            "entity_type": entity_type
+        })
+    
+    def cleanup_expired(self) -> int:
+        """Remove expired tokens"""
+        now = datetime.now()
+        expired = [
+            token for token, meta in self.token_store.items()
+            if meta["expires_at"] and now > meta["expires_at"]
+        ]
+        
+        for token in expired:
+            value = self._decrypt(self.token_store[token]["value"])
+            del self.token_store[token]
+            if value in self.reverse_index:
+                del self.reverse_index[value]
+        
+        return len(expired)
+
+# Usage
+vault = SecureTokenVault(encryption_key="your-secret-key")
+
+# Tokenize PII with 24-hour expiration
+email_token = vault.tokenize("john@example.com", "EMAIL", ttl_hours=24)
+ssn_token = vault.tokenize("123-45-6789", "SSN", ttl_hours=1)
+
+print(f"Email token: {email_token}")
+print(f"SSN token: {ssn_token}")
+
+# Later, retrieve original values
+original_email = vault.detokenize(email_token)
+print(f"Original email: {original_email}")
+</code></pre>
+</div>
+
+<h2>Pseudonymization with Consistent Mapping</h2>
+<div class="code-block">
+<pre><code>import hashlib
+import hmac
+
+class PseudonymizationEngine:
+    """Generate consistent pseudonyms for analytics"""
+    
+    def __init__(self, secret_key: str):
+        self.secret_key = secret_key.encode()
+    
+    def pseudonymize(self, value: str, entity_type: str) -> str:
+        """Generate consistent pseudonym using HMAC"""
+        
+        # Use HMAC for cryptographic strength
+        h = hmac.new(self.secret_key, value.encode(), hashlib.sha256)
+        hash_value = h.hexdigest()[:16]
+        
+        return f"{entity_type}_{hash_value}"
+    
+    def pseudonymize_preserving_format(self, value: str, entity_type: str) -> str:
+        """Generate pseudonym that preserves original format"""
+        
+        if entity_type == "EMAIL":
+            # Preserve email structure: user@domain.com
+            local, domain = value.split("@")
+            pseudo_local = self.pseudonymize(local, "EMAIL_LOCAL")[:8]
+            return f"{pseudo_local}@{domain}"
+        
+        elif entity_type == "PHONE":
+            # Preserve phone format: (XXX) XXX-XXXX
+            digits = ''.join(c for c in value if c.isdigit())
+            pseudo_digits = self.pseudonymize(digits, "PHONE")[:10]
+            return f"({pseudo_digits[:3]}) {pseudo_digits[3:6]}-{pseudo_digits[6:]}"
+        
+        elif entity_type == "NAME":
+            # Generate realistic pseudonym
+            hash_val = int(self.pseudonymize(value, "NAME")[:8], 16)
+            first_names = ["Alex", "Jordan", "Taylor", "Morgan", "Casey"]
+            last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones"]
+            
+            first = first_names[hash_val % len(first_names)]
+            last = last_names[(hash_val // 100) % len(last_names)]
+            return f"{first} {last}"
+        
+        return self.pseudonymize(value, entity_type)
+
+# Usage
+engine = PseudonymizationEngine(secret_key="your-secret-key")
+
+# Consistent pseudonyms
+email1 = engine.pseudonymize("john@example.com", "EMAIL")
+email2 = engine.pseudonymize("john@example.com", "EMAIL")
+print(f"Same input, same output: {email1 == email2}")  # True
+
+# Format-preserving pseudonymization
+original_email = "john.smith@company.com"
+pseudo_email = engine.pseudonymize_preserving_format(original_email, "EMAIL")
+print(f"Original: {original_email}")
+print(f"Pseudonym: {pseudo_email}")  # e.g., "a3f5e8d2@company.com"
+</code></pre>
+</div>
+
+<h2>Differential Privacy for Aggregated Data</h2>
+<div class="code-block">
+<pre><code>import numpy as np
+
+class DifferentialPrivacy:
+    """Add noise to protect individual privacy in aggregated data"""
+    
+    def __init__(self, epsilon: float = 1.0):
+        """
+        epsilon: Privacy budget (lower = more privacy, less accuracy)
+        - epsilon < 1: Strong privacy
+        - epsilon = 1: Moderate privacy
+        - epsilon > 1: Weak privacy
+        """
+        self.epsilon = epsilon
+    
+    def add_laplace_noise(self, true_value: float, sensitivity: float = 1.0) -> float:
+        """Add Laplace noise for differential privacy"""
+        scale = sensitivity / self.epsilon
+        noise = np.random.laplace(0, scale)
+        return true_value + noise
+    
+    def private_count(self, count: int) -> int:
+        """Return noisy count"""
+        noisy = self.add_laplace_noise(float(count), sensitivity=1.0)
+        return max(0, int(round(noisy)))  # Ensure non-negative
+    
+    def private_average(self, values: list, min_val: float, max_val: float) -> float:
+        """Return noisy average"""
+        true_avg = np.mean(values)
+        sensitivity = (max_val - min_val) / len(values)
+        return self.add_laplace_noise(true_avg, sensitivity)
+
+# Usage for GenAI analytics
+dp = DifferentialPrivacy(epsilon=0.5)  # Strong privacy
+
+# Example: Report user statistics without revealing individuals
+true_user_count = 1000
+reported_count = dp.private_count(true_user_count)
+print(f"True count: {true_user_count}, Reported: {reported_count}")
+
+# Average age with privacy
+ages = [25, 30, 35, 40, 45]
+private_avg = dp.private_average(ages, min_val=18, max_val=100)
+print(f"True average: {np.mean(ages):.1f}, Private average: {private_avg:.1f}")
+</code></pre>
+</div>
+
+<h2>K-Anonymity for Dataset Release</h2>
+<div class="code-block">
+<pre><code>import pandas as pd
+
+class KAnonymity:
+    """Ensure k-anonymity in datasets"""
+    
+    def __init__(self, k: int = 5):
+        """
+        k: Minimum group size
+        Each combination of quasi-identifiers must appear at least k times
+        """
+        self.k = k
+    
+    def generalize_age(self, age: int) -> str:
+        """Generalize age into ranges"""
+        if age < 20:
+            return "< 20"
+        elif age < 30:
+            return "20-29"
+        elif age < 40:
+            return "30-39"
+        elif age < 50:
+            return "40-49"
+        elif age < 60:
+            return "50-59"
+        else:
+            return "60+"
+    
+    def generalize_zipcode(self, zipcode: str) -> str:
+        """Generalize ZIP code to first 3 digits"""
+        return zipcode[:3] + "**"
+    
+    def achieve_k_anonymity(self, df: pd.DataFrame, quasi_identifiers: list) -> pd.DataFrame:
+        """Generalize data to achieve k-anonymity"""
+        
+        result = df.copy()
+        
+        # Apply generalizations
+        if 'age' in quasi_identifiers:
+            result['age'] = result['age'].apply(self.generalize_age)
+        
+        if 'zipcode' in quasi_identifiers:
+            result['zipcode'] = result['zipcode'].apply(self.generalize_zipcode)
+        
+        # Check k-anonymity
+        group_sizes = result.groupby(quasi_identifiers).size()
+        min_group_size = group_sizes.min()
+        
+        if min_group_size < self.k:
+            # Suppress small groups
+            small_groups = group_sizes[group_sizes < self.k].index
+            for group in small_groups:
+                mask = True
+                for col, val in zip(quasi_identifiers, group):
+                    mask &= (result[col] == val)
+                result = result[~mask]
+        
+        return result
+
+# Example usage
+data = pd.DataFrame({
+    'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
+    'age': [25, 27, 26, 45, 46],
+    'zipcode': ['10001', '10002', '10001', '90210', '90211'],
+    'diagnosis': ['Flu', 'Cold', 'Flu', 'Diabetes', 'Diabetes']
+})
+
+k_anon = KAnonymity(k=2)
+anonymized = k_anon.achieve_k_anonymity(
+    data,
+    quasi_identifiers=['age', 'zipcode']
+)
+
+print("Original data:")
+print(data[['age', 'zipcode', 'diagnosis']])
+print("\nK-anonymous data:")
+print(anonymized[['age', 'zipcode', 'diagnosis']])
+</code></pre>
+</div>
+
+<h2>Combining Techniques for GenAI Pipelines</h2>
+<div class="code-block">
+<pre><code>class HybridAnonymization:
+    """Combine multiple techniques based on data sensitivity"""
+    
+    def __init__(self):
+        self.vault = SecureTokenVault("secret-key")
+        self.pseudo_engine = PseudonymizationEngine("pseudo-key")
+    
+    def anonymize_for_llm(self, text: str, entities: list) -> tuple:
+        """Apply appropriate technique based on entity type"""
+        
+        result = text
+        mapping = {}
+        
+        # Sort entities by position (reverse) to maintain indices
+        for entity in sorted(entities, key=lambda e: e.start, reverse=True):
+            original = text[entity.start:entity.end]
+            entity_type = entity.entity_type
+            
+            # Critical PII: Tokenize (reversible)
+            if entity_type in ["US_SSN", "CREDIT_CARD", "US_PASSPORT"]:
+                replacement = self.vault.tokenize(original, entity_type, ttl_hours=24)
+            
+            # Names: Pseudonymize (consistent but not reversible)
+            elif entity_type == "PERSON":
+                replacement = self.pseudo_engine.pseudonymize_preserving_format(
+                    original, "NAME"
+                )
+            
+            # Contact info: Format-preserving pseudonymization
+            elif entity_type in ["EMAIL_ADDRESS", "PHONE_NUMBER"]:
+                replacement = self.pseudo_engine.pseudonymize_preserving_format(
+                    original, entity_type
+                )
+            
+            # Everything else: Simple redaction
+            else:
+                replacement = f"[{entity_type}]"
+            
+            # Apply replacement
+            result = result[:entity.start] + replacement + result[entity.end:]
+            mapping[replacement] = original
+        
+        return result, mapping
+
+# Usage
+hybrid = HybridAnonymization()
+
+text = """
+Patient John Smith (SSN: 123-45-6789) contacted us at john@email.com.
+Credit card ending in 4532 was charged $150.
+"""
+
+anonymized, mapping = hybrid.anonymize_for_llm(text, detected_entities)
+print(f"Anonymized: {anonymized}")
+print(f"Mapping: {mapping}")
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Choose based on use case:</strong> Tokenization for reversibility, pseudonymization for analytics</li>
+    <li><strong>Secure token storage:</strong> Use encrypted databases with access controls and audit logging</li>
+    <li><strong>Implement expiration:</strong> Tokens should have TTL to limit exposure window</li>
+    <li><strong>Monitor access patterns:</strong> Track detokenization requests for anomaly detection</li>
+    <li><strong>Use strong cryptography:</strong> HMAC-SHA256 minimum, AES-256 for encryption</li>
+    <li><strong>Key rotation:</strong> Regularly rotate encryption keys with proper migration</li>
+    <li><strong>Test reversibility:</strong> Regularly verify tokenization/detokenization workflows</li>
+    <li><strong>Document mappings:</strong> Maintain clear records of what technique is used where</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

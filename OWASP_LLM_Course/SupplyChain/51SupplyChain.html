@@ -1,0 +1,51 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM05: Supply Chain Vulnerabilities</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM05: Supply Chain Vulnerabilities</h1>
+
+<p>The supply chain for LLM applications includes base models, fine-tuning datasets, software libraries, and third-party plugins. A vulnerability in any of these components can compromise the security and integrity of your entire application.</p>
+
+<h2>5.1 The Complex LLM Supply Chain</h2>
+<ul>
+    <li><strong>Model Providers:</strong> Vulnerabilities in the APIs or infrastructure of providers like OpenAI, Anthropic, or Google.</li>
+    <li><strong>Open-Source Models:</strong> Malicious models uploaded to platforms like Hugging Face (e.g., a model file that contains a "pickle bomb" for remote code execution).</li>
+    <li><strong>Training Datasets:</strong> Poisoned or biased datasets obtained from the community.</li>
+    <li><strong>Orchestration Frameworks:</strong> Vulnerabilities in libraries like LangChain, LlamaIndex, or Spring AI.</li>
+    <li><strong>Plugins and Tools:</strong> Malicious or poorly coded plugins that have excessive permissions.</li>
+</ul>
+
+<h2>5.2 Supply Chain Attack Vectors</h2>
+<ul>
+    <li><strong>Model Squatting:</strong> Registering a model name that is very similar to a popular one on Hugging Face to trick developers into using a malicious version.</li>
+    <li><strong>Pickle Deserialization:</strong> Using models stored in the legacy "Pickle" format, which can execute arbitrary code when loaded.</li>
+    <li><strong>Stale Libraries:</strong> Using outdated versions of AI frameworks that have known security bugs.</li>
+    <li><strong>Vulnerable Plugins:</strong> Integrating with a third-party plugin that is susceptible to prompt injection or has been hijacked by an attacker.</li>
+</ul>
+
+<h2>5.3 Remediation Strategies</h2>
+<p>Securing the LLM supply chain requires a proactive and defensive posture:
+<ul>
+    <li><strong>Vulnerability Scanning (SCA):</strong> Regularly scanning your application's dependencies (including AI-specific libraries) for known vulnerabilities.</li>
+    <li><strong>Model Verification:</strong> Only using models from reputable sources. Verifying the SHA-256 hash of model files before loading them.</li>
+    <li><strong>Avoid Insecure Formats:</strong> Preferring modern, safer model formats like <code>Safetensors</code> over legacy formats like <code>Pickle</code> or <code>PyTorch Checkpoint</code>.</li>
+    <li><strong>Plugin Sandboxing and Review:</strong> Rigorously reviewing any third-party plugins and running them in isolated environments with the minimum necessary permissions.</li>
+    <li><strong>Model Inventory (AI Bill of Materials - AI-BOM):</strong> Maintaining a complete record of all models, datasets, and libraries used in your application to enable fast response to new vulnerabilities.</li>
+</ul></p>
+
+<h2>5.4 The Importance of "Internal" Supply Chain</h2>
+<p>If your organization fine-tunes its own models, you must also secure your internal supply chain. This includes the internal servers used for training, the repositories where model weights are stored, and the access controls for the data scientists and developers working on the project.</p>
+
+<p>By treating AI components with the same security rigor as traditional software libraries, you can significantly reduce the risk of a supply-chain-based compromise.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

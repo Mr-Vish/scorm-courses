@@ -1,0 +1,242 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Anatomy of a System Prompt</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>Anatomy of a System Prompt</h1>
+
+<h2>What Is a System Prompt?</h2>
+<p>
+A system prompt is the highest-priority instruction provided to a large language model before
+any user interaction occurs. It defines how the model should behave, what role it should assume,
+what constraints it must obey, and how outputs should be structured. Unlike user prompts,
+system prompts persist across all interactions and shape every response the model generates.
+</p>
+
+<p>
+In production systems, the system prompt functions as an invisible policy layer. End users
+never see it, yet it governs tone, safety, reasoning style, verbosity, and boundaries.
+Well-designed system prompts can dramatically improve consistency, reliability, and safety
+without requiring model fine-tuning.
+</p>
+
+<p>
+From an architectural perspective, system prompts are a form of soft control. They do not
+change model weights, but they strongly bias token generation. This makes them fast to iterate,
+cheap to deploy, and essential for real-world applications.
+</p>
+
+<h2>Why System Prompts Matter More Than You Think</h2>
+<p>
+Many early LLM applications failed not because of model limitations, but because of weak
+system prompts. Without clear guidance, models may hallucinate, over-answer, under-answer,
+or violate domain boundaries.
+</p>
+
+<p>
+A strong system prompt acts as:
+</p>
+
+<ul>
+    <li>A role contract defining expertise and scope</li>
+    <li>A behavioral governor controlling tone and style</li>
+    <li>A safety boundary preventing misuse</li>
+    <li>A formatting contract enabling downstream parsing</li>
+</ul>
+
+<p>
+In enterprise systems, the system prompt often carries more importance than the user prompt.
+It encodes organizational policy, compliance requirements, and brand voice.
+</p>
+
+<h2>Core Components of a System Prompt</h2>
+<p>
+Although system prompts can vary widely, effective prompts tend to include several recurring
+components.
+</p>
+
+<ol>
+    <li>
+        <strong>Role Definition</strong><br/>
+        This establishes who the model is supposed to be. Roles narrow the model’s response
+        space and reduce ambiguity.
+    </li>
+    <li>
+        <strong>Task Description</strong><br/>
+        This defines what the model should do, not how it should do it.
+    </li>
+    <li>
+        <strong>Behavioral Guidelines</strong><br/>
+        These describe tone, attitude, reasoning style, and interaction patterns.
+    </li>
+    <li>
+        <strong>Output Format</strong><br/>
+        This ensures responses are structured and predictable.
+    </li>
+    <li>
+        <strong>Constraints</strong><br/>
+        These explicitly forbid unwanted behaviors.
+    </li>
+    <li>
+        <strong>Examples</strong><br/>
+        Optional but powerful demonstrations of desired behavior.
+    </li>
+</ol>
+
+<h2>Role Definition: Anchoring the Model</h2>
+<p>
+Role definition is the foundation of the system prompt. It answers the question: “Who are you?”
+</p>
+
+<p>
+Effective roles are:
+</p>
+<ul>
+    <li>Specific rather than generic</li>
+    <li>Domain-scoped</li>
+    <li>Aligned with the product’s purpose</li>
+</ul>
+
+<p>
+For example, “You are a customer support agent for a SaaS billing platform” is significantly
+more effective than “You are a helpful assistant.” Specificity reduces hallucinations and
+off-topic responses.
+</p>
+
+<h2>Task Description: Clarifying Intent</h2>
+<p>
+The task description defines the core function of the model. It should describe outcomes,
+not implementation details.
+</p>
+
+<p>
+Poor task descriptions often overload the model with conflicting goals. Strong prompts
+prioritize tasks and define what success looks like.
+</p>
+
+<h2>Behavioral Guidelines: Shaping Interaction Style</h2>
+<p>
+Behavioral guidelines control tone, empathy, verbosity, and reasoning transparency.
+These instructions are especially important for user-facing systems.
+</p>
+
+<p>
+Common behavioral constraints include:
+</p>
+
+<ul>
+    <li>Being polite and empathetic</li>
+    <li>Asking clarifying questions when input is ambiguous</li>
+    <li>Avoiding speculation</li>
+    <li>Admitting uncertainty</li>
+</ul>
+
+<p>
+These guidelines reduce user frustration and increase trust.
+</p>
+
+<h2>Output Format: Enabling Reliability</h2>
+<p>
+Output format control is essential when LLM outputs are consumed by downstream systems.
+Unstructured responses introduce brittleness and parsing errors.
+</p>
+
+<p>
+Formats may include:
+</p>
+
+<ul>
+    <li>Bulleted lists</li>
+    <li>Strict JSON schemas</li>
+    <li>Fixed section headers</li>
+    <li>Tabular responses</li>
+</ul>
+
+<p>
+Explicit formatting instructions significantly reduce variability.
+</p>
+
+<h2>Constraints: Preventing Undesired Behavior</h2>
+<p>
+Constraints are negative instructions that define what the model must not do.
+They are essential for safety, compliance, and brand protection.
+</p>
+
+<p>
+Effective constraints are:
+</p>
+
+<ul>
+    <li>Explicit</li>
+    <li>Unambiguous</li>
+    <li>Repeated when critical</li>
+</ul>
+
+<p>
+Using words such as “NEVER” and “DO NOT” is appropriate in system prompts and improves adherence.
+</p>
+
+<h2>Examples: Teaching by Demonstration</h2>
+<p>
+Examples are optional but extremely powerful. They reduce ambiguity by showing the model
+exactly how it should respond in realistic scenarios.
+</p>
+
+<p>
+However, examples should be used sparingly. Too many examples increase prompt length and
+can reduce flexibility.
+</p>
+
+<h2>Common Failure Modes</h2>
+<p>
+Even well-written system prompts can fail if they are:
+</p>
+
+<ul>
+    <li>Too vague</li>
+    <li>Internally contradictory</li>
+    <li>Overloaded with rules</li>
+    <li>Misaligned with user intent</li>
+</ul>
+
+<p>
+Prompt design is an iterative process. Testing and refinement are unavoidable.
+</p>
+
+<h2>System Prompts in Multi-Agent Systems</h2>
+<p>
+In advanced architectures, multiple agents may each have distinct system prompts.
+Clear role separation is essential to avoid overlap and conflict.
+</p>
+
+<h2>Additional Readings</h2>
+<ul>
+    <li>
+        <a href="https://platform.openai.com/docs/guides/prompt-engineering" target="_blank">
+        OpenAI – Prompt Engineering Guide
+        </a>
+    </li>
+    <li>
+        <a href="https://www.anthropic.com/research/constitutional-ai" target="_blank">
+        Anthropic – Constitutional AI
+        </a>
+    </li>
+    <li>
+        <a href="https://www.promptingguide.ai/" target="_blank">
+        Prompt Engineering Guide (Community)
+        </a>
+    </li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Batch Processing and Asynchronous Operations</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Batch Processing and Asynchronous Operations</h1>
+
+<h2>Learning Objectives</h2>
+<ul>
+    <li>Understand batch processing architecture and use cases</li>
+    <li>Learn asynchronous request patterns for high-volume workloads</li>
+    <li>Master cost optimization through batch operations</li>
+    <li>Comprehend batch job management and monitoring strategies</li>
+</ul>
+
+<h2>Understanding Batch Processing</h2>
+<p>Batch processing enables efficient handling of large volumes of API requests by grouping multiple operations into single submissions. This approach optimizes resource utilization, reduces overhead, and provides significant cost advantages for non-time-sensitive workloads.</p>
+
+<h3>Batch vs Real-Time Processing</h3>
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Real-Time Processing</th>
+        <th>Batch Processing</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Response Time</td>
+        <td>Immediate (seconds)</td>
+        <td>Delayed (minutes to hours)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost Efficiency</td>
+        <td>Standard pricing</td>
+        <td>50% cost reduction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Use Case</td>
+        <td>Interactive applications</td>
+        <td>Background processing, analytics</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Throughput</td>
+        <td>Limited by rate limits</td>
+        <td>High-volume capable</td>
+    </tr>
+</table>
+
+<h2>Batch API Architecture</h2>
+<p>The Anthropic Batch API follows an asynchronous pattern where requests are submitted, queued, processed, and results retrieved separately.</p>
+
+<h3>Batch Processing Workflow</h3>
+<ol>
+    <li><strong>Batch Creation:</strong> Submit collection of requests as a single batch job</li>
+    <li><strong>Validation:</strong> System validates request format and parameters</li>
+    <li><strong>Queuing:</strong> Batch enters processing queue with assigned priority</li>
+    <li><strong>Processing:</strong> Requests processed asynchronously in background</li>
+    <li><strong>Completion:</strong> Results compiled and made available for retrieval</li>
+    <li><strong>Retrieval:</strong> Client downloads results file with all responses</li>
+</ol>
+
+<h2>Batch Request Structure</h2>
+<p>Batch requests use JSONL (JSON Lines) format where each line represents an individual request:</p>
+
+<div class="code-block">
+<pre><code>{"custom_id": "request-1", "params": {"model": "claude-sonnet-4-20250514", "max_tokens": 1024, "messages": [{"role": "user", "content": "Summarize this document..."}]}}
+{"custom_id": "request-2", "params": {"model": "claude-sonnet-4-20250514", "max_tokens": 1024, "messages": [{"role": "user", "content": "Analyze this data..."}]}}
+{"custom_id": "request-3", "params": {"model": "claude-sonnet-4-20250514", "max_tokens": 1024, "messages": [{"role": "user", "content": "Generate report..."}]}}</code></pre>
+</div>
+
+<h3>Key Components</h3>
+<ul>
+    <li><strong>custom_id:</strong> Unique identifier for tracking individual requests within batch</li>
+    <li><strong>params:</strong> Standard Messages API parameters for each request</li>
+    <li><strong>JSONL Format:</strong> One complete JSON object per line, no commas between lines</li>
+</ul>
+
+<h2>Batch Submission Process</h2>
+<p>Submitting a batch involves uploading the JSONL file and creating a batch job:</p>
+
+<h3>Step 1: Upload Requests File</h3>
+<p>Upload JSONL file containing all requests to Anthropic's file storage.</p>
+
+<h3>Step 2: Create Batch Job</h3>
+<p>Reference the uploaded file to create a batch processing job with configuration parameters.</p>
+
+<h3>Step 3: Monitor Progress</h3>
+<p>Poll batch status endpoint to track processing progress and completion.</p>
+
+<h2>Batch Job States</h2>
+<p>Batch jobs progress through defined states:</p>
+
+<ul>
+    <li><strong>validating:</strong> System validating request format and parameters</li>
+    <li><strong>in_progress:</strong> Batch actively being processed</li>
+    <li><strong>completed:</strong> All requests processed successfully</li>
+    <li><strong>failed:</strong> Batch processing encountered unrecoverable error</li>
+    <li><strong>expired:</strong> Batch exceeded maximum processing time</li>
+    <li><strong>cancelled:</strong> Batch manually cancelled by user</li>
+</ul>
+
+<h2>Cost Optimization Benefits</h2>
+
+<h3>50% Cost Reduction</h3>
+<p>Batch processing offers significant cost advantages:</p>
+<ul>
+    <li><strong>Lower Token Pricing:</strong> Batch requests priced at 50% of standard rates</li>
+    <li><strong>Volume Efficiency:</strong> Process thousands of requests at reduced cost</li>
+    <li><strong>Resource Optimization:</strong> Anthropic can optimize resource allocation for batch workloads</li>
+</ul>
+
+<h3>Cost Calculation Example</h3>
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Standard API Cost</th>
+        <th>Batch API Cost</th>
+        <th>Savings</th>
+    </tr>
+    <tr>
+        <td class="rowheader">10,000 requests @ 1K tokens each</td>
+        <td>$150</td>
+        <td>$75</td>
+        <td>$75 (50%)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">100,000 requests @ 500 tokens each</td>
+        <td>$750</td>
+        <td>$375</td>
+        <td>$375 (50%)</td>
+    </tr>
+</table>
+
+<h2>Ideal Use Cases for Batch Processing</h2>
+
+<h3>1. Content Analysis and Classification</h3>
+<ul>
+    <li>Analyzing thousands of customer reviews for sentiment</li>
+    <li>Classifying support tickets by category and priority</li>
+    <li>Extracting structured data from large document collections</li>
+</ul>
+
+<h3>2. Data Enrichment</h3>
+<ul>
+    <li>Generating product descriptions from specifications</li>
+    <li>Creating summaries for article databases</li>
+    <li>Translating content libraries to multiple languages</li>
+</ul>
+
+<h3>3. Evaluation and Testing</h3>
+<ul>
+    <li>Running model evaluation benchmarks</li>
+    <li>Testing prompt variations across datasets</li>
+    <li>Quality assurance for AI-generated content</li>
+</ul>
+
+<h3>4. Periodic Reporting</h3>
+<ul>
+    <li>Generating daily/weekly analytical reports</li>
+    <li>Creating automated content digests</li>
+    <li>Producing scheduled business intelligence summaries</li>
+</ul>
+
+<h2>Batch Processing Best Practices</h2>
+
+<h3>1. Request Organization</h3>
+<ul>
+    <li><strong>Logical Grouping:</strong> Group related requests in same batch</li>
+    <li><strong>Size Optimization:</strong> Balance batch size (1,000-10,000 requests optimal)</li>
+    <li><strong>Priority Separation:</strong> Create separate batches for different priority levels</li>
+</ul>
+
+<h3>2. Error Handling Strategy</h3>
+<ul>
+    <li><strong>Individual Failures:</strong> Some requests may fail while batch completes</li>
+    <li><strong>Retry Logic:</strong> Implement retry mechanism for failed individual requests</li>
+    <li><strong>Partial Results:</strong> Process successful results even if some requests fail</li>
+</ul>
+
+<h3>3. Monitoring and Tracking</h3>
+<ul>
+    <li><strong>Status Polling:</strong> Check batch status at appropriate intervals (every 5-10 minutes)</li>
+    <li><strong>Progress Metrics:</strong> Track completion percentage and estimated time remaining</li>
+    <li><strong>Alerting:</strong> Set up notifications for batch completion or failures</li>
+</ul>
+
+<h3>4. Result Management</h3>
+<ul>
+    <li><strong>Timely Retrieval:</strong> Download results promptly after completion</li>
+    <li><strong>Storage Strategy:</strong> Plan for storing large result files</li>
+    <li><strong>Processing Pipeline:</strong> Automate result parsing and downstream processing</li>
+</ul>
+
+<h2>Asynchronous Processing Patterns</h2>
+
+<h3>Fire-and-Forget Pattern</h3>
+<p>Submit batch and check results later without blocking application flow:</p>
+<ul>
+    <li>Submit batch job</li>
+    <li>Store batch ID for later retrieval</li>
+    <li>Continue application operations</li>
+    <li>Retrieve results when needed</li>
+</ul>
+
+<h3>Scheduled Processing Pattern</h3>
+<p>Regular batch submissions on defined schedule:</p>
+<ul>
+    <li>Accumulate requests throughout day</li>
+    <li>Submit batch at scheduled time (e.g., nightly)</li>
+    <li>Process results in morning</li>
+    <li>Integrate into daily workflows</li>
+</ul>
+
+<h3>Event-Driven Pattern</h3>
+<p>Trigger batch processing based on events:</p>
+<ul>
+    <li>Monitor for triggering conditions (e.g., queue size threshold)</li>
+    <li>Submit batch when conditions met</li>
+    <li>Process results and trigger downstream actions</li>
+</ul>
+
+<h2>Performance Considerations</h2>
+
+<h3>Processing Time Expectations</h3>
+<ul>
+    <li><strong>Small Batches (100-1,000 requests):</strong> 10-30 minutes</li>
+    <li><strong>Medium Batches (1,000-10,000 requests):</strong> 30 minutes - 2 hours</li>
+    <li><strong>Large Batches (10,000+ requests):</strong> 2-6 hours</li>
+</ul>
+
+<h3>Factors Affecting Processing Time</h3>
+<ul>
+    <li>Total number of requests in batch</li>
+    <li>Complexity of individual requests</li>
+    <li>Model selected (Opus slower than Haiku)</li>
+    <li>Current system load and queue depth</li>
+    <li>Token counts (input and output)</li>
+</ul>
+
+<h2>Batch API Limitations</h2>
+
+<h3>Technical Constraints</h3>
+<ul>
+    <li><strong>Maximum Batch Size:</strong> 100,000 requests per batch</li>
+    <li><strong>File Size Limit:</strong> 100 MB for JSONL input file</li>
+    <li><strong>Processing Timeout:</strong> 24-hour maximum processing window</li>
+    <li><strong>Result Retention:</strong> Results available for 30 days after completion</li>
+</ul>
+
+<h3>Operational Considerations</h3>
+<ul>
+    <li>No real-time feedback during processing</li>
+    <li>Cannot modify batch after submission</li>
+    <li>Limited to specific models (check documentation)</li>
+    <li>Requires asynchronous application architecture</li>
+</ul>
+
+<h2>Monitoring and Observability</h2>
+
+<h3>Key Metrics to Track</h3>
+<ul>
+    <li><strong>Batch Completion Rate:</strong> Percentage of batches completing successfully</li>
+    <li><strong>Average Processing Time:</strong> Time from submission to completion</li>
+    <li><strong>Request Success Rate:</strong> Individual request success within batches</li>
+    <li><strong>Cost Per Request:</strong> Actual cost efficiency achieved</li>
+    <li><strong>Queue Depth:</strong> Number of pending batches</li>
+</ul>
+
+<h3>Logging Best Practices</h3>
+<ul>
+    <li>Log batch submission with timestamp and request count</li>
+    <li>Record batch ID for tracking and troubleshooting</li>
+    <li>Log status checks and state transitions</li>
+    <li>Capture completion metrics and any errors</li>
+    <li>Store result file locations and processing outcomes</li>
+</ul>
+
+<h2>Integration Patterns</h2>
+
+<h3>Queue-Based Architecture</h3>
+<p>Use message queues to manage batch workflow:</p>
+<ul>
+    <li>Requests added to queue as they arrive</li>
+    <li>Worker process batches requests periodically</li>
+    <li>Batch submission triggered by size or time threshold</li>
+    <li>Results processed and distributed to consumers</li>
+</ul>
+
+<h3>Database-Driven Pattern</h3>
+<p>Track batch operations in database:</p>
+<ul>
+    <li>Store pending requests in database table</li>
+    <li>Batch creation process queries pending requests</li>
+    <li>Update request status as batch progresses</li>
+    <li>Store results linked to original requests</li>
+</ul>
+
+<h2>When NOT to Use Batch Processing</h2>
+<ul>
+    <li><strong>Real-Time Requirements:</strong> User-facing applications needing immediate responses</li>
+    <li><strong>Interactive Workflows:</strong> Conversational AI or chat applications</li>
+    <li><strong>Low Volume:</strong> Fewer than 100 requests (overhead not justified)</li>
+    <li><strong>Time-Sensitive:</strong> Operations with strict latency requirements</li>
+    <li><strong>Dynamic Context:</strong> Requests dependent on previous responses</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Batch processing offers 50% cost reduction for high-volume, non-time-sensitive workloads</li>
+    <li>Asynchronous workflow involves submission, queuing, processing, and retrieval phases</li>
+    <li>JSONL format enables efficient packaging of multiple requests</li>
+    <li>Ideal for content analysis, data enrichment, evaluation, and periodic reporting</li>
+    <li>Processing times range from minutes to hours depending on batch size and complexity</li>
+    <li>Proper monitoring, error handling, and result management are essential</li>
+    <li>Not suitable for real-time, interactive, or low-volume scenarios</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

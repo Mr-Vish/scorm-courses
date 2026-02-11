@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hybrid Retrieval with Claude</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hybrid Retrieval with Claude</h1>
+<div class="container">
+<h2>Hybrid Retrieval with Claude</h2>
+<p>While Claude is excellent at reasoning over semantic context, the best RAG pipelines combine this with traditional keyword-based retrieval. <strong>Hybrid Retrieval</strong> ensures that your system can handle both "broad meaning" queries and "exact match" searches for technical terms, IDs, or rare acronyms.</p>
+
+<h3>The Two Pillars of Hybrid Retrieval</h3>
+<ol>
+    <li><strong>Vector Search (Semantic):</strong> Great for finding general concepts and "meaning." Uses models to map text to high-dimensional vectors.</li>
+    <li><strong>Keyword Search (Lexical):</strong> Great for finding specific words. Uses traditional search techniques like BM25 to find exact matches for rare terms.</li>
+</ol>
+
+<h3>Why Claude Needs Both</h3>
+<p>Claude's reasoning is powerful, but it's only as good as the information it's given. If a user asks for "Error 0x8004210B" and your vector search only returns documents about "connection issues," Claude might give a good general answer but miss the specific fix for that exact error code. Hybrid retrieval ensures the specific fix is included in the context.</p>
+
+<h3>Implementing Hybrid Search for Claude</h3>
+<p>Most modern vector databases (like Pinecone, Weaviate, or Qdrant) support hybrid search out of the box. The typical workflow is:
+<ol>
+    <li><strong>Query:</strong> The user's question is sent to the database.</li>
+    <li><strong>Parallel Search:</strong> The database performs both a vector search and a keyword search.</li>
+    <li><strong>Rank Fusion:</strong> The results are combined using an algorithm like <strong>Reciprocal Rank Fusion (RRF)</strong>. This puts the documents that appear high in *both* lists at the very top.</li>
+    <li><strong>Augment:</strong> The top reranked results are wrapped in XML tags and sent to Claude.</li>
+</ol></p>
+
+<h3>Tuning the Hybrid Weights</h3>
+<p>Depending on your use case, you might want to "weight" one type of search more heavily than the other.
+<ul>
+    <li><strong>Technical Documentation:</strong> Might benefit from a higher keyword weight to catch specific function names or error codes.</li>
+    <li><strong>Customer Feedback:</strong> Might benefit from a higher vector weight to catch the "sentiment" and "intent" of the user.</li>
+</ul>
+Claude can actually help you find the best weights! You can run a small experiment and ask Claude to evaluate which set of retrieved documents (Vector, Keyword, or Hybrid) provided the best context for a set of test questions.</p>
+
+<h3>Metadata Filtering + Hybrid Search</h3>
+<p>The most robust pipelines use metadata as a third pillar. "Find documents about '0x8004210B' (Keyword) related to 'Outlook' (Metadata Filter) that mention 'authentication' (Vector Search)." This triple-threat approach is the gold standard for enterprise RAG.</p>
+
+<h3>Practical Exercise: Comparing Search Results</h3>
+<p>Take a specific technical query. Run a pure Vector Search and a pure Keyword Search. Identify 3 documents that appeared in one but not the other. How would missing those 3 documents affect Claude's ability to provide a complete answer? This will demonstrate the power of hybrid retrieval.</p>
+
+<h3>Summary</h3>
+<p>Hybrid Retrieval is about robustness. By combining the semantic depth of vectors with the literal precision of keywords, you can build Claude-powered RAG systems that are resilient to the many different ways users ask questions and the diverse types of data they need to find.</p>
+
+</div>
+</body>
+</html>

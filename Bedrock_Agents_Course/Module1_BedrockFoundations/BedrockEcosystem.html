@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Amazon Bedrock Ecosystem and Foundation Models</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Amazon Bedrock Ecosystem and Foundation Models</h1>
+
+<h2>Module Objectives</h2>
+<p>In this section, you will:</p>
+<ul>
+    <li>Understand the Amazon Bedrock service architecture and its position in the AWS AI/ML ecosystem</li>
+    <li>Explore available foundation models and their characteristics</li>
+    <li>Learn how to select appropriate models for different agent use cases</li>
+    <li>Understand the relationship between Bedrock APIs, models, and agents</li>
+</ul>
+
+<h2>What is Amazon Bedrock?</h2>
+<p>Amazon Bedrock is a fully managed service that provides access to high-performing foundation models (FMs) from leading AI companies through a unified API. Unlike traditional machine learning services that require you to train and host your own models, Bedrock offers pre-trained, state-of-the-art models that can be used immediately for a wide range of generative AI tasks.</p>
+
+<p>Bedrock serves as the foundation layer for building generative AI applications on AWS. It abstracts away the complexity of model hosting, scaling, and infrastructure management, allowing developers to focus on application logic and user experience. The service provides three primary capabilities:</p>
+
+<ul>
+    <li><strong>Model Access:</strong> Direct API access to foundation models for text generation, embeddings, and image generation</li>
+    <li><strong>Model Customization:</strong> Fine-tuning capabilities to adapt models to specific domains or tasks</li>
+    <li><strong>Agents Framework:</strong> Orchestration layer for building autonomous AI agents that can reason, plan, and take actions</li>
+</ul>
+
+<h2>The Bedrock Service Architecture</h2>
+<p>Understanding Bedrock's architecture is essential for building effective agents. The service consists of several interconnected components:</p>
+
+<h3>1. Foundation Model Layer</h3>
+<p>At the core of Bedrock are the foundation models themselves. These are large-scale neural networks trained on vast amounts of text, code, and other data. Bedrock provides access to models from multiple providers:</p>
+
+<table>
+    <tr>
+        <th>Provider</th>
+        <th>Model Family</th>
+        <th>Key Strengths</th>
+        <th>Typical Use Cases</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Anthropic</td>
+        <td>Claude (Opus, Sonnet, Haiku)</td>
+        <td>Long context windows, strong reasoning, safety-focused</td>
+        <td>Complex analysis, document processing, customer service agents</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Amazon</td>
+        <td>Titan (Text, Embeddings, Multimodal)</td>
+        <td>Cost-effective, AWS-native, multilingual</td>
+        <td>Content generation, search, summarization</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Meta</td>
+        <td>Llama 2, Llama 3</td>
+        <td>Open-source, customizable, strong performance</td>
+        <td>General-purpose text generation, code assistance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cohere</td>
+        <td>Command, Embed</td>
+        <td>Enterprise-focused, multilingual, RAG-optimized</td>
+        <td>Search, classification, semantic understanding</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AI21 Labs</td>
+        <td>Jurassic-2</td>
+        <td>Instruction-following, creative writing</td>
+        <td>Content creation, marketing copy, summarization</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Stability AI</td>
+        <td>Stable Diffusion</td>
+        <td>Image generation and editing</td>
+        <td>Visual content creation, design automation</td>
+    </tr>
+</table>
+
+<h3>2. API Layer</h3>
+<p>Bedrock exposes three primary API categories:</p>
+<ul>
+    <li><strong>InvokeModel:</strong> Synchronous model invocation for real-time responses</li>
+    <li><strong>InvokeModelWithResponseStream:</strong> Streaming responses for improved user experience</li>
+    <li><strong>Agent APIs:</strong> Higher-level abstractions for creating and managing autonomous agents</li>
+</ul>
+
+<h3>3. Management and Governance Layer</h3>
+<p>This layer provides enterprise capabilities including:</p>
+<ul>
+    <li><strong>Model Evaluation:</strong> Tools to assess model performance on specific tasks</li>
+    <li><strong>Guardrails:</strong> Content filtering and safety controls</li>
+    <li><strong>Model Customization:</strong> Fine-tuning and continued pre-training</li>
+    <li><strong>Provisioned Throughput:</strong> Reserved capacity for predictable performance</li>
+</ul>
+
+<h2>Foundation Models: Deep Dive</h2>
+
+<h3>Claude Models (Anthropic)</h3>
+<p>Claude represents one of the most advanced model families available in Bedrock, particularly well-suited for agent applications due to its strong reasoning capabilities and extended context windows.</p>
+
+<p><strong>Claude 3 Opus:</strong> The most capable model in the Claude family, offering exceptional performance on complex reasoning tasks, nuanced analysis, and multi-step problem solving. With a 200K token context window, Opus can process entire codebases, lengthy documents, or extended conversation histories. This makes it ideal for agents that need to maintain deep context or analyze large amounts of information before taking action.</p>
+
+<p><strong>Claude 3 Sonnet:</strong> Balances performance and cost, providing strong reasoning capabilities at a lower price point than Opus. Sonnet is the recommended choice for most production agent deployments where you need reliable performance without the premium cost of Opus. It excels at customer service scenarios, data analysis tasks, and general-purpose automation.</p>
+
+<p><strong>Claude 3 Haiku:</strong> The fastest and most cost-effective Claude model, optimized for high-throughput scenarios where speed matters more than maximum capability. Haiku is suitable for agents handling simple queries, routing decisions, or tasks that don't require deep reasoning.</p>
+
+<h3>Amazon Titan Models</h3>
+<p>Titan models are Amazon's native foundation models, designed specifically for AWS integration and cost-conscious deployments.</p>
+
+<p><strong>Titan Text:</strong> A general-purpose text generation model suitable for summarization, content creation, and conversational applications. While not as capable as Claude for complex reasoning, Titan Text offers excellent value for straightforward agent tasks.</p>
+
+<p><strong>Titan Embeddings:</strong> Specialized for converting text into vector representations, essential for building knowledge bases and semantic search capabilities. Titan Embeddings supports multiple languages and produces 1,536-dimensional vectors optimized for retrieval tasks.</p>
+
+<p><strong>Titan Multimodal:</strong> Combines text and image understanding, enabling agents to process visual information alongside textual inputs. This opens possibilities for agents that need to analyze documents with images, process screenshots, or generate visual content.</p>
+
+<h3>Llama Models (Meta)</h3>
+<p>Llama 2 and Llama 3 are open-source models that offer strong performance and the flexibility of open licensing. These models are particularly popular in scenarios where organizations want more control over model behavior or need to fine-tune extensively.</p>
+
+<p>Llama 3 represents a significant advancement over Llama 2, with improved reasoning, coding capabilities, and multilingual support. For agent applications, Llama 3's enhanced instruction-following makes it a viable alternative to proprietary models, especially when combined with careful prompt engineering.</p>
+
+<h2>Selecting the Right Foundation Model</h2>
+<p>Choosing the appropriate foundation model for your agent is a critical decision that impacts performance, cost, and user experience. Consider these factors:</p>
+
+<h3>Task Complexity</h3>
+<ul>
+    <li><strong>Simple routing and classification:</strong> Claude Haiku, Titan Text</li>
+    <li><strong>General-purpose conversation and automation:</strong> Claude Sonnet, Llama 3</li>
+    <li><strong>Complex reasoning and analysis:</strong> Claude Opus</li>
+    <li><strong>Specialized domains (legal, medical, technical):</strong> Claude Opus with custom knowledge bases</li>
+</ul>
+
+<h3>Context Requirements</h3>
+<p>Different models support different context window sizes:</p>
+<ul>
+    <li><strong>Claude 3 models:</strong> Up to 200K tokens (approximately 150,000 words)</li>
+    <li><strong>Llama 3:</strong> Up to 8K tokens</li>
+    <li><strong>Titan Text:</strong> Up to 32K tokens</li>
+</ul>
+
+<p>For agents that need to maintain long conversation histories or process extensive documents, Claude's extended context window provides significant advantages.</p>
+
+<h3>Cost Considerations</h3>
+<p>Model pricing varies significantly based on capability:</p>
+<ul>
+    <li><strong>Input tokens:</strong> Cost per 1,000 tokens processed</li>
+    <li><strong>Output tokens:</strong> Cost per 1,000 tokens generated (typically higher than input)</li>
+    <li><strong>Embeddings:</strong> Cost per 1,000 tokens embedded (for knowledge base operations)</li>
+</ul>
+
+<p>For high-volume agent deployments, even small per-token cost differences can have substantial budget implications. Consider using tiered approaches where simple queries route to cost-effective models (Haiku, Titan) while complex tasks escalate to more capable models (Sonnet, Opus).</p>
+
+<h3>Latency and Throughput</h3>
+<p>Response time matters for user-facing agents:</p>
+<ul>
+    <li><strong>Fastest:</strong> Claude Haiku, Titan Text (sub-second responses for short prompts)</li>
+    <li><strong>Moderate:</strong> Claude Sonnet, Llama 3 (1-3 seconds typical)</li>
+    <li><strong>Slower:</strong> Claude Opus (3-5+ seconds for complex reasoning)</li>
+</ul>
+
+<h2>Bedrock Agents: The Orchestration Layer</h2>
+<p>While foundation models provide the intelligence, Bedrock Agents provide the orchestration framework that transforms models into autonomous systems. An agent is more than just a model—it's a complete system that includes:</p>
+
+<ul>
+    <li><strong>Foundation Model:</strong> The reasoning engine (Claude, Titan, Llama, etc.)</li>
+    <li><strong>Instructions:</strong> System-level prompts that define the agent's role, capabilities, and behavior</li>
+    <li><strong>Action Groups:</strong> APIs and tools the agent can invoke to perform real-world actions</li>
+    <li><strong>Knowledge Bases:</strong> Vector databases containing domain-specific information for RAG</li>
+    <li><strong>Guardrails:</strong> Safety controls and content filters</li>
+    <li><strong>Session Management:</strong> Conversation state and context tracking</li>
+</ul>
+
+<p>The agent orchestration flow works as follows:</p>
+<ol>
+    <li><strong>User Input:</strong> Natural language request received</li>
+    <li><strong>Pre-processing:</strong> Input validation, intent detection, context retrieval</li>
+    <li><strong>Reasoning:</strong> Foundation model analyzes request and plans actions</li>
+    <li><strong>Action Execution:</strong> Agent invokes APIs, queries knowledge bases, or returns control</li>
+    <li><strong>Post-processing:</strong> Results formatted and returned to user</li>
+    <li><strong>Session Update:</strong> Conversation state persisted for future turns</li>
+</ol>
+
+<h2>Integration with AWS Services</h2>
+<p>Bedrock Agents integrate seamlessly with the broader AWS ecosystem:</p>
+
+<ul>
+    <li><strong>AWS Lambda:</strong> Execute action group functions</li>
+    <li><strong>Amazon S3:</strong> Store knowledge base documents and agent artifacts</li>
+    <li><strong>Amazon OpenSearch Serverless:</strong> Vector database for knowledge bases</li>
+    <li><strong>AWS IAM:</strong> Fine-grained access control and permissions</li>
+    <li><strong>Amazon CloudWatch:</strong> Logging, monitoring, and alerting</li>
+    <li><strong>AWS CloudTrail:</strong> Audit trail for compliance</li>
+    <li><strong>Amazon EventBridge:</strong> Event-driven agent invocation</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Amazon Bedrock provides managed access to multiple foundation models through a unified API</li>
+    <li>Model selection should balance task complexity, context requirements, cost, and latency</li>
+    <li>Claude models excel at reasoning and long-context tasks, making them ideal for complex agents</li>
+    <li>Titan models offer cost-effective options for simpler use cases and embeddings</li>
+    <li>Bedrock Agents orchestrate foundation models with actions, knowledge, and guardrails</li>
+    <li>The service integrates deeply with AWS for enterprise-grade security and scalability</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

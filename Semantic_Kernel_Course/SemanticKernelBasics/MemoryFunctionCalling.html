@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Semantic Kernel - Memory and Knowledge</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Giving Agents a Memory: Knowledge and Context</h1>
+
+<div class="content-section">
+<h2>1. The Problem of "Stateless" AI</h2>
+<p>By default, LLMs are stateless—they don't remember anything from one conversation to the next. Even within a single conversation, their "context window" is limited. <strong>Memory</strong> in Semantic Kernel allows you to give your agents a long-term "brain" where they can store and retrieve information, documents, and previous interactions. This is the foundation of <strong>Retrieval-Augmented Generation (RAG)</strong>.</p>
+
+<h2>2. How Semantic Memory Works</h2>
+<p>Unlike a traditional database that searches for exact words, Semantic Memory searches for <strong>meaning</strong>. This is achieved through three steps:</p>
+<ol>
+    <li><strong>Embeddings:</strong> Converting text into a long list of numbers (a vector) that represents its semantic meaning.</li>
+    <li><strong>Vector Database:</strong> Storing these vectors in a specialized database (like Pinecone, Weaviate, or Azure AI Search).</li>
+    <li><strong>Semantic Search:</strong> When a user asks a question, the question is also converted into a vector. The database then finds the "nearest neighbors"—the stored vectors that are mathematically most similar to the question vector.</li>
+</ol>
+
+<h2>3. Types of Memory in Semantic Kernel</h2>
+<ul>
+    <li><strong>Text Memory:</strong> For storing and retrieving raw text snippets or document chunks.</li>
+    <li><strong>Key-Value Memory:</strong> For storing structured metadata associated with a specific key.</li>
+    <li><strong>Semantic Collections:</strong> Organizing memory into logical groups (e.g., "Company Policies," "Customer History," "Technical Manuals").</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Implementing Memory in Semantic Kernel (Python)
+from semantic_kernel.memory import VolatileMemoryStore
+
+# 1. Choose a memory store (Volatile is in-memory for testing)
+kernel.use_memory(VolatileMemoryStore())
+
+# 2. Add information to memory
+await kernel.memory.save_information_async(
+    collection="about_me",
+    id="info1",
+    text="My name is Jules and I am a software engineer."
+)
+
+# 3. Search memory
+result = await kernel.memory.search_async("about_me", "What is my name?")
+print(result[0].text)</code></pre>
+</div>
+
+<h2>4. RAG: Retrieval-Augmented Generation</h2>
+<p>Memory is most powerful when combined with a model call. This is the RAG pattern:
+    <ol>
+        <li><strong>Retrieve:</strong> Search the memory for information relevant to the user's prompt.</li>
+        <li><strong>Augment:</strong> Inject the retrieved information into the prompt as "context."</li>
+        <li><strong>Generate:</strong> The model answers the prompt using both its general knowledge and the provided context.</li>
+    </ol>
+</p>
+<p>This approach allows you to build models that can answer questions about your private data without having to fine-tune the model every time the data changes.</p>
+
+<h2>5. Managing Context with Context Variables</h2>
+<p>In Semantic Kernel, data is passed between functions using <strong>Context Variables</strong>. This is like a shared "scratchpad" that the kernel and the plugins can all read from and write to.
+    <ul>
+        <li><strong>Input Variables:</strong> Parameters passed to a function.</li>
+        <li><strong>Output Variables:</strong> Results returned by a function.</li>
+        <li><strong>Global Context:</strong> Information like <code>user_id</code> or <code>session_id</code> that needs to be accessible throughout the execution.</li>
+    </ul>
+</p>
+
+<h2>6. Advanced Concept: Semantic Caching</h2>
+<p>You can use Memory to implement a <strong>Semantic Cache</strong>. Before sending a request to the expensive LLM, the kernel searches its memory to see if a similar question has been asked and answered recently. If a high-similarity match is found, the cached answer is returned immediately, saving time and money.</p>
+
+<h2>7. Selecting the Right Memory Store</h2>
+<p>Choosing the right vector database depends on your scale and infrastructure:
+    <ul>
+        <li><strong>VolatileMemoryStore:</strong> Fast, in-memory, but lost when the program restarts. Great for unit tests.</li>
+        <li><strong>Pinecone / Weaviate:</strong> Specialized, high-performance vector databases for massive scale.</li>
+        <li><strong>Azure AI Search:</strong> Excellent for enterprise-grade security and integration with the Microsoft ecosystem.</li>
+        <li><strong>Chromadb:</strong> A popular, lightweight, open-source choice for local development.</li>
+    </ul>
+</p>
+
+<h2>Conclusion</h2>
+<p>Memory transforms a reactive chatbot into a proactive agent that understands its environment and its history. By effectively using embeddings and vector databases, you can build AI systems that are truly grounded in your organization's unique knowledge. In our next module, we'll dive deeper into the core architecture of the Kernel itself.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

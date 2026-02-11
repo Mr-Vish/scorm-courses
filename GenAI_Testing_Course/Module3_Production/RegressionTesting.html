@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Regression Testing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Regression Testing</h1>
+
+<h2>Purpose</h2>
+<p>Ensure that prompt changes, model updates, or code modifications don't degrade quality.</p>
+
+<h2>Building Regression Test Suites</h2>
+<div class="code-block">
+<pre><code># regression_tests.yaml
+test_suite:
+  name: "QA System Regression"
+  version: "1.0"
+  
+  test_cases:
+    - id: "reg_001"
+      input: "What is the capital of France?"
+      expected_keywords: ["Paris"]
+      min_quality_score: 0.9
+      
+    - id: "reg_002"
+      input: "Explain quantum computing"
+      min_length: 50
+      max_length: 200
+      min_quality_score: 0.85
+      
+    - id: "reg_003"
+      input: "Translate 'hello' to Spanish"
+      expected_keywords: ["hola"]
+      min_quality_score: 0.95
+</code></pre>
+</div>
+
+<h2>Running Regression Tests</h2>
+<div class="code-block">
+<pre><code>def run_regression_suite(test_suite_path):
+    with open(test_suite_path) as f:
+        suite = yaml.safe_load(f)
+    
+    results = []
+    for test_case in suite["test_cases"]:
+        output = llm.generate(test_case["input"])
+        
+        passed = True
+        failures = []
+        
+        # Check expected keywords
+        if "expected_keywords" in test_case:
+            for keyword in test_case["expected_keywords"]:
+                if keyword.lower() not in output.lower():
+                    passed = False
+                    failures.append(f"Missing keyword: {keyword}")
+        
+        # Check length constraints
+        word_count = len(output.split())
+        if "min_length" in test_case and word_count < test_case["min_length"]:
+            passed = False
+            failures.append(f"Too short: {word_count} < {test_case['min_length']}")
+        
+        results.append({
+            "test_id": test_case["id"],
+            "passed": passed,
+            "failures": failures,
+            "output": output
+        })
+    
+    return results
+</code></pre>
+</div>
+
+<h2>Baseline Comparison</h2>
+<p>Compare current performance against baseline:</p>
+<div class="code-block">
+<pre><code>def compare_to_baseline(current_results, baseline_path):
+    with open(baseline_path) as f:
+        baseline = json.load(f)
+    
+    comparison = {
+        "improved": [],
+        "degraded": [],
+        "unchanged": []
+    }
+    
+    for current in current_results:
+        test_id = current["test_id"]
+        baseline_result = baseline.get(test_id, {})
+        
+        current_score = current.get("quality_score", 0)
+        baseline_score = baseline_result.get("quality_score", 0)
+        
+        diff = current_score - baseline_score
+        
+        if diff > 0.05:
+            comparison["improved"].append(test_id)
+        elif diff < -0.05:
+            comparison["degraded"].append(test_id)
+        else:
+            comparison["unchanged"].append(test_id)
+    
+    return comparison
+</code></pre>
+</div>
+
+<h2>Updating Baselines</h2>
+<p>When intentional improvements are made, update the baseline:</p>
+<div class="code-block">
+<pre><code>def update_baseline(results, baseline_path):
+    baseline = {}
+    
+    for result in results:
+        baseline[result["test_id"]] = {
+            "quality_score": result["quality_score"],
+            "output_sample": result["output"][:100],
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    with open(baseline_path, 'w') as f:
+        json.dump(baseline, f, indent=2)
+    
+    print(f"Baseline updated with {len(results)} test cases")
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

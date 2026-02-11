@@ -1,0 +1,381 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>The /dev Agent and Autonomous Development</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Advanced Features and Enterprise Adoption</h1>
+
+<h2>Lesson 1: The /dev Agent and Autonomous Development</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand the capabilities and architecture of the /dev agent</li>
+    <li>Master techniques for describing features to autonomous agents</li>
+    <li>Identify appropriate use cases for autonomous feature development</li>
+    <li>Recognize limitations and best practices for agent-assisted development</li>
+</ul>
+
+<h2>Introduction to Autonomous Development</h2>
+<p>The /dev agent represents a significant evolution in AI-assisted development, moving beyond code completion and chat assistance to autonomous feature implementation. Rather than generating individual code snippets, the /dev agent can analyze requirements, plan implementation strategies, generate multiple files, and create complete features from natural language descriptions.</p>
+
+<p>This capability fundamentally changes the developer's role from writing every line of code to becoming a feature architect who describes requirements and reviews AI-generated implementations. The /dev agent handles the mechanical aspects of coding while developers focus on design decisions, business logic, and quality assurance.</p>
+
+<h2>How the /dev Agent Works</h2>
+
+<h3>Agent Architecture</h3>
+<p>The /dev agent operates through a multi-stage process:</p>
+
+<h4>1. Requirement Analysis</h4>
+<p>The agent analyzes your feature description:</p>
+<ul>
+    <li><strong>Intent Recognition:</strong> Understanding what you want to build</li>
+    <li><strong>Scope Determination:</strong> Identifying boundaries and constraints</li>
+    <li><strong>Dependency Analysis:</strong> Recognizing required libraries and services</li>
+    <li><strong>Context Gathering:</strong> Examining existing codebase structure</li>
+</ul>
+
+<h4>2. Implementation Planning</h4>
+<p>The agent creates an execution plan:</p>
+<ul>
+    <li><strong>File Structure:</strong> Determining which files to create or modify</li>
+    <li><strong>Component Design:</strong> Planning classes, functions, and modules</li>
+    <li><strong>Integration Points:</strong> Identifying how new code connects to existing code</li>
+    <li><strong>Testing Strategy:</strong> Planning test coverage</li>
+</ul>
+
+<h4>3. Code Generation</h4>
+<p>The agent implements the feature:</p>
+<ul>
+    <li><strong>Multi-File Generation:</strong> Creating all necessary files</li>
+    <li><strong>Consistent Style:</strong> Matching existing code conventions</li>
+    <li><strong>Error Handling:</strong> Including appropriate exception handling</li>
+    <li><strong>Documentation:</strong> Adding comments and docstrings</li>
+</ul>
+
+<h4>4. Review and Iteration</h4>
+<p>The agent presents results for review:</p>
+<ul>
+    <li><strong>Change Summary:</strong> Overview of what was created/modified</li>
+    <li><strong>Interactive Review:</strong> Ability to request modifications</li>
+    <li><strong>Iterative Refinement:</strong> Making adjustments based on feedback</li>
+    <li><strong>Acceptance/Rejection:</strong> Applying or discarding changes</li>
+</ul>
+
+<h2>Using the /dev Agent</h2>
+
+<h3>Invoking the Agent</h3>
+<p>Multiple methods to start the /dev agent:</p>
+
+<h4>Chat Command</h4>
+<p>Type /dev in the chat interface followed by your feature description:</p>
+<blockquote>
+/dev Create a REST API endpoint for user registration that validates email format, checks for duplicate emails, hashes passwords with bcrypt, and stores users in PostgreSQL
+</blockquote>
+
+<h4>Context Menu</h4>
+<ul>
+    <li>Right-click in editor or file explorer</li>
+    <li>Select "Amazon Q: Implement Feature"</li>
+    <li>Enter feature description in dialog</li>
+</ul>
+
+<h4>Command Palette</h4>
+<ul>
+    <li>Open command palette (Ctrl+Shift+P / Cmd+Shift+P)</li>
+    <li>Search for "Amazon Q: /dev Agent"</li>
+    <li>Enter feature description</li>
+</ul>
+
+<h3>Writing Effective Feature Descriptions</h3>
+
+<h4>Components of Good Descriptions</h4>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Description</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Functionality</td>
+        <td>What the feature should do</td>
+        <td>"Create a user authentication system"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Technology Stack</td>
+        <td>Specific technologies to use</td>
+        <td>"using JWT tokens and Express.js"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Requirements</td>
+        <td>Data structures and storage</td>
+        <td>"store user data in MongoDB with email and hashed password"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Validation Rules</td>
+        <td>Input validation and constraints</td>
+        <td>"validate email format and require passwords 8+ characters"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Error Handling</td>
+        <td>How to handle failures</td>
+        <td>"return appropriate HTTP status codes and error messages"</td>
+    </tr>
+</table>
+
+<h4>Example Feature Descriptions</h4>
+
+<p><strong>Web API Development:</strong></p>
+<blockquote>
+/dev Create a RESTful API for managing blog posts with the following endpoints:
+- GET /posts - list all posts with pagination
+- GET /posts/:id - get single post
+- POST /posts - create new post (requires authentication)
+- PUT /posts/:id - update post (requires authentication and ownership)
+- DELETE /posts/:id - delete post (requires authentication and ownership)
+
+Use Express.js, validate inputs with Joi, authenticate with JWT tokens, and store data in PostgreSQL. Include error handling and appropriate HTTP status codes.
+</blockquote>
+
+<p><strong>Data Processing:</strong></p>
+<blockquote>
+/dev Implement a CSV file processor that:
+1. Reads CSV files from an S3 bucket
+2. Validates each row against a schema (name, email, age)
+3. Transforms data (normalize names, validate emails, ensure age is numeric)
+4. Filters out invalid rows and logs errors
+5. Writes valid rows to DynamoDB
+6. Sends summary report via SNS
+
+Use Python with boto3, pandas for CSV processing, and implement proper error handling with retries for AWS service calls.
+</blockquote>
+
+<p><strong>Frontend Component:</strong></p>
+<blockquote>
+/dev Create a React component for a user profile form with:
+- Input fields: name, email, bio, avatar URL
+- Real-time validation (email format, required fields)
+- Avatar preview when URL is entered
+- Submit button that calls API endpoint /api/users/:id
+- Loading state during submission
+- Success/error message display
+- Form reset after successful submission
+
+Use React hooks, styled-components for styling, and axios for API calls. Include PropTypes for type checking.
+</blockquote>
+
+<h2>Agent Capabilities and Limitations</h2>
+
+<h3>What the /dev Agent Can Do</h3>
+
+<h4>Multi-File Feature Implementation</h4>
+<ul>
+    <li>Create multiple related files (controllers, models, views, tests)</li>
+    <li>Maintain consistency across files</li>
+    <li>Set up proper imports and dependencies</li>
+    <li>Follow project structure conventions</li>
+</ul>
+
+<h4>Framework Integration</h4>
+<ul>
+    <li>Generate code using popular frameworks (React, Express, Spring Boot, Django)</li>
+    <li>Follow framework best practices and conventions</li>
+    <li>Configure framework-specific features</li>
+    <li>Integrate with framework ecosystems</li>
+</ul>
+
+<h4>AWS Service Integration</h4>
+<ul>
+    <li>Generate code for AWS SDK operations</li>
+    <li>Create infrastructure-as-code templates (CloudFormation, CDK)</li>
+    <li>Implement serverless functions (Lambda)</li>
+    <li>Configure AWS service integrations</li>
+</ul>
+
+<h4>Testing and Documentation</h4>
+<ul>
+    <li>Generate unit tests for implemented features</li>
+    <li>Create integration tests</li>
+    <li>Add inline documentation and comments</li>
+    <li>Generate API documentation</li>
+</ul>
+
+<h3>Current Limitations</h3>
+
+<h4>Complexity Boundaries</h4>
+<ul>
+    <li><strong>Feature Scope:</strong> Works best for well-defined, medium-sized features</li>
+    <li><strong>Architectural Decisions:</strong> Cannot make high-level architecture choices</li>
+    <li><strong>Business Logic:</strong> May struggle with complex domain-specific logic</li>
+    <li><strong>Performance Optimization:</strong> Generated code may not be optimally performant</li>
+</ul>
+
+<h4>Context Limitations</h4>
+<ul>
+    <li><strong>Codebase Understanding:</strong> Limited understanding of large, complex codebases</li>
+    <li><strong>Legacy Code:</strong> May struggle with unusual or legacy patterns</li>
+    <li><strong>Implicit Requirements:</strong> Cannot infer unstated requirements</li>
+    <li><strong>Domain Knowledge:</strong> Limited understanding of specialized domains</li>
+</ul>
+
+<h4>Technical Constraints</h4>
+<ul>
+    <li><strong>File Count:</strong> Practical limits on number of files generated</li>
+    <li><strong>Code Size:</strong> May struggle with very large implementations</li>
+    <li><strong>Dependency Management:</strong> May not handle complex dependency scenarios</li>
+    <li><strong>Refactoring:</strong> Limited ability to refactor existing code</li>
+</ul>
+
+<h2>Best Practices for Agent-Assisted Development</h2>
+
+<h3>Preparation</h3>
+
+<h4>Before Using the Agent</h4>
+<ul>
+    <li><strong>Clear Requirements:</strong> Define exactly what you want to build</li>
+    <li><strong>Technology Decisions:</strong> Choose frameworks and libraries beforehand</li>
+    <li><strong>Project Structure:</strong> Establish clear project organization</li>
+    <li><strong>Coding Standards:</strong> Have existing code that demonstrates your style</li>
+</ul>
+
+<h4>Optimal Use Cases</h4>
+<ul>
+    <li>CRUD operations and standard API endpoints</li>
+    <li>Data validation and transformation logic</li>
+    <li>Integration with well-documented APIs and services</li>
+    <li>Boilerplate code and scaffolding</li>
+    <li>Test case generation</li>
+</ul>
+
+<h3>During Implementation</h3>
+
+<h4>Monitoring Progress</h4>
+<ul>
+    <li>Review the agent's implementation plan before execution</li>
+    <li>Monitor file creation and modification in real-time</li>
+    <li>Interrupt if the agent is heading in wrong direction</li>
+    <li>Provide clarifications when agent asks questions</li>
+</ul>
+
+<h4>Iterative Refinement</h4>
+<ul>
+    <li>Review generated code thoroughly</li>
+    <li>Request specific modifications through follow-up messages</li>
+    <li>Iterate until implementation meets requirements</li>
+    <li>Don't accept first version if it's not quite right</li>
+</ul>
+
+<h3>After Implementation</h3>
+
+<h4>Code Review Checklist</h4>
+<ul>
+    <li><strong>Functionality:</strong> Does it implement all requirements?</li>
+    <li><strong>Correctness:</strong> Is the logic correct and bug-free?</li>
+    <li><strong>Security:</strong> Are there security vulnerabilities?</li>
+    <li><strong>Performance:</strong> Are there obvious performance issues?</li>
+    <li><strong>Style:</strong> Does it match project conventions?</li>
+    <li><strong>Testing:</strong> Are tests comprehensive and passing?</li>
+    <li><strong>Documentation:</strong> Is code adequately documented?</li>
+</ul>
+
+<h4>Integration Steps</h4>
+<ul>
+    <li>Run all tests to ensure nothing broke</li>
+    <li>Perform manual testing of new functionality</li>
+    <li>Review integration points with existing code</li>
+    <li>Update documentation and README files</li>
+    <li>Commit with descriptive message noting AI assistance</li>
+</ul>
+
+<h2>Advanced Agent Techniques</h2>
+
+<h3>Incremental Feature Building</h3>
+<p>Break large features into smaller agent tasks:</p>
+<ul>
+    <li><strong>Phase 1:</strong> Basic data models and database schema</li>
+    <li><strong>Phase 2:</strong> Core business logic and validation</li>
+    <li><strong>Phase 3:</strong> API endpoints and request handling</li>
+    <li><strong>Phase 4:</strong> Error handling and edge cases</li>
+    <li><strong>Phase 5:</strong> Tests and documentation</li>
+</ul>
+
+<h3>Template-Based Generation</h3>
+<p>Provide examples for the agent to follow:</p>
+<ul>
+    <li>Implement one endpoint manually as a template</li>
+    <li>Ask agent to create similar endpoints following the pattern</li>
+    <li>Results in more consistent code</li>
+    <li>Faster than describing every detail</li>
+</ul>
+
+<h3>Specification-Driven Development</h3>
+<p>Provide detailed specifications:</p>
+<ul>
+    <li>API specifications (OpenAPI/Swagger)</li>
+    <li>Database schemas</li>
+    <li>Data flow diagrams</li>
+    <li>State machines</li>
+</ul>
+
+<h2>Measuring Agent Effectiveness</h2>
+
+<h3>Success Metrics</h3>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Measurement</th>
+        <th>Target</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Time Savings</td>
+        <td>Time to implement vs. manual coding</td>
+        <td>40-60% reduction</td>
+    </tr>
+    <tr>
+        <td class="rowheader">First-Pass Quality</td>
+        <td>Percentage of code accepted without modification</td>
+        <td>60-70%</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Test Coverage</td>
+        <td>Percentage of generated code with tests</td>
+        <td>80%+</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Bug Rate</td>
+        <td>Bugs found in agent-generated code</td>
+        <td>Similar to manually written code</td>
+    </tr>
+</table>
+
+<h3>Productivity Indicators</h3>
+<ul>
+    <li>Faster feature delivery</li>
+    <li>More time for complex problem-solving</li>
+    <li>Reduced boilerplate coding</li>
+    <li>Increased test coverage</li>
+    <li>Better documentation</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>The /dev agent enables autonomous feature implementation from natural language descriptions</li>
+    <li>Agent operates through requirement analysis, planning, code generation, and iterative refinement</li>
+    <li>Effective feature descriptions include functionality, technology stack, data requirements, and validation rules</li>
+    <li>Agent excels at CRUD operations, API endpoints, and standard patterns but has limitations with complex logic</li>
+    <li>Best practices include clear preparation, monitoring progress, and thorough code review</li>
+    <li>Incremental feature building and template-based generation improve results</li>
+    <li>Always review and test agent-generated code before integration</li>
+    <li>Agent is a productivity multiplier, not a replacement for developer expertise</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

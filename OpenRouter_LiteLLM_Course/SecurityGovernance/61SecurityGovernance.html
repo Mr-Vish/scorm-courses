@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 6: Security and Governance with AI Proxies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 6: Securing and Governing Multi-model AI</h1>
+
+<p>As AI usage expands across an enterprise, it is vital to have centralized security and governance. A multi-model proxy like LiteLLM is the perfect place to enforce these policies.</p>
+
+<h2>6.1 Centralized API Key Management</h2>
+<p>Individual developers should never have access to the master API keys from OpenAI or Anthropic.
+<ul>
+    <li><strong>Virtual Keys:</strong> The proxy generates unique "virtual keys" for each application or user. These keys can be revoked or rotated at any time without affecting other systems.</li>
+    <li><strong>Key Aliasing:</strong> Mapping a simple alias (e.g., "production-key") to a complex provider key, making configuration easier and safer.</li>
+</ul></p>
+
+<h2>6.2 Global Rate Limiting and Quotas</h2>
+<p>Prevent any single application from exhausting your organization's total API capacity or exceeding your budget.
+<ul>
+    <li><strong>RPM and TPM Limits:</strong> Enforcing limits at the global, team, or key level.</li>
+    <li><strong>Budget Alerts:</strong> Automatically notifying admins when spend reaches 80%, 90%, and 100% of the allocated budget.</li>
+</ul></p>
+
+<h2>6.3 Comprehensive Audit Logging</h2>
+<p>Maintaining a complete record of all AI interactions is essential for security, compliance, and debugging.
+<ul>
+    <li><strong>Full Request/Response Logs:</strong> Capturing exactly what was asked and what the model replied.</li>
+    <li><strong>Metadata Logging:</strong> Recording the timestamp, user ID, model used, cost, and latency for every request.</li>
+    <li><strong>Log Exporting:</strong> Sending logs to centralized systems like Splunk, Datadog, or an S3 bucket for long-term storage and analysis.</li>
+</ul></p>
+
+<h2>6.4 Content Moderation and Guardrails</h2>
+<p>The proxy can automatically scan all incoming and outgoing messages for prohibited content.
+<ul>
+    <li><strong>Integration with Moderation APIs:</strong> Automatically calling OpenAI's or Llama Guard's moderation service for every request.</li>
+    <li><strong>Custom PII Redaction:</strong> Using a secondary model or regex to strip sensitive data from prompts before they are sent to an external provider.</li>
+</ul></p>
+
+<h2>6.5 Enterprise Compliance</h2>
+<p>A centralized proxy helps in meeting regulatory requirements (GDPR, HIPAA) by providing a single point of control for data residency, logging, and access control. It allows the security team to define "golden" prompts and approved models that everyone in the organization must use.</p>
+
+<p>By implementing a robust governance layer with an AI proxy, you can empower your developers to innovate while ensuring your organization's data and budget remain protected.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

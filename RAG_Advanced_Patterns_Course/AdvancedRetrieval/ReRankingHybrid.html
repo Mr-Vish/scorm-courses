@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Re-Ranking and Hybrid Search</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Re-Ranking and Hybrid Search</h1>
+
+
+<h2>Two-Stage Retrieval</h2>
+<p>Use a fast first-stage retriever (vector search) followed by a more accurate <strong>re-ranker</strong>:</p>
+<div class="code-block">
+<pre><code># Stage 1: Fast retrieval (get 50 candidates)
+candidates = vector_store.search(query, top_k=50)
+
+# Stage 2: Re-rank with cross-encoder (select top 5)
+reranked = reranker.rank(query, candidates, top_k=5)
+
+# Stage 3: Generate with top results
+answer = llm.generate(query, context=reranked)</code></pre>
+</div>
+
+<h2>Hybrid Search</h2>
+<p>Combine <strong>semantic search</strong> (embeddings) with <strong>keyword search</strong> (BM25) for better coverage:</p>
+<ul>
+    <li><strong>Semantic search:</strong> Good at understanding meaning and paraphrases</li>
+    <li><strong>Keyword search:</strong> Good at exact matches, acronyms, product names</li>
+    <li><strong>Fusion:</strong> Reciprocal Rank Fusion (RRF) combines both result lists</li>
+</ul>
+
+<h2>Reciprocal Rank Fusion (RRF)</h2>
+<div class="code-block">
+<pre><code>def rrf_score(rank, k=60):
+    return 1.0 / (k + rank)
+
+# Combine scores from both retrievers
+for doc in all_results:
+    doc.score = rrf_score(semantic_rank) + rrf_score(keyword_rank)</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced: AWQ and GPTQ</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced: AWQ and GPTQ</h1>
+<div class="container">
+<h2>AWQ and GPTQ: Advanced 4-bit Quantization</h2>
+<p>As the AI community coalesced around 4-bit quantization as the "sweet spot" for memory and performance, two major techniques emerged as the leaders: <strong>GPTQ</strong> (Generalized Post-Training Quantization) and <strong>AWQ</strong> (Activation-aware Weight Quantization). While both aim for high-quality 4-bit models, they use different philosophies to get there.</p>
+
+<h3>GPTQ: Layer-by-Layer Optimization</h3>
+<p>GPTQ is a PTQ method that quantizes the model one layer at a time. For each layer, it tries to find the quantized weights that minimize the "reconstruction error"—the difference between the output of the original layer and the quantized layer.
+<ul>
+    <li><strong>The Math:</strong> It uses second-order information (the Hessian matrix) to decide which weights are most important and should be quantized with more care.</li>
+    <li><strong>Performance:</strong> GPTQ models are very fast during inference, especially on NVIDIA GPUs.</li>
+    <li><strong>Availability:</strong> Many models on Hugging Face are provided in <code>.gptq</code> format.</li>
+</ul></p>
+
+<h3>AWQ: Protecting the 'Salient' Weights</h3>
+<p>AWQ is based on the observation that not all weights are created equal. Some weights (called "salient weights") are much more important for the model's performance than others. AWQ identifies these salient weights by looking at the model's activations.
+<ul>
+    <li><strong>The Core Idea:</strong> Instead of trying to optimize every weight, AWQ just "protects" the top 1% of the most important weights. It does this by scaling them up before quantization, effectively giving them more precision.</li>
+    <li><strong>Data-Free (Almost):</strong> AWQ only needs a tiny amount of calibration data (as few as 25 samples) to identify the salient weights.</li>
+    <li><strong>Hardware Agnostic:</strong> AWQ is designed to be easier to implement on different types of hardware (not just NVIDIA).</li>
+</ul></p>
+
+<h3>AWQ vs. GPTQ: A Comparison</h3>
+<table>
+    <tr><th>Feature</th><th>GPTQ</th><th>AWQ</th></tr>
+    <tr><td>Optimization Goal</td><td>Minimize reconstruction error</td><td>Protect salient weights</td></tr>
+    <tr><td>Calibration Data</td><td>Requires more (e.g., 128-256 samples)</td><td>Requires very little (e.g., 25 samples)</td></tr>
+    <tr><td>Inference Speed</td><td>Excellent on NVIDIA</td><td>Excellent, often faster on newer GPUs</td></tr>
+    <tr><td>Accuracy</td><td>Very good</td><td>Often slightly better for smaller models</td></tr>
+</table>
+
+<h3>The Role of Kernels</h3>
+<p>The success of AWQ and GPTQ isn't just about the weights; it's also about the "kernels"—the low-level code that performs the math on the GPU. Both methods require specialized kernels that can perform 4-bit multiplication efficiently. Without these kernels, the model would be small but actually *slower* because the GPU would have to constantly convert the 4-bit integers back to 16-bit floats to do the math.</p>
+
+<h3>When to Use Which?</h3>
+<ul>
+    <li><strong>Use GPTQ</strong> if you are using older NVIDIA hardware or if you find a pre-quantized GPTQ model that meets your needs.</li>
+    <li><strong>Use AWQ</strong> if you are quantizing a model yourself (it's faster and needs less data) or if you are targeting newer hardware or non-NVIDIA devices.</li>
+</ul>
+
+<h3>Practical Exercise: Identifying Formats</h3>
+<p>Go to Hugging Face and search for "Llama-3-8B-Instruct-4bit." Look at the "Files and versions" tab. Can you identify if the model is in GPTQ, AWQ, or another format? What are the file extensions you see?</p>
+
+<h3>Summary</h3>
+<p>GPTQ and AWQ represent the cutting edge of 4-bit quantization. They have turned what was once a research curiosity into a practical, everyday tool for AI developers. By understanding the differences between them, you can choose the best format for your specific hardware and performance requirements.</p>
+
+</div>
+</body>
+</html>

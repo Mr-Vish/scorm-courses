@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Optimizers and Compiling</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Optimizers and Compiling</h1>
+
+
+<h2>What Are Optimizers?</h2>
+<p>Optimizers (formerly called teleprompters) are the core innovation of DSPy. They automatically tune your program's prompts and few-shot examples to maximize a metric you define. This replaces manual prompt engineering with systematic optimization.</p>
+
+<h2>The Compile Workflow</h2>
+<ol>
+    <li><strong>Define your program:</strong> Create a DSPy module with signatures</li>
+    <li><strong>Prepare training data:</strong> Provide input-output examples (even a handful works)</li>
+    <li><strong>Define a metric:</strong> Write a function that scores program outputs</li>
+    <li><strong>Choose an optimizer:</strong> Select the optimization strategy</li>
+    <li><strong>Compile:</strong> The optimizer tunes your program automatically</li>
+</ol>
+
+<h2>Defining Metrics</h2>
+<div class="code-block">
+<pre><code>import dspy
+
+# Simple exact-match metric
+def accuracy_metric(example, prediction, trace=None):
+    return example.answer.lower() == prediction.answer.lower()
+
+# Semantic similarity metric using an LM as judge
+def quality_metric(example, prediction, trace=None):
+    judge = dspy.Predict("question, gold_answer, predicted_answer -&gt; score: float")
+    result = judge(
+        question=example.question,
+        gold_answer=example.answer,
+        predicted_answer=prediction.answer,
+    )
+    return float(result.score) &gt; 0.7</code></pre>
+</div>
+
+<h2>Optimizer Types</h2>
+<table>
+    <tr><th>Optimizer</th><th>Strategy</th><th>When to Use</th></tr>
+    <tr><td>BootstrapFewShot</td><td>Finds optimal few-shot examples from training data</td><td>Small datasets, quick improvement</td></tr>
+    <tr><td>BootstrapFewShotWithRandomSearch</td><td>BootstrapFewShot with multiple random trials</td><td>Better results, more compute budget</td></tr>
+    <tr><td>MIPRO</td><td>Optimizes instructions + few-shot examples jointly</td><td>Best overall quality</td></tr>
+    <tr><td>BootstrapFinetune</td><td>Generates data and fine-tunes the underlying LM</td><td>Maximum performance, highest cost</td></tr>
+</table>
+
+<h2>Compiling a Program</h2>
+<div class="code-block">
+<pre><code>from dspy.teleprompt import BootstrapFewShotWithRandomSearch
+
+# Training examples
+trainset = [
+    dspy.Example(question="What is Python?", answer="A programming language").with_inputs("question"),
+    dspy.Example(question="What is RAG?", answer="Retrieval-Augmented Generation").with_inputs("question"),
+    # ... more examples
+]
+
+# Compile with optimizer
+optimizer = BootstrapFewShotWithRandomSearch(
+    metric=accuracy_metric,
+    max_bootstrapped_demos=4,
+    num_candidate_programs=10,
+)
+
+compiled_rag = optimizer.compile(RAGPipeline(), trainset=trainset)
+
+# Use the optimized program
+result = compiled_rag(question="What is DSPy?")
+print(result.answer)</code></pre>
+</div>
+
+<h2>Benefits of Compiling</h2>
+<ul>
+    <li><strong>Portability:</strong> Recompile when switching models (e.g., GPT-4 to Claude) - the optimizer adapts prompts automatically</li>
+    <li><strong>Reproducibility:</strong> Save and load compiled programs for consistent behavior</li>
+    <li><strong>Systematic improvement:</strong> Add more training examples and recompile for better performance</li>
+    <li><strong>Reduced prompt fragility:</strong> Optimized prompts are more robust than hand-crafted ones</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

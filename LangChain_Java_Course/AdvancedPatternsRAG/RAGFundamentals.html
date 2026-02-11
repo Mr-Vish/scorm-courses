@@ -1,0 +1,351 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>RAG Fundamentals and Vector Databases</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>RAG Fundamentals and Vector Databases</h1>
+
+<h2>What is Retrieval-Augmented Generation (RAG)?</h2>
+<p><strong>RAG</strong> is a technique that enhances LLM responses by retrieving relevant information from external knowledge bases before generating answers. This allows LLMs to access up-to-date, domain-specific information beyond their training data.</p>
+
+<h2>Why Use RAG?</h2>
+<ul>
+    <li><strong>Current Information:</strong> Access real-time data not in the LLM's training set</li>
+    <li><strong>Domain Expertise:</strong> Incorporate company-specific or specialized knowledge</li>
+    <li><strong>Reduced Hallucinations:</strong> Ground responses in factual, retrieved content</li>
+    <li><strong>Cost Efficiency:</strong> Avoid fine-tuning models for specific domains</li>
+    <li><strong>Transparency:</strong> Cite sources and provide evidence for answers</li>
+</ul>
+
+<h2>RAG Architecture</h2>
+<p>The RAG pipeline consists of two main phases:</p>
+
+<h3>1. Indexing Phase (Offline)</h3>
+<ol>
+    <li><strong>Load Documents:</strong> Import data from PDFs, websites, databases</li>
+    <li><strong>Split Text:</strong> Break documents into manageable chunks</li>
+    <li><strong>Generate Embeddings:</strong> Convert text chunks to vector representations</li>
+    <li><strong>Store Vectors:</strong> Save embeddings in a vector database</li>
+</ol>
+
+<h3>2. Retrieval Phase (Online)</h3>
+<ol>
+    <li><strong>User Query:</strong> Receive question from user</li>
+    <li><strong>Query Embedding:</strong> Convert question to vector</li>
+    <li><strong>Similarity Search:</strong> Find most relevant document chunks</li>
+    <li><strong>Context Injection:</strong> Add retrieved content to LLM prompt</li>
+    <li><strong>Generate Response:</strong> LLM answers using retrieved context</li>
+</ol>
+
+<h2>Vector Embeddings Explained</h2>
+<p>Embeddings are numerical representations of text that capture semantic meaning:</p>
+
+<table>
+    <tr>
+        <th>Text</th>
+        <th>Embedding (simplified)</th>
+        <th>Semantic Meaning</th>
+    </tr>
+    <tr>
+        <td class="rowheader">"Java programming"</td>
+        <td>[0.8, 0.6, 0.1, ...]</td>
+        <td>Programming, technology</td>
+    </tr>
+    <tr>
+        <td class="rowheader">"Python coding"</td>
+        <td>[0.75, 0.65, 0.15, ...]</td>
+        <td>Similar to Java (close vectors)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">"Cooking recipes"</td>
+        <td>[0.1, 0.2, 0.9, ...]</td>
+        <td>Food, unrelated (distant vectors)</td>
+    </tr>
+</table>
+
+<h2>Vector Databases</h2>
+<p>Specialized databases optimized for storing and searching vector embeddings:</p>
+
+<table>
+    <tr>
+        <th>Database</th>
+        <th>Type</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">PgVector</td>
+        <td>PostgreSQL extension</td>
+        <td>Existing PostgreSQL infrastructure</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Chroma</td>
+        <td>Embedded/Server</td>
+        <td>Development and prototyping</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Pinecone</td>
+        <td>Cloud-native</td>
+        <td>Managed service, scalability</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Weaviate</td>
+        <td>Open-source</td>
+        <td>Self-hosted, feature-rich</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Qdrant</td>
+        <td>Open-source</td>
+        <td>High performance, filtering</td>
+    </tr>
+</table>
+
+<h2>Implementing RAG with LangChain4j</h2>
+
+<h3>Step 1: Load and Split Documents</h3>
+<div class="code-block">
+<pre><code>import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.DocumentSplitter;
+import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
+import dev.langchain4j.data.document.splitter.DocumentSplitters;
+
+// Load documents
+List&lt;Document&gt; documents = FileSystemDocumentLoader.loadDocuments(
+    Paths.get("docs/"),
+    glob("*.pdf")
+);
+
+// Split into chunks
+DocumentSplitter splitter = DocumentSplitters.recursive(
+    500,  // chunk size
+    50    // overlap
+);
+
+List&lt;TextSegment&gt; segments = splitter.splitAll(documents);
+</code></pre>
+</div>
+
+<h3>Step 2: Generate and Store Embeddings</h3>
+<div class="code-block">
+<pre><code>import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
+
+// Create embedding model
+EmbeddingModel embeddingModel = OpenAiEmbeddingModel.builder()
+    .apiKey(System.getenv("OPENAI_API_KEY"))
+    .modelName("text-embedding-3-small")
+    .build();
+
+// Create vector store
+EmbeddingStore&lt;TextSegment&gt; embeddingStore = PgVectorEmbeddingStore.builder()
+    .host("localhost")
+    .port(5432)
+    .database("vectordb")
+    .user("postgres")
+    .password("password")
+    .table("embeddings")
+    .dimension(1536)
+    .build();
+
+// Generate and store embeddings
+EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
+    .embeddingModel(embeddingModel)
+    .embeddingStore(embeddingStore)
+    .documentSplitter(splitter)
+    .build();
+
+ingestor.ingest(documents);
+</code></pre>
+</div>
+
+<h3>Step 3: Implement RAG Query</h3>
+<div class="code-block">
+<pre><code>import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
+
+public interface RAGAssistant {
+    String answer(String question);
+}
+
+// Create content retriever
+ContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
+    .embeddingStore(embeddingStore)
+    .embeddingModel(embeddingModel)
+    .maxResults(5)
+    .minScore(0.7)
+    .build();
+
+// Create RAG-enabled assistant
+RAGAssistant assistant = AiServices.builder(RAGAssistant.class)
+    .chatLanguageModel(chatModel)
+    .contentRetriever(retriever)
+    .build();
+
+// Query with RAG
+String answer = assistant.answer("What is the refund policy?");
+</code></pre>
+</div>
+
+<h2>Implementing RAG with Spring AI</h2>
+
+<h3>Configuration</h3>
+<blockquote>
+spring:
+  ai:
+    vectorstore:
+      pgvector:
+        host: localhost
+        port: 5432
+        database: vectordb
+        dimensions: 1536
+</blockquote>
+
+<h3>Document Ingestion</h3>
+<div class="code-block">
+<pre><code>@Service
+public class DocumentIngestionService {
+    
+    private final VectorStore vectorStore;
+    private final EmbeddingModel embeddingModel;
+    
+    public DocumentIngestionService(VectorStore vectorStore,
+                                    EmbeddingModel embeddingModel) {
+        this.vectorStore = vectorStore;
+        this.embeddingModel = embeddingModel;
+    }
+    
+    public void ingestDocuments(List&lt;Resource&gt; resources) {
+        // Load documents
+        List&lt;Document&gt; documents = resources.stream()
+            .map(this::loadDocument)
+            .collect(Collectors.toList());
+        
+        // Split documents
+        TokenTextSplitter splitter = new TokenTextSplitter(500, 50);
+        List&lt;Document&gt; chunks = splitter.apply(documents);
+        
+        // Generate embeddings and store
+        vectorStore.add(chunks);
+    }
+}
+</code></pre>
+</div>
+
+<h3>RAG Query with ChatClient</h3>
+<div class="code-block">
+<pre><code>@Service
+public class RAGService {
+    
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+    
+    public RAGService(ChatClient.Builder builder, VectorStore vectorStore) {
+        this.vectorStore = vectorStore;
+        this.chatClient = builder.build();
+    }
+    
+    public String query(String question) {
+        // Retrieve relevant documents
+        List&lt;Document&gt; relevantDocs = vectorStore.similaritySearch(
+            SearchRequest.query(question).withTopK(5)
+        );
+        
+        // Build context from retrieved documents
+        String context = relevantDocs.stream()
+            .map(Document::getContent)
+            .collect(Collectors.joining("\n\n"));
+        
+        // Query with context
+        return chatClient.prompt()
+            .user(u -&gt; u.text("""
+                Answer the question based on the following context:
+                
+                Context:
+                {context}
+                
+                Question: {question}
+                """)
+                .param("context", context)
+                .param("question", question))
+            .call()
+            .content();
+    }
+}
+</code></pre>
+</div>
+
+<h2>Chunking Strategies</h2>
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>Description</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Fixed Size</td>
+        <td>Split by character/token count</td>
+        <td>Uniform content</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Recursive</td>
+        <td>Split by paragraphs, then sentences</td>
+        <td>Natural text boundaries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Semantic</td>
+        <td>Split by topic/meaning changes</td>
+        <td>Maintaining context</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Document-based</td>
+        <td>Split by document structure (headers)</td>
+        <td>Structured documents</td>
+    </tr>
+</table>
+
+<h2>Similarity Search Metrics</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Range</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Cosine Similarity</td>
+        <td>-1 to 1</td>
+        <td>Most common, direction-based</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Euclidean Distance</td>
+        <td>0 to ∞</td>
+        <td>Absolute distance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Dot Product</td>
+        <td>-∞ to ∞</td>
+        <td>Magnitude and direction</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Chunk Size:</strong> 300-500 tokens balances context and precision</li>
+    <li><strong>Overlap:</strong> 10-20% overlap prevents context loss at boundaries</li>
+    <li><strong>Metadata:</strong> Store source, date, author with embeddings for filtering</li>
+    <li><strong>Reranking:</strong> Use a reranker model to improve retrieval quality</li>
+    <li><strong>Hybrid Search:</strong> Combine vector search with keyword search</li>
+    <li><strong>Caching:</strong> Cache embeddings to reduce API costs</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

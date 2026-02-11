@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Native Function Calling in Semantic Kernel</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Native Function Calling: Giving AI the Reins</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>In the early days of LLMs, the model was just a "text generator." If you wanted it to perform an action, you had to manually parse its output and call your code. <strong>Native Function Calling</strong> (also known as Tool Calling) changes this. It allows the model itself to decide when it needs to call a specific function in your code to fulfill a user request.</p>
+
+<h2>2. How it Works: The Tool-Call Loop</h2>
+<p>When you provide the model with a set of "tools" (functions), the process follows this loop:</p>
+<ol>
+    <li><strong>Request:</strong> The user asks a question (e.g., "What is the weather in London?").</li>
+    <li><strong>Model Decision:</strong> Instead of answering, the model returns a "tool call" request in its response, specifying the function <code>get_weather</code> and the argument <code>city="London"</code>.</li>
+    <li><strong>Execution:</strong> Semantic Kernel intercepts this, executes your local Python code for <code>get_weather("London")</code>, and gets the result (e.g., "15°C and cloudy").</li>
+    <li><strong>Final Generation:</strong> The kernel sends the tool result back to the model. The model now has the factual information it needs to give a natural language answer to the user.</li>
+</ol>
+
+<h2>3. Defining a Tool with <code>@kernel_function</code></h2>
+<p>In Semantic Kernel, any Python function can be a tool. The most important part is the <strong>Docstring</strong> and the <strong>Type Hints</strong>. This is the information the LLM uses to understand what the function does and what arguments it needs.</p>
+
+<div class="code-block">
+<pre><code># Defining a Native Function for Tool Calling
+from semantic_kernel.functions import kernel_function
+
+class BusinessTools:
+    @kernel_function(
+        name="get_customer_id",
+        description="Retrieves a customer's ID based on their email address."
+    )
+    def get_id(self, email: str) -> str:
+        # Imagine a database lookup here
+        if email == "jules@example.com":
+            return "CUST-123"
+        return "NOT_FOUND"
+
+# The LLM will now know how to call this function!</code></pre>
+</div>
+
+<h2>4. Manual vs. Automatic Function Calling</h2>
+<p>Semantic Kernel provides two ways to handle these tool calls:</p>
+
+<h3>Manual Invocation</h3>
+<p>The kernel simply returns the tool call request to you. You are responsible for executing the function and sending the result back. This is useful for high-security environments where you want "human-in-the-loop" for every action.</p>
+
+<h3>Automatic Function Calling</h3>
+<p>This is the "magic" mode. You configure the kernel to automatically execute any tool calls requested by the model. This is much more efficient for building autonomous agents.</p>
+
+<div class="code-block">
+<pre><code># Enabling Automatic Function Calling
+from semantic_kernel.connectors.ai.open_ai import OpenAIChatPromptExecutionSettings
+
+settings = OpenAIChatPromptExecutionSettings(
+    tool_choice="auto" # The model decides
+)
+
+# When you invoke the prompt, the kernel will handle the tool calls in the background
+result = await kernel.invoke(my_function, settings=settings)</code></pre>
+</div>
+
+<h2>5. Handling Multi-Tool Calls</h2>
+<p>Modern models like GPT-4o can request multiple tool calls in a single turn. For example: "Get the customer ID for jules@example.com AND check their latest invoice." Semantic Kernel handles this complexity by executing the functions (sometimes in parallel) and managing the conversation history for you.</p>
+
+<h2>6. Security and Safety with Function Calling</h2>
+<p>Giving an AI the ability to call your code is powerful but risky.
+    <ul>
+        <li><strong>Least Privilege:</strong> Only provide the model with the minimum set of functions it needs for the specific task.</li>
+        <li><strong>Validation:</strong> Always validate the arguments provided by the model. Never trust that the model will provide a "valid" customer ID or email format.</li>
+        <li><strong>Output Sanitization:</strong> Be careful about what your native functions return. If a function returns sensitive raw database rows, the model might reveal them to the user.</li>
+    </ul>
+</p>
+
+<h2>7. Best Practices for Function Descriptions</h2>
+<ul>
+    <li><strong>Be Explicit:</strong> Instead of "Gets data," use "Retrieves the quarterly sales report for a specific region."</li>
+    <li><strong>Define Constraints:</strong> "The 'year' argument must be a four-digit integer between 2000 and 2025."</li>
+    <li><strong>Explain Return Values:</strong> "Returns a JSON string containing the customer name and account balance."</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>Native Function Calling is what transforms a chat model into an <strong>Agent</strong>. By bridging the gap between natural language reasoning and deterministic code execution, you can build systems that can actually get work done. In our next module, we'll explore the future of orchestration: Multi-Agent Systems.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

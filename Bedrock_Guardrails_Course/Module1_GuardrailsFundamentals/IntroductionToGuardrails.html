@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to Amazon Bedrock Guardrails</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Introduction to Amazon Bedrock Guardrails</h1>
+
+<h2>Module Overview</h2>
+<p>This module establishes the foundational understanding of Amazon Bedrock Guardrails, exploring the critical need for content governance in generative AI applications, the architectural components that enable safe AI interactions, and the fundamental mechanisms through which guardrails protect users and organizations.</p>
+
+<h2>What Are Amazon Bedrock Guardrails?</h2>
+<p>Amazon Bedrock Guardrails is a comprehensive content governance framework designed specifically for generative AI applications. It provides configurable safeguards that evaluate and filter both user inputs (prompts) and model outputs (responses) to ensure compliance with organizational policies, regulatory requirements, and ethical standards.</p>
+
+<p>Unlike traditional content moderation systems that operate reactively after content is published, Bedrock Guardrails functions proactively—intercepting and evaluating content in real-time before it reaches end users or is processed by foundation models. This preventive approach significantly reduces risk exposure and ensures consistent policy enforcement across all AI interactions.</p>
+
+<h2>The Critical Need for AI Guardrails</h2>
+<p>The deployment of generative AI applications without proper safeguards exposes organizations to multiple categories of risk:</p>
+
+<h3>Content Safety Risks</h3>
+<p>Foundation models, despite extensive training, can generate harmful content including hate speech, violent imagery descriptions, sexually explicit material, or instructions for dangerous activities. Without guardrails, these outputs can reach users, causing psychological harm, legal liability, and reputational damage. Guardrails act as a safety net, preventing such content from ever being displayed.</p>
+
+<h3>Compliance and Regulatory Risks</h3>
+<p>Organizations operating in regulated industries (healthcare, finance, education) must comply with strict content and data handling requirements. Regulations such as GDPR, HIPAA, COPPA, and industry-specific standards impose legal obligations regarding data privacy, content appropriateness, and user protection. Guardrails provide the technical controls necessary to demonstrate compliance and avoid regulatory penalties.</p>
+
+<h3>Brand and Reputation Risks</h3>
+<p>AI-generated content that contradicts organizational values, discusses competitors inappropriately, or makes unauthorized claims can severely damage brand reputation. A single viral incident of inappropriate AI behavior can erode years of brand trust. Guardrails protect brand integrity by ensuring all AI outputs align with organizational messaging and values.</p>
+
+<h3>Security and Adversarial Risks</h3>
+<p>Malicious actors continuously develop sophisticated prompt injection attacks designed to manipulate AI systems into revealing sensitive information, bypassing restrictions, or generating harmful content. These attacks exploit the natural language understanding capabilities of models to circumvent intended behaviors. Guardrails provide defense-in-depth protection against such adversarial inputs.</p>
+
+<h3>Data Privacy Risks</h3>
+<p>Users may inadvertently or intentionally include personally identifiable information (PII) in their prompts, or models may generate responses containing sensitive data. Without proper filtering, this information could be logged, stored, or displayed inappropriately, violating privacy regulations and user trust. Guardrails detect and redact PII to maintain privacy compliance.</p>
+
+<h2>How Guardrails Work: The Evaluation Pipeline</h2>
+<p>Amazon Bedrock Guardrails operates through a multi-stage evaluation pipeline that processes content at two critical intervention points:</p>
+
+<h3>Input Evaluation (Prompt Filtering)</h3>
+<p>Before a user's prompt reaches the foundation model, guardrails evaluate the input against configured policies. This evaluation includes:</p>
+
+<ul>
+    <li><strong>Content Classification:</strong> Analyzing the prompt for harmful content categories (hate, violence, sexual content, misconduct)</li>
+    <li><strong>Topic Detection:</strong> Identifying whether the prompt relates to denied topics defined by the organization</li>
+    <li><strong>Word Matching:</strong> Scanning for blocked words, phrases, or profanity</li>
+    <li><strong>PII Detection:</strong> Identifying sensitive information that should not be processed</li>
+    <li><strong>Prompt Attack Detection:</strong> Recognizing patterns indicative of adversarial manipulation attempts</li>
+</ul>
+
+<p>If the input violates any configured policy, the guardrail intervenes immediately—blocking the request before it consumes model inference resources and returning a policy-compliant message to the user.</p>
+
+<h3>Output Evaluation (Response Filtering)</h3>
+<p>After the foundation model generates a response, but before it reaches the user, guardrails evaluate the output against the same policy framework. This second layer of protection catches:</p>
+
+<ul>
+    <li><strong>Model Hallucinations:</strong> Responses that, despite safe inputs, generate inappropriate content</li>
+    <li><strong>Context-Dependent Issues:</strong> Content that becomes problematic only in combination with the specific prompt</li>
+    <li><strong>Grounding Failures:</strong> Responses that deviate from provided source material or make unsupported claims</li>
+    <li><strong>Emergent PII:</strong> Sensitive information that appears in model outputs despite not being in the input</li>
+</ul>
+
+<p>This dual-layer approach ensures comprehensive protection regardless of whether issues originate from user inputs or model behaviors.</p>
+
+<h2>Guardrail Intervention Mechanisms</h2>
+<p>When a guardrail detects a policy violation, it can respond through several intervention mechanisms:</p>
+
+<h3>Blocking</h3>
+<p>The most restrictive intervention—completely preventing the content from proceeding. The user receives a generic message indicating the request cannot be processed due to policy restrictions. Blocking is appropriate for severe violations (hate speech, violence) where no acceptable alternative exists.</p>
+
+<h3>Anonymization</h3>
+<p>For PII detection, guardrails can replace sensitive information with generic placeholders (e.g., replacing "john.doe@email.com" with "[EMAIL_ADDRESS]"). This allows the interaction to proceed while protecting privacy. Anonymization balances functionality with compliance.</p>
+
+<h3>Redaction</h3>
+<p>Similar to anonymization but removes the sensitive content entirely rather than replacing it. Useful when the presence of even placeholder text might be problematic or when the sensitive information is not essential to the interaction.</p>
+
+<h3>Warning and Logging</h3>
+<p>For lower-severity issues or monitoring purposes, guardrails can allow content to proceed while logging the incident for review. This approach supports continuous improvement of guardrail configurations based on real-world usage patterns.</p>
+
+<h2>Guardrail Configuration Flexibility</h2>
+<p>Amazon Bedrock Guardrails provides extensive configuration flexibility to accommodate diverse organizational needs:</p>
+
+<h3>Filter Strength Levels</h3>
+<p>Each content filter category supports multiple strength levels (NONE, LOW, MEDIUM, HIGH) that control detection sensitivity. Higher strength levels catch more potential violations but may increase false positives. Organizations can tune these levels independently for inputs and outputs based on their risk tolerance and user experience requirements.</p>
+
+<h3>Custom Policy Definitions</h3>
+<p>Beyond pre-built content categories, organizations can define custom denied topics specific to their business context—such as competitor discussions, proprietary information, or sensitive business areas. These custom policies extend guardrail protection to organization-specific risks.</p>
+
+<h3>Contextual Application</h3>
+<p>Guardrails can be applied selectively to different applications, user groups, or use cases. A customer-facing chatbot might require stricter filtering than an internal research tool. This contextual flexibility ensures appropriate protection without over-restricting legitimate use cases.</p>
+
+<h2>Integration with Amazon Bedrock Architecture</h2>
+<p>Guardrails integrate seamlessly into the Amazon Bedrock service architecture. When invoking a foundation model, applications specify which guardrail to apply and its version. The Bedrock service automatically routes the request through the guardrail evaluation pipeline before and after model inference. This integration is transparent to the model itself—guardrails operate as a wrapper around model invocations without requiring model modifications.</p>
+
+<p>The integration supports both synchronous (real-time) and asynchronous (batch) processing patterns, ensuring guardrails can protect diverse application architectures from interactive chatbots to large-scale content generation pipelines.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Amazon Bedrock Guardrails provides proactive, real-time content governance for generative AI applications</li>
+    <li>Guardrails address multiple risk categories: content safety, compliance, brand protection, security, and privacy</li>
+    <li>The dual-layer evaluation pipeline filters both inputs (prompts) and outputs (responses)</li>
+    <li>Multiple intervention mechanisms (blocking, anonymization, redaction) provide flexible policy enforcement</li>
+    <li>Configurable filter strengths and custom policies enable tailored protection for specific organizational needs</li>
+    <li>Seamless integration with Amazon Bedrock ensures transparent protection without application complexity</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

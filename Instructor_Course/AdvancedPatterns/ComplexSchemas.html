@@ -1,0 +1,319 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Complex Schemas and Nested Models</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Complex Schemas and Nested Models</h1>
+
+<h2>Building Hierarchical Data Structures</h2>
+<p>Real-world applications often require extracting complex, nested data structures. Instructor excels at handling hierarchical schemas where models contain other models, enabling extraction of rich, structured information from unstructured text.</p>
+
+<h2>Nested Model Basics</h2>
+<p>Pydantic models can contain other Pydantic models as fields, creating nested structures:</p>
+
+<div class="code-block">
+<pre><code>from pydantic import BaseModel, Field
+from typing import List, Optional
+from datetime import date
+
+class Address(BaseModel):
+    street: str
+    city: str
+    state: str
+    zip_code: str
+    country: str = "USA"
+
+class ContactInfo(BaseModel):
+    email: str = Field(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
+    phone: str
+    linkedin: Optional[str] = None
+
+class WorkExperience(BaseModel):
+    company: str
+    position: str
+    start_date: date
+    end_date: Optional[date] = None
+    responsibilities: List[str]
+
+class Resume(BaseModel):
+    name: str
+    address: Address
+    contact: ContactInfo
+    summary: str
+    experience: List[WorkExperience]
+    skills: List[str]
+    education: List[str]
+
+# Extract complete resume structure
+resume_text = """
+John Smith
+123 Main St, San Francisco, CA 94102
+Email: john.smith@email.com, Phone: 555-0123
+
+Summary: Senior software engineer with 10 years experience
+
+Experience:
+- Tech Corp (2020-present): Senior Engineer
+  Led team of 5, built microservices architecture
+- StartupCo (2018-2020): Software Engineer
+  Developed REST APIs, implemented CI/CD
+
+Skills: Python, JavaScript, Docker, Kubernetes
+Education: BS Computer Science, Stanford University
+"""
+
+resume = client.chat.completions.create(
+    model="gpt-4o",
+    response_model=Resume,
+    messages=[{"role": "user", "content": resume_text}],
+)
+
+print(f"{resume.name} - {resume.contact.email}")
+print(f"Experience: {len(resume.experience)} positions")</code></pre>
+</div>
+
+<h2>Handling Optional and Conditional Fields</h2>
+<p>Not all data is always present. Use Optional fields and default values to handle missing information gracefully:</p>
+
+<div class="code-block">
+<pre><code>from typing import Optional, Literal
+
+class Product(BaseModel):
+    name: str
+    category: Literal["Electronics", "Clothing", "Food", "Other"]
+    price: float = Field(gt=0)
+    discount: Optional[float] = Field(None, ge=0, le=100)
+    availability: Literal["in_stock", "out_of_stock", "pre_order"] = "in_stock"
+    
+    # Computed field
+    @property
+    def final_price(self) -> float:
+        if self.discount:
+            return self.price * (1 - self.discount / 100)
+        return self.price
+
+class ProductListing(BaseModel):
+    products: List[Product]
+    total_count: int
+    page: int = 1
+    
+    @field_validator("total_count")
+    @classmethod
+    def validate_count(cls, v, info):
+        products = info.data.get("products", [])
+        if v < len(products):
+            raise ValueError("total_count must be >= number of products")
+        return v</code></pre>
+</div>
+
+<h2>Union Types and Discriminated Unions</h2>
+<p>When data can have multiple valid structures, use Union types or discriminated unions:</p>
+
+<div class="code-block">
+<pre><code>from typing import Union, Literal
+from pydantic import Field, Discriminator
+
+class EmailNotification(BaseModel):
+    type: Literal["email"] = "email"
+    recipient: str
+    subject: str
+    body: str
+
+class SMSNotification(BaseModel):
+    type: Literal["sms"] = "sms"
+    phone: str
+    message: str = Field(max_length=160)
+
+class PushNotification(BaseModel):
+    type: Literal["push"] = "push"
+    device_id: str
+    title: str
+    body: str
+    badge_count: int = 0
+
+# Discriminated union
+Notification = Union[EmailNotification, SMSNotification, PushNotification]
+
+class NotificationBatch(BaseModel):
+    notifications: List[Notification]
+    priority: Literal["low", "medium", "high"] = "medium"
+
+# Extract mixed notification types
+text = """
+Send email to john@example.com with subject "Welcome" and body "Thanks for signing up"
+Also send SMS to 555-0123 saying "Your code is 1234"
+And push notification to device ABC123 with title "New Message"
+"""
+
+batch = client.chat.completions.create(
+    model="gpt-4o",
+    response_model=NotificationBatch,
+    messages=[{"role": "user", "content": text}],
+)
+
+for notif in batch.notifications:
+    if notif.type == "email":
+        print(f"Email to {notif.recipient}")
+    elif notif.type == "sms":
+        print(f"SMS to {notif.phone}")
+    else:
+        print(f"Push to {notif.device_id}")</code></pre>
+</div>
+
+<h2>Recursive Models</h2>
+<p>For tree-like structures, models can reference themselves:</p>
+
+<div class="code-block">
+<pre><code>from typing import List, Optional
+from pydantic import BaseModel
+
+class Category(BaseModel):
+    name: str
+    description: str
+    subcategories: Optional[List['Category']] = None
+    
+    def count_total_categories(self) -> int:
+        count = 1
+        if self.subcategories:
+            count += sum(sub.count_total_categories() for sub in self.subcategories)
+        return count
+
+# Extract hierarchical category structure
+text = """
+Electronics category includes:
+- Computers (Laptops, Desktops, Tablets)
+- Mobile Devices (Smartphones, Smartwatches)
+- Audio (Headphones, Speakers)
+"""
+
+category = client.chat.completions.create(
+    model="gpt-4o",
+    response_model=Category,
+    messages=[{"role": "user", "content": text}],
+)
+
+print(f"Total categories: {category.count_total_categories()}")</code></pre>
+</div>
+
+<h2>Cross-Field Validation</h2>
+<p>Validate relationships between fields to ensure data consistency:</p>
+
+<div class="code-block">
+<pre><code>from datetime import datetime
+from pydantic import model_validator
+
+class Event(BaseModel):
+    title: str
+    start_time: datetime
+    end_time: datetime
+    location: str
+    attendees: List[str] = Field(min_length=1)
+    max_capacity: int = Field(gt=0)
+    
+    @model_validator(mode='after')
+    def validate_times_and_capacity(self):
+        # Validate time range
+        if self.end_time <= self.start_time:
+            raise ValueError("end_time must be after start_time")
+        
+        # Validate capacity
+        if len(self.attendees) > self.max_capacity:
+            raise ValueError(f"attendees ({len(self.attendees)}) exceeds max_capacity ({self.max_capacity})")
+        
+        return self
+
+class Conference(BaseModel):
+    name: str
+    dates: tuple[date, date]
+    events: List[Event]
+    
+    @model_validator(mode='after')
+    def validate_event_dates(self):
+        conf_start, conf_end = self.dates
+        for event in self.events:
+            event_date = event.start_time.date()
+            if not (conf_start <= event_date <= conf_end):
+                raise ValueError(f"Event {event.title} is outside conference dates")
+        return self</code></pre>
+</div>
+
+<h2>Dynamic Field Validation</h2>
+<p>Implement custom validation logic based on business rules:</p>
+
+<div class="code-block">
+<pre><code>from pydantic import field_validator, ValidationInfo
+
+class Order(BaseModel):
+    order_id: str
+    customer_email: str
+    items: List[str] = Field(min_length=1)
+    subtotal: float = Field(gt=0)
+    tax: float = Field(ge=0)
+    shipping: float = Field(ge=0)
+    discount_code: Optional[str] = None
+    discount_amount: float = Field(default=0, ge=0)
+    total: float = Field(gt=0)
+    
+    @field_validator("order_id")
+    @classmethod
+    def validate_order_id(cls, v):
+        if not v.startswith("ORD-"):
+            raise ValueError("order_id must start with 'ORD-'")
+        return v
+    
+    @model_validator(mode='after')
+    def validate_total(self):
+        calculated_total = self.subtotal + self.tax + self.shipping - self.discount_amount
+        if abs(self.total - calculated_total) > 0.01:  # Allow for rounding
+            raise ValueError(f"Total mismatch: expected {calculated_total}, got {self.total}")
+        return self</code></pre>
+</div>
+
+<h2>Schema Complexity Best Practices</h2>
+<table>
+    <tr><th>Practice</th><th>Benefit</th><th>Example</th></tr>
+    <tr><td class="rowheader">Use Field descriptions</td><td>Guides LLM extraction</td><td><code>Field(description="ISO 8601 date")</code></td></tr>
+    <tr><td class="rowheader">Limit nesting depth</td><td>Reduces errors</td><td>Max 3-4 levels deep</td></tr>
+    <tr><td class="rowheader">Provide examples</td><td>Improves accuracy</td><td>Include sample data in prompts</td></tr>
+    <tr><td class="rowheader">Use Literal types</td><td>Constrains values</td><td><code>Literal["active", "inactive"]</code></td></tr>
+    <tr><td class="rowheader">Set sensible defaults</td><td>Handles missing data</td><td><code>status: str = "pending"</code></td></tr>
+</table>
+
+<h2>Testing Complex Schemas</h2>
+<p>Validate your schemas work correctly before production:</p>
+
+<div class="code-block">
+<pre><code>import pytest
+from pydantic import ValidationError
+
+def test_resume_validation():
+    # Test valid resume
+    valid_data = {
+        "name": "John Doe",
+        "address": {"street": "123 Main", "city": "SF", "state": "CA", "zip_code": "94102"},
+        "contact": {"email": "john@example.com", "phone": "555-0123"},
+        "summary": "Experienced engineer",
+        "experience": [],
+        "skills": ["Python"],
+        "education": ["BS CS"]
+    }
+    resume = Resume(**valid_data)
+    assert resume.name == "John Doe"
+    
+    # Test invalid email
+    invalid_data = valid_data.copy()
+    invalid_data["contact"]["email"] = "invalid-email"
+    with pytest.raises(ValidationError):
+        Resume(**invalid_data)</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

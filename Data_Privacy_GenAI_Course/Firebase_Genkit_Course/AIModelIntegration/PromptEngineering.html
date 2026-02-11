@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Engineering and Management</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Engineering and Management</h1>
+
+<h2>The Importance of Prompt Engineering</h2>
+<p>Effective prompt engineering is crucial for getting consistent, high-quality outputs from AI models. Genkit provides tools to define, manage, and version prompts as reusable components.</p>
+
+<h2>Defining Prompts in Genkit</h2>
+<div class="code-block">
+<pre><code>import { definePrompt } from '@genkit-ai/core';
+
+const summarizePrompt = definePrompt({
+  name: 'summarize',
+  inputSchema: z.object({
+    text: z.string(),
+    maxLength: z.number().default(100)
+  }),
+  outputSchema: z.object({
+    summary: z.string()
+  })
+}, async (input) => {
+  return {
+    messages: [
+      {
+        role: 'user',
+        content: `Summarize the following text in no more than ${input.maxLength} words:
+        
+${input.text}
+
+Provide a concise, accurate summary that captures the main points.`
+      }
+    ],
+    output: {
+      schema: z.object({ summary: z.string() })
+    }
+  };
+});
+</code></pre>
+</div>
+
+<h2>Using Prompts in Flows</h2>
+<div class="code-block">
+<pre><code>const summarizeFlow = ai.defineFlow({
+  name: 'summarizeWithPrompt',
+  inputSchema: z.object({ text: z.string() }),
+  outputSchema: z.object({ summary: z.string() })
+}, async (input) => {
+  const { output } = await summarizePrompt({
+    text: input.text,
+    maxLength: 150
+  });
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Prompt Engineering Techniques</h2>
+
+<h3>Few-Shot Learning</h3>
+<div class="code-block">
+<pre><code>const classifyPrompt = definePrompt({
+  name: 'classifySentiment',
+  inputSchema: z.object({ text: z.string() }),
+  outputSchema: z.object({ 
+    sentiment: z.enum(['positive', 'negative', 'neutral']),
+    confidence: z.number()
+  })
+}, async (input) => {
+  return {
+    messages: [
+      { role: 'user', content: 'Review: This product exceeded my expectations!' },
+      { role: 'model', content: '{"sentiment": "positive", "confidence": 0.95}' },
+      { role: 'user', content: 'Review: Terrible quality, waste of money.' },
+      { role: 'model', content: '{"sentiment": "negative", "confidence": 0.98}' },
+      { role: 'user', content: 'Review: It works as described.' },
+      { role: 'model', content: '{"sentiment": "neutral", "confidence": 0.85}' },
+      { role: 'user', content: `Review: ${input.text}` }
+    ],
+    output: {
+      schema: z.object({
+        sentiment: z.enum(['positive', 'negative', 'neutral']),
+        confidence: z.number()
+      })
+    }
+  };
+});
+</code></pre>
+</div>
+
+<h3>Chain-of-Thought Prompting</h3>
+<div class="code-block">
+<pre><code>const reasoningPrompt = definePrompt({
+  name: 'solveWithReasoning',
+  inputSchema: z.object({ problem: z.string() }),
+  outputSchema: z.object({
+    reasoning: z.array(z.string()),
+    answer: z.string()
+  })
+}, async (input) => {
+  return {
+    messages: [
+      {
+        role: 'user',
+        content: `Solve this problem step by step:
+
+${input.problem}
+
+Think through the problem carefully:
+1. Break down the problem
+2. Identify key information
+3. Apply relevant concepts
+4. Reach a conclusion
+
+Provide your reasoning steps and final answer.`
+      }
+    ],
+    output: {
+      schema: z.object({
+        reasoning: z.array(z.string()).describe('Step-by-step reasoning'),
+        answer: z.string().describe('Final answer')
+      })
+    }
+  };
+});
+</code></pre>
+</div>
+
+<h3>Role-Based Prompting</h3>
+<div class="code-block">
+<pre><code>const expertPrompt = definePrompt({
+  name: 'expertAdvice',
+  inputSchema: z.object({
+    domain: z.string(),
+    question: z.string()
+  }),
+  outputSchema: z.object({ advice: z.string() })
+}, async (input) => {
+  return {
+    messages: [
+      {
+        role: 'system',
+        content: `You are an expert ${input.domain} consultant with 20 years of experience. 
+Provide detailed, professional advice based on industry best practices.`
+      },
+      {
+        role: 'user',
+        content: input.question
+      }
+    ],
+    output: {
+      schema: z.object({ advice: z.string() })
+    }
+  };
+});
+</code></pre>
+</div>
+
+<h2>Prompt Templates with Variables</h2>
+<div class="code-block">
+<pre><code>const emailPrompt = definePrompt({
+  name: 'generateEmail',
+  inputSchema: z.object({
+    recipient: z.string(),
+    purpose: z.string(),
+    tone: z.enum(['formal', 'casual', 'friendly']),
+    keyPoints: z.array(z.string())
+  }),
+  outputSchema: z.object({
+    subject: z.string(),
+    body: z.string()
+  })
+}, async (input) => {
+  const toneInstructions = {
+    formal: 'Use professional, business-appropriate language',
+    casual: 'Use relaxed, conversational language',
+    friendly: 'Use warm, personable language'
+  };
+  
+  return {
+    messages: [
+      {
+        role: 'user',
+        content: `Write an email with the following details:
+
+Recipient: ${input.recipient}
+Purpose: ${input.purpose}
+Tone: ${input.tone} (${toneInstructions[input.tone]})
+
+Key points to include:
+${input.keyPoints.map((point, i) => `${i + 1}. ${point}`).join('\n')}
+
+Generate a subject line and email body.`
+      }
+    ],
+    output: {
+      schema: z.object({
+        subject: z.string().describe('Email subject line'),
+        body: z.string().describe('Email body content')
+      })
+    }
+  };
+});
+</code></pre>
+</div>
+
+<h2>Prompt Versioning</h2>
+<div class="code-block">
+<pre><code>// prompts/summarize/v1.ts
+export const summarizeV1 = definePrompt({
+  name: 'summarize',
+  version: 'v1',
+  inputSchema: z.object({ text: z.string() }),
+  outputSchema: z.object({ summary: z.string() })
+}, async (input) => {
+  return {
+    messages: [{ role: 'user', content: `Summarize: ${input.text}` }],
+    output: { schema: z.object({ summary: z.string() }) }
+  };
+});
+
+// prompts/summarize/v2.ts
+export const summarizeV2 = definePrompt({
+  name: 'summarize',
+  version: 'v2',
+  inputSchema: z.object({ 
+    text: z.string(),
+    style: z.enum(['brief', 'detailed'])
+  }),
+  outputSchema: z.object({ 
+    summary: z.string(),
+    keyPoints: z.array(z.string())
+  })
+}, async (input) => {
+  return {
+    messages: [{
+      role: 'user',
+      content: `Provide a ${input.style} summary with key points: ${input.text}`
+    }],
+    output: {
+      schema: z.object({
+        summary: z.string(),
+        keyPoints: z.array(z.string())
+      })
+    }
+  };
+});
+</code></pre>
+</div>
+
+<h2>Testing Prompts</h2>
+<div class="code-block">
+<pre><code>import { describe, it, expect } from 'vitest';
+
+describe('summarizePrompt', () => {
+  it('should generate summary within length limit', async () => {
+    const result = await summarizePrompt({
+      text: 'Long article text...',
+      maxLength: 50
+    });
+    
+    const wordCount = result.output.summary.split(' ').length;
+    expect(wordCount).toBeLessThanOrEqual(50);
+  });
+  
+  it('should handle different text lengths', async () => {
+    const shortText = 'Brief text.';
+    const longText = 'Very long article...'.repeat(100);
+    
+    const shortResult = await summarizePrompt({ text: shortText, maxLength: 100 });
+    const longResult = await summarizePrompt({ text: longText, maxLength: 100 });
+    
+    expect(shortResult.output.summary).toBeTruthy();
+    expect(longResult.output.summary).toBeTruthy();
+  });
+});
+</code></pre>
+</div>
+
+<h2>Prompt Optimization Strategies</h2>
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>When to Use</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Be Specific</td>
+        <td>When outputs are too vague</td>
+        <td>"List exactly 5 items" vs "List some items"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Provide Examples</td>
+        <td>For consistent formatting</td>
+        <td>Show 2-3 example outputs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Set Constraints</td>
+        <td>To control output length/format</td>
+        <td>"In 100 words or less"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Use System Messages</td>
+        <td>To set overall behavior</td>
+        <td>"You are a helpful assistant"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Break Down Tasks</td>
+        <td>For complex operations</td>
+        <td>Multiple prompts in sequence</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Version Your Prompts:</strong> Track changes and enable A/B testing</li>
+    <li><strong>Use Descriptive Names:</strong> Make prompt purpose clear</li>
+    <li><strong>Add Schema Descriptions:</strong> Guide AI output structure</li>
+    <li><strong>Test Extensively:</strong> Validate prompts with diverse inputs</li>
+    <li><strong>Iterate Based on Results:</strong> Refine prompts using real data</li>
+    <li><strong>Keep Prompts Focused:</strong> One clear task per prompt</li>
+    <li><strong>Document Prompt Intent:</strong> Explain why prompts are structured a certain way</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

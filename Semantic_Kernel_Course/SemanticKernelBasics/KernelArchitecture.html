@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Semantic Kernel Architecture</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Under the Hood: The Semantic Kernel Architecture</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>To build truly robust AI applications, you need to understand the architectural design of the tools you are using. Semantic Kernel is designed with a "modular-first" philosophy. Every component—from the LLM provider to the memory store—is an interchangeable part. This article dives into the core components that make up the "Kernel" and how they interact to process an AI request.</p>
+
+<h2>2. The Kernel Object</h2>
+<p>The <strong>Kernel</strong> is the central hub. It is a lightweight object that coordinates the execution of tasks. You don't "run" a model; you "ask the kernel" to perform an action.
+    <ul>
+        <li><strong>The Builder Pattern:</strong> Kernels are constructed using a builder, allowing you to fluently add services like AI models (OpenAI, Azure OpenAI, Hugging Face) and logging.</li>
+        <li><strong>Service Management:</strong> The kernel maintains a registry of services. You can add multiple AI services and choose which one to use for a specific task based on its "service ID."</li>
+    </ul>
+</p>
+
+<h2>3. AI Services and Connectors</h2>
+<p>Semantic Kernel uses <strong>Connectors</strong> to communicate with different AI providers. This abstraction allows you to write your code once and swap out the underlying model without changing your business logic.</p>
+<ul>
+    <li><strong>Chat Completion Service:</strong> For standard conversational AI.</li>
+    <li><strong>Text Generation Service:</strong> For completion-based tasks.</li>
+    <li><strong>Text Embedding Service:</strong> For converting text into vectors for memory.</li>
+    <li><strong>Image Generation Service:</strong> For DALL-E or Stable Diffusion tasks.</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Building a Kernel with multiple services
+from semantic_kernel import Kernel
+from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
+
+kernel = Kernel()
+
+# Add Azure OpenAI service
+kernel.add_service(
+    AzureChatCompletion(
+        service_id="gpt4",
+        deployment_name="my-gpt4-deployment",
+        endpoint="...",
+        api_key="..."
+    )
+)
+
+# You can now ask the kernel to use 'gpt4' for specific tasks</code></pre>
+</div>
+
+<h2>4. The Execution Pipeline: Hooks and Filters</h2>
+<p>One of the most powerful features of the SK architecture is the <strong>Function Invocation Filter</strong>. This allows you to "intercept" a request before it goes to the model and after it returns.
+    <ul>
+        <li><strong>Pre-Invocation:</strong> You can use this to check for safety violations, redact PII, or even modify the prompt.</li>
+        <li><strong>Post-Invocation:</strong> You can use this to log the token usage, validate the JSON format of the response, or trigger a retry if the output is unsatisfactory.</li>
+    </ul>
+</p>
+
+<h2>5. Semantic Functions vs. Native Functions</h2>
+<p>The kernel treats both types of functions as first-class citizens.
+    <ul>
+        <li><strong>Semantic Functions</strong> are registered with the kernel along with their configuration (temperature, max tokens) and their prompt template.</li>
+        <li><strong>Native Functions</strong> are registered as standard code objects. The kernel uses reflection to understand their arguments and return types.</li>
+    </ul>
+    Because they are both "Kernel Functions," they can be easily chained together in a single pipeline.
+</p>
+
+<h2>6. Template Engines</h2>
+<p>When you define a Semantic Function, you use a <strong>Template Engine</strong> to define how variables are injected into the prompt.
+    <ul>
+        <li><strong>SK Prompt Template:</strong> The default, simple syntax like <code>"Summarize this: {{$input}}"</code>.</li>
+        <li><strong>Handlebars Template:</strong> A more powerful engine that supports complex logic, loops, and calling other kernel functions directly within the prompt. This allows for "prompt-side orchestration."</li>
+    </ul>
+</p>
+
+<h2>7. The Kernel Context: Data Flow</h2>
+<p>The <strong>Kernel Context</strong> (or <code>KernelArguments</code> in newer versions) is the data bag that travels through the pipeline. It stores the input, the output, and any intermediate variables. Understanding how to manage this context is the key to building complex, multi-step AI workflows. It also allows you to pass metadata like <code>user_id</code>, <code>trace_id</code>, or custom configuration flags to your native functions.</p>
+
+<h2>8. Multi-Model Pipelines</h2>
+<p>A single Kernel can manage multiple AI services. This is useful for building fallback logic or using different models for different stages of a task.
+    <ul>
+        <li><strong>Routing:</strong> Use a fast model (GPT-3.5) for simple classification and a powerful model (GPT-4) for complex reasoning.</li>
+        <li><strong>Fallback:</strong> If the primary service fails (e.g., due to a 429 error), the kernel can be configured to automatically retry with a secondary service.</li>
+        <li><strong>Verification:</strong> Use one model to generate an answer and a second, independent model to verify its accuracy.</li>
+    </ul>
+</p>
+
+<h2>Conclusion</h2>
+<p>The architecture of Semantic Kernel is designed for flexibility, observability, and scale. By separating the "what" (the goal) from the "how" (the specific model or code), SK allows you to build AI systems that can evolve as the underlying technology changes. In our next module, we'll explore how to use this architecture for Native Function Calling.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

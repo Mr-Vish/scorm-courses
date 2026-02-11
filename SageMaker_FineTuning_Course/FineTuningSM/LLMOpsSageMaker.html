@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLMOps with Amazon SageMaker</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLMOps: Automating the LLM Lifecycle on SageMaker</h1>
+
+<div class="content-section">
+<h2>1. From Experiments to Production</h2>
+<p>Fine-tuning a model once in a Jupyter notebook is an achievement, but in an enterprise environment, you need a repeatable, reliable, and automated process. <strong>LLMOps (Large Language Model Operations)</strong> is the adaptation of MLOps principles specifically for the challenges of Generative AI. Amazon SageMaker provides a suite of tools to automate the entire LLM lifecycle.</p>
+
+<h2>2. SageMaker Pipelines for LLMs</h2>
+<p><strong>SageMaker Pipelines</strong> allows you to build CI/CD workflows for your AI. A typical fine-tuning pipeline might include the following steps:</p>
+<ol>
+    <li><strong>Data Preparation Step:</strong> A Processing Job that cleans and tokenizes raw text from S3.</li>
+    <li><strong>Training Step:</strong> A SageMaker Training Job that performs PEFT/LoRA fine-tuning.</li>
+    <li><strong>Evaluation Step:</strong> A Processing Job that calculates ROUGE/BLEU scores or runs a "Judge Model" on the outputs.</li>
+    <li><strong>Condition Step:</strong> A logic gate that only proceeds if the evaluation metrics meet a certain threshold (e.g., Accuracy > 85%).</li>
+    <li><strong>Register Step:</strong> Automatically adding the fine-tuned weights and metadata to the SageMaker Model Registry.</li>
+</ol>
+
+<div class="code-block">
+<pre><code># Conceptual SageMaker Pipeline Step
+from sagemaker.workflow.steps import TrainingStep
+
+step_train = TrainingStep(
+    name="LLMFineTuning",
+    estimator=huggingface_estimator,
+    inputs={
+        "train": s3_input_data
+    }
+)</code></pre>
+</div>
+
+<h2>3. SageMaker Model Registry</h2>
+<p>The <strong>Model Registry</strong> is a central repository for your models. It allows you to:
+    <ul>
+        <li><strong>Version Control:</strong> Track different versions of your fine-tuned models and their associated training data.</li>
+        <li><strong>Approval Workflows:</strong> Manually or automatically mark a model as "Approved" or "Rejected" for production.</li>
+        <li><strong>Metadata Tracking:</strong> Store the hyperparameters, evaluation results, and lineage for every model version.</li>
+    </ul>
+</p>
+
+<h2>4. Automating Evaluation with Model Quality Monitoring</h2>
+<p>Evaluation shouldn't just happen once after training. In an LLMOps workflow, you should constantly monitor the <strong>Quality of your Outputs</strong>. SageMaker Model Monitor can be configured to run periodically on your production endpoints, feeding samples of real-world traffic back into your evaluation pipeline to detect drift in tone, accuracy, or safety.</p>
+
+<h2>5. Continuous Deployment (CD) and A/B Testing</h2>
+<p>When you have a new version of a fine-tuned model, you shouldn't just swap it out instantly. SageMaker supports sophisticated deployment strategies:
+    <ul>
+        <li><strong>Blue/Green Deployments:</strong> Spin up a new endpoint (Green) with the new model, test it, and then shift traffic away from the old one (Blue).</li>
+        <li><strong>A/B Testing:</strong> Route 10% of traffic to the new model and 90% to the old one. Use CloudWatch metrics to compare their performance (e.g., user click-through rate or completion length) before deciding whether to fully transition.</li>
+        <li><strong>Shadow Deployments:</strong> Send a copy of the production traffic to the new model but don't show the results to the user. This allows you to test the new model's performance and latency under real load without any risk to the user experience.</li>
+    </ul>
+</p>
+
+<h2>6. Human-in-the-loop (HITL) Workflows</h2>
+<p>Sometimes, an automated evaluation isn't enough. LLMOps on SageMaker can incorporate <strong>SageMaker Augmented AI (A2I)</strong>. If the model's confidence in a response is low, or if the safety filter identifies a potential issue, the request can be automatically routed to a human reviewer for approval or correction before being sent to the final user.</p>
+
+<h2>Conclusion</h2>
+<p>LLMOps turns the "art" of fine-tuning into an "engineering discipline." By automating the data, training, evaluation, and deployment steps with SageMaker Pipelines, you can ensure that your aligned models are always performing at their best and can be updated safely and frequently. In our next module, we'll compare JumpStart with custom training scripts to help you choose the right path for your projects.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

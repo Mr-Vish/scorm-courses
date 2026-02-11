@@ -1,0 +1,327 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Deployment and Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Production Deployment and Optimization</h1>
+
+<h2>Production Readiness Checklist</h2>
+<p>Before deploying agents to production, ensure comprehensive readiness across multiple dimensions.</p>
+
+<h3>Functional Readiness</h3>
+<ul>
+    <li><strong>Comprehensive Testing:</strong> Validated across happy paths, edge cases, and error scenarios</li>
+    <li><strong>Action Group Verification:</strong> All APIs tested and returning expected responses</li>
+    <li><strong>Knowledge Base Validation:</strong> Retrieval quality assessed and optimized</li>
+    <li><strong>Guardrail Testing:</strong> Content filters and safety controls verified</li>
+    <li><strong>Multi-Turn Conversations:</strong> Context maintenance validated across sessions</li>
+</ul>
+
+<h3>Performance Readiness</h3>
+<ul>
+    <li><strong>Latency Benchmarking:</strong> Response times measured under expected load</li>
+    <li><strong>Throughput Testing:</strong> Concurrent request handling validated</li>
+    <li><strong>Token Usage Analysis:</strong> Cost per interaction calculated and budgeted</li>
+    <li><strong>Optimization Applied:</strong> Instructions, prompts, and retrieval tuned for efficiency</li>
+</ul>
+
+<h3>Security Readiness</h3>
+<ul>
+    <li><strong>IAM Policies:</strong> Least-privilege permissions configured</li>
+    <li><strong>Data Protection:</strong> PII redaction and encryption enabled</li>
+    <li><strong>Access Controls:</strong> Authentication and authorization implemented</li>
+    <li><strong>Audit Logging:</strong> CloudTrail and CloudWatch configured</li>
+    <li><strong>Compliance Review:</strong> Regulatory requirements validated</li>
+</ul>
+
+<h3>Operational Readiness</h3>
+<ul>
+    <li><strong>Monitoring:</strong> Metrics, alarms, and dashboards configured</li>
+    <li><strong>Logging:</strong> Trace and application logs enabled</li>
+    <li><strong>Runbooks:</strong> Incident response procedures documented</li>
+    <li><strong>Backup Strategy:</strong> Agent configurations version-controlled</li>
+    <li><strong>Rollback Plan:</strong> Procedure for reverting to previous versions</li>
+</ul>
+
+<h2>Deployment Strategies</h2>
+
+<h3>Blue-Green Deployment</h3>
+<p>Maintain two identical environments (blue and green) and switch traffic between them:</p>
+
+<ol>
+    <li><strong>Blue Environment:</strong> Current production version</li>
+    <li><strong>Green Environment:</strong> New version being deployed</li>
+    <li><strong>Testing:</strong> Validate green environment with synthetic traffic</li>
+    <li><strong>Cutover:</strong> Switch alias to point to green version</li>
+    <li><strong>Monitoring:</strong> Watch metrics closely after cutover</li>
+    <li><strong>Rollback:</strong> Switch alias back to blue if issues detected</li>
+</ol>
+
+<p><strong>Implementation with Aliases:</strong></p>
+<div class="code-block">
+<pre><code># Production alias initially points to v1
+Production Alias -> Agent v1
+
+# Deploy v2 to staging alias for testing
+Staging Alias -> Agent v2
+
+# After validation, update production alias
+Production Alias -> Agent v2
+
+# Keep v1 available for quick rollback
+Blue Alias -> Agent v1</code></pre>
+</div>
+
+<h3>Canary Deployment</h3>
+<p>Gradually roll out new versions to subsets of users:</p>
+
+<ol>
+    <li><strong>Deploy New Version:</strong> Create and prepare new agent version</li>
+    <li><strong>Route Small Percentage:</strong> Send 5-10% of traffic to new version</li>
+    <li><strong>Monitor Metrics:</strong> Compare error rates, latency, user satisfaction</li>
+    <li><strong>Gradual Increase:</strong> If metrics are good, increase to 25%, 50%, 100%</li>
+    <li><strong>Rollback if Needed:</strong> Revert to previous version if issues arise</li>
+</ol>
+
+<p><strong>Implementation Approach:</strong></p>
+<div class="code-block">
+<pre><code># Application-level routing logic
+def get_agent_version(user_id):
+    # Hash user ID to determine version
+    if hash(user_id) % 100 < 10:  # 10% of users
+        return 'AGENT_V2_ID'
+    else:
+        return 'AGENT_V1_ID'
+
+# Invoke appropriate version
+agent_id = get_agent_version(current_user_id)
+response = bedrock_agent_runtime.invoke_agent(
+    agentId=agent_id,
+    agentAliasId='PROD',
+    sessionId=session_id,
+    inputText=user_input
+)</code></pre>
+</div>
+
+<h3>Feature Flags</h3>
+<p>Control agent behavior through configuration without redeployment:</p>
+
+<ul>
+    <li>Enable/disable specific action groups</li>
+    <li>Toggle between different knowledge bases</li>
+    <li>Adjust guardrail sensitivity</li>
+    <li>Switch foundation models</li>
+</ul>
+
+<h2>Monitoring and Observability</h2>
+
+<h3>Key Metrics to Track</h3>
+
+<h4>Performance Metrics</h4>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Description</th>
+        <th>Target</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Latency (P50, P95, P99)</td>
+        <td>Response time distribution</td>
+        <td>P95 < 5 seconds</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Throughput</td>
+        <td>Requests per second</td>
+        <td>Based on capacity planning</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Token Usage</td>
+        <td>Input/output tokens per request</td>
+        <td>Monitor for cost optimization</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Action Invocations</td>
+        <td>API calls per agent request</td>
+        <td>Minimize unnecessary calls</td>
+    </tr>
+</table>
+
+<h4>Quality Metrics</h4>
+<ul>
+    <li><strong>Task Completion Rate:</strong> Percentage of requests successfully resolved</li>
+    <li><strong>Escalation Rate:</strong> Percentage requiring human intervention</li>
+    <li><strong>User Satisfaction:</strong> Ratings or feedback scores</li>
+    <li><strong>Guardrail Triggers:</strong> Frequency of content filter activations</li>
+</ul>
+
+<h4>Error Metrics</h4>
+<ul>
+    <li><strong>Error Rate:</strong> Percentage of failed requests</li>
+    <li><strong>Error Types:</strong> Distribution of error categories</li>
+    <li><strong>Action Failures:</strong> Lambda or API errors</li>
+    <li><strong>Knowledge Base Failures:</strong> Retrieval errors or timeouts</li>
+</ul>
+
+<h3>CloudWatch Dashboards</h3>
+<p>Create comprehensive dashboards showing:</p>
+<ul>
+    <li>Real-time invocation volume and trends</li>
+    <li>Latency percentiles over time</li>
+    <li>Error rates and types</li>
+    <li>Token usage and cost projections</li>
+    <li>Action group invocation patterns</li>
+    <li>Knowledge base query frequency</li>
+</ul>
+
+<h3>Alerting Strategy</h3>
+<p>Configure alarms for critical conditions:</p>
+
+<ul>
+    <li><strong>High Error Rate:</strong> Alert if error rate exceeds 5% over 5 minutes</li>
+    <li><strong>Elevated Latency:</strong> Alert if P95 latency exceeds threshold</li>
+    <li><strong>Cost Anomalies:</strong> Alert on unexpected token usage spikes</li>
+    <li><strong>Action Failures:</strong> Alert on repeated Lambda errors</li>
+    <li><strong>Guardrail Triggers:</strong> Alert on unusual content filter activity</li>
+</ul>
+
+<h2>Cost Optimization</h2>
+
+<h3>Token Usage Optimization</h3>
+<p>Reduce costs by minimizing token consumption:</p>
+
+<ul>
+    <li><strong>Concise Instructions:</strong> Remove unnecessary verbosity from agent instructions</li>
+    <li><strong>Efficient Prompts:</strong> Optimize prompt engineering for brevity</li>
+    <li><strong>Knowledge Base Tuning:</strong> Retrieve fewer, more relevant chunks</li>
+    <li><strong>Session Management:</strong> Clear old sessions to avoid context bloat</li>
+    <li><strong>Streaming:</strong> Enable streaming to reduce perceived latency without increasing tokens</li>
+</ul>
+
+<h3>Model Selection</h3>
+<p>Use appropriate models for different scenarios:</p>
+
+<ul>
+    <li><strong>Simple Queries:</strong> Route to Claude Haiku or Titan Text</li>
+    <li><strong>Complex Reasoning:</strong> Use Claude Sonnet or Opus</li>
+    <li><strong>Tiered Approach:</strong> Start with smaller model, escalate if needed</li>
+</ul>
+
+<h3>Caching Strategies</h3>
+<p>Cache frequently accessed information:</p>
+
+<ul>
+    <li>Common knowledge base queries</li>
+    <li>Frequently invoked action results</li>
+    <li>Static reference data</li>
+</ul>
+
+<h2>Debugging and Troubleshooting</h2>
+
+<h3>Trace Analysis</h3>
+<p>Enable trace logging to diagnose issues:</p>
+
+<ul>
+    <li><strong>Pre-Processing Trace:</strong> Input validation, guardrail checks</li>
+    <li><strong>Orchestration Trace:</strong> Reasoning steps, action decisions</li>
+    <li><strong>Action Invocation Trace:</strong> Lambda calls, parameters, responses</li>
+    <li><strong>Knowledge Base Trace:</strong> Queries, retrieved chunks, relevance scores</li>
+    <li><strong>Post-Processing Trace:</strong> Response generation, output guardrails</li>
+</ul>
+
+<h3>Common Issues and Solutions</h3>
+
+<h4>Agent Not Invoking Actions</h4>
+<p><strong>Symptoms:</strong> Agent provides generic responses without using action groups</p>
+<p><strong>Causes:</strong></p>
+<ul>
+    <li>Unclear action descriptions</li>
+    <li>Instructions don't mention available actions</li>
+    <li>OpenAPI schema too complex</li>
+</ul>
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Improve action group descriptions</li>
+    <li>Explicitly instruct agent to use actions</li>
+    <li>Simplify OpenAPI schema</li>
+    <li>Provide examples of when to use actions</li>
+</ul>
+
+<h4>Poor Knowledge Base Retrieval</h4>
+<p><strong>Symptoms:</strong> Agent can't find relevant information or retrieves wrong content</p>
+<p><strong>Causes:</strong></p>
+<ul>
+    <li>Suboptimal chunking strategy</li>
+    <li>Poor document quality</li>
+    <li>Insufficient metadata</li>
+</ul>
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Adjust chunk size and overlap</li>
+    <li>Improve document structure and clarity</li>
+    <li>Add metadata for better filtering</li>
+    <li>Increase number of retrieved results</li>
+</ul>
+
+<h4>High Latency</h4>
+<p><strong>Symptoms:</strong> Slow response times</p>
+<p><strong>Causes:</strong></p>
+<ul>
+    <li>Multiple action invocations</li>
+    <li>Large knowledge base queries</li>
+    <li>Slow Lambda functions</li>
+    <li>Large context windows</li>
+</ul>
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Optimize action group logic</li>
+    <li>Reduce retrieved chunk count</li>
+    <li>Improve Lambda performance</li>
+    <li>Use faster foundation models for simple queries</li>
+</ul>
+
+<h2>Best Practices Summary</h2>
+
+<h3>Design Principles</h3>
+<ul>
+    <li>Start simple, add complexity incrementally</li>
+    <li>Design for failure with graceful degradation</li>
+    <li>Optimize for user experience, not just functionality</li>
+    <li>Build observability in from the start</li>
+</ul>
+
+<h3>Operational Excellence</h3>
+<ul>
+    <li>Automate testing and deployment</li>
+    <li>Monitor continuously and alert proactively</li>
+    <li>Document decisions and configurations</li>
+    <li>Conduct regular reviews and optimizations</li>
+</ul>
+
+<h3>Security and Compliance</h3>
+<ul>
+    <li>Apply least-privilege IAM policies</li>
+    <li>Enable guardrails for content safety</li>
+    <li>Redact PII in logs and responses</li>
+    <li>Maintain audit trails for compliance</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Production readiness requires validation across functional, performance, security, and operational dimensions</li>
+    <li>Blue-green and canary deployments enable safe rollouts with quick rollback capabilities</li>
+    <li>Comprehensive monitoring of performance, quality, and error metrics is essential</li>
+    <li>Cost optimization through token usage reduction, model selection, and caching</li>
+    <li>Trace logging is invaluable for debugging and troubleshooting agent behavior</li>
+    <li>Follow best practices for design, operations, security, and compliance</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

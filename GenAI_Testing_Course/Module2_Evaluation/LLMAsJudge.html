@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM-as-Judge Pattern</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM-as-Judge Pattern</h1>
+
+<h2>Concept</h2>
+<p>Use a powerful LLM to evaluate outputs from your production model. This scales better than human evaluation while maintaining quality assessment.</p>
+
+<h2>Implementation</h2>
+<div class="code-block">
+<pre><code>async def llm_as_judge(question, answer, criteria="helpfulness"):
+    judge_prompt = f"""Evaluate this AI response on {criteria} (1-5 scale).
+
+Question: {question}
+Answer: {answer}
+
+Provide score and brief justification.
+Format: Score: X | Justification: ..."""
+    
+    response = await judge_llm.generate(judge_prompt)
+    score = int(response.split("Score:")[1].split("|")[0].strip())
+    return score
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li>Use stronger model as judge (GPT-4, Claude Opus)</li>
+    <li>Provide clear evaluation criteria</li>
+    <li>Include examples of good/bad outputs</li>
+    <li>Validate judge consistency with human ratings</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

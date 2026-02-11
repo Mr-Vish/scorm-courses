@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Query Engines and Response Synthesis</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Query Engines and Response Synthesis</h1>
+
+
+<h2>Query Engines</h2>
+<p>A query engine takes a natural language question, retrieves relevant context, and generates an answer. It is the primary interface for asking questions of your data:</p>
+<div class="code-block">
+<pre><code>from llama_index.core import VectorStoreIndex, StorageContext, load_index_from_storage
+
+# Load persisted index
+storage_context = StorageContext.from_defaults(persist_dir="./storage")
+index = load_index_from_storage(storage_context)
+
+# Create query engine
+query_engine = index.as_query_engine(
+    similarity_top_k=5,
+    response_mode="tree_summarize",
+)
+
+# Ask a question
+response = query_engine.query("What are the main risks in our Q3 report?")
+print(response.response)
+print(f"Sources: {[n.metadata for n in response.source_nodes]}")</code></pre>
+</div>
+
+<h2>Response Modes</h2>
+<table>
+    <tr><th>Mode</th><th>How It Works</th><th>Trade-offs</th></tr>
+    <tr><td>refine</td><td>Iteratively refines answer with each chunk</td><td>Higher quality, more LLM calls</td></tr>
+    <tr><td>compact</td><td>Stuffs as many chunks as possible per call</td><td>Fewer calls, good balance</td></tr>
+    <tr><td>tree_summarize</td><td>Builds a summary tree bottom-up</td><td>Best for summarization tasks</td></tr>
+    <tr><td>simple_input</td><td>Concatenates all chunks into one prompt</td><td>Fastest, limited by context window</td></tr>
+    <tr><td>no_text</td><td>Returns retrieved nodes without LLM synthesis</td><td>For custom processing pipelines</td></tr>
+</table>
+
+<h2>Chat Engine for Conversations</h2>
+<div class="code-block">
+<pre><code># Chat engine maintains conversation history
+chat_engine = index.as_chat_engine(
+    chat_mode="condense_plus_context",
+    similarity_top_k=3,
+)
+
+response1 = chat_engine.chat("Tell me about revenue growth")
+response2 = chat_engine.chat("How does that compare to last year?")</code></pre>
+</div>
+
+<h2>Advanced Query Techniques</h2>
+<ul>
+    <li><strong>Sub-question query engine:</strong> Decomposes complex queries into sub-questions, each targeting specific data sources</li>
+    <li><strong>Router query engine:</strong> Automatically routes queries to the best index or data source</li>
+    <li><strong>SQL query engine:</strong> Converts natural language to SQL for structured data</li>
+    <li><strong>Hybrid search:</strong> Combines vector similarity with keyword (BM25) retrieval for better recall</li>
+    <li><strong>Re-ranking:</strong> Uses a cross-encoder to re-score and re-order retrieved nodes for higher precision</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

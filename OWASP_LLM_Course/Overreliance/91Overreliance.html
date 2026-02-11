@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM09: Overreliance</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM09: Overreliance on LLM Outputs</h1>
+
+<p>Overreliance occurs when users or systems trust the output of an LLM too much, failing to verify its accuracy or consider its potential for hallucination, bias, or malicious manipulation. This is not just a user-interface issue; it's a fundamental security and reliability risk.</p>
+
+<h2>9.1 The Hallucination Problem</h2>
+<p>LLMs are probabilistic machines, not database engines. They are designed to generate plausible-sounding text, which may not always be factually correct. When users rely on these "hallucinations" for critical decision-making (e.g., in medical, legal, or financial contexts), the consequences can be severe.</p>
+
+<h2>9.2 Types of Overreliance</h2>
+<ul>
+    <li><strong>Factual Overreliance:</strong> Trusting that the LLM's statements about the real world are always true.</li>
+    <li><strong>Security Overreliance:</strong> Trusting that the LLM's security advice or generated code is inherently safe.</li>
+    <li><strong>Bias Overreliance:</strong> Unconsciously adopting the societal or political biases present in the model's training data and reflected in its output.</li>
+    <li><strong>Automated Overreliance:</strong> Designing systems that automatically take actions based on LLM output without any human verification.</li>
+</ul>
+
+<h2>9.3 Remediation Strategies</h2>
+<p>Combating overreliance requires a combination of technical guardrails and user education:
+<ul>
+    <li><strong>Cite Your Sources:</strong> In RAG systems, always force the LLM to provide citations for its claims, allowing the user to verify the information in the source document.</li>
+    <li><strong>Confidence Scoring:</strong> Asking the model to state its level of confidence in its response and flagging low-confidence answers for human review.</li>
+    <li><strong>Explicit Disclaimers:</strong> Clearly informing the user that the AI can make mistakes and that its output should be verified for critical tasks.</li>
+    <li><strong>Multi-model Verification:</strong> Using two different models to answer the same question and flagging any discrepancies for review.</li>
+    <li><strong>Human-in-the-loop (HITL):</strong> Maintaining human oversight for all high-stakes decisions and actions.</li>
+    <li><strong>Output Filtering:</strong> Using a secondary "fact-checking" step to verify key claims against a trusted knowledge base.</li>
+</ul></p>
+
+<h2>9.4 Case Study: The Fake Case Law</h2>
+<p>In a well-known 2023 case, an attorney used an LLM to help write a legal brief. The LLM generated several plausible-sounding but completely fake case citations. The attorney, overrelying on the model's output, submitted the brief to the court without verifying the citations, resulting in significant professional and legal consequences. This highlights the danger of overreliance in professional settings.</p>
+
+<p>By fostering a "trust but verify" mindset and building the necessary validation tools, you can leverage the power of LLMs while minimizing the risks of misinformation and incorrect decision-making.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

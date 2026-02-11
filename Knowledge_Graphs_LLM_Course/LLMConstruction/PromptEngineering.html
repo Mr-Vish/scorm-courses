@@ -1,0 +1,352 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Engineering for Extraction</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Engineering for Extraction</h1>
+
+<h2>Effective Prompt Design</h2>
+<p>The quality of knowledge graph extraction heavily depends on prompt design. Well-crafted prompts guide the LLM to produce consistent, accurate, and structured outputs.</p>
+
+<h2>Prompt Components</h2>
+<table>
+    <tr><th>Component</th><th>Purpose</th><th>Example</th></tr>
+    <tr>
+        <td class="rowheader">Role Definition</td>
+        <td>Set the LLM's perspective and expertise</td>
+        <td>"You are an expert knowledge graph extraction system"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Task Description</td>
+        <td>Clearly state what to extract</td>
+        <td>"Extract entities and their relationships from the text"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Schema Specification</td>
+        <td>Define allowed entity and relation types</td>
+        <td>"Entity types: Person, Organization, Location"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Output Format</td>
+        <td>Specify the structure of results</td>
+        <td>"Return JSON with 'entities' and 'relations' arrays"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Examples</td>
+        <td>Demonstrate desired behavior</td>
+        <td>Few-shot examples of input-output pairs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Constraints</td>
+        <td>Set boundaries and rules</td>
+        <td>"Only extract explicitly stated information"</td>
+    </tr>
+</table>
+
+<h2>Basic Extraction Prompt</h2>
+<div class="code-block">
+<pre><code>BASIC_EXTRACTION_PROMPT = """You are a knowledge graph extraction system.
+
+Extract entities and relationships from the provided text.
+
+Entity Types:
+- Person: Individual human beings
+- Organization: Companies, institutions, groups
+- Location: Cities, countries, addresses
+- Product: Commercial goods or services
+- Technology: Tools, frameworks, systems
+
+Relationship Types:
+- WORKS_AT: Person employed by Organization
+- FOUNDED: Person created Organization
+- LOCATED_IN: Entity situated in Location
+- DEVELOPED: Organization created Product/Technology
+- ACQUIRED: Organization purchased Organization
+
+Return JSON format:
+{
+  "entities": [{"name": str, "type": str, "properties": dict}],
+  "relations": [{"source": str, "relation": str, "target": str, "properties": dict}]
+}
+
+Rules:
+1. Only extract information explicitly stated in the text
+2. Use exact names as they appear
+3. Include relevant properties (dates, amounts, roles)
+4. Ensure all relation sources and targets exist in entities list
+"""
+</code></pre>
+</div>
+
+<h2>Advanced Prompt with Few-Shot Examples</h2>
+<div class="code-block">
+<pre><code>ADVANCED_EXTRACTION_PROMPT = """You are an expert knowledge graph extraction system specializing in business and technology domains.
+
+**Task:** Extract entities and relationships with high precision.
+
+**Entity Types:**
+- Person: Individual with name
+- Organization: Company, university, or institution
+- Location: Geographic place
+- Product: Commercial offering
+- Technology: Technical system or framework
+- Event: Specific occurrence with time/place
+
+**Relationship Types:**
+- WORKS_AT (Person → Organization)
+- FOUNDED (Person → Organization)
+- LOCATED_IN (Entity → Location)
+- DEVELOPED (Organization → Product/Technology)
+- ACQUIRED (Organization → Organization)
+- ATTENDED (Person → Event)
+- PARTNERED_WITH (Organization ↔ Organization)
+
+**Example 1:**
+Input: "Sarah Chen founded DataCorp in 2018 in Seattle."
+Output:
+{
+  "entities": [
+    {"name": "Sarah Chen", "type": "Person", "properties": {}},
+    {"name": "DataCorp", "type": "Organization", "properties": {"founded": 2018}},
+    {"name": "Seattle", "type": "Location", "properties": {}}
+  ],
+  "relations": [
+    {"source": "Sarah Chen", "relation": "FOUNDED", "target": "DataCorp", "properties": {"year": 2018}},
+    {"source": "DataCorp", "relation": "LOCATED_IN", "target": "Seattle", "properties": {}}
+  ]
+}
+
+**Example 2:**
+Input: "Microsoft acquired GitHub for $7.5 billion in 2018."
+Output:
+{
+  "entities": [
+    {"name": "Microsoft", "type": "Organization", "properties": {}},
+    {"name": "GitHub", "type": "Organization", "properties": {}}
+  ],
+  "relations": [
+    {"source": "Microsoft", "relation": "ACQUIRED", "target": "GitHub", "properties": {"amount": "$7.5 billion", "year": 2018}}
+  ]
+}
+
+**Guidelines:**
+1. Extract only factual information present in the text
+2. Preserve exact entity names (including capitalization)
+3. Capture temporal information (dates, years) in properties
+4. Include quantitative data (amounts, percentages) when mentioned
+5. Ensure relation directionality matches the relationship type
+6. Do not infer information not explicitly stated
+
+Now extract from the following text:
+"""
+</code></pre>
+</div>
+
+<h2>Domain-Specific Prompts</h2>
+
+<h3>Scientific Literature</h3>
+<div class="code-block">
+<pre><code>SCIENTIFIC_EXTRACTION_PROMPT = """Extract scientific knowledge graph from research text.
+
+Entity Types:
+- Researcher: Author or scientist
+- Institution: University or research center
+- Chemical: Compound or molecule
+- Gene: Genetic element
+- Disease: Medical condition
+- Method: Experimental technique
+- Publication: Research paper
+
+Relationship Types:
+- AUTHORED (Researcher → Publication)
+- AFFILIATED_WITH (Researcher → Institution)
+- TREATS (Chemical → Disease)
+- REGULATES (Gene → Gene)
+- USES_METHOD (Publication → Method)
+- CITES (Publication → Publication)
+
+Focus on:
+- Author affiliations
+- Chemical-disease interactions
+- Gene regulatory networks
+- Methodological approaches
+- Citation relationships
+"""
+</code></pre>
+</div>
+
+<h3>Financial Documents</h3>
+<div class="code-block">
+<pre><code>FINANCIAL_EXTRACTION_PROMPT = """Extract financial knowledge graph from business documents.
+
+Entity Types:
+- Company: Public or private corporation
+- Executive: C-level or board member
+- Investor: Individual or institutional investor
+- Product: Commercial offering
+- Market: Industry or sector
+
+Relationship Types:
+- INVESTS_IN (Investor → Company)
+- LEADS (Executive → Company)
+- COMPETES_WITH (Company ↔ Company)
+- OPERATES_IN (Company → Market)
+- OFFERS (Company → Product)
+
+Extract:
+- Investment amounts and dates
+- Executive roles and tenures
+- Market share percentages
+- Revenue figures
+- Partnership details
+"""
+</code></pre>
+</div>
+
+<h2>Prompt Optimization Techniques</h2>
+
+<h3>1. Iterative Refinement</h3>
+<div class="code-block">
+<pre><code>def test_prompt_variations(text: str, prompts: list[str]) -> dict:
+    """Compare extraction quality across prompt variations."""
+    results = {}
+    
+    for i, prompt in enumerate(prompts):
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": text}
+            ],
+            temperature=0.0
+        )
+        
+        results[f"prompt_{i}"] = json.loads(response.choices[0].message.content)
+    
+    return results
+
+# Test and compare
+prompts = [BASIC_EXTRACTION_PROMPT, ADVANCED_EXTRACTION_PROMPT]
+comparison = test_prompt_variations(sample_text, prompts)
+</code></pre>
+</div>
+
+<h3>2. Chain-of-Thought for Complex Extraction</h3>
+<div class="code-block">
+<pre><code>COT_EXTRACTION_PROMPT = """Extract knowledge graph using step-by-step reasoning.
+
+Step 1: Identify all entities mentioned in the text
+Step 2: Classify each entity by type
+Step 3: Identify relationships between entities
+Step 4: Extract properties and temporal information
+Step 5: Format as JSON
+
+Think through each step, then provide the final JSON output.
+"""
+</code></pre>
+</div>
+
+<h3>3. Self-Consistency Checking</h3>
+<div class="code-block">
+<pre><code>def extract_with_consistency_check(text: str, n_samples: int = 3) -> dict:
+    """Extract multiple times and use majority voting."""
+    extractions = []
+    
+    for _ in range(n_samples):
+        result = extract_entities_and_relations(text)
+        extractions.append(result)
+    
+    # Merge results using majority voting
+    merged = merge_extractions_by_consensus(extractions)
+    return merged
+
+def merge_extractions_by_consensus(extractions: list[dict]) -> dict:
+    """Keep entities/relations that appear in majority of extractions."""
+    entity_counts = {}
+    relation_counts = {}
+    
+    for extraction in extractions:
+        for entity in extraction["entities"]:
+            key = (entity["name"], entity["type"])
+            entity_counts[key] = entity_counts.get(key, 0) + 1
+        
+        for relation in extraction["relations"]:
+            key = (relation["source"], relation["relation"], relation["target"])
+            relation_counts[key] = relation_counts.get(key, 0) + 1
+    
+    threshold = len(extractions) / 2
+    
+    consensus_entities = [
+        {"name": k[0], "type": k[1]} 
+        for k, count in entity_counts.items() 
+        if count > threshold
+    ]
+    
+    consensus_relations = [
+        {"source": k[0], "relation": k[1], "target": k[2]} 
+        for k, count in relation_counts.items() 
+        if count > threshold
+    ]
+    
+    return {
+        "entities": consensus_entities,
+        "relations": consensus_relations
+    }
+</code></pre>
+</div>
+
+<h2>Handling Edge Cases</h2>
+<ul>
+    <li><strong>Ambiguous References:</strong> Add coreference resolution instructions</li>
+    <li><strong>Implicit Relationships:</strong> Specify whether to infer or only extract explicit relations</li>
+    <li><strong>Nested Entities:</strong> Define how to handle entities within entities (e.g., department within company)</li>
+    <li><strong>Temporal Expressions:</strong> Normalize dates and time periods to standard formats</li>
+    <li><strong>Negations:</strong> Instruct how to handle negative statements</li>
+</ul>
+
+<h2>Prompt Testing Framework</h2>
+<div class="code-block">
+<pre><code>def evaluate_extraction_quality(extracted: dict, ground_truth: dict) -> dict:
+    """Calculate precision, recall, and F1 for extraction."""
+    
+    # Entity evaluation
+    extracted_entities = {(e["name"], e["type"]) for e in extracted["entities"]}
+    true_entities = {(e["name"], e["type"]) for e in ground_truth["entities"]}
+    
+    entity_tp = len(extracted_entities & true_entities)
+    entity_precision = entity_tp / len(extracted_entities) if extracted_entities else 0
+    entity_recall = entity_tp / len(true_entities) if true_entities else 0
+    entity_f1 = 2 * entity_precision * entity_recall / (entity_precision + entity_recall) if (entity_precision + entity_recall) > 0 else 0
+    
+    # Relation evaluation
+    extracted_relations = {(r["source"], r["relation"], r["target"]) for r in extracted["relations"]}
+    true_relations = {(r["source"], r["relation"], r["target"]) for r in ground_truth["relations"]}
+    
+    relation_tp = len(extracted_relations & true_relations)
+    relation_precision = relation_tp / len(extracted_relations) if extracted_relations else 0
+    relation_recall = relation_tp / len(true_relations) if true_relations else 0
+    relation_f1 = 2 * relation_precision * relation_recall / (relation_precision + relation_recall) if (relation_precision + relation_recall) > 0 else 0
+    
+    return {
+        "entity_precision": entity_precision,
+        "entity_recall": entity_recall,
+        "entity_f1": entity_f1,
+        "relation_precision": relation_precision,
+        "relation_recall": relation_recall,
+        "relation_f1": relation_f1
+    }
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

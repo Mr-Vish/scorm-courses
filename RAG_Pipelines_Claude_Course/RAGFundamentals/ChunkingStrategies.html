@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Chunking Strategies and Preprocessing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Chunking Strategies and Preprocessing</h1>
+
+
+<h2>Why Chunking Matters</h2>
+<p>How you split documents into chunks directly impacts retrieval quality. Chunks that are too large dilute relevance; chunks that are too small lose context.</p>
+
+<h2>Chunking Strategies Compared</h2>
+<table>
+    <tr><th>Strategy</th><th>Description</th><th>Best For</th></tr>
+    <tr><td>Fixed Size</td><td>Split every N tokens with overlap</td><td>Uniform documents (logs, data)</td></tr>
+    <tr><td>Recursive Character</td><td>Split on paragraphs, then sentences</td><td>General purpose text</td></tr>
+    <tr><td>Semantic</td><td>Split on topic boundaries using embeddings</td><td>Long-form content</td></tr>
+    <tr><td>Document Structure</td><td>Split on headings, sections, pages</td><td>Structured documents</td></tr>
+    <tr><td>Sentence Window</td><td>Index sentences, retrieve surrounding context</td><td>Precise retrieval needs</td></tr>
+</table>
+
+<h2>Implementing Recursive Chunking</h2>
+<div class="code-block">
+<pre><code>from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=512,
+    chunk_overlap=50,
+    separators=["
+
+", "
+", ". ", " "]
+)
+
+chunks = splitter.split_text(document_text)
+print(f"Created {len(chunks)} chunks")</code></pre>
+</div>
+
+<h2>Metadata Enrichment</h2>
+<p>Attach metadata to each chunk to improve retrieval and filtering:</p>
+<ul>
+    <li><strong>Source document:</strong> File name, URL, or document ID</li>
+    <li><strong>Section hierarchy:</strong> Chapter &gt; Section &gt; Subsection path</li>
+    <li><strong>Document type:</strong> API docs, tutorial, FAQ, changelog</li>
+    <li><strong>Timestamps:</strong> When the content was created or last updated</li>
+    <li><strong>Custom tags:</strong> Product, version, difficulty level</li>
+</ul>
+
+<h2>Preprocessing Pipeline</h2>
+<ul>
+    <li>Strip boilerplate (headers, footers, navigation)</li>
+    <li>Normalize whitespace and fix encoding issues</li>
+    <li>Convert tables to structured text representations</li>
+    <li>Extract and describe images using Claude Vision</li>
+    <li>Resolve abbreviations and expand acronyms</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

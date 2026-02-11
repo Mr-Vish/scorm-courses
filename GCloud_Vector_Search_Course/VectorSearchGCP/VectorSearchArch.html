@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Vertex AI Vector Search Architecture</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Vertex AI Vector Search Architecture</h1>
+
+
+<h2>Vertex AI Vector Search</h2>
+<p>Vertex AI Vector Search (formerly Matching Engine) is Google Cloud's managed service for high-performance approximate nearest neighbor (ANN) search, built on the same infrastructure as Google Search.</p>
+
+<h2>Architecture Components</h2>
+<ul>
+    <li><strong>Index:</strong> The data structure storing vectors and metadata</li>
+    <li><strong>Index Endpoint:</strong> A deployed index ready to serve queries</li>
+    <li><strong>Embeddings:</strong> Vector representations of your data</li>
+    <li><strong>ScaNN Algorithm:</strong> Google's ANN algorithm optimized for speed and accuracy</li>
+</ul>
+
+<h2>Creating a Vector Search Index</h2>
+<div class="code-block">
+<pre><code>from google.cloud import aiplatform
+
+aiplatform.init(project="my-project", location="us-central1")
+
+# Create index
+index = aiplatform.MatchingEngineIndex.create_tree_ah_index(
+    display_name="product-embeddings",
+    contents_delta_uri="gs://my-bucket/embeddings/",
+    dimensions=768,
+    approximate_neighbors_count=150,
+    distance_measure_type="DOT_PRODUCT_DISTANCE",
+    leaf_node_embedding_count=500,
+    leaf_nodes_to_search_percent=7
+)
+
+# Create endpoint and deploy
+endpoint = aiplatform.MatchingEngineIndexEndpoint.create(
+    display_name="product-search-endpoint",
+    public_endpoint_enabled=True
+)
+
+endpoint.deploy_index(
+    index=index,
+    deployed_index_id="product_index_v1",
+    machine_type="e2-standard-16",
+    min_replica_count=1,
+    max_replica_count=5
+)</code></pre>
+</div>
+
+<h2>Performance Characteristics</h2>
+<table>
+    <tr><th>Metric</th><th>Capability</th></tr>
+    <tr><td>Scale</td><td>Billions of vectors</td></tr>
+    <tr><td>Latency</td><td>Single-digit milliseconds at p99</td></tr>
+    <tr><td>Recall</td><td>&gt;95% at high throughput</td></tr>
+    <tr><td>QPS</td><td>Thousands per replica</td></tr>
+    <tr><td>Dimensions</td><td>Up to 2048</td></tr>
+</table>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

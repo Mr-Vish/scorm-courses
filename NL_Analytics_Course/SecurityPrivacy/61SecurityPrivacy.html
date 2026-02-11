@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 6: Security and Privacy in NL Analytics</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 6: Security, Privacy, and Data Governance</h1>
+
+<p>When you enable natural language access to your corporate data, security and privacy become your highest priority. This module covers the critical measures needed to protect your data and ensure that only authorized users can access specific insights.</p>
+
+<h2>6.1 Preventing SQL Injection in NLA</h2>
+<p>While LLMs are generally good at generating safe SQL, they can still be manipulated. An attacker might use natural language to "trick" the model into generating a malicious query.
+<ul>
+    <li><strong>Input Sanitization:</strong> Using a secondary model to scan the natural language prompt for signs of "jailbreaking" or SQL injection attempts.</li>
+    <li><strong>Query Whitelisting:</strong> Only allowing a specific subset of SQL commands (e.g., only <code>SELECT</code>, no <code>DROP</code> or <code>DELETE</code>).</li>
+    <li><strong>Parameterized Queries:</strong> Ensuring that any user-provided filters (like date ranges or names) are passed as parameters to the SQL engine, rather than being concatenated into the query string.</li>
+</ul></p>
+
+<h2>6.2 Role-Based Access Control (RBAC) in NLA</h2>
+<p>The NLA system must respect your organization's existing data security policies.
+<ul>
+    <li><strong>Schema Filtering:</strong> If a user doesn't have permission to see the <code>salaries</code> table, that table should not be included in the schema metadata provided to the LLM.</li>
+    <li><strong>Row-Level Security (RLS):</strong> Ensuring that the generated SQL automatically includes filters to restrict data based on the user's identity (e.g., a regional manager can only see data for their specific region).</li>
+    <li><strong>Dynamic Masking:</strong> Automatically redacting or masking sensitive columns (like PII) in the final results before they are shown to the user.</li>
+</ul></p>
+
+<h2>6.3 Data Privacy and Sovereignty</h2>
+<p>If you are using a third-party LLM (like GPT-4), you must be careful about sending sensitive data in the prompt.
+<ul>
+    <li><strong>Never send raw data in the prompt:</strong> Only send the schema (table and column names). The actual data processing should happen in your private database or sandbox.</li>
+    <li><strong>PII Redaction:</strong> Automatically redacting any PII that might appear in the user's natural language question (e.g., "Show me the records for John Smith").</li>
+    <li><strong>Private AI Gateways:</strong> Using a proxy to strip metadata and enforce data residency requirements before forwarding requests to the AI provider.</li>
+</ul></p>
+
+<h2>6.4 Auditability and Transparency</h2>
+<p>Every natural language request and its resulting SQL/Python code must be logged and auditable.
+<ul>
+    <li><strong>The "Explain" Feature:</strong> Always show the user the code that was generated to answer their question. This builds trust and allows for manual verification.</li>
+    <li><strong>Immutable Logs:</strong> Storing all interactions in a secure, tamper-proof location for compliance reviews.</li>
+    <li><strong>Source Attribution:</strong> Clearly indicating which tables and datasets were used to reach an answer.</li>
+</ul></p>
+
+<h2>6.5 Safe and Responsible Analytics</h2>
+<p>Beyond security, consider the "responsibility" of the insights generated.
+<ul>
+    <li><strong>Avoiding Bias:</strong> Being aware that if your underlying data is biased, the NL Analytics system will reflect and potentially amplify that bias.</li>
+    <li><strong>Communicating Uncertainty:</strong> If the model is not confident in its interpretation of a query, it should say so rather than guessing and providing potentially false insights.</li>
+</ul>
+
+<p>By building security and privacy into the foundation of your NL Analytics architecture, you can empower your users with data-driven insights while maintaining the highest levels of corporate responsibility and trust.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

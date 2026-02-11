@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Retrieval-Augmented Generation (RAG)</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Retrieval-Augmented Generation (RAG)</h1>
+
+<h2>What is RAG?</h2>
+<p>Retrieval-Augmented Generation (RAG) enhances AI responses by retrieving relevant information from external knowledge bases before generating answers. This approach reduces hallucinations and enables AI to access up-to-date, domain-specific information.</p>
+
+<h2>RAG Architecture in Genkit</h2>
+<div style="background: linear-gradient(135deg, #ffffff 0%, #fef7f0 100%); border: 2px solid #F16F00; border-radius: 16px; padding: 2rem; margin: 2rem 0;">
+<pre style="font-family: monospace; color: #2d3748; line-height: 1.8;">
+User Query
+   ↓
+Embedding Generation
+   ↓
+Vector Search (Retriever)
+   ↓
+Relevant Documents Retrieved
+   ↓
+Context Injection into Prompt
+   ↓
+AI Generation with Context
+   ↓
+Final Response
+</pre>
+</div>
+
+<h2>Setting Up a Retriever</h2>
+<div class="code-block">
+<pre><code>import { defineRetriever } from '@genkit-ai/core';
+import { embed } from '@genkit-ai/googleai';
+
+const documentRetriever = defineRetriever({
+  name: 'documentRetriever',
+  configSchema: z.object({
+    topK: z.number().default(5)
+  })
+}, async (query, config) => {
+  // Generate embedding for query
+  const queryEmbedding = await embed({
+    model: 'text-embedding-004',
+    content: query
+  });
+  
+  // Search vector database
+  const results = await vectorDB.search({
+    vector: queryEmbedding,
+    topK: config.topK
+  });
+  
+  return {
+    documents: results.map(r => ({
+      content: r.text,
+      metadata: { source: r.source, score: r.score }
+    }))
+  };
+});
+</code></pre>
+</div>
+
+<h2>Implementing RAG Flow</h2>
+<div class="code-block">
+<pre><code>const ragFlow = ai.defineFlow({
+  name: 'ragQuery',
+  inputSchema: z.object({
+    question: z.string()
+  }),
+  outputSchema: z.object({
+    answer: z.string(),
+    sources: z.array(z.string())
+  })
+}, async (input) => {
+  // Retrieve relevant documents
+  const { documents } = await documentRetriever(input.question, { topK: 3 });
+  
+  // Build context from retrieved documents
+  const context = documents
+    .map((doc, i) => `[${i + 1}] ${doc.content}`)
+    .join('\n\n');
+  
+  // Generate answer with context
+  const { output } = await ai.generate({
+    prompt: `Answer the question based on the following context:
+
+Context:
+${context}
+
+Question: ${input.question}
+
+Provide a detailed answer citing the relevant sources.`,
+    output: {
+      schema: z.object({
+        answer: z.string(),
+        sources: z.array(z.string())
+      })
+    }
+  });
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Vector Database Integration</h2>
+
+<h3>Using Pinecone</h3>
+<div class="code-block">
+<pre><code>import { Pinecone } from '@pinecone-database/pinecone';
+
+const pinecone = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY
+});
+
+const index = pinecone.index('knowledge-base');
+
+async function indexDocuments(documents: Array<{text: string, metadata: any}>) {
+  for (const doc of documents) {
+    const embedding = await embed({
+      model: 'text-embedding-004',
+      content: doc.text
+    });
+    
+    await index.upsert([{
+      id: crypto.randomUUID(),
+      values: embedding,
+      metadata: { text: doc.text, ...doc.metadata }
+    }]);
+  }
+}
+</code></pre>
+</div>
+
+<h3>Using Chroma</h3>
+<div class="code-block">
+<pre><code>import { ChromaClient } from 'chromadb';
+
+const chroma = new ChromaClient();
+const collection = await chroma.getOrCreateCollection({
+  name: 'documents'
+});
+
+async function addDocuments(documents: string[]) {
+  const embeddings = await Promise.all(
+    documents.map(doc => embed({
+      model: 'text-embedding-004',
+      content: doc
+    }))
+  );
+  
+  await collection.add({
+    ids: documents.map((_, i) => `doc_${i}`),
+    embeddings,
+    documents
+  });
+}
+
+async function queryDocuments(query: string, topK: number = 5) {
+  const queryEmbedding = await embed({
+    model: 'text-embedding-004',
+    content: query
+  });
+  
+  const results = await collection.query({
+    queryEmbeddings: [queryEmbedding],
+    nResults: topK
+  });
+  
+  return results.documents[0];
+}
+</code></pre>
+</div>
+
+<h2>Document Chunking Strategies</h2>
+<div class="code-block">
+<pre><code>function chunkDocument(text: string, chunkSize: number = 500, overlap: number = 50): string[] {
+  const chunks: string[] = [];
+  let start = 0;
+  
+  while (start < text.length) {
+    const end = Math.min(start + chunkSize, text.length);
+    chunks.push(text.slice(start, end));
+    start = end - overlap;
+  }
+  
+  return chunks;
+}
+
+function semanticChunking(text: string): string[] {
+  // Split by paragraphs or sections
+  const paragraphs = text.split(/\n\n+/);
+  const chunks: string[] = [];
+  let currentChunk = '';
+  
+  for (const para of paragraphs) {
+    if ((currentChunk + para).length > 1000) {
+      if (currentChunk) chunks.push(currentChunk.trim());
+      currentChunk = para;
+    } else {
+      currentChunk += '\n\n' + para;
+    }
+  }
+  
+  if (currentChunk) chunks.push(currentChunk.trim());
+  return chunks;
+}
+</code></pre>
+</div>
+
+<h2>Advanced RAG Patterns</h2>
+
+<h3>Hybrid Search (Keyword + Semantic)</h3>
+<div class="code-block">
+<pre><code>async function hybridSearch(query: string, topK: number = 5) {
+  // Semantic search
+  const semanticResults = await vectorDB.search(query, topK);
+  
+  // Keyword search (BM25)
+  const keywordResults = await fullTextSearch(query, topK);
+  
+  // Combine and re-rank
+  const combined = [...semanticResults, ...keywordResults];
+  const unique = Array.from(new Map(combined.map(r => [r.id, r])).values());
+  
+  return unique
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+}
+</code></pre>
+</div>
+
+<h3>Re-ranking Retrieved Documents</h3>
+<div class="code-block">
+<pre><code>const rerankedRAGFlow = ai.defineFlow({
+  name: 'rerankedRAG',
+  inputSchema: z.object({ question: z.string() }),
+  outputSchema: z.object({ answer: z.string() })
+}, async (input) => {
+  // Initial retrieval (get more candidates)
+  const { documents } = await documentRetriever(input.question, { topK: 10 });
+  
+  // Re-rank using AI
+  const { output: reranked } = await ai.generate({
+    prompt: `Rank these documents by relevance to the question: "${input.question}"
+
+Documents:
+${documents.map((d, i) => `${i + 1}. ${d.content}`).join('\n\n')}
+
+Return the top 3 most relevant document numbers.`,
+    output: {
+      schema: z.object({
+        topDocuments: z.array(z.number())
+      })
+    }
+  });
+  
+  // Use top-ranked documents for final answer
+  const topDocs = reranked.topDocuments
+    .map(idx => documents[idx - 1])
+    .filter(Boolean);
+  
+  const context = topDocs.map(d => d.content).join('\n\n');
+  
+  const { output } = await ai.generate({
+    prompt: `Answer based on context:\n\n${context}\n\nQuestion: ${input.question}`,
+    output: { schema: z.object({ answer: z.string() }) }
+  });
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Chunk Appropriately:</strong> Balance between context and specificity</li>
+    <li><strong>Use Metadata:</strong> Store source, date, and relevance information</li>
+    <li><strong>Implement Caching:</strong> Cache embeddings and frequent queries</li>
+    <li><strong>Monitor Retrieval Quality:</strong> Track relevance of retrieved documents</li>
+    <li><strong>Update Knowledge Base:</strong> Regularly refresh indexed documents</li>
+    <li><strong>Cite Sources:</strong> Always provide source attribution in responses</li>
+    <li><strong>Handle No Results:</strong> Gracefully handle queries with no relevant documents</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

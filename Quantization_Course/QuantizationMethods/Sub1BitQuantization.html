@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>The 1.58-bit Revolution</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>The 1.58-bit Revolution</h1>
+<div class="container">
+<h2>The 1.58-bit Revolution: Ternary Quantization</h2>
+<p>For a long time, 4-bit was considered the practical limit for high-quality quantization. However, a recent breakthrough in research, popularized by the "BitNet b1.58" paper, has shown that it is possible to train models where every weight is just one of three values: {-1, 0, 1}. This is known as "Ternary" or "1.58-bit" quantization.</p>
+
+<h3>Why 1.58 bits?</h3>
+<p>Log2(3) is approximately 1.58. Since each weight can have one of three states, it takes 1.58 bits of information to store. This is a massive reduction from 16-bit or even 4-bit.</p>
+
+<h3>The Magic of Addition vs. Multiplication</h3>
+<p>The real brilliance of 1.58-bit quantization is not just the memory savings, but the <strong>computational savings</strong>.
+<ul>
+    <li><strong>The Math:</strong> In a standard model, you perform billions of "multiply-accumulate" (MAC) operations. Multiplications are expensive in terms of hardware and power.</li>
+    <li><strong>The 1.58-bit Way:</strong> If your weights are only -1, 0, or 1, you don't need to multiply! You just need to perform <strong>additions and subtractions</strong>. Adding or subtracting numbers is significantly faster and uses much less energy than multiplying them.</li>
+</ul></p>
+
+<h3>Hardware of the Future: Multiplication-Free AI</h3>
+<p>Standard GPUs are designed for multiplication. To get the full benefit of 1.58-bit models, we need new types of hardware that are optimized for massive amounts of simple additions. This could lead to AI chips that are 10x or even 100x more efficient than today's GPUs.</p>
+
+<h3>The Performance of 1.58-bit Models</h3>
+<p>You might expect a 1.58-bit model to be "stupid," but the researchers showed that by training the model from scratch with ternary weights, it can match the performance of full-precision models of the same size. This suggests that the *structure* of the network is often more important than the *precision* of the individual weights.</p>
+
+<h3>The Role of QAT in 1.58-bit</h3>
+<p>You cannot simply take a pre-trained model and quantize it to 1.58 bits (PTQ). The quality would be terrible. 1.58-bit models must be trained using <strong>Quantization-Aware Training (QAT)</strong> from the very first step. The model must "learn" how to represent complex concepts using only -1, 0, and 1.</p>
+
+<h3>Use Cases: AI in Everything</h3>
+<p>If we can make models this efficient, we can put them everywhere:
+- Sensors that can "think" for years on a single coin-cell battery.
+- Smart home devices that don't need to send any data to the cloud.
+- On-device AI for even the cheapest smartphones.</p>
+
+<h3>Summary</h3>
+<p>The 1.58-bit revolution is a glimpse into a future where AI is not just powerful, but ubiquitous and almost "free" in terms of energy and cost. While it requires a fundamental shift in how we train and run models, the potential rewards are too large to ignore.</p>
+
+</div>
+</body>
+</html>

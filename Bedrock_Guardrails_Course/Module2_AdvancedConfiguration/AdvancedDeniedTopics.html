@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Denied Topics Strategy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Denied Topics Strategy</h1>
+
+<h2>Module Overview</h2>
+<p>This module explores advanced guardrail configuration techniques, focusing on sophisticated denied topic strategies, comprehensive PII management, contextual grounding implementation, and optimization approaches. These advanced concepts enable organizations to implement nuanced content governance that addresses complex business requirements while maintaining robust protection.</p>
+
+<h2>Strategic Approach to Denied Topics</h2>
+<p>While Module 1 introduced denied topics as a mechanism for organization-specific content restrictions, implementing an effective denied topics strategy requires deeper consideration of business context, stakeholder needs, and operational realities. Denied topics represent the intersection of technical capability and business policy, requiring collaboration across organizational functions.</p>
+
+<h3>Denied Topics vs. Content Filters: When to Use Each</h3>
+<p>Understanding when to use denied topics versus relying on standard content filters is crucial for effective guardrail design:</p>
+
+<p><strong>Use Content Filters When:</strong> The content risk is universal and not organization-specific (hate speech, violence, sexual content). Content filters are optimized for these categories and provide better detection accuracy than custom denied topics.</p>
+
+<p><strong>Use Denied Topics When:</strong> The content restriction is specific to your organization, industry, or application context. Examples include competitor discussions, proprietary methodologies, specific product lines, or business-sensitive subjects that are not inherently harmful but are inappropriate for your AI application to address.</p>
+
+<h3>Identifying Strategic Denied Topics</h3>
+<p>Organizations should conduct a systematic denied topics identification process involving multiple stakeholders:</p>
+
+<h4>Legal and Compliance Perspective</h4>
+<p>Legal teams identify topics that create liability exposure, regulatory risk, or compliance concerns. In healthcare, this might include topics where AI-generated advice could constitute unauthorized medical practice. In financial services, topics where AI responses could be construed as financial advice requiring disclaimers or licensing. In education, topics that could violate student privacy regulations.</p>
+
+<h4>Business Strategy Perspective</h4>
+<p>Business leaders identify competitive intelligence boundaries, proprietary information protection needs, and strategic communication restrictions. This includes preventing AI from discussing unreleased products, revealing pricing strategies, comparing offerings to competitors, or addressing sensitive business relationships.</p>
+
+<h4>Brand and Communications Perspective</h4>
+<p>Communications teams identify topics that could damage brand reputation, contradict messaging strategies, or enter controversial territory. This includes politically divisive subjects, socially controversial topics, or areas where the organization has taken public positions that AI responses must align with.</p>
+
+<h4>Product and User Experience Perspective</h4>
+<p>Product teams identify out-of-scope topics that exceed the application's intended purpose or expertise. A customer service chatbot should not provide medical advice. A product recommendation engine should not discuss competitor products. A technical support bot should not engage in philosophical debates.</p>
+
+<h3>Writing Comprehensive Topic Definitions</h3>
+<p>The effectiveness of denied topic detection depends heavily on definition quality. Comprehensive definitions include multiple elements:</p>
+
+<h4>Core Topic Description</h4>
+<p>Begin with a clear, concise statement of what the topic encompasses. Use natural language that captures the semantic meaning, not just keywords. For example: "Discussions of our company's financial performance, including revenue, profit margins, stock price, financial forecasts, or comparisons to previous quarters."</p>
+
+<h4>Inclusion Criteria</h4>
+<p>Explicitly state what types of content should be caught by this topic. Provide diverse examples covering different ways users might approach the topic. For the financial performance example: "This includes direct questions about earnings, indirect questions about company success or growth, requests for financial data, and comparisons of our financial position to competitors."</p>
+
+<h4>Exclusion Criteria</h4>
+<p>Equally important, state what should NOT be caught. This prevents overly broad blocking. For the financial example: "This does not include general discussions of our products, services, or customer success stories that do not reference specific financial metrics."</p>
+
+<h4>Contextual Boundaries</h4>
+<p>Address edge cases and boundary conditions. For example: "Discussions of publicly announced financial results from official earnings releases are acceptable, but speculation about future performance or unreleased financial data should be blocked."</p>
+
+<h3>Topic Definition Patterns</h3>
+<p>Several common patterns emerge across organizations:</p>
+
+<p><strong>Competitor Restriction Pattern:</strong> "Discussions comparing our [products/services/features] to those of [specific competitors or 'competing companies']. Includes requests for competitive analysis, feature comparisons, pricing comparisons, or recommendations between our offerings and alternatives. Does not include neutral mentions of competitors in industry context or factual statements about market landscape."</p>
+
+<p><strong>Proprietary Information Pattern:</strong> "Discussions of [specific proprietary methodology/technology/process], including how it works, technical implementation details, or information that could reveal trade secrets. Includes requests for technical specifications, architectural details, or implementation guidance. Does not include general descriptions of what the technology does or its benefits."</p>
+
+<p><strong>Out-of-Scope Expertise Pattern:</strong> "Requests for [specific type of advice/guidance] that exceeds this application's intended purpose and expertise. This application is designed for [intended purpose] and should not provide guidance on [out-of-scope areas]. Users seeking [out-of-scope guidance] should be directed to appropriate resources."</p>
+
+<h3>Testing and Refining Topic Definitions</h3>
+<p>Topic definitions require iterative refinement based on real-world performance:</p>
+
+<h4>Pre-Deployment Testing</h4>
+<p>Before deploying denied topics to production, conduct comprehensive testing with diverse prompts:</p>
+
+<ul>
+    <li><strong>Direct Approach Testing:</strong> Test obvious, direct questions about the denied topic</li>
+    <li><strong>Indirect Approach Testing:</strong> Test subtle, indirect ways users might approach the topic</li>
+    <li><strong>Edge Case Testing:</strong> Test boundary cases that should or should not be caught</li>
+    <li><strong>False Positive Testing:</strong> Test legitimate prompts that might be incorrectly flagged</li>
+</ul>
+
+<h4>Post-Deployment Monitoring</h4>
+<p>After deployment, monitor denied topic interventions to identify refinement opportunities:</p>
+
+<ul>
+    <li><strong>Intervention Rate Analysis:</strong> Track how frequently each denied topic triggers. Unusually high rates may indicate overly broad definitions</li>
+    <li><strong>False Positive Review:</strong> Sample blocked interactions to identify legitimate content being incorrectly flagged</li>
+    <li><strong>False Negative Investigation:</strong> Review user feedback and escalations to identify policy violations that were not caught</li>
+    <li><strong>Definition Evolution:</strong> Update topic definitions based on observed patterns and emerging user approaches</li>
+</ul>
+
+<h2>Multi-Topic Coordination</h2>
+<p>As organizations implement multiple denied topics, coordination becomes important to avoid gaps or overlaps:</p>
+
+<h3>Topic Hierarchy and Relationships</h3>
+<p>Some topics are subsets of others or have overlapping boundaries. Document these relationships to ensure consistent coverage. For example, a topic denying "unreleased product discussions" might overlap with "proprietary technology discussions." Ensure definitions are coordinated to avoid gaps where content falls between topics.</p>
+
+<h3>Priority and Precedence</h3>
+<p>When multiple topics might apply to the same content, understand how the guardrail handles precedence. Document which topics take priority in ambiguous cases and ensure this aligns with organizational policy priorities.</p>
+
+<h3>Maintenance and Governance</h3>
+<p>Establish a governance process for denied topics:</p>
+
+<ul>
+    <li><strong>Ownership:</strong> Assign clear ownership for each denied topic to a responsible team or individual</li>
+    <li><strong>Review Cadence:</strong> Schedule regular reviews to ensure topics remain relevant and accurate</li>
+    <li><strong>Change Management:</strong> Implement a process for proposing, reviewing, and approving topic changes</li>
+    <li><strong>Documentation:</strong> Maintain comprehensive documentation of each topic's purpose, definition rationale, and change history</li>
+</ul>
+
+<h2>Industry-Specific Denied Topic Strategies</h2>
+<p>Different industries have characteristic denied topic requirements:</p>
+
+<h3>Healthcare</h3>
+<p>Healthcare organizations typically deny topics related to specific medical diagnoses, treatment recommendations, medication advice, and any content that could constitute unauthorized medical practice. Denied topics must balance preventing liability with allowing general health information.</p>
+
+<h3>Financial Services</h3>
+<p>Financial institutions deny topics related to specific investment advice, stock recommendations, financial forecasts, and any content that could be construed as regulated financial advice. Topics must distinguish between general financial education and personalized advice.</p>
+
+<h3>Legal Services</h3>
+<p>Legal organizations deny topics related to specific legal advice, case strategy, or any content that could constitute unauthorized practice of law. Topics must allow general legal information while preventing advice that creates attorney-client relationships.</p>
+
+<h3>Education</h3>
+<p>Educational institutions deny topics related to completing assignments for students, providing exam answers, or any content that facilitates academic dishonesty. Topics must balance preventing cheating with supporting legitimate learning assistance.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Denied topics address organization-specific restrictions that standard content filters cannot handle</li>
+    <li>Effective denied topics require collaboration across legal, business, communications, and product teams</li>
+    <li>Comprehensive topic definitions include core description, inclusion criteria, exclusion criteria, and contextual boundaries</li>
+    <li>Topic definitions require iterative refinement based on pre-deployment testing and post-deployment monitoring</li>
+    <li>Multi-topic coordination ensures consistent coverage without gaps or contradictions</li>
+    <li>Industry-specific denied topic strategies address characteristic risks and regulatory requirements</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

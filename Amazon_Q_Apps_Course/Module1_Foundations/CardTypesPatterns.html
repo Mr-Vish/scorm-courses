@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Card Types and Application Design Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+
+
+</head>
+<body>
+<h1>Module 1: Foundations of Amazon Q Apps</h1>
+<h2>Card Types and Application Design Patterns</h2>
+
+<h2>Understanding Card Types</h2>
+<p>The card-based architecture of Amazon Q Apps provides a library of pre-built card types, each serving a specific function within an application workflow. Understanding these card types and their appropriate use cases is fundamental to effective Q Apps development.</p>
+
+<h3>Input Cards</h3>
+<p>Input cards collect information from users when they run the application. These cards define the parameters that make each application execution unique.</p>
+
+<h3>Text Input Card</h3>
+<p><strong>Purpose:</strong> Collects free-form text from users</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>Field label and description</li>
+<li>Placeholder text to guide users</li>
+<li>Required vs. optional designation</li>
+<li>Character limits (if applicable)</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Collecting customer names, project titles, or topic descriptions</li>
+<li>Gathering specific questions or search queries</li>
+<li>Accepting free-form requirements or specifications</li>
+</ul>
+<p><strong>Example:</strong> An RFP response generator might use a text input card to collect the customer name and project description.</p>
+
+<h3>File Upload Card</h3>
+<p><strong>Purpose:</strong> Allows users to upload documents for processing</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>Accepted file types (PDF, Word, Excel, etc.)</li>
+<li>File size limits</li>
+<li>Single or multiple file upload</li>
+<li>Instructions for what to upload</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Contract analysis applications requiring document upload</li>
+<li>Resume screening tools</li>
+<li>Compliance checking applications</li>
+</ul>
+<p><strong>Example:</strong> A contract risk analyzer would use a file upload card to accept contract documents in PDF format.</p>
+
+<h3>Dropdown Selection Card</h3>
+<p><strong>Purpose:</strong> Presents users with predefined options to choose from</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>List of available options</li>
+<li>Default selection</li>
+<li>Single or multiple selection mode</li>
+<li>Option descriptions or tooltips</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Selecting product lines, departments, or categories</li>
+<li>Choosing report formats or output types</li>
+<li>Picking from predefined templates or scenarios</li>
+</ul>
+<p><strong>Example:</strong> A sales proposal generator might use a dropdown to select the product category (Software, Hardware, Services).</p>
+
+<h3>Date Picker Card</h3>
+<p><strong>Purpose:</strong> Collects date or date range inputs</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>Single date or date range</li>
+<li>Date format preferences</li>
+<li>Minimum and maximum date constraints</li>
+<li>Default date values</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Report generation for specific time periods</li>
+<li>Event planning applications</li>
+<li>Historical data analysis tools</li>
+</ul>
+
+<h2>Processing Cards</h2>
+<p>Processing cards perform the core logic of the application by querying data, transforming information, or calling external services.</p>
+
+<h3>Q Business Query Card</h3>
+<p><strong>Purpose:</strong> Sends queries to Amazon Q Business to retrieve information from connected data sources</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>Query prompt template with variable placeholders</li>
+<li>Data source scope (all sources or specific sources)</li>
+<li>Response length preferences</li>
+<li>Context instructions for query interpretation</li>
+</ul>
+<p><strong>How It Works:</strong> The card takes inputs from previous cards, inserts them into the query template, sends the query to Q Business, and passes the response to subsequent cards.</p>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Searching knowledge bases for relevant information</li>
+<li>Retrieving product specifications or pricing data</li>
+<li>Finding policy documents or compliance requirements</li>
+</ul>
+<p><strong>Example:</strong> A competitive analysis app might query: "Based on the uploaded RFP document, what are our product capabilities that address the customer's requirements for [requirement category]?"</p>
+
+<h3>Text Generation Card</h3>
+<p><strong>Purpose:</strong> Generates formatted text based on inputs and instructions</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>Generation prompt with instructions and variable placeholders</li>
+<li>Output format specifications (bullet points, paragraphs, tables)</li>
+<li>Tone and style guidelines</li>
+<li>Length constraints</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Creating email drafts or communication templates</li>
+<li>Generating executive summaries</li>
+<li>Producing formatted reports or documentation</li>
+</ul>
+<p><strong>Example:</strong> An email response generator might use: "Write a professional email response to a customer inquiry about [topic], incorporating these key points: [retrieved information]."</p>
+
+<h3>Plugin Card</h3>
+<p><strong>Purpose:</strong> Calls external APIs or Q Business plugins to perform specialized functions</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>Plugin selection from available integrations</li>
+<li>Parameter mapping from previous cards</li>
+<li>Error handling preferences</li>
+<li>Response parsing instructions</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Retrieving real-time data from external systems</li>
+<li>Performing calculations or data transformations</li>
+<li>Triggering actions in connected applications</li>
+</ul>
+<p><strong>Example:</strong> A sales forecasting app might call a CRM plugin to retrieve current pipeline data.</p>
+
+<h2>Output Cards</h2>
+<p>Output cards display results to users in formatted, user-friendly presentations.</p>
+
+<h3>Text Display Card</h3>
+<p><strong>Purpose:</strong> Shows generated or retrieved text to users</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>Formatting options (headings, bold, italics)</li>
+<li>Section labels and descriptions</li>
+<li>Copy-to-clipboard functionality</li>
+<li>Download options</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Displaying analysis results</li>
+<li>Showing generated content</li>
+<li>Presenting recommendations or insights</li>
+</ul>
+
+<h3>Formatted Output Card</h3>
+<p><strong>Purpose:</strong> Displays structured data in tables, lists, or other formatted layouts</p>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li>Layout templates (table, list, grid)</li>
+<li>Column or field definitions</li>
+<li>Sorting and filtering options</li>
+<li>Export capabilities</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Presenting comparison data</li>
+<li>Showing search results</li>
+<li>Displaying structured analysis outputs</li>
+</ul>
+
+<h2>Application Design Patterns</h2>
+<p>Effective Q Apps typically follow established design patterns that combine cards in proven sequences.</p>
+
+<h3>Pattern 1: Simple Query and Display</h3>
+<p><strong>Structure:</strong> Input → Query → Output</p>
+<p><strong>Description:</strong> User provides a query parameter, the app searches data sources, and results are displayed.</p>
+<p><strong>Example Application:</strong> Policy Lookup Tool</p>
+<ul>
+<li>Text Input: "What policy topic are you looking for?"</li>
+<li>Q Business Query: "Find company policies related to [topic]"</li>
+<li>Text Display: Show retrieved policy information</li>
+</ul>
+
+<h3>Pattern 2: Document Analysis</h3>
+<p><strong>Structure:</strong> File Upload → Query (with document context) → Output</p>
+<p><strong>Description:</strong> User uploads a document, the app analyzes it based on specific criteria, and presents findings.</p>
+<p><strong>Example Application:</strong> Contract Risk Analyzer</p>
+<ul>
+<li>File Upload: "Upload contract document"</li>
+<li>Q Business Query: "Analyze the uploaded contract for potential risks, focusing on liability clauses, termination conditions, and payment terms"</li>
+<li>Formatted Output: Display risks in categorized table format</li>
+</ul>
+
+<h3>Pattern 3: Multi-Step Information Gathering</h3>
+<p><strong>Structure:</strong> Input 1 → Query 1 → Input 2 → Query 2 → Output</p>
+<p><strong>Description:</strong> The app gathers information in stages, using results from early queries to inform later queries.</p>
+<p><strong>Example Application:</strong> Competitive Proposal Builder</p>
+<ul>
+<li>File Upload: "Upload customer RFP"</li>
+<li>Q Business Query 1: "Extract key requirements from the RFP"</li>
+<li>Dropdown: "Select your product line"</li>
+<li>Q Business Query 2: "Match [product line] capabilities to [extracted requirements]"</li>
+<li>Text Generation: "Create a proposal response section addressing each requirement"</li>
+<li>Text Display: Show generated proposal content</li>
+</ul>
+
+<h3>Pattern 4: Parameterized Report Generation</h3>
+<p><strong>Structure:</strong> Multiple Inputs → Query → Text Generation → Formatted Output</p>
+<p><strong>Description:</strong> User provides multiple parameters, the app retrieves relevant data, generates narrative content, and presents a formatted report.</p>
+<p><strong>Example Application:</strong> Executive Briefing Generator</p>
+<ul>
+<li>Dropdown: "Select department"</li>
+<li>Date Range: "Select reporting period"</li>
+<li>Q Business Query: "Retrieve key metrics and initiatives for [department] during [date range]"</li>
+<li>Text Generation: "Create an executive summary highlighting achievements, challenges, and upcoming priorities"</li>
+<li>Formatted Output: Display as structured briefing document</li>
+</ul>
+
+<h3>Pattern 5: Comparison and Recommendation</h3>
+<p><strong>Structure:</strong> Inputs → Multiple Parallel Queries → Text Generation (synthesis) → Output</p>
+<p><strong>Description:</strong> The app gathers information from multiple sources, compares options, and provides recommendations.</p>
+<p><strong>Example Application:</strong> Vendor Selection Assistant</p>
+<ul>
+<li>Text Input: "Describe your requirements"</li>
+<li>Q Business Query 1: "Find approved vendors in category [category]"</li>
+<li>Q Business Query 2: "Retrieve past performance data for these vendors"</li>
+<li>Text Generation: "Compare vendors based on requirements and recommend top 3 options with justification"</li>
+<li>Formatted Output: Display comparison table and recommendations</li>
+</ul>
+
+<h2>Design Principles for Effective Q Apps</h2>
+
+<h3>Principle 1: Start Simple</h3>
+<p>Begin with the minimum viable application that solves the core problem. Add complexity only when necessary.</p>
+
+<h3>Principle 2: Clear User Guidance</h3>
+<p>Every input card should have clear labels and instructions. Users should never wonder what to enter.</p>
+
+<h3>Principle 3: Logical Flow</h3>
+<p>Cards should be arranged in a sequence that mirrors how users naturally think about the task.</p>
+
+<h3>Principle 4: Appropriate Granularity</h3>
+<p>Break complex queries into multiple cards rather than trying to do everything in one query.</p>
+
+<h3>Principle 5: Meaningful Outputs</h3>
+<p>Output formatting should match how users need to consume the information (copy-paste, download, visual review).</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Input cards (text, file upload, dropdown, date) collect user parameters</li>
+<li>Processing cards (Q Business query, text generation, plugin) perform application logic</li>
+<li>Output cards (text display, formatted output) present results to users</li>
+<li>Common design patterns include simple query, document analysis, multi-step gathering, report generation, and comparison</li>
+<li>Effective Q Apps follow principles of simplicity, clear guidance, logical flow, appropriate granularity, and meaningful outputs</li>
+<li>Understanding card types and patterns enables rapid application design and development</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

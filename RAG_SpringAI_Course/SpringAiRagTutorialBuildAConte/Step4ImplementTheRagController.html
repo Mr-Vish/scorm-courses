@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Step 4: Implement the RAG Controller</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Step 4: Implement the RAG Controller</h1>
+
+<p>The RAG logic is greatly simplified by Spring AI&#x27;s <strong>Advisor</strong> API, specifically QuestionAnswerAdvisor. This advisor automatically performs the retrieval and prompt augmentation before calling the LLM.</p>
+
+<img src="../images/image1.jpg" alt="image" style="max-width:100%; height:auto; margin: 1rem 0;" />
+
+<p>Getty Images</p>
+
+<p>Explore</p>
+
+<p>Create a REST controller named RagController.java:</p>
+
+<p>Java</p>
+
+<p>package com.example.ragtutorial;</p>
+
+<p>import org.springframework.ai.chat.client.ChatClient;</p>
+
+<p>import org.springframework.ai.vectorstore.VectorStore;</p>
+
+<p>import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;</p>
+
+<p>import org.springframework.web.bind.annotation.GetMapping;</p>
+
+<p>import org.springframework.web.bind.annotation.RequestParam;</p>
+
+<p>import org.springframework.web.bind.annotation.RestController;</p>
+
+<p>@RestController</p>
+
+<p>public class RagController {</p>
+
+<p>    private final ChatClient chatClient;</p>
+
+<p>    public RagController(ChatClient.Builder chatClientBuilder, VectorStore vectorStore) {</p>
+
+<p>        // Configure the ChatClient with the QuestionAnswerAdvisor</p>
+
+<p>        // The QuestionAnswerAdvisor handles:</p>
+
+<p>        // 1. Retrieving relevant documents from the VectorStore based on the user query.</p>
+
+<p>        // 2. Augmenting the user&#x27;s prompt with the retrieved documents as context.</p>
+
+<p>        this.chatClient = chatClientBuilder</p>
+
+<p>            // This is the core of RAG implementation in Spring AI</p>
+
+<p>            .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore).build())</p>
+
+<p>            .build();</p>
+
+<p>    }</p>
+
+<p>    @GetMapping(&quot;/rag/query&quot;)</p>
+
+<p>    public String ragQuery(@RequestParam(defaultValue = &quot;What is Spring AI and what are its features?&quot;) String query) {</p>
+
+<p>        // The advisor runs before this call, injecting the retrieved context into the prompt</p>
+
+<p>        return this.chatClient.prompt()</p>
+
+<p>            .user(query)</p>
+
+<p>            .call()</p>
+
+<p>            .content();</p>
+
+<p>    }</p>
+
+<p>}</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

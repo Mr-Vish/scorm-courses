@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 9: Evaluating Multi-step RAG</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 9: Evaluating Multi-step RAG Pipelines</h1>
+
+<p>How do you know if your multi-step RAG system is actually performing well? Traditional metrics like BLEU or ROUGE are insufficient for evaluating the complex reasoning and factual accuracy required in RAG. We need specialized metrics and tools for automated evaluation.</p>
+
+<h2>9.1 The RAG Triad of Metrics</h2>
+<p>Modern evaluation frameworks (like RAGAS or TruLens) focus on three core metrics:
+<ol>
+    <li><strong>Faithfulness:</strong> How well is the answer supported by the retrieved context? (Does it avoid hallucinations?)</li>
+    <li><strong>Answer Relevance:</strong> How directly does the answer address the user's question?</li>
+    <li><strong>Context Precision/Recall:</strong> How relevant were the documents retrieved by the system? Did we find all the necessary information?</li>
+</ol></p>
+
+<h2>9.2 Automated Evaluation with LLM-as-a-Judge</h2>
+<p>Because these metrics require semantic understanding, we often use a larger, more capable LLM (like GPT-4o) as a "Judge" to score the outputs of our smaller, production RAG model.</p>
+
+<h3>Example Evaluation Workflow</h3>
+<ol>
+    <li><strong>Generate a "Golden Dataset":</strong> A set of questions and their ground-truth answers.</li>
+    <li><strong>Run the RAG Pipeline:</strong> Generate answers and capture the retrieved context for each question in the dataset.</li>
+    <li><strong>Score with a Judge:</strong> Pass the (Question, Context, Generated Answer) to the Judge model and ask it to score the Faithfulness and Relevance on a scale of 0 to 1.</li>
+</ol>
+
+<h2>9.3 RAGAS (RAG Assessment) Framework</h2>
+<p>RAGAS is an open-source framework that provides automated metrics for RAG pipelines. While it is primarily a Python tool, you can integrate it into your Java-based Spring AI workflow by exposing your evaluation data via an API or by running RAGAS as a separate microservice.</p>
+
+<h2>9.4 Continuous Monitoring in Production</h2>
+<p>Evaluation shouldn't stop after deployment. You should continuously monitor your system in production:
+<ul>
+    <li><strong>User Feedback:</strong> Implementing "Thumbs up/down" buttons for users to rate answers.</li>
+    <li><strong>Anomaly Detection:</strong> Monitoring for sudden drops in relevance scores or increases in "I don't know" answers.</li>
+    <li><strong>Cost Monitoring:</strong> Tracking token usage per query to identify inefficient reasoning paths.</li>
+</ul></p>
+
+<h2>9.5 Iterative Improvement</h2>
+<p>Use the data from your evaluation to drive improvements. If Faithfulness is low, you might need better context or a more restrictive system prompt. If Context Precision is low, you might need to tune your embedding model or implement re-ranking (as discussed in Module 4).</p>
+
+<p>By making evaluation a first-class citizen in your development process, you can build multi-step RAG systems that are not just impressive in demos, but reliable and trustworthy in production.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

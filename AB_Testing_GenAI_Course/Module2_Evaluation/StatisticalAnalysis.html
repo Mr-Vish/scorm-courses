@@ -1,0 +1,351 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 2: Statistical Hypothesis Testing and Analysis</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Statistical Hypothesis Testing and Analysis</h1>
+
+<h2>Understanding Statistical Significance</h2>
+
+<p>Statistical hypothesis testing provides the mathematical framework for determining whether observed differences between experiment variants are real effects or merely random chance. For GenAI experiments, proper statistical analysis is essential because the inherent variability in model outputs can mask or exaggerate true treatment effects.</p>
+
+<h2>The Hypothesis Testing Framework</h2>
+
+<h3>Null and Alternative Hypotheses</h3>
+<p>Every A/B test begins with two competing hypotheses:</p>
+
+<ul>
+    <li><strong>Null Hypothesis (H₀):</strong> There is no difference between control and treatment variants. Any observed difference is due to random chance.</li>
+    <li><strong>Alternative Hypothesis (H₁):</strong> There is a real difference between variants. The treatment has a genuine effect.</li>
+</ul>
+
+<p><strong>Example for GenAI Testing:</strong></p>
+<ul>
+    <li>H₀: GPT-4 and Claude 3.5 produce responses with equal user satisfaction rates</li>
+    <li>H₁: GPT-4 and Claude 3.5 produce responses with different user satisfaction rates</li>
+</ul>
+
+<h3>Type I and Type II Errors</h3>
+
+<table>
+    <tr>
+        <th>Reality</th>
+        <th>Decision: Reject H₀</th>
+        <th>Decision: Fail to Reject H₀</th>
+    </tr>
+    <tr>
+        <td class="rowheader">H₀ is True (No real difference)</td>
+        <td><strong>Type I Error (False Positive)</strong><br/>Probability = α (typically 0.05)</td>
+        <td>Correct Decision</td>
+    </tr>
+    <tr>
+        <td class="rowheader">H₁ is True (Real difference exists)</td>
+        <td>Correct Decision</td>
+        <td><strong>Type II Error (False Negative)</strong><br/>Probability = β (typically 0.20)</td>
+    </tr>
+</table>
+
+<p><strong>Practical Implications:</strong></p>
+<ul>
+    <li><strong>Type I Error:</strong> You conclude GPT-4 is better when it's actually not, leading to unnecessary model changes and costs</li>
+    <li><strong>Type II Error:</strong> You miss a real improvement, leaving better performance undiscovered</li>
+</ul>
+
+<h2>Statistical Tests for GenAI Experiments</h2>
+
+<h3>Two-Sample T-Test</h3>
+<p>Used when comparing continuous metrics (e.g., average quality scores, latency) between two variants:</p>
+
+<div class="code-block">
+<pre><code>from scipy import stats
+import numpy as np
+
+def two_sample_ttest(control_scores, treatment_scores, alpha=0.05):
+    """Perform two-sample t-test for continuous metrics."""
+    
+    control = np.array(control_scores)
+    treatment = np.array(treatment_scores)
+    
+    # Perform t-test
+    t_statistic, p_value = stats.ttest_ind(control, treatment)
+    
+    # Calculate means and standard deviations
+    control_mean = control.mean()
+    treatment_mean = treatment.mean()
+    control_std = control.std()
+    treatment_std = treatment.std()
+    
+    # Determine significance
+    is_significant = p_value < alpha
+    
+    return {
+        "control_mean": control_mean,
+        "treatment_mean": treatment_mean,
+        "difference": treatment_mean - control_mean,
+        "t_statistic": t_statistic,
+        "p_value": p_value,
+        "is_significant": is_significant,
+        "interpretation": interpret_result(is_significant, treatment_mean, control_mean)
+    }
+
+def interpret_result(is_significant, treatment_mean, control_mean):
+    """Provide human-readable interpretation."""
+    if not is_significant:
+        return "No statistically significant difference detected"
+    elif treatment_mean > control_mean:
+        return "Treatment significantly outperforms control"
+    else:
+        return "Control significantly outperforms treatment"</code></pre>
+</div>
+
+<h3>Two-Proportion Z-Test</h3>
+<p>Used when comparing binary outcomes (e.g., thumbs up rate, task completion rate):</p>
+
+<div class="code-block">
+<pre><code>from statsmodels.stats.proportion import proportions_ztest
+
+def two_proportion_test(control_successes, control_total, 
+                       treatment_successes, treatment_total, alpha=0.05):
+    """Perform two-proportion z-test for binary metrics."""
+    
+    counts = np.array([treatment_successes, control_successes])
+    nobs = np.array([treatment_total, control_total])
+    
+    # Perform z-test
+    z_stat, p_value = proportions_ztest(counts, nobs)
+    
+    # Calculate proportions
+    control_rate = control_successes / control_total
+    treatment_rate = treatment_successes / treatment_total
+    
+    return {
+        "control_rate": control_rate,
+        "treatment_rate": treatment_rate,
+        "absolute_difference": treatment_rate - control_rate,
+        "relative_lift": ((treatment_rate - control_rate) / control_rate) * 100,
+        "z_statistic": z_stat,
+        "p_value": p_value,
+        "is_significant": p_value < alpha
+    }</code></pre>
+</div>
+
+<h3>Mann-Whitney U Test (Non-Parametric)</h3>
+<p>Used when data doesn't follow normal distribution or has outliers:</p>
+
+<div class="code-block">
+<pre><code>def mann_whitney_test(control_scores, treatment_scores, alpha=0.05):
+    """Non-parametric test for comparing distributions."""
+    
+    u_statistic, p_value = stats.mannwhitneyu(
+        treatment_scores, control_scores, alternative='two-sided'
+    )
+    
+    return {
+        "u_statistic": u_statistic,
+        "p_value": p_value,
+        "is_significant": p_value < alpha,
+        "note": "Non-parametric test - robust to outliers and non-normal distributions"
+    }</code></pre>
+</div>
+
+<h2>Effect Size Calculation</h2>
+
+<p>Statistical significance tells you whether a difference exists, but effect size tells you how large and practically meaningful that difference is. A result can be statistically significant but practically insignificant (e.g., 0.1% improvement) or vice versa.</p>
+
+<h3>Cohen's d (Standardized Mean Difference)</h3>
+<p>Measures the magnitude of difference in standard deviation units:</p>
+
+<div class="code-block">
+<pre><code>def calculate_cohens_d(control_scores, treatment_scores):
+    """Calculate Cohen's d effect size."""
+    
+    control = np.array(control_scores)
+    treatment = np.array(treatment_scores)
+    
+    # Calculate pooled standard deviation
+    n1, n2 = len(control), len(treatment)
+    var1, var2 = control.var(ddof=1), treatment.var(ddof=1)
+    pooled_std = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2))
+    
+    # Calculate Cohen's d
+    cohens_d = (treatment.mean() - control.mean()) / pooled_std
+    
+    return {
+        "cohens_d": cohens_d,
+        "interpretation": interpret_cohens_d(cohens_d)
+    }
+
+def interpret_cohens_d(d):
+    """Interpret Cohen's d magnitude."""
+    abs_d = abs(d)
+    if abs_d < 0.2:
+        return "Negligible effect"
+    elif abs_d < 0.5:
+        return "Small effect"
+    elif abs_d < 0.8:
+        return "Medium effect"
+    else:
+        return "Large effect"</code></pre>
+</div>
+
+<h3>Effect Size Interpretation Guidelines</h3>
+<table>
+    <tr>
+        <th>Cohen's d</th>
+        <th>Interpretation</th>
+        <th>Practical Meaning</th>
+    </tr>
+    <tr>
+        <td class="rowheader">0.0 - 0.2</td>
+        <td>Negligible</td>
+        <td>Difference is too small to matter in practice</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.2 - 0.5</td>
+        <td>Small</td>
+        <td>Noticeable but modest improvement</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.5 - 0.8</td>
+        <td>Medium</td>
+        <td>Substantial, meaningful improvement</td>
+    </tr>
+    <tr>
+        <td class="rowheader">&gt; 0.8</td>
+        <td>Large</td>
+        <td>Major, highly impactful improvement</td>
+    </tr>
+</table>
+
+<h2>Confidence Intervals</h2>
+
+<p>Confidence intervals provide a range of plausible values for the true treatment effect, offering more information than a simple p-value:</p>
+
+<div class="code-block">
+<pre><code>def calculate_confidence_interval(control_scores, treatment_scores, confidence=0.95):
+    """Calculate confidence interval for the difference in means."""
+    
+    control = np.array(control_scores)
+    treatment = np.array(treatment_scores)
+    
+    # Calculate difference
+    diff = treatment.mean() - control.mean()
+    
+    # Calculate standard error
+    se = np.sqrt(control.var()/len(control) + treatment.var()/len(treatment))
+    
+    # Calculate confidence interval
+    z_score = stats.norm.ppf((1 + confidence) / 2)
+    margin_of_error = z_score * se
+    
+    ci_lower = diff - margin_of_error
+    ci_upper = diff + margin_of_error
+    
+    return {
+        "point_estimate": diff,
+        "confidence_level": confidence,
+        "ci_lower": ci_lower,
+        "ci_upper": ci_upper,
+        "interpretation": f"We are {confidence*100}% confident the true difference is between {ci_lower:.3f} and {ci_upper:.3f}"
+    }</code></pre>
+</div>
+
+<h2>Sequential Testing and Early Stopping</h2>
+
+<p>Traditional fixed-horizon testing requires waiting until the predetermined sample size is reached. Sequential testing allows for early stopping when results become conclusive, but requires special statistical procedures to maintain validity.</p>
+
+<h3>Challenges with Peeking</h3>
+<p>Repeatedly checking experiment results and stopping when p &lt; 0.05 inflates the false positive rate. If you check 10 times, your actual Type I error rate can exceed 20% instead of the intended 5%.</p>
+
+<h3>Sequential Probability Ratio Test (SPRT)</h3>
+<p>SPRT provides a statistically valid method for continuous monitoring:</p>
+
+<ul>
+    <li>Define upper and lower decision boundaries</li>
+    <li>Calculate likelihood ratio after each observation</li>
+    <li>Stop when likelihood ratio crosses a boundary</li>
+    <li>Maintains desired error rates despite continuous monitoring</li>
+</ul>
+
+<h2>Practical Analysis Workflow</h2>
+
+<div class="code-block">
+<pre><code>def comprehensive_analysis(control_data, treatment_data, metric_name):
+    """Perform complete statistical analysis of experiment results."""
+    
+    # 1. Descriptive statistics
+    print(f"=== Analysis for {metric_name} ===")
+    print(f"Control: mean={np.mean(control_data):.3f}, std={np.std(control_data):.3f}, n={len(control_data)}")
+    print(f"Treatment: mean={np.mean(treatment_data):.3f}, std={np.std(treatment_data):.3f}, n={len(treatment_data)}")
+    
+    # 2. Hypothesis test
+    test_result = two_sample_ttest(control_data, treatment_data)
+    print(f"\nHypothesis Test:")
+    print(f"  p-value: {test_result['p_value']:.4f}")
+    print(f"  Significant: {test_result['is_significant']}")
+    
+    # 3. Effect size
+    effect_size = calculate_cohens_d(control_data, treatment_data)
+    print(f"\nEffect Size:")
+    print(f"  Cohen's d: {effect_size['cohens_d']:.3f}")
+    print(f"  Interpretation: {effect_size['interpretation']}")
+    
+    # 4. Confidence interval
+    ci = calculate_confidence_interval(control_data, treatment_data)
+    print(f"\nConfidence Interval (95%):")
+    print(f"  [{ci['ci_lower']:.3f}, {ci['ci_upper']:.3f}]")
+    
+    # 5. Decision recommendation
+    if test_result['is_significant'] and abs(effect_size['cohens_d']) >= 0.2:
+        print("\nRecommendation: SHIP - Statistically significant with meaningful effect size")
+    elif test_result['is_significant']:
+        print("\nRecommendation: CAUTION - Significant but small effect size")
+    else:
+        print("\nRecommendation: NO CHANGE - No significant difference detected")
+    
+    return {
+        "test": test_result,
+        "effect_size": effect_size,
+        "confidence_interval": ci
+    }</code></pre>
+</div>
+
+<h2>Common Pitfalls and How to Avoid Them</h2>
+
+<h3>1. P-Hacking</h3>
+<p><strong>Problem:</strong> Testing multiple metrics and only reporting significant ones.</p>
+<p><strong>Solution:</strong> Pre-register your primary metric before starting the experiment.</p>
+
+<h3>2. Ignoring Effect Size</h3>
+<p><strong>Problem:</strong> Shipping changes based solely on statistical significance.</p>
+<p><strong>Solution:</strong> Always calculate and consider effect size alongside p-values.</p>
+
+<h3>3. Insufficient Sample Size</h3>
+<p><strong>Problem:</strong> Running experiments without adequate power.</p>
+<p><strong>Solution:</strong> Perform power analysis before starting and wait for sufficient data.</p>
+
+<h3>4. Confounding Variables</h3>
+<p><strong>Problem:</strong> External factors affecting results.</p>
+<p><strong>Solution:</strong> Use randomization, monitor for SRM, and check for temporal patterns.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Statistical hypothesis testing determines whether observed differences are real or due to chance</li>
+    <li>Choose appropriate tests based on metric type (continuous vs binary) and data distribution</li>
+    <li>Effect size measures practical significance, complementing statistical significance</li>
+    <li>Confidence intervals provide more information than p-values alone</li>
+    <li>Sequential testing requires special procedures to maintain statistical validity</li>
+    <li>Always consider both statistical and practical significance when making decisions</li>
+    <li>Pre-register hypotheses and primary metrics to avoid p-hacking</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

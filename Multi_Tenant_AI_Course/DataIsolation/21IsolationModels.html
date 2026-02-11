@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 2: Data Isolation and Security in Multi-tenant AI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Data Isolation and Security Strategies</h1>
+
+<p>In a multi-tenant AI system, ensuring that one tenant's data is never accessible or visible to another is the most critical design requirement. This is especially challenging when using large language models, as they can inadvertently "memorize" information from their training data or context windows.</p>
+
+<h2>2.1 The Three Core Isolation Models</h2>
+<p>Borrowing from traditional SaaS architecture, there are three primary models for data isolation in multi-tenant AI:</p>
+
+<h3>1. The Silo Model (Full Isolation)</h3>
+<p>In the Silo model, each tenant has their own dedicated resources. This might include a separate database instance, separate file storage, and even a dedicated instance of the AI model.
+<ul>
+    <li><strong>Pros:</strong> Highest level of security and performance isolation; no risk of cross-tenant data leakage; easier to meet strict compliance requirements.</li>
+    <li><strong>Cons:</strong> Highest cost; complex to manage at scale; poor resource utilization (many idle instances).</li>
+</ul></p>
+
+<h3>2. The Bridge Model (Logical Isolation)</h3>
+<p>Tenants share some resources (like the application server and the AI model) but have separate databases or separate schemas within a single database.
+<ul>
+    <li><strong>Pros:</strong> Better cost-efficiency than the Silo model; easier to manage updates and deployments.</li>
+    <li><strong>Cons:</strong> Risk of "noisy neighbor" issues where one tenant's heavy usage impacts others; requires robust application-level logic to prevent cross-tenant access.</li>
+</ul></p>
+
+<h3>3. The Pool Model (Shared Resources)</h3>
+<p>All tenants share all resources, including the database and the model. Isolation is enforced purely through software logic (e.g., a <code>tenant_id</code> column in every table).
+<ul>
+    <li><strong>Pros:</strong> Most cost-effective; highest resource utilization; simplest to scale and manage.</li>
+    <li><strong>Cons:</strong> Highest risk of data leakage due to bugs in the application logic; very difficult to provide performance guarantees for individual tenants.</li>
+</ul></p>
+
+<h2>2.2 Preventing Leakage in LLM Contexts</h2>
+<p>When using LLMs, data isolation extends to the "context" provided in prompts. If a system uses Retrieval-Augmented Generation (RAG), it must ensure that the retrieval step only searches the current tenant's document store.
+<ul>
+    <li><strong>Tenant-scoped Vector Search:</strong> Every vector in the database should be tagged with a <code>tenant_id</code>, and every query must include a filter for that specific ID.</li>
+    <li><strong>Prompt Sanitization:</strong> Ensuring that no tenant-specific data is "leaked" into system prompts that are shared across tenants.</li>
+    <li><strong>Ephemeral Context:</strong> Clearing the model's history or session state immediately after a request is completed to prevent the next tenant from seeing previous data.</li>
+</ul></p>
+
+<h2>2.3 Encryption and Key Management</h2>
+<p>Robust security requires that each tenant's data is encrypted with their own unique key (Bring Your Own Key - BYOK).
+<ul>
+    <li><strong>Encryption at Rest:</strong> Ensuring all stored data is encrypted using tenant-specific keys.</li>
+    <li><strong>Encryption in Transit:</strong> Using TLS for all communication between the tenant, the application, and the AI provider.</li>
+    <li><strong>Secure Key Storage:</strong> Using Hardware Security Modules (HSMs) or cloud-based key management services (KMS) to manage and rotate tenant keys.</li>
+</ul></p>
+
+<p>Choosing the right isolation model is a balance between security, cost, and complexity. For many AI startups, the Pool model with strong logical isolation is the starting point, while enterprise-grade systems often move towards the Bridge or Silo models for their most sensitive clients.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

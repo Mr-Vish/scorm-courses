@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on Exercise: Multi-Image Comparison</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on Exercise: Multi-Image Comparison and Analysis</h1>
+
+<p>In this advanced exercise, you will learn how to send multiple images to Claude in a single request and ask the model to perform a detailed comparison. This technique is widely used in fields like quality control, architectural review, and medical diagnostics.</p>
+
+<h2>Scenario: The "Spot the Difference" Quality Audit</h2>
+<p>Imagine you are working in a manufacturing plant that produces electronic circuit boards. Your task is to compare a "Master" board (the perfect reference) with a "Test" board coming off the assembly line to identify any missing components or soldering defects.</p>
+
+<h2>Step 1: Preparing Your Script</h2>
+<p>Create a new file named <code>multi_image_compare.py</code>. We will use the <code>anthropic</code> library to send two images simultaneously.</p>
+
+<pre>
+import anthropic
+import base64
+
+client = anthropic.Anthropic()
+
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+# Paths to your two images
+master_image_path = "master_pcb.jpg"
+test_image_path = "test_pcb.jpg"
+
+master_data = encode_image(master_image_path)
+test_data = encode_image(test_image_path)
+
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1500,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I am sending you two images of a circuit board. The first is the 'Master' reference, and the second is a 'Test' board from the assembly line."
+                },
+                {
+                    "type": "image",
+                    "source": {"type": "base64", "media_type": "image/jpeg", "data": master_data}
+                },
+                {
+                    "type": "image",
+                    "source": {"type": "base64", "media_type": "image/jpeg", "data": test_data}
+                },
+                {
+                    "type": "text",
+                    "text": "Please compare these two boards. Identify any missing components, misaligned parts, or obvious soldering issues on the Test board relative to the Master board. Provide your findings in a structured list."
+                }
+            ]
+        }
+    ]
+)
+
+print("Comparison Results:")
+print(response.content[0].text)
+</pre>
+
+<h2>Step 2: Understanding the Request Structure</h2>
+<p>Notice how we provide a list of content blocks. The order matters! We first provide context, then the two images, and finally the specific question. Claude can distinguish between the images based on their order in the <code>content</code> array (e.g., "the first image" vs. "the second image").</p>
+
+<h2>Step 3: Refining the Analysis</h2>
+<p>If the results are too general, you can refine your prompt to be more specific:</p>
+<p><em>"Focus specifically on the upper-right quadrant of both boards. Are all the capacitors (labeled C1-C10) present and correctly oriented on the Test board?"</em></p>
+
+<h2>Key Learnings</h2>
+<ul>
+    <li><strong>Contextual Prompting:</strong> Labeling the images (e.g., "Master" vs. "Test") in your text prompt helps Claude understand their roles.</li>
+    <li><strong>Structured Outputs:</strong> Asking for a "structured list" or a "JSON object" makes the model's output easier to use in an automated system.</li>
+    <li><strong>Token Management:</strong> Sending multiple high-resolution images can consume a significant number of tokens. Always monitor your usage and consider resizing images if they are larger than necessary.</li>
+</ul>
+
+<p>By mastering multi-image analysis, you can build sophisticated AI systems that can reason about changes, differences, and relationships across multiple visual inputs.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

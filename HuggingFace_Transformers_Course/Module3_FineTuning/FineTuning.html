@@ -1,0 +1,340 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Fine-Tuning with the Trainer API</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Fine-Tuning with the Trainer API</h1>
+
+<h2>Why Fine-Tune?</h2>
+<p>Fine-tuning adapts pre-trained models to specific tasks or domains, improving performance beyond what prompting alone can achieve. It's essential when you need consistent behavior, domain-specific knowledge, or task-specific formatting.</p>
+
+<h2>Fine-Tuning Approaches</h2>
+<table>
+    <tr>
+        <th>Approach</th>
+        <th>Parameters Updated</th>
+        <th>Memory Required</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Full Fine-Tuning</td>
+        <td>All model parameters</td>
+        <td>Very High</td>
+        <td>Maximum customization, large datasets</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LoRA</td>
+        <td>Low-rank adapter matrices</td>
+        <td>Low (1-10% of full)</td>
+        <td>Most common, efficient, good results</td>
+    </tr>
+    <tr>
+        <td class="rowheader">QLoRA</td>
+        <td>LoRA + 4-bit quantization</td>
+        <td>Very Low</td>
+        <td>Consumer GPUs, limited memory</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prefix Tuning</td>
+        <td>Learnable prefix tokens</td>
+        <td>Very Low</td>
+        <td>Task-specific adaptation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Adapter Layers</td>
+        <td>Small bottleneck layers</td>
+        <td>Low</td>
+        <td>Multi-task scenarios</td>
+    </tr>
+</table>
+
+<h2>Basic Fine-Tuning with Trainer</h2>
+<pre><code>from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    Trainer,
+    TrainingArguments,
+    DataCollatorForLanguageModeling
+)
+from datasets import load_dataset
+
+# Load model and tokenizer
+model_name = "gpt2"
+model = AutoModelForCausalLM.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token
+
+# Load and prepare dataset
+dataset = load_dataset("text", data_files={"train": "train.txt"})
+
+def tokenize_function(examples):
+    return tokenizer(
+        examples["text"],
+        truncation=True,
+        max_length=512,
+        padding="max_length"
+    )
+
+tokenized_dataset = dataset.map(
+    tokenize_function,
+    batched=True,
+    remove_columns=dataset["train"].column_names
+)
+
+# Configure training
+training_args = TrainingArguments(
+    output_dir="./results",
+    num_train_epochs=3,
+    per_device_train_batch_size=4,
+    save_steps=500,
+    save_total_limit=2,
+    logging_steps=100,
+    learning_rate=5e-5,
+    weight_decay=0.01,
+    warmup_steps=500,
+    fp16=True  # Mixed precision training
+)
+
+# Data collator for language modeling
+data_collator = DataCollatorForLanguageModeling(
+    tokenizer=tokenizer,
+    mlm=False  # Causal LM, not masked LM
+)
+
+# Create trainer
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_dataset["train"],
+    data_collator=data_collator
+)
+
+# Start training
+trainer.train()
+
+# Save fine-tuned model
+trainer.save_model("./fine_tuned_model")\n</code></pre>
+
+<h2>LoRA Fine-Tuning</h2>
+<p>Low-Rank Adaptation (LoRA) is the most popular efficient fine-tuning method:</p>
+
+<pre><code>from peft import LoraConfig, get_peft_model, TaskType
+from transformers import AutoModelForCausalLM, TrainingArguments, Trainer
+
+# Load base model
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b-instruct",
+    torch_dtype=torch.float16,
+    device_map="auto"
+)
+
+# Configure LoRA
+lora_config = LoraConfig(
+    r=16,  # Rank of update matrices
+    lora_alpha=32,  # Scaling factor
+    target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],  # Which layers to adapt
+    lora_dropout=0.05,
+    bias="none",
+    task_type=TaskType.CAUSAL_LM
+)
+
+# Apply LoRA to model
+model = get_peft_model(model, lora_config)
+
+# Check trainable parameters
+model.print_trainable_parameters()
+# Output: trainable params: 4,194,304 || all params: 8,030,261,248 || trainable%: 0.05%
+
+# Train with Trainer API (same as before)
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_dataset["train"],
+    data_collator=data_collator
+)
+
+trainer.train()
+
+# Save LoRA adapters (only ~10MB instead of ~16GB)
+model.save_pretrained("./lora_adapters")\n</code></pre>
+
+<h2>QLoRA Fine-Tuning</h2>
+<p>Combines LoRA with 4-bit quantization for maximum memory efficiency:</p>
+
+<pre><code>from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+from peft import prepare_model_for_kbit_training, LoraConfig, get_peft_model
+
+# 4-bit quantization config
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=True
+)
+
+# Load quantized model
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b-instruct",
+    quantization_config=bnb_config,
+    device_map="auto"
+)
+
+# Prepare for k-bit training
+model = prepare_model_for_kbit_training(model)
+
+# Apply LoRA
+lora_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type=TaskType.CAUSAL_LM
+)
+
+model = get_peft_model(model, lora_config)
+
+# Train (can fine-tune 70B models on 24GB GPU!)
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_dataset["train"]
+)
+
+trainer.train()\n</code></pre>
+
+<h2>Instruction Fine-Tuning</h2>
+<pre><code>from datasets import load_dataset
+
+# Load instruction dataset
+dataset = load_dataset("tatsu-lab/alpaca")
+
+# Format for instruction tuning
+def format_instruction(example):
+    if example["input"]:
+        prompt = f"""### Instruction:
+{example["instruction"]}
+
+### Input:
+{example["input"]}
+
+### Response:
+{example["output"]}"""
+    else:
+        prompt = f"""### Instruction:
+{example["instruction"]}
+
+### Response:
+{example["output"]}"""
+    return {"text": prompt}
+
+formatted_dataset = dataset.map(format_instruction)
+
+# Tokenize
+def tokenize(example):
+    return tokenizer(
+        example["text"],
+        truncation=True,
+        max_length=512,
+        padding="max_length"
+    )
+
+tokenized_dataset = formatted_dataset.map(tokenize, batched=True)
+
+# Train with formatted instructions
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_dataset["train"]
+)
+
+trainer.train()\n</code></pre>
+
+<h2>Training Arguments Deep Dive</h2>
+<pre><code>training_args = TrainingArguments(
+    output_dir="./results",
+    
+    # Training duration
+    num_train_epochs=3,
+    max_steps=-1,  # Override epochs if set
+    
+    # Batch sizes
+    per_device_train_batch_size=4,
+    per_device_eval_batch_size=8,
+    gradient_accumulation_steps=4,  # Effective batch = 4 * 4 = 16
+    
+    # Learning rate
+    learning_rate=5e-5,
+    lr_scheduler_type="cosine",  # cosine, linear, constant
+    warmup_steps=500,
+    warmup_ratio=0.1,  # Alternative to warmup_steps
+    
+    # Optimization
+    weight_decay=0.01,
+    adam_beta1=0.9,
+    adam_beta2=0.999,
+    adam_epsilon=1e-8,
+    max_grad_norm=1.0,  # Gradient clipping
+    
+    # Mixed precision
+    fp16=True,  # For older GPUs
+    bf16=False,  # For newer GPUs (A100, H100)
+    
+    # Logging and saving
+    logging_steps=100,
+    save_steps=500,
+    save_total_limit=2,  # Keep only 2 checkpoints
+    evaluation_strategy="steps",
+    eval_steps=500,
+    
+    # Performance
+    dataloader_num_workers=4,
+    dataloader_pin_memory=True,
+    
+    # Other
+    seed=42,
+    report_to="tensorboard"  # or "wandb"
+)\n</code></pre>
+
+<h2>Monitoring Training</h2>
+<pre><code># View training logs
+# tensorboard --logdir ./results/runs
+
+# Custom callback for monitoring
+from transformers import TrainerCallback
+
+class CustomCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs:
+            print(f"Step {state.global_step}: Loss = {logs.get('loss', 'N/A')}")
+    
+    def on_epoch_end(self, args, state, control, **kwargs):
+        print(f"Epoch {state.epoch} completed")
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_dataset["train"],
+    callbacks=[CustomCallback()]
+)\n</code></pre>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Start with LoRA:</strong> Efficient and effective for most use cases</li>
+    <li><strong>Use QLoRA for Large Models:</strong> Fine-tune 70B models on consumer GPUs</li>
+    <li><strong>Monitor Overfitting:</strong> Use validation set and early stopping</li>
+    <li><strong>Adjust Learning Rate:</strong> Lower for large models (1e-5 to 5e-5)</li>
+    <li><strong>Use Gradient Accumulation:</strong> Simulate larger batches with limited memory</li>
+    <li><strong>Save Checkpoints:</strong> Training can be interrupted, save frequently</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

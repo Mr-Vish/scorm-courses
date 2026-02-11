@@ -1,0 +1,350 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Implementing Basic Grounding</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Implementing Basic Grounding</h1>
+
+<h2>Setting Up Your Environment</h2>
+<p>Before implementing grounding, ensure you have the necessary dependencies and authentication configured.</p>
+
+<h3>Installation</h3>
+<blockquote><pre><code># Install the Google Generative AI SDK
+pip install google-generativeai
+
+# For Vertex AI (enterprise grounding)
+pip install google-cloud-aiplatform
+</code></pre></blockquote>
+
+<h3>Authentication Setup</h3>
+<blockquote><pre><code>import os
+from google import genai
+
+# For Google AI Studio (development/prototyping)
+os.environ['GOOGLE_API_KEY'] = 'your-api-key-here'
+client = genai.Client(api_key=os.environ['GOOGLE_API_KEY'])
+
+# For Vertex AI (production)
+from google.cloud import aiplatform
+aiplatform.init(project='your-project-id', location='us-central1')
+</code></pre></blockquote>
+
+<h2>Basic Grounding Implementation</h2>
+<p>The simplest grounding implementation uses Google Search to augment responses with current information.</p>
+
+<h3>Without Grounding (Baseline)</h3>
+<blockquote>
+from google import genai
+
+client = genai.Client()
+
+# Standard request without grounding
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents='What is the current price of Bitcoin?'
+)
+
+print(response.text)
+# Output: "I don't have access to real-time information..."
+# OR worse: Provides outdated/hallucinated price
+</blockquote>
+
+<h3>With Grounding (Enhanced)</h3>
+<blockquote>
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+# Request with Google Search grounding
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents='What is the current price of Bitcoin?',
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+
+print(response.text)
+# Output: "As of [current date], Bitcoin is trading at approximately 
+# $XX,XXX according to [source]..."
+
+# Access grounding metadata
+if response.candidates[0].grounding_metadata:
+    metadata = response.candidates[0].grounding_metadata
+    print(f"\nGrounding Score: {metadata.grounding_support.grounding_score}")
+    print("\nSources:")
+    for chunk in metadata.grounding_chunks:
+        print(f"  - {chunk.web.uri}")
+        print(f"    Title: {chunk.web.title}")
+</blockquote>
+
+<h2>Understanding Grounding Configuration</h2>
+<p>The GenerateContentConfig object controls grounding behavior:</p>
+
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td class="rowheader">tools</td>
+        <td>List[Tool]</td>
+        <td>Grounding sources to use (Google Search, data stores)</td>
+        <td>None</td>
+    </tr>
+    <tr>
+        <td class="rowheader">google_search</td>
+        <td>GoogleSearch</td>
+        <td>Enables Google Search grounding</td>
+        <td>Disabled</td>
+    </tr>
+    <tr>
+        <td class="rowheader">dynamic_retrieval_config</td>
+        <td>DynamicRetrievalConfig</td>
+        <td>Controls when model decides to search</td>
+        <td>None</td>
+    </tr>
+</table>
+
+<h2>Grounding Metadata Structure</h2>
+<p>Every grounded response includes metadata that provides transparency and verification:</p>
+
+<blockquote>
+# Example: Accessing comprehensive grounding metadata
+response = client.models.generate_content(
+    model='gemini-2.0-flash',
+    contents='Explain the latest developments in quantum computing',
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+)
+
+# Extract metadata
+candidate = response.candidates[0]
+metadata = candidate.grounding_metadata
+
+# Grounding support score (0.0 to 1.0)
+grounding_score = metadata.grounding_support.grounding_score
+print(f"Grounding Score: {grounding_score}")
+
+# Individual grounding chunks (sources)
+for i, chunk in enumerate(metadata.grounding_chunks, 1):
+    print(f"\nSource {i}:")
+    print(f"  URL: {chunk.web.uri}")
+    print(f"  Title: {chunk.web.title}")
+    
+# Search entry point (the query used for search)
+if metadata.search_entry_point:
+    print(f"\nSearch Query: {metadata.search_entry_point.rendered_content}")
+</blockquote>
+
+<h2>Grounding Score Interpretation</h2>
+<p>The grounding score indicates how well the response is supported by retrieved sources:</p>
+
+<table>
+    <tr>
+        <th>Score Range</th>
+        <th>Interpretation</th>
+        <th>Action</th>
+    </tr>
+    <tr>
+        <td class="rowheader">0.8 - 1.0</td>
+        <td>Strongly grounded</td>
+        <td>High confidence, use response as-is</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.5 - 0.79</td>
+        <td>Moderately grounded</td>
+        <td>Review sources, may need additional verification</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.3 - 0.49</td>
+        <td>Weakly grounded</td>
+        <td>Caution advised, consider re-prompting or additional sources</td>
+    </tr>
+    <tr>
+        <td class="rowheader">0.0 - 0.29</td>
+        <td>Poorly grounded</td>
+        <td>Reject response, likely contains hallucinations</td>
+    </tr>
+</table>
+
+<h2>Implementing Grounding Thresholds</h2>
+<p>Production systems should enforce minimum grounding scores to prevent hallucinations:</p>
+
+<blockquote>
+def get_grounded_response(query, min_grounding_score=0.7):
+    """
+    Get a grounded response with quality threshold enforcement.
+    
+    Args:
+        query: User's question
+        min_grounding_score: Minimum acceptable grounding score (0.0-1.0)
+    
+    Returns:
+        Tuple of (response_text, sources, grounding_score)
+    """
+    client = genai.Client()
+    
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=query,
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(google_search=types.GoogleSearch())]
+        )
+    )
+    
+    candidate = response.candidates[0]
+    metadata = candidate.grounding_metadata
+    
+    # Extract grounding score
+    grounding_score = 0.0
+    if metadata and metadata.grounding_support:
+        grounding_score = metadata.grounding_support.grounding_score
+    
+    # Enforce threshold
+    if grounding_score < min_grounding_score:
+        return (
+            f"I cannot provide a sufficiently grounded response. "
+            f"Grounding score: {grounding_score:.2f} (minimum: {min_grounding_score})",
+            [],
+            grounding_score
+        )
+    
+    # Extract sources
+    sources = []
+    if metadata and metadata.grounding_chunks:
+        sources = [
+            {
+                'url': chunk.web.uri,
+                'title': chunk.web.title
+            }
+            for chunk in metadata.grounding_chunks
+        ]
+    
+    return (response.text, sources, grounding_score)
+
+
+# Usage example
+query = "What are the health benefits of intermittent fasting?"
+text, sources, score = get_grounded_response(query, min_grounding_score=0.7)
+
+print(f"Response: {text}")
+print(f"\nGrounding Score: {score:.2f}")
+print(f"\nSources ({len(sources)}):")
+for source in sources:
+    print(f"  - {source['title']}")
+    print(f"    {source['url']}")
+</blockquote>
+
+<h2>Error Handling and Fallbacks</h2>
+<p>Robust grounding implementations handle failures gracefully:</p>
+
+<blockquote>
+from google import genai
+from google.genai import types
+import logging
+
+def grounded_query_with_fallback(query, max_retries=2):
+    """
+    Execute grounded query with retry logic and fallback.
+    """
+    client = genai.Client()
+    
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=query,
+                config=types.GenerateContentConfig(
+                    tools=[types.Tool(google_search=types.GoogleSearch())]
+                )
+            )
+            
+            # Check if grounding was successful
+            candidate = response.candidates[0]
+            if candidate.grounding_metadata:
+                return {
+                    'success': True,
+                    'response': response.text,
+                    'grounded': True,
+                    'metadata': candidate.grounding_metadata
+                }
+            else:
+                logging.warning(f"Attempt {attempt + 1}: No grounding metadata")
+                
+        except Exception as e:
+            logging.error(f"Attempt {attempt + 1} failed: {str(e)}")
+            if attempt == max_retries - 1:
+                # Final fallback: ungrounded response with warning
+                try:
+                    fallback_response = client.models.generate_content(
+                        model='gemini-2.0-flash',
+                        contents=query
+                    )
+                    return {
+                        'success': True,
+                        'response': fallback_response.text,
+                        'grounded': False,
+                        'warning': 'Grounding failed, using ungrounded response'
+                    }
+                except Exception as fallback_error:
+                    return {
+                        'success': False,
+                        'error': str(fallback_error)
+                    }
+    
+    return {
+        'success': False,
+        'error': 'All retry attempts exhausted'
+    }
+
+
+# Usage
+result = grounded_query_with_fallback("What is the weather in Tokyo today?")
+if result['success']:
+    print(result['response'])
+    if not result.get('grounded'):
+        print(f"\nWARNING: {result.get('warning')}")
+else:
+    print(f"Error: {result['error']}")
+</blockquote>
+
+<h2>Best Practices for Basic Grounding</h2>
+<ul>
+    <li><strong>Always Check Metadata:</strong> Verify grounding_metadata exists before accessing it</li>
+    <li><strong>Set Appropriate Thresholds:</strong> Higher thresholds (0.7-0.8) for critical applications, lower (0.5-0.6) for general use</li>
+    <li><strong>Log Grounding Scores:</strong> Track scores over time to identify quality trends</li>
+    <li><strong>Implement Fallbacks:</strong> Have a strategy when grounding fails or scores are too low</li>
+    <li><strong>Cache When Appropriate:</strong> For frequently asked questions, cache grounded responses (with expiration)</li>
+    <li><strong>Monitor Latency:</strong> Grounding adds 200-500ms; optimize for user experience</li>
+</ul>
+
+<h2>Common Pitfalls to Avoid</h2>
+<blockquote>
+<strong>❌ Don't:</strong> Assume grounding always succeeds
+<br/><strong>✓ Do:</strong> Check for metadata existence and handle None cases
+
+<br/><br/><strong>❌ Don't:</strong> Use the same grounding threshold for all use cases
+<br/><strong>✓ Do:</strong> Adjust thresholds based on accuracy requirements
+
+<br/><br/><strong>❌ Don't:</strong> Ignore grounding scores below your threshold
+<br/><strong>✓ Do:</strong> Provide clear feedback when responses are rejected
+
+<br/><br/><strong>❌ Don't:</strong> Ground every single query
+<br/><strong>✓ Do:</strong> Evaluate which queries actually need grounding
+</blockquote>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

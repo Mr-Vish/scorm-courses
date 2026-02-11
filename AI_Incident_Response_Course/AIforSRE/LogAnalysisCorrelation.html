@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Log Analysis and Correlation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Log Analysis and Correlation</h1>
+
+
+<h2>AI-Powered Incident Response</h2>
+<p>Site Reliability Engineers (SREs) face an overwhelming volume of logs, metrics, and alerts during incidents. GenAI can accelerate incident response by analyzing logs, correlating events across systems, and suggesting likely root causes in seconds rather than hours.</p>
+
+<h2>Log Analysis with LLMs</h2>
+<table>
+    <tr><th>Capability</th><th>Traditional Approach</th><th>LLM-Enhanced Approach</th></tr>
+    <tr><td>Pattern detection</td><td>Regex rules, manual inspection</td><td>LLM identifies novel error patterns in unstructured logs</td></tr>
+    <tr><td>Log summarization</td><td>Keyword search, grep</td><td>LLM summarizes thousands of log lines into key findings</td></tr>
+    <tr><td>Cross-service correlation</td><td>Distributed tracing, manual linking</td><td>LLM finds connections across services by analyzing log content</td></tr>
+    <tr><td>Anomaly explanation</td><td>Dashboard investigation</td><td>LLM explains what changed and why metrics deviated</td></tr>
+</table>
+
+<h2>Log Summarization</h2>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+def summarize_incident_logs(logs: list[str], service_name: str) -&gt; dict:
+    '''Summarize incident logs to identify key events and errors.'''
+    log_text = "
+".join(logs[-500:])  # Last 500 lines
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": (
+                "You are an SRE expert analyzing incident logs. "
+                "Identify the key errors, their timeline, and likely root cause."
+            )},
+            {"role": "user", "content": (
+                f"Service: {service_name}
+"
+                f"Logs:
+{log_text}
+
+"
+                "Return JSON: {"summary": str, "key_errors": [{"timestamp": str, "
+                ""error": str, "count": int}], "timeline": [str], "
+                ""likely_root_cause": str, "severity": str}"
+            )},
+        ],
+    )
+    return json.loads(response.choices[0].message.content)</code></pre>
+</div>
+
+<h2>Multi-Service Correlation</h2>
+<div class="code-block">
+<pre><code>def correlate_across_services(service_summaries: dict) -&gt; str:
+    '''Correlate incidents across multiple services to find the root cause.'''
+    summaries_text = ""
+    for service, summary in service_summaries.items():
+        summaries_text += f"
+== {service} ==
+{json.dumps(summary, indent=2)}
+"
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                "You are a senior SRE investigating a production incident. "
+                "Multiple services are affected. Correlate the evidence to find "
+                "the root cause and suggest a remediation plan."
+            )},
+            {"role": "user", "content": (
+                f"Service summaries:
+{summaries_text}
+
+"
+                "Questions:
+"
+                "1. What is the root cause?
+"
+                "2. What is the chain of failure?
+"
+                "3. What is the recommended fix?
+"
+                "4. What should we do to prevent recurrence?"
+            )},
+        ],
+    )
+    return response.choices[0].message.content</code></pre>
+</div>
+
+<h2>Integration with Observability Tools</h2>
+<ul>
+    <li><strong>Datadog:</strong> Use the API to fetch logs and metrics, then send to LLM for analysis</li>
+    <li><strong>PagerDuty:</strong> Trigger LLM analysis when an incident is created, attach findings to the incident</li>
+    <li><strong>Grafana:</strong> Build an AI assistant panel that explains dashboard anomalies in natural language</li>
+    <li><strong>Slack:</strong> Deploy an incident bot that summarizes logs and suggests actions in the incident channel</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

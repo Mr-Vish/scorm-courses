@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>4. The Re-Ranking Step: Two-Stage Retrieval</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>4. The Re-Ranking Step: Two-Stage Retrieval</h1>
+
+<p>One of the most effective ways to improve the accuracy of a RAG system is to implement a <strong>Two-Stage Retrieval</strong> process using a <strong>Re-ranker</strong>. While vector search is great for finding potentially relevant documents, it is not always perfect at identifying the absolute best context for a specific question. Re-ranking adds a second, more intensive layer of analysis to ensure the highest possible quality of retrieved information.</p>
+
+<h2>Why Two-Stage Retrieval?</h2>
+<p>Vector search (Stage 1) uses "Bi-Encoders" to map queries and documents into a shared embedding space. This is extremely fast and can search through millions of documents in milliseconds. However, it can sometimes miss the subtle semantic relationships between a question and an answer.</p>
+<p>Re-ranking (Stage 2) uses "Cross-Encoders" that analyze the query and a specific document *together*. This is much more accurate but significantly slower. By combining them—using the fast search to find the top 50-100 candidates and then using the re-ranker to select the top 5-10 from that group—we get the best of both worlds: speed and high precision.</p>
+
+<h2>Implementing Re-ranking in Spring AI</h2>
+<p>While Spring AI doesn't yet have a dedicated <code>ReRanker</code> interface, you can easily integrate re-ranking into your pipeline using a custom service or by calling a re-ranking API (like Cohere or Jina AI).</p>
+
+<h3>Example: Using a Cross-Encoder Service</h3>
+<div class="code-block">
+<pre><code>@Service
+public class ReRankingService {
+    private final ChatClient chatClient;
+
+    public List&lt;Document&gt; reRank(String query, List&lt;Document&gt; candidates) {
+        // 1. Prepare the ranking prompt
+        String candidateText = candidates.stream()
+            .map(d -> d.getId() + ": " + d.getContent())
+            .collect(Collectors.joining("\n\n"));
+
+        String response = chatClient.prompt()
+            .user(u -> u.text("Given the query: {q}\n\nRank the following documents by their relevance to the query. Return ONLY the IDs of the top 3 most relevant documents, separated by commas.\n\nDocuments:\n{docs}")
+                        .param("q", query).param("docs", candidateText))
+            .call().content();
+
+        // 2. Parse the IDs and return the corresponding documents
+        List&lt;String&gt; topIds = Arrays.asList(response.split(","));
+        return candidates.stream()
+            .filter(d -> topIds.contains(d.getId()))
+            .toList();
+    }
+}</code></pre>
+</div>
+
+<h2>The Benefits of Re-ranking</h2>
+<ul>
+    <li><strong>Reduced Hallucinations:</strong> By providing the LLM with more relevant context, you significantly reduce the chance of it "filling in the blanks" with incorrect information.</li>
+    <li><strong>Better Handling of Complex Language:</strong> Cross-encoders are much better at understanding nuance, negation, and complex sentence structures than simple vector embeddings.</li>
+    <li><strong>Optimal Token Usage:</strong> Instead of sending a large amount of potentially irrelevant context, you send only the most important information, saving on token costs and improving the "signal" in the prompt.</li>
+</ul>
+
+<h2>Choosing a Re-ranker</h2>
+<ul>
+    <li><strong>LLM-based Re-ranking:</strong> As shown in the example above, you can use a powerful model like GPT-4o or Claude 3.5 Sonnet to perform the re-ranking. This is very accurate but can be expensive and slow.</li>
+    <li><strong>Specialized Cross-Encoders:</strong> Models like BGE-Reranker or Cohere Rerank are specifically trained for this task and are often faster and more cost-effective than using a general-purpose LLM.</li>
+</ul>
+
+<p>Implementing a two-stage retrieval process is one of the most impactful optimizations you can make to your multi-step RAG pipeline, providing a significant boost in the reliability and quality of your AI-generated answers.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

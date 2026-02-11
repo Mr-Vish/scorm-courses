@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>MCP Transport Layers and Communication Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>MCP Transport Layers and Communication Patterns</h1>
+
+<h2>Understanding Transport Layers</h2>
+
+<p>The transport layer in MCP defines how messages are physically transmitted between clients and servers. While the MCP protocol itself is transport-agnostic, the specification currently defines two standard transport mechanisms, each optimized for different deployment scenarios.</p>
+
+<p>Choosing the appropriate transport is a critical architectural decision that affects performance, security, deployment complexity, and operational characteristics of your MCP server.</p>
+
+<h2>stdio Transport: Local Process Communication</h2>
+
+<p>The <strong>stdio (Standard Input/Output) transport</strong> is the default and most common transport mechanism for MCP servers. It leverages the standard input and output streams of operating system processes for communication.</p>
+
+<h3>How stdio Transport Works</h3>
+
+<p>In the stdio model:</p>
+
+<ol>
+    <li>The MCP host launches the server as a child process</li>
+    <li>The host writes JSON-RPC messages to the server's stdin stream</li>
+    <li>The server reads messages from its stdin stream</li>
+    <li>The server writes responses to its stdout stream</li>
+    <li>The host reads responses from the server's stdout stream</li>
+    <li>Error messages and logs go to stderr (not part of the protocol)</li>
+</ol>
+
+<h3>stdio Transport Characteristics</h3>
+
+<table>
+    <tr>
+        <th>Characteristic</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Connection Model</td>
+        <td>Process-based: one server process per client connection</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Lifecycle</td>
+        <td>Server starts when host needs it, terminates when connection closes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Network Requirements</td>
+        <td>None - purely local communication</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Security Boundary</td>
+        <td>Same as host process (inherits permissions)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Performance</td>
+        <td>Very fast - no network overhead</td>
+    </tr>
+</table>
+
+<h3>stdio Use Cases</h3>
+
+<p>stdio transport is ideal for:</p>
+
+<ul>
+    <li><strong>Local File System Access:</strong> Servers that read/write files on the user's machine</li>
+    <li><strong>Development Tools:</strong> Git integration, code analysis, build system interaction</li>
+    <li><strong>System Utilities:</strong> Process management, system information, local database access</li>
+    <li><strong>CLI Tool Wrappers:</strong> Exposing command-line tools to AI applications</li>
+</ul>
+
+<h2>SSE Transport: Remote Server Communication</h2>
+
+<p>The <strong>SSE (Server-Sent Events) transport</strong> enables MCP servers to be accessed over HTTP, allowing remote deployment and multi-client scenarios.</p>
+
+<h3>How SSE Transport Works</h3>
+
+<p>SSE transport uses a combination of HTTP technologies:</p>
+
+<ol>
+    <li>Server exposes an HTTP endpoint</li>
+    <li>Client establishes SSE connection for server-to-client messages</li>
+    <li>Client sends requests via HTTP POST</li>
+    <li>Server sends responses via the SSE connection</li>
+    <li>Connection remains open for bidirectional communication</li>
+</ol>
+
+<h3>SSE Transport Characteristics</h3>
+
+<table>
+    <tr>
+        <th>Characteristic</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Connection Model</td>
+        <td>Network-based: server can handle multiple clients</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Lifecycle</td>
+        <td>Server runs continuously, clients connect/disconnect</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Network Requirements</td>
+        <td>HTTP/HTTPS connectivity required</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Security Boundary</td>
+        <td>Network boundary - requires authentication</td>
+    </tr>
+</table>
+
+<h3>SSE Use Cases</h3>
+
+<p>SSE transport is ideal for:</p>
+
+<ul>
+    <li><strong>Shared Resources:</strong> Servers that multiple team members need to access</li>
+    <li><strong>Cloud Services:</strong> Integration with cloud APIs and services</li>
+    <li><strong>Enterprise Systems:</strong> Access to corporate databases, CRM, ERP systems</li>
+    <li><strong>Centralized Tools:</strong> Shared development tools, CI/CD systems</li>
+</ul>
+
+<h2>JSON-RPC 2.0 Message Format</h2>
+
+<p>Regardless of transport, MCP uses JSON-RPC 2.0 as its message format.</p>
+
+<h3>Request Message Structure</h3>
+
+<blockquote>
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "query_database",
+    "arguments": {
+      "sql": "SELECT * FROM users LIMIT 10"
+    }
+  }
+}
+</blockquote>
+
+<h3>Response Message Structure</h3>
+
+<blockquote>
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {"type": "text", "text": "Found 10 users..."}
+    ]
+  }
+}
+</blockquote>
+
+<h3>Error Response Structure</h3>
+
+<blockquote>
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32602,
+    "message": "Invalid parameters",
+    "data": {"details": "SQL query is required"}
+  }
+}
+</blockquote>
+
+<h2>Transport Selection Guidelines</h2>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Recommended Transport</th>
+        <th>Rationale</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Personal desktop tools</td>
+        <td>stdio</td>
+        <td>Simple, fast, no network configuration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Team collaboration</td>
+        <td>SSE</td>
+        <td>Multiple users need access</td>
+    </tr>
+    <tr>
+        <td class="rowheader">File system access</td>
+        <td>stdio</td>
+        <td>Local files, no network needed</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cloud API integration</td>
+        <td>SSE</td>
+        <td>Already network-based</td>
+    </tr>
+</table>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>stdio transport is for local, single-user scenarios with process-based communication</li>
+    <li>SSE transport is for remote, multi-user scenarios with HTTP-based communication</li>
+    <li>Both transports use JSON-RPC 2.0 message format</li>
+    <li>Transport choice affects security, performance, and deployment complexity</li>
+    <li>MCP SDKs abstract transport details, allowing focus on business logic</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

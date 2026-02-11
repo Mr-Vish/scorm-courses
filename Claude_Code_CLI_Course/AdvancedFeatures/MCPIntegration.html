@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>MCP Server Integration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>MCP Server Integration</h1>
+
+
+<h2>Model Context Protocol (MCP)</h2>
+<p>Claude Code supports <strong>MCP servers</strong> that extend its capabilities with custom tools and data sources. MCP is an open protocol that lets you connect Claude to external systems.</p>
+
+<h2>Adding MCP Servers</h2>
+<p>Configure MCP servers in your settings:</p>
+<div class="code-block">
+<pre><code>{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "your-token"
+      }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres"],
+      "env": {
+        "DATABASE_URL": "postgresql://..."
+      }
+    }
+  }
+}</code></pre>
+</div>
+
+<h2>Popular MCP Servers</h2>
+<ul>
+    <li><strong>GitHub:</strong> Create PRs, manage issues, search code across repos</li>
+    <li><strong>PostgreSQL/MySQL:</strong> Query databases, inspect schemas</li>
+    <li><strong>Filesystem:</strong> Extended file operations with permissions</li>
+    <li><strong>Brave Search:</strong> Web search capabilities</li>
+    <li><strong>Puppeteer:</strong> Browser automation and web scraping</li>
+</ul>
+
+<h2>Building Custom MCP Servers</h2>
+<p>You can build your own MCP servers using the SDK to expose any API, database, or service to Claude Code. Servers communicate via <strong>stdio</strong> or <strong>SSE</strong> transport.</p>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

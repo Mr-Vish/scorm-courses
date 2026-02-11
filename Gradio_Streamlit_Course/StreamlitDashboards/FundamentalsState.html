@@ -1,0 +1,378 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Streamlit Fundamentals and State Management</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Streamlit Fundamentals and State Management</h1>
+
+<h2>Introduction to Streamlit</h2>
+<p>Streamlit is a Python framework for building data-driven web applications. Unlike Gradio's function-based approach, Streamlit uses a script-based model where the entire script reruns on every interaction. This makes it powerful for complex dashboards but requires understanding state management.</p>
+
+<h2>Installation and Basic Structure</h2>
+<blockquote>
+# Install Streamlit
+pip install streamlit
+
+# Install additional packages for GenAI
+pip install openai anthropic langchain streamlit-chat
+
+# Create app.py
+import streamlit as st
+
+st.title("My First Streamlit App")
+st.write("Hello, World!")
+
+# Run the app
+# streamlit run app.py
+</blockquote>
+
+<h2>Core Streamlit Components</h2>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Function</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">st.title()</td>
+        <td>Display title text</td>
+        <td>App header</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.header()</td>
+        <td>Display header text</td>
+        <td>Section headers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.write()</td>
+        <td>Display any content</td>
+        <td>General output</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.markdown()</td>
+        <td>Display markdown</td>
+        <td>Formatted text</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.text_input()</td>
+        <td>Single-line text input</td>
+        <td>Short inputs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.text_area()</td>
+        <td>Multi-line text input</td>
+        <td>Prompts, long text</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.button()</td>
+        <td>Clickable button</td>
+        <td>Trigger actions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.selectbox()</td>
+        <td>Dropdown selection</td>
+        <td>Model selection</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.slider()</td>
+        <td>Numeric slider</td>
+        <td>Temperature, parameters</td>
+    </tr>
+    <tr>
+        <td class="rowheader">st.file_uploader()</td>
+        <td>File upload</td>
+        <td>Document processing</td>
+    </tr>
+</table>
+
+<h2>Understanding Streamlit's Execution Model</h2>
+<p>Streamlit reruns the entire script from top to bottom on every user interaction. This is fundamentally different from traditional web frameworks:</p>
+
+<blockquote>
+import streamlit as st
+
+# This runs every time the user interacts
+st.title("Counter Example")
+
+# Without state management, this resets to 0 every time
+counter = 0
+
+if st.button("Increment"):
+    counter += 1  # This won't work as expected!
+
+st.write(f"Counter: {counter}")  # Always shows 0
+</blockquote>
+
+<h2>Session State: The Key to Streamlit</h2>
+<p>Session state allows you to persist data across reruns:</p>
+
+<blockquote>
+import streamlit as st
+
+st.title("Counter with Session State")
+
+# Initialize session state
+if "counter" not in st.session_state:
+    st.session_state.counter = 0
+
+# Button to increment
+if st.button("Increment"):
+    st.session_state.counter += 1
+
+# Display counter
+st.write(f"Counter: {st.session_state.counter}")
+
+# Reset button
+if st.button("Reset"):
+    st.session_state.counter = 0
+</blockquote>
+
+<h2>Building a Text Generation Interface</h2>
+<blockquote>
+import streamlit as st
+from openai import OpenAI
+
+st.title("Text Generator")
+
+# Initialize OpenAI client
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+# Sidebar for parameters
+with st.sidebar:
+    st.header("Parameters")
+    model = st.selectbox(
+        "Model",
+        ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]
+    )
+    temperature = st.slider("Temperature", 0.0, 2.0, 0.7, 0.1)
+    max_tokens = st.slider("Max Tokens", 50, 2000, 500, 50)
+
+# Main area
+prompt = st.text_area(
+    "Enter your prompt",
+    placeholder="Write a story about...",
+    height=150
+)
+
+if st.button("Generate", type="primary"):
+    if prompt:
+        with st.spinner("Generating..."):
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=temperature,
+                    max_tokens=max_tokens
+                )
+                
+                result = response.choices[0].message.content
+                st.success("Generated!")
+                st.write(result)
+                
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+    else:
+        st.warning("Please enter a prompt")
+</blockquote>
+
+<h2>Chat Interface with Session State</h2>
+<blockquote>
+import streamlit as st
+from openai import OpenAI
+
+st.title("AI Chat Assistant")
+
+# Initialize OpenAI client
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+# Initialize chat history in session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Chat input
+if prompt := st.chat_input("What would you like to know?"):
+    # Add user message to history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    # Display user message
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    # Generate assistant response
+    with st.chat_message("assistant"):
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=st.session_state.messages
+        )
+        assistant_message = response.choices[0].message.content
+        st.markdown(assistant_message)
+    
+    # Add assistant message to history
+    st.session_state.messages.append(
+        {"role": "assistant", "content": assistant_message}
+    )
+</blockquote>
+
+<h2>Streaming Responses in Streamlit</h2>
+<blockquote>
+import streamlit as st
+from openai import OpenAI
+
+st.title("Streaming Chat")
+
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display existing messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Chat input
+if prompt := st.chat_input("Ask me anything"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    with st.chat_message("assistant"):
+        # Create streaming response
+        stream = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=st.session_state.messages,
+            stream=True
+        )
+        
+        # Use st.write_stream for automatic streaming display
+        response = st.write_stream(stream)
+    
+    st.session_state.messages.append(
+        {"role": "assistant", "content": response}
+    )
+</blockquote>
+
+<h2>Advanced State Management Patterns</h2>
+<blockquote>
+import streamlit as st
+
+# Initialize multiple state variables
+def initialize_state():
+    '''Initialize all session state variables.'''
+    if "initialized" not in st.session_state:
+        st.session_state.initialized = True
+        st.session_state.messages = []
+        st.session_state.model = "gpt-4o-mini"
+        st.session_state.temperature = 0.7
+        st.session_state.conversation_count = 0
+
+initialize_state()
+
+# Access state variables
+st.write(f"Conversations: {st.session_state.conversation_count}")
+
+# Update state
+if st.button("New Conversation"):
+    st.session_state.messages = []
+    st.session_state.conversation_count += 1
+    st.rerun()  # Force immediate rerun
+
+# Clear all state
+if st.button("Reset All"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
+</blockquote>
+
+<h2>Callbacks for State Updates</h2>
+<blockquote>
+import streamlit as st
+
+def update_model():
+    '''Callback function when model changes.'''
+    st.session_state.model_changed = True
+    st.session_state.messages = []  # Clear history on model change
+
+# Use callback with on_change
+model = st.selectbox(
+    "Select Model",
+    ["gpt-4o", "gpt-4o-mini"],
+    key="model",
+    on_change=update_model
+)
+
+if st.session_state.get("model_changed", False):
+    st.info(f"Switched to {model}. Chat history cleared.")
+    st.session_state.model_changed = False
+</blockquote>
+
+<h2>Caching for Performance</h2>
+<blockquote>
+import streamlit as st
+from openai import OpenAI
+
+@st.cache_resource
+def get_openai_client():
+    '''Cache the OpenAI client to avoid recreating it.'''
+    return OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+@st.cache_data(ttl=3600)  # Cache for 1 hour
+def load_embeddings(file_path):
+    '''Cache expensive operations like loading embeddings.'''
+    # Load and return embeddings
+    return embeddings
+
+# Use cached functions
+client = get_openai_client()
+embeddings = load_embeddings("data.pkl")
+</blockquote>
+
+<h2>Secrets Management</h2>
+<blockquote>
+# Create .streamlit/secrets.toml in your project directory
+# DO NOT commit this file to version control
+
+# secrets.toml
+OPENAI_API_KEY = "sk-..."
+ANTHROPIC_API_KEY = "sk-ant-..."
+
+[database]
+host = "localhost"
+port = 5432
+username = "user"
+password = "pass"
+
+# Access secrets in your app
+import streamlit as st
+
+api_key = st.secrets["OPENAI_API_KEY"]
+db_host = st.secrets["database"]["host"]
+</blockquote>
+
+<h2>Session State Best Practices</h2>
+<ul>
+    <li><strong>Initialize Early:</strong> Set up all state variables at the start of your script</li>
+    <li><strong>Use Descriptive Keys:</strong> Name state variables clearly (e.g., "chat_messages" not "msgs")</li>
+    <li><strong>Check Before Access:</strong> Always check if a key exists before accessing it</li>
+    <li><strong>Clear When Needed:</strong> Provide ways to reset state for new sessions</li>
+    <li><strong>Avoid Overuse:</strong> Don't store everything in state, only what needs to persist</li>
+    <li><strong>Use Callbacks:</strong> Leverage on_change callbacks for complex state updates</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

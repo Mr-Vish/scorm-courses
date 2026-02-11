@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Audit Trails and Explainability</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Audit Trails and Explainability</h1>
+
+
+<h2>Building Audit Trails for AI Systems</h2>
+<p>Regulators require evidence that AI systems are operating correctly, fairly, and within defined parameters. Comprehensive audit trails capture every decision point:</p>
+
+<h2>What to Log</h2>
+<table>
+    <tr><th>Data Point</th><th>Purpose</th><th>Retention</th></tr>
+    <tr><td>Input (redacted)</td><td>Reconstruct what the model received</td><td>Per regulation (3-7 years typical)</td></tr>
+    <tr><td>Model version</td><td>Know exactly which model produced the output</td><td>Match to input</td></tr>
+    <tr><td>Output</td><td>Reconstruct what the model produced</td><td>Per regulation</td></tr>
+    <tr><td>Confidence scores</td><td>Assess model certainty at time of decision</td><td>Per regulation</td></tr>
+    <tr><td>Human reviewer</td><td>Identify who approved the AI output</td><td>Per regulation</td></tr>
+    <tr><td>Override decisions</td><td>Track when humans disagreed with AI</td><td>Per regulation</td></tr>
+    <tr><td>Retrieval context</td><td>What documents the RAG system used</td><td>Per regulation</td></tr>
+</table>
+
+<h2>Audit Trail Implementation</h2>
+<div class="code-block">
+<pre><code>import datetime
+import uuid
+import json
+
+class AuditLogger:
+    '''Immutable audit logger for regulated AI systems.'''
+
+    def __init__(self, storage_backend):
+        self.storage = storage_backend
+
+    def log_ai_decision(
+        self,
+        input_text: str,
+        output_text: str,
+        model_id: str,
+        model_version: str,
+        confidence: float,
+        user_id: str,
+        decision_type: str,
+        sources: list[str] = None,
+    ) -&gt; str:
+        record = {
+            "id": str(uuid.uuid4()),
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "model_id": model_id,
+            "model_version": model_version,
+            "decision_type": decision_type,
+            "input_hash": self._hash(input_text),  # Hash for privacy
+            "output_text": output_text,
+            "confidence": confidence,
+            "user_id": user_id,
+            "sources": sources or [],
+            "human_reviewed": False,
+            "human_reviewer": None,
+            "human_override": None,
+        }
+        self.storage.append_only_write(record)
+        return record["id"]
+
+    def log_human_review(self, record_id: str, reviewer_id: str, approved: bool, override_text: str = None):
+        review = {
+            "record_id": record_id,
+            "reviewer_id": reviewer_id,
+            "approved": approved,
+            "override_text": override_text,
+            "reviewed_at": datetime.datetime.utcnow().isoformat(),
+        }
+        self.storage.append_only_write(review)</code></pre>
+</div>
+
+<h2>Explainability Techniques</h2>
+<table>
+    <tr><th>Technique</th><th>How It Works</th><th>Use Case</th></tr>
+    <tr><td>Source attribution</td><td>Show which documents the RAG system used</td><td>Justify answers with references</td></tr>
+    <tr><td>Chain-of-thought</td><td>Ask model to explain its reasoning</td><td>Show logical steps leading to output</td></tr>
+    <tr><td>Confidence scores</td><td>Report model certainty for each prediction</td><td>Flag low-confidence decisions for review</td></tr>
+    <tr><td>Counterfactual explanations</td><td>Show what would change the outcome</td><td>Explain denials: "If income were $X, the result would differ"</td></tr>
+    <tr><td>Feature importance</td><td>Highlight which input factors mattered most</td><td>Required for lending decisions (ECOA)</td></tr>
+</table>
+
+<h2>Compliance Architecture Pattern</h2>
+<div class="code-block">
+<pre><code># Regulated AI decision flow
+def make_regulated_decision(input_data, user_id):
+    # 1. Log the incoming request
+    request_id = audit.log_request(input_data, user_id)
+
+    # 2. Check PII and redact
+    clean_input = dlp_pipeline.scan_and_redact(input_data)
+
+    # 3. Run AI model with explainability
+    result = model.predict(clean_input, return_explanation=True)
+
+    # 4. Log the AI decision
+    decision_id = audit.log_ai_decision(
+        input_text=clean_input,
+        output_text=result.output,
+        model_id="intent-classifier",
+        model_version="v2.1.0",
+        confidence=result.confidence,
+        user_id=user_id,
+        sources=result.sources,
+    )
+
+    # 5. Route based on confidence
+    if result.confidence &lt; 0.85:
+        # Low confidence: require human review
+        queue_for_human_review(decision_id)
+        return {"status": "pending_review", "decision_id": decision_id}
+
+    return {"status": "approved", "result": result.output, "decision_id": decision_id}</code></pre>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li><strong>Design for audit from day one:</strong> Retrofitting audit trails is expensive and error-prone</li>
+    <li><strong>Immutable logging:</strong> Use append-only storage that cannot be modified after the fact</li>
+    <li><strong>Human-in-the-loop:</strong> Regulators expect human oversight for consequential decisions</li>
+    <li><strong>Model versioning:</strong> Track exactly which model version produced each output</li>
+    <li><strong>Engage legal early:</strong> Consult regulatory counsel before deploying AI in regulated contexts</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

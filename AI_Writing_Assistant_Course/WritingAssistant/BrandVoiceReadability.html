@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Brand Voice and Readability Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Brand Voice and Readability Optimization</h1>
+
+
+<h2>Encoding Brand Voice</h2>
+<p>A brand voice defines how an organization communicates. AI writing assistants can enforce brand voice consistency across all content by encoding voice guidelines into the system prompt:</p>
+
+<h2>Brand Voice Profile</h2>
+<div class="code-block">
+<pre><code># Define a brand voice profile
+BRAND_VOICE = {
+    "name": "TechCorp",
+    "personality": "Confident, approachable, innovative",
+    "tone": "Professional but not stuffy. Warm but not casual.",
+    "vocabulary": {
+        "use": ["build", "empower", "seamless", "intuitive", "scale"],
+        "avoid": ["synergy", "leverage", "disrupt", "paradigm shift", "bleeding edge"],
+    },
+    "grammar_rules": [
+        "Use active voice",
+        "Keep sentences under 25 words",
+        "Use second person (you/your) for user-facing content",
+        "Avoid exclamation marks in product documentation",
+        "Use Oxford comma",
+    ],
+    "examples": {
+        "good": "Build scalable APIs with our intuitive SDK.",
+        "bad": "Leverage our best-in-class synergistic platform to disrupt your workflow!",
+    },
+}
+
+def build_brand_voice_prompt(brand: dict) -&gt; str:
+    '''Convert a brand voice profile into a system prompt.'''
+    prompt = f"You write in the voice of {brand['name']}.
+"
+    prompt += f"Personality: {brand['personality']}
+"
+    prompt += f"Tone: {brand['tone']}
+"
+    prompt += "Vocabulary to use: " + ", ".join(brand["vocabulary"]["use"]) + "
+"
+    prompt += "Vocabulary to avoid: " + ", ".join(brand["vocabulary"]["avoid"]) + "
+"
+    prompt += "Grammar rules:
+"
+    for rule in brand["grammar_rules"]:
+        prompt += f"  - {rule}
+"
+    prompt += f"
+Good example: {brand['examples']['good']}
+"
+    prompt += f"Bad example: {brand['examples']['bad']}
+"
+    return prompt</code></pre>
+</div>
+
+<h2>Brand Voice Scoring</h2>
+<div class="code-block">
+<pre><code>def score_brand_voice(text: str, brand_profile: dict) -&gt; dict:
+    '''Score how well a text matches the brand voice.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": (
+                "You are a brand voice auditor. Score the text against "
+                "the brand guidelines on a 1-10 scale for each dimension."
+            )},
+            {"role": "user", "content": (
+                f"Brand guidelines:
+{json.dumps(brand_profile)}
+
+"
+                f"Text to score:
+{text}
+
+"
+                "Return JSON: {"overall_score": float, "dimensions": "
+                "{"tone": int, "vocabulary": int, "grammar": int, "clarity": int}, "
+                ""issues": [{"text": str, "issue": str, "suggestion": str}]}"
+            )},
+        ],
+    )
+    return json.loads(response.choices[0].message.content)</code></pre>
+</div>
+
+<h2>Content Optimization Pipeline</h2>
+<table>
+    <tr><th>Step</th><th>Action</th><th>Tool</th></tr>
+    <tr><td>1. Draft</td><td>Writer creates initial content</td><td>Any editor</td></tr>
+    <tr><td>2. Tone check</td><td>Detect and adjust tone to match brand</td><td>LLM tone analysis</td></tr>
+    <tr><td>3. Readability</td><td>Check reading level and simplify if needed</td><td>Flesch score + LLM rewrite</td></tr>
+    <tr><td>4. Brand voice</td><td>Score against brand guidelines, fix issues</td><td>LLM brand scoring</td></tr>
+    <tr><td>5. Inclusivity</td><td>Check for non-inclusive language</td><td>LLM + word lists</td></tr>
+    <tr><td>6. SEO</td><td>Optimize for search keywords if applicable</td><td>LLM keyword integration</td></tr>
+    <tr><td>7. Final review</td><td>Human editor approves</td><td>Human judgment</td></tr>
+</table>
+
+<h2>Multi-Channel Adaptation</h2>
+<div class="code-block">
+<pre><code>def adapt_for_channel(content: str, channel: str) -&gt; str:
+    '''Adapt content for different communication channels.'''
+    channel_guidelines = {
+        "twitter": "Under 280 characters. Punchy. Use relevant hashtags.",
+        "email": "Subject line + 3-5 short paragraphs. Clear CTA.",
+        "blog": "800-1200 words. Use headers. Include examples.",
+        "slack": "Brief. Use bullet points. Emoji OK for internal comms.",
+        "documentation": "Precise. Step-by-step. Code examples where relevant.",
+    }
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                f"Adapt the following content for {channel}. "
+                f"Guidelines: {channel_guidelines.get(channel, 'Standard format.')}"
+            )},
+            {"role": "user", "content": content},
+        ],
+    )
+    return response.choices[0].message.content</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Start with brand guidelines:</strong> Encode existing style guides into structured profiles before building AI tools</li>
+    <li><strong>A/B test variations:</strong> Generate multiple style variants and test which performs best with your audience</li>
+    <li><strong>Human final review:</strong> AI writing tools assist but do not replace human editorial judgment</li>
+    <li><strong>Feedback integration:</strong> Track which AI suggestions writers accept/reject to improve recommendations</li>
+    <li><strong>Version control:</strong> Maintain version history of brand voice profiles as they evolve</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

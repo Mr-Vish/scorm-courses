@@ -1,0 +1,515 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Quality Assurance and Governance</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Enterprise Implementation and Integration</h1>
+<h2>Part 2: Quality Assurance and Governance</h2>
+
+<h2>Quality Assurance Framework for AI-Generated Code</h2>
+
+<h3>Multi-Layer Quality Validation</h3>
+<p>AI-generated code requires comprehensive quality validation across multiple dimensions to ensure reliability, security, and maintainability in production environments.</p>
+
+<h4>Layer 1: Automated Static Analysis</h4>
+<p>Automated tools provide the first line of defense against code quality issues:</p>
+
+<ul>
+    <li><strong>Syntax and Compilation Checks:</strong>
+        <ul>
+            <li>Verify code compiles without errors</li>
+            <li>Validate syntax correctness for target language</li>
+            <li>Check for type safety and type consistency</li>
+            <li>Ensure proper import and dependency declarations</li>
+        </ul>
+    </li>
+    <li><strong>Code Style and Standards:</strong>
+        <ul>
+            <li>Enforce organizational coding conventions</li>
+            <li>Validate naming conventions (variables, functions, classes)</li>
+            <li>Check code formatting and indentation</li>
+            <li>Verify documentation completeness</li>
+        </ul>
+    </li>
+    <li><strong>Complexity Analysis:</strong>
+        <ul>
+            <li>Measure cyclomatic complexity</li>
+            <li>Identify overly complex functions requiring refactoring</li>
+            <li>Assess code maintainability index</li>
+            <li>Detect code duplication and redundancy</li>
+        </ul>
+    </li>
+    <li><strong>Security Scanning (SAST):</strong>
+        <ul>
+            <li>Identify common vulnerabilities (OWASP Top 10)</li>
+            <li>Detect insecure coding patterns</li>
+            <li>Check for hardcoded credentials or secrets</li>
+            <li>Validate input sanitization and output encoding</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Layer 2: Automated Testing</h4>
+<p>Comprehensive testing validates functional correctness and behavior:</p>
+
+<ul>
+    <li><strong>Unit Testing:</strong>
+        <ul>
+            <li>Test individual functions and methods in isolation</li>
+            <li>Validate happy path scenarios</li>
+            <li>Test edge cases and boundary conditions</li>
+            <li>Verify error handling and exception management</li>
+            <li>Achieve minimum 80% code coverage threshold</li>
+        </ul>
+    </li>
+    <li><strong>Integration Testing:</strong>
+        <ul>
+            <li>Test interactions between components</li>
+            <li>Validate API contracts and interfaces</li>
+            <li>Test database operations and data persistence</li>
+            <li>Verify external service integrations</li>
+        </ul>
+    </li>
+    <li><strong>Performance Testing:</strong>
+        <ul>
+            <li>Measure response times and latency</li>
+            <li>Assess resource utilization (CPU, memory)</li>
+            <li>Identify performance bottlenecks</li>
+            <li>Validate scalability characteristics</li>
+        </ul>
+    </li>
+    <li><strong>Security Testing:</strong>
+        <ul>
+            <li>Penetration testing for vulnerabilities</li>
+            <li>Authentication and authorization validation</li>
+            <li>Data encryption and protection verification</li>
+            <li>Compliance with security standards</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Layer 3: Human Code Review</h4>
+<p>Human expertise remains essential for comprehensive quality assurance:</p>
+
+<ul>
+    <li><strong>Logic and Correctness Review:</strong>
+        <ul>
+            <li>Verify code correctly implements requirements</li>
+            <li>Validate business logic and algorithms</li>
+            <li>Check for logical errors and edge cases</li>
+            <li>Ensure appropriate error handling</li>
+        </ul>
+    </li>
+    <li><strong>Architecture and Design Review:</strong>
+        <ul>
+            <li>Assess alignment with system architecture</li>
+            <li>Verify appropriate design patterns usage</li>
+            <li>Evaluate modularity and separation of concerns</li>
+            <li>Check for architectural anti-patterns</li>
+        </ul>
+    </li>
+    <li><strong>Security and Privacy Review:</strong>
+        <ul>
+            <li>Identify security vulnerabilities missed by automated tools</li>
+            <li>Verify data privacy and protection measures</li>
+            <li>Assess compliance with security policies</li>
+            <li>Review authentication and authorization logic</li>
+        </ul>
+    </li>
+    <li><strong>Maintainability Review:</strong>
+        <ul>
+            <li>Evaluate code readability and clarity</li>
+            <li>Assess documentation quality and completeness</li>
+            <li>Check for technical debt introduction</li>
+            <li>Verify testability and debuggability</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Quality Metrics and Thresholds</h3>
+
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Threshold</th>
+        <th>Action if Below Threshold</th>
+    </tr>
+    <tr>
+        <td>Code Coverage</td>
+        <td>≥ 80%</td>
+        <td>Generate additional tests or reject code</td>
+    </tr>
+    <tr>
+        <td>Cyclomatic Complexity</td>
+        <td>≤ 10 per function</td>
+        <td>Refactor to reduce complexity</td>
+    </tr>
+    <tr>
+        <td>Maintainability Index</td>
+        <td>≥ 65</td>
+        <td>Improve code structure and documentation</td>
+    </tr>
+    <tr>
+        <td>Security Vulnerabilities</td>
+        <td>0 critical, 0 high</td>
+        <td>Fix vulnerabilities before merge</td>
+    </tr>
+    <tr>
+        <td>Code Duplication</td>
+        <td>≤ 5%</td>
+        <td>Extract common code to reusable functions</td>
+    </tr>
+    <tr>
+        <td>Documentation Coverage</td>
+        <td>≥ 90% of public APIs</td>
+        <td>Add missing documentation</td>
+    </tr>
+</table>
+
+<h3>Continuous Quality Monitoring</h3>
+
+<ul>
+    <li><strong>Real-Time Quality Dashboards:</strong>
+        <ul>
+            <li>Track quality metrics across all AI-generated code</li>
+            <li>Monitor trends in code quality over time</li>
+            <li>Identify patterns in quality issues</li>
+            <li>Compare AI-generated vs human-written code quality</li>
+        </ul>
+    </li>
+    <li><strong>Automated Alerts:</strong>
+        <ul>
+            <li>Notify teams of quality threshold violations</li>
+            <li>Alert on security vulnerability detection</li>
+            <li>Flag significant quality degradation</li>
+            <li>Escalate critical issues to appropriate stakeholders</li>
+        </ul>
+    </li>
+    <li><strong>Quality Reports:</strong>
+        <ul>
+            <li>Weekly quality summary reports</li>
+            <li>Monthly trend analysis</li>
+            <li>Quarterly quality reviews</li>
+            <li>Annual quality assessment and improvement planning</li>
+        </ul>
+    </li>
+</ul>
+
+<h2>Governance Framework</h2>
+
+<h3>Policy and Standards</h3>
+
+<h4>AI Code Generation Usage Policy</h4>
+<p>Establish clear policies governing AI code generation usage:</p>
+
+<ul>
+    <li><strong>Approved Tools and Services:</strong>
+        <ul>
+            <li>List of authorized AI code generation tools</li>
+            <li>Approved use cases for each tool</li>
+            <li>Restrictions on unapproved tools</li>
+            <li>Process for evaluating and approving new tools</li>
+        </ul>
+    </li>
+    <li><strong>Data Handling Requirements:</strong>
+        <ul>
+            <li>Prohibition on sharing sensitive or proprietary code with external AI services</li>
+            <li>Requirements for data anonymization and sanitization</li>
+            <li>Restrictions on using AI tools with customer data</li>
+            <li>Compliance with data residency and sovereignty requirements</li>
+        </ul>
+    </li>
+    <li><strong>Code Review Requirements:</strong>
+        <ul>
+            <li>Mandatory human review for all AI-generated code</li>
+            <li>Specific review criteria for AI-generated code</li>
+            <li>Prohibition on auto-merging AI-generated code</li>
+            <li>Documentation requirements for AI-generated code</li>
+        </ul>
+    </li>
+    <li><strong>Quality Standards:</strong>
+        <ul>
+            <li>Minimum quality thresholds for AI-generated code</li>
+            <li>Testing requirements (unit, integration, security)</li>
+            <li>Documentation standards</li>
+            <li>Performance and scalability requirements</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Intellectual Property and Licensing</h4>
+
+<ul>
+    <li><strong>Code Ownership:</strong>
+        <ul>
+            <li>Clarify ownership of AI-generated code</li>
+            <li>Define rights and responsibilities</li>
+            <li>Address potential copyright issues</li>
+            <li>Establish attribution requirements</li>
+        </ul>
+    </li>
+    <li><strong>License Compliance:</strong>
+        <ul>
+            <li>Verify AI-generated code doesn't violate licenses</li>
+            <li>Check for copyrighted code reproduction</li>
+            <li>Ensure compatibility with project licenses</li>
+            <li>Maintain license compliance documentation</li>
+        </ul>
+    </li>
+    <li><strong>Third-Party Code:</strong>
+        <ul>
+            <li>Policies for AI-generated code using third-party libraries</li>
+            <li>Dependency review and approval processes</li>
+            <li>License compatibility verification</li>
+            <li>Security assessment of dependencies</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Roles and Responsibilities</h3>
+
+<h4>AI Code Generation Governance Committee</h4>
+<p>Establish a cross-functional committee to oversee AI code generation adoption:</p>
+
+<ul>
+    <li><strong>Composition:</strong>
+        <ul>
+            <li>Engineering leadership (CTO, VP Engineering)</li>
+            <li>Security and compliance representatives</li>
+            <li>Legal and intellectual property counsel</li>
+            <li>Developer representatives and champions</li>
+            <li>Quality assurance leadership</li>
+        </ul>
+    </li>
+    <li><strong>Responsibilities:</strong>
+        <ul>
+            <li>Define and update AI code generation policies</li>
+            <li>Approve new AI tools and services</li>
+            <li>Review quality and security metrics</li>
+            <li>Address escalated issues and concerns</li>
+            <li>Ensure compliance with regulations and standards</li>
+        </ul>
+    </li>
+    <li><strong>Meeting Cadence:</strong>
+        <ul>
+            <li>Monthly governance meetings</li>
+            <li>Quarterly strategic reviews</li>
+            <li>Ad-hoc meetings for urgent issues</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>AI Code Generation Champions</h4>
+<p>Designate champions to support adoption and best practices:</p>
+
+<ul>
+    <li><strong>Responsibilities:</strong>
+        <ul>
+            <li>Provide guidance and support to developers</li>
+            <li>Share best practices and lessons learned</li>
+            <li>Conduct training and workshops</li>
+            <li>Gather feedback and improvement suggestions</li>
+            <li>Advocate for AI code generation adoption</li>
+        </ul>
+    </li>
+    <li><strong>Selection Criteria:</strong>
+        <ul>
+            <li>Strong technical skills and credibility</li>
+            <li>Enthusiasm for AI code generation</li>
+            <li>Good communication and mentoring abilities</li>
+            <li>Availability to support other developers</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Compliance and Audit</h3>
+
+<h4>Regulatory Compliance</h4>
+<p>Ensure AI code generation practices comply with relevant regulations:</p>
+
+<ul>
+    <li><strong>Data Privacy Regulations:</strong>
+        <ul>
+            <li>GDPR compliance for European operations</li>
+            <li>CCPA compliance for California operations</li>
+            <li>HIPAA compliance for healthcare applications</li>
+            <li>Industry-specific data protection requirements</li>
+        </ul>
+    </li>
+    <li><strong>Security Standards:</strong>
+        <ul>
+            <li>ISO 27001 information security management</li>
+            <li>SOC 2 compliance for service organizations</li>
+            <li>PCI DSS for payment card processing</li>
+            <li>NIST cybersecurity framework alignment</li>
+        </ul>
+    </li>
+    <li><strong>Industry Regulations:</strong>
+        <ul>
+            <li>Financial services regulations (SOX, FINRA)</li>
+            <li>Healthcare regulations (FDA, HIPAA)</li>
+            <li>Government and defense standards (FedRAMP, ITAR)</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Audit and Monitoring</h4>
+
+<ul>
+    <li><strong>Usage Auditing:</strong>
+        <ul>
+            <li>Log all AI code generation interactions</li>
+            <li>Track which developers use which tools</li>
+            <li>Monitor frequency and patterns of usage</li>
+            <li>Identify potential policy violations</li>
+        </ul>
+    </li>
+    <li><strong>Code Auditing:</strong>
+        <ul>
+            <li>Track percentage of AI-generated code in codebase</li>
+            <li>Monitor quality metrics for AI-generated code</li>
+            <li>Identify security issues in AI-generated code</li>
+            <li>Assess compliance with coding standards</li>
+        </ul>
+    </li>
+    <li><strong>Compliance Auditing:</strong>
+        <ul>
+            <li>Regular compliance assessments</li>
+            <li>Third-party security audits</li>
+            <li>License compliance verification</li>
+            <li>Data privacy impact assessments</li>
+        </ul>
+    </li>
+</ul>
+
+<h2>Risk Management</h2>
+
+<h3>Risk Identification and Assessment</h3>
+
+<table>
+    <tr>
+        <th>Risk Category</th>
+        <th>Specific Risks</th>
+        <th>Likelihood</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td>Security</td>
+        <td>Introduction of vulnerabilities, data exposure</td>
+        <td>Medium</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td>Quality</td>
+        <td>Incorrect logic, bugs, performance issues</td>
+        <td>Medium</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td>Compliance</td>
+        <td>Regulatory violations, license issues</td>
+        <td>Low</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td>Intellectual Property</td>
+        <td>Copyright infringement, ownership disputes</td>
+        <td>Low</td>
+        <td>High</td>
+    </tr>
+    <tr>
+        <td>Dependency</td>
+        <td>Over-reliance on AI tools, vendor lock-in</td>
+        <td>Medium</td>
+        <td>Medium</td>
+    </tr>
+    <tr>
+        <td>Skills</td>
+        <td>Developer skill degradation, knowledge gaps</td>
+        <td>Medium</td>
+        <td>Medium</td>
+    </tr>
+</table>
+
+<h3>Risk Mitigation Strategies</h3>
+
+<ul>
+    <li><strong>Security Risks:</strong>
+        <ul>
+            <li>Mandatory security scanning of all AI-generated code</li>
+            <li>Security-focused code review by trained reviewers</li>
+            <li>Regular security training for developers</li>
+            <li>Penetration testing of applications with AI-generated code</li>
+        </ul>
+    </li>
+    <li><strong>Quality Risks:</strong>
+        <ul>
+            <li>Comprehensive automated testing requirements</li>
+            <li>Mandatory human code review</li>
+            <li>Quality metrics monitoring and enforcement</li>
+            <li>Continuous quality improvement processes</li>
+        </ul>
+    </li>
+    <li><strong>Compliance Risks:</strong>
+        <ul>
+            <li>Regular compliance assessments and audits</li>
+            <li>Legal review of AI tool terms of service</li>
+            <li>Data privacy impact assessments</li>
+            <li>Compliance training for developers</li>
+        </ul>
+    </li>
+    <li><strong>Intellectual Property Risks:</strong>
+        <ul>
+            <li>License compliance scanning tools</li>
+            <li>Code originality verification</li>
+            <li>Clear IP ownership policies</li>
+            <li>Legal counsel consultation for complex cases</li>
+        </ul>
+    </li>
+    <li><strong>Dependency Risks:</strong>
+        <ul>
+            <li>Multi-vendor strategy to avoid lock-in</li>
+            <li>Maintain core development skills without AI assistance</li>
+            <li>Regular evaluation of alternative tools</li>
+            <li>Contingency plans for tool unavailability</li>
+        </ul>
+    </li>
+    <li><strong>Skills Risks:</strong>
+        <ul>
+            <li>Continued investment in developer training and education</li>
+            <li>Encourage understanding of AI-generated code, not just acceptance</li>
+            <li>Maintain coding challenges and skill development programs</li>
+            <li>Balance AI assistance with manual coding practice</li>
+        </ul>
+    </li>
+</ul>
+
+<h2>Module 2 Summary</h2>
+<p>In this module, you have learned:</p>
+<ul>
+    <li>Enterprise AI code generation implementation requires structured assessment, planning, tool selection, and phased deployment</li>
+    <li>Tool evaluation should consider technical capabilities, security, compliance, and business factors</li>
+    <li>Pilot programs with 5-15 developers over 4-6 weeks provide valuable insights before full deployment</li>
+    <li>Integration with IDEs, version control, and CI/CD pipelines is essential for seamless adoption</li>
+    <li>Multiple integration patterns exist: AI-assisted development, specification-driven generation, refactoring, and test-driven development</li>
+    <li>Quality assurance requires multi-layer validation: automated static analysis, automated testing, and human code review</li>
+    <li>Governance frameworks must address policies, standards, roles, responsibilities, and compliance requirements</li>
+    <li>Risk management strategies are essential for security, quality, compliance, IP, dependency, and skills risks</li>
+    <li>Continuous monitoring, auditing, and improvement processes ensure sustained success</li>
+    <li>Success requires organizational commitment, proper training, and adherence to best practices</li>
+</ul>
+
+<p><strong>You are now ready to take Assessment 2 to validate your understanding of Enterprise Implementation and Integration.</strong></p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

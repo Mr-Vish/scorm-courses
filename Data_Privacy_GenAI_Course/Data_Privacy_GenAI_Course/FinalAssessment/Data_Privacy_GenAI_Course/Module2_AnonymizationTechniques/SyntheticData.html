@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Synthetic Data Generation for Testing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Synthetic Data Generation for Testing</h1>
+
+<h2>Why Synthetic Data?</h2>
+<p>Synthetic data provides realistic test data without exposing real PII, enabling:</p>
+<ul>
+    <li><strong>Safe testing:</strong> Test GenAI applications without privacy risks</li>
+    <li><strong>Demo environments:</strong> Showcase features with realistic but fake data</li>
+    <li><strong>Training datasets:</strong> Generate large volumes of training data</li>
+    <li><strong>Compliance:</strong> Avoid GDPR/HIPAA restrictions in non-production environments</li>
+    <li><strong>Data augmentation:</strong> Expand limited datasets for ML training</li>
+</ul>
+
+<h2>Using Faker for Synthetic PII</h2>
+<div class="code-block">
+<pre><code>from faker import Faker
+import random
+
+fake = Faker()
+
+# Generate individual PII elements
+print(f"Name: {fake.name()}")
+print(f"Email: {fake.email()}")
+print(f"Phone: {fake.phone_number()}")
+print(f"Address: {fake.address()}")
+print(f"SSN: {fake.ssn()}")
+print(f"Credit Card: {fake.credit_card_number()}")
+
+# Output:
+# Name: Jennifer Martinez
+# Email: michael.brown@example.org
+# Phone: (555) 123-4567
+# Address: 789 Elm Street, Springfield, IL 62701
+# SSN: 123-45-6789
+# Credit Card: 4532-1234-5678-9010
+</code></pre>
+</div>
+
+<h2>Generating Realistic Conversations</h2>
+<div class="code-block">
+<pre><code>class SyntheticConversationGenerator:
+    """Generate realistic customer service conversations"""
+    
+    def __init__(self, locale='en_US'):
+        self.fake = Faker(locale)
+    
+    def generate_customer_profile(self):
+        """Create a synthetic customer"""
+        return {
+            'name': self.fake.name(),
+            'email': self.fake.email(),
+            'phone': self.fake.phone_number(),
+            'address': self.fake.address(),
+            'account_number': f"ACC-{self.fake.random_number(digits=8)}",
+            'member_since': self.fake.date_between(start_date='-5y', end_date='today')
+        }
+    
+    def generate_support_conversation(self):
+        """Generate a customer support conversation"""
+        customer = self.generate_customer_profile()
+        
+        issues = [
+            "password reset",
+            "billing inquiry",
+            "account access",
+            "feature request",
+            "technical issue"
+        ]
+        
+        issue = random.choice(issues)
+        
+        conversation = f"""
+Customer: Hi, I'm {customer['name']}. I need help with {issue}.
+My email is {customer['email']} and account number is {customer['account_number']}.
+
+Agent: Hello {customer['name'].split()[0]}, I'd be happy to help you with {issue}.
+Let me pull up your account ending in {customer['account_number'][-4:]}.
+
+Customer: Thank you! You can reach me at {customer['phone']} if needed.
+
+Agent: Perfect, I've resolved the issue. Is there anything else I can help with?
+
+Customer: No, that's all. Thanks!
+"""
+        return conversation, customer
+
+# Generate 10 synthetic conversations
+generator = SyntheticConversationGenerator()
+
+for i in range(10):
+    conversation, profile = generator.generate_support_conversation()
+    print(f"--- Conversation {i+1} ---")
+    print(conversation)
+    print(f"Profile: {profile}")
+    print()
+</code></pre>
+</div>
+
+<h2>Domain-Specific Synthetic Data</h2>
+
+<h3>Healthcare Synthetic Data</h3>
+<div class="code-block">
+<pre><code>class HealthcareSyntheticData:
+    """Generate HIPAA-compliant synthetic medical data"""
+    
+    def __init__(self):
+        self.fake = Faker()
+        self.diagnoses = ['Type 2 Diabetes', 'Hypertension', 'Asthma', 'Migraine']
+        self.medications = ['Metformin', 'Lisinopril', 'Albuterol', 'Sumatriptan']
+    
+    def generate_patient_record(self):
+        """Create synthetic patient record"""
+        return {
+            'mrn': f"MRN-{self.fake.random_number(digits=6)}",
+            'name': self.fake.name(),
+            'dob': self.fake.date_of_birth(minimum_age=18, maximum_age=90),
+            'ssn': self.fake.ssn(),
+            'phone': self.fake.phone_number(),
+            'address': self.fake.address(),
+            'diagnosis': random.choice(self.diagnoses),
+            'medication': random.choice(self.medications),
+            'provider_npi': self.fake.random_number(digits=10),
+            'visit_date': self.fake.date_between(start_date='-1y', end_date='today')
+        }
+    
+    def generate_clinical_note(self):
+        """Generate synthetic clinical note"""
+        patient = self.generate_patient_record()
+        
+        note = f"""
+PATIENT: {patient['name']}
+MRN: {patient['mrn']}
+DOB: {patient['dob']}
+VISIT DATE: {patient['visit_date']}
+
+CHIEF COMPLAINT: Follow-up for {patient['diagnosis']}
+
+HISTORY: Patient is a {self._calculate_age(patient['dob'])}-year-old with history of {patient['diagnosis']}.
+Currently taking {patient['medication']}.
+
+ASSESSMENT: {patient['diagnosis']} - stable
+
+PLAN: Continue current medication. Follow-up in 3 months.
+
+Provider NPI: {patient['provider_npi']}
+"""
+        return note, patient
+    
+    def _calculate_age(self, dob):
+        from datetime import date
+        today = date.today()
+        return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+# Usage
+healthcare_gen = HealthcareSyntheticData()
+note, patient = healthcare_gen.generate_clinical_note()
+print(note)
+</code></pre>
+</div>
+
+<h3>Financial Synthetic Data</h3>
+<div class="code-block">
+<pre><code>class FinancialSyntheticData:
+    """Generate PCI-compliant synthetic financial data"""
+    
+    def __init__(self):
+        self.fake = Faker()
+    
+    def generate_transaction(self):
+        """Create synthetic transaction"""
+        return {
+            'transaction_id': f"TXN-{self.fake.random_number(digits=12)}",
+            'account_number': self.fake.credit_card_number(),
+            'amount': round(random.uniform(10, 1000), 2),
+            'merchant': self.fake.company(),
+            'timestamp': self.fake.date_time_between(start_date='-30d', end_date='now'),
+            'card_holder': self.fake.name(),
+            'billing_address': self.fake.address()
+        }
+    
+    def generate_account_statement(self, num_transactions=10):
+        """Generate synthetic account statement"""
+        account_holder = self.fake.name()
+        account_number = f"****-****-****-{self.fake.random_number(digits=4)}"
+        
+        statement = f"""
+ACCOUNT STATEMENT
+Account Holder: {account_holder}
+Account Number: {account_number}
+Statement Period: {self.fake.date_this_month()} to {self.fake.date_this_month()}
+
+TRANSACTIONS:
+"""
+        total = 0
+        for _ in range(num_transactions):
+            txn = self.generate_transaction()
+            statement += f"{txn['timestamp']}: {txn['merchant']} - ${txn['amount']:.2f}\n"
+            total += txn['amount']
+        
+        statement += f"\nTotal: ${total:.2f}"
+        return statement
+
+# Usage
+financial_gen = FinancialSyntheticData()
+statement = financial_gen.generate_account_statement(5)
+print(statement)
+</code></pre>
+</div>
+
+<h2>Preserving Statistical Properties</h2>
+<div class="code-block">
+<pre><code>import numpy as np
+from scipy import stats
+
+class StatisticallyAccurateSynthetic:
+    """Generate synthetic data matching original distribution"""
+    
+    def __init__(self, original_data):
+        """Learn distribution from original data"""
+        self.mean = np.mean(original_data)
+        self.std = np.std(original_data)
+        self.min = np.min(original_data)
+        self.max = np.max(original_data)
+    
+    def generate(self, n_samples):
+        """Generate synthetic data with same distribution"""
+        # Generate from normal distribution
+        synthetic = np.random.normal(self.mean, self.std, n_samples)
+        
+        # Clip to original range
+        synthetic = np.clip(synthetic, self.min, self.max)
+        
+        return synthetic
+
+# Example: Generate synthetic ages matching original distribution
+original_ages = [25, 30, 35, 40, 45, 28, 32, 38, 42, 29]
+generator = StatisticallyAccurateSynthetic(original_ages)
+
+synthetic_ages = generator.generate(100)
+print(f"Original mean: {np.mean(original_ages):.1f}")
+print(f"Synthetic mean: {np.mean(synthetic_ages):.1f}")
+print(f"Original std: {np.std(original_ages):.1f}")
+print(f"Synthetic std: {np.std(synthetic_ages):.1f}")
+</code></pre>
+</div>
+
+<h2>Replacing Real PII with Synthetic Data</h2>
+<div class="code-block">
+<pre><code>from presidio_anonymizer import AnonymizerEngine
+from presidio_anonymizer.entities import OperatorConfig
+
+class SyntheticReplacementEngine:
+    """Replace detected PII with synthetic equivalents"""
+    
+    def __init__(self):
+        self.anonymizer = AnonymizerEngine()
+        self.fake = Faker()
+    
+    def create_synthetic_operators(self):
+        """Define synthetic replacement operators"""
+        return {
+            "PERSON": OperatorConfig("replace", {"new_value": self.fake.name()}),
+            "EMAIL_ADDRESS": OperatorConfig("replace", {"new_value": self.fake.email()}),
+            "PHONE_NUMBER": OperatorConfig("replace", {"new_value": self.fake.phone_number()}),
+            "LOCATION": OperatorConfig("replace", {"new_value": self.fake.address()}),
+            "US_SSN": OperatorConfig("replace", {"new_value": self.fake.ssn()}),
+            "CREDIT_CARD": OperatorConfig("replace", {"new_value": self.fake.credit_card_number()}),
+            "DATE_TIME": OperatorConfig("replace", {"new_value": str(self.fake.date_this_year())}),
+        }
+    
+    def synthesize_text(self, text, analyzer_results):
+        """Replace all PII with synthetic data"""
+        operators = self.create_synthetic_operators()
+        
+        result = self.anonymizer.anonymize(
+            text=text,
+            analyzer_results=analyzer_results,
+            operators=operators
+        )
+        
+        return result.text
+
+# Usage
+text = """
+Patient John Smith (SSN: 123-45-6789) visited on 2024-01-15.
+Contact: john.smith@email.com, (555) 123-4567
+Address: 123 Main St, New York, NY 10001
+"""
+
+# Detect PII
+from presidio_analyzer import AnalyzerEngine
+analyzer = AnalyzerEngine()
+results = analyzer.analyze(text=text, language="en")
+
+# Replace with synthetic
+synthetic_engine = SyntheticReplacementEngine()
+synthetic_text = synthetic_engine.synthesize_text(text, results)
+
+print("Original:")
+print(text)
+print("\nSynthetic:")
+print(synthetic_text)
+</code></pre>
+</div>
+
+<h2>Limitations and Risks</h2>
+<ul>
+    <li><strong>Accidental real PII:</strong> Synthetic generators may randomly create real identifiers</li>
+    <li><strong>Loss of relationships:</strong> Synthetic data doesn't preserve real-world correlations</li>
+    <li><strong>Not for production:</strong> Should only be used in test/dev environments</li>
+    <li><strong>Quality varies:</strong> Synthetic data may not capture edge cases or rare patterns</li>
+    <li><strong>Validation needed:</strong> Always verify synthetic data doesn't match real records</li>
+</ul>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Use for testing only:</strong> Never use synthetic data in production systems</li>
+    <li><strong>Validate uniqueness:</strong> Check that synthetic IDs don't match real ones</li>
+    <li><strong>Preserve format:</strong> Maintain data formats for realistic testing</li>
+    <li><strong>Document clearly:</strong> Mark synthetic datasets to prevent confusion</li>
+    <li><strong>Regular refresh:</strong> Regenerate synthetic data periodically</li>
+    <li><strong>Match distributions:</strong> Ensure synthetic data reflects real statistical properties</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

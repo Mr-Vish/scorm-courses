@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 4: Multi-modal Integration</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 4: Integrating Vision with Tool Use and Reasoning</h1>
+
+<p>The true power of multi-modal AI is realized when vision is integrated with other capabilities like tool use (function calling), complex reasoning, and external search. This allows for the creation of "Agents" that can see the world, process information, and take actions based on what they perceive.</p>
+
+<h2>4.1 Vision + Tool Use: The "Visual Assistant"</h2>
+<p>Imagine an AI agent that can help a user with home repairs. The user takes a photo of a broken faucet. The agent analyzes the photo, identifies the make and model of the faucet, and then calls a tool to search for a repair manual or a replacement part.</p>
+<p><strong>Workflow:</strong></p>
+<ol>
+    <li><strong>Image Input:</strong> User sends a photo.</li>
+    <li><strong>Visual Analysis:</strong> Claude identifies: "This is a Moen single-handle kitchen faucet, model 7594."</li>
+    <li><strong>Tool Selection:</strong> Claude decides to use the <code>search_manual(model_number)</code> tool.</li>
+    <li><strong>Action:</strong> The tool returns the manual.</li>
+    <li><strong>Synthesis:</strong> Claude provides the user with step-by-step instructions from the manual, referencing the specific parts visible in the photo.</li>
+</ol>
+
+<h2>4.2 Multi-image Reasoning</h2>
+<p>Claude can process multiple images in a single conversation, allowing for comparison and "temporal" reasoning (understanding changes over time).</p>
+<ul>
+    <li><strong>Before and After:</strong> Comparing a construction site photo from last month to one from today to track progress.</li>
+    <li><strong>Multiple Angles:</strong> Analyzing photos of a product from different sides to create a complete 3D description.</li>
+    <li><strong>Step-by-Step Instructions:</strong> Showing Claude a series of images from a "how-to" guide and asking it to summarize the process.</li>
+</ul>
+
+<h2>4.3 Vision-based Document Q&amp;A (RAG with Images)</h2>
+<p>In many Retrieval-Augmented Generation (RAG) systems, information is stored as text. However, many documents (like manuals, textbooks, and reports) contain critical information in charts and diagrams. Multi-modal RAG involves:</p>
+<ol>
+    <li><strong>Document Ingestion:</strong> Parsing PDFs and extracting both text and images.</li>
+    <li><strong>Indexing:</strong> Using multi-modal embeddings or generating text descriptions of images for indexing.</li>
+    <li><strong>Retrieval:</strong> Finding the relevant page (text + image) based on a user query.</li>
+    <li><strong>Generation:</strong> Claude reads both the text and the chart on the page to provide an accurate answer.</li>
+</ol>
+
+<h2>4.4 Autonomous Navigation and UI Automation</h2>
+<p>By providing Claude with screenshots of a computer or mobile interface, it can act as a "User Interface Agent." It can "see" where buttons are, understand the state of a checkbox, and generate the necessary clicks or keystrokes to navigate a software application or a website. This has massive implications for automated testing and accessibility.</p>
+
+<p>Integrating vision into the broader AI ecosystem transforms it from a passive observer into an active participant in solving real-world problems.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

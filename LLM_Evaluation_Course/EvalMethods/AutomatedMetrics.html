@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Automated Metrics and LLM-as-Judge</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Automated Metrics and LLM-as-Judge</h1>
+
+
+<h2>Why Evaluate LLM Output?</h2>
+<p>Without evaluation, you cannot improve. Evaluation answers: Is the model performing well? Is version B better than version A? Did this prompt change help or hurt?</p>
+
+<h2>Automated Metrics</h2>
+<table>
+    <tr><th>Metric</th><th>Measures</th><th>Best For</th><th>Limitation</th></tr>
+    <tr><td>BLEU</td><td>N-gram overlap with reference</td><td>Translation</td><td>Does not capture meaning</td></tr>
+    <tr><td>ROUGE</td><td>Recall of reference n-grams</td><td>Summarization</td><td>Penalizes valid paraphrases</td></tr>
+    <tr><td>BERTScore</td><td>Semantic similarity via embeddings</td><td>General text quality</td><td>Requires reference text</td></tr>
+    <tr><td>Exact Match</td><td>Exact string match</td><td>Factual QA, extraction</td><td>Too strict for open-ended tasks</td></tr>
+    <tr><td>Pass@k</td><td>Code passes tests in k attempts</td><td>Code generation</td><td>Requires test cases</td></tr>
+</table>
+
+<h2>Standard Industry Benchmarks</h2>
+<p>Benchmarks provide a standardized baseline to compare different models across specific capabilities:</p>
+<ul>
+    <li><strong>MMLU (Massive Multitask Language Understanding):</strong> Evaluates general knowledge and problem-solving across 57 subjects (STEM, humanities, social sciences).</li>
+    <li><strong>GSM8K:</strong> A dataset of grade school math word problems that tests multi-step mathematical reasoning.</li>
+    <li><strong>HumanEval / MBPP:</strong> Benchmarks for evaluating code generation capabilities in Python and other languages.</li>
+    <li><strong>IFEval:</strong> Tests "Instruction Following" by checking if models follow strict formatting constraints (e.g., "no more than 400 words", "output in JSON").</li>
+</ul>
+
+<h2>Detecting Hallucinations</h2>
+<p>Hallucinations occur when a model generates factual errors or unverifiable claims. Automated detection strategies include:</p>
+<ul>
+    <li><strong>Self-Consistency:</strong> Generating multiple responses for the same query and checking for contradictions.</li>
+    <li><strong>NLI (Natural Language Inference):</strong> Treating the retrieved context as a "premise" and the model output as a "hypothesis" to check for entailment vs. contradiction.</li>
+    <li><strong>SelfCheckGPT:</strong> Using a second model call to verify specific facts within the initial response against a reference or through multiple sampling.</li>
+</ul>
+
+<div class="code-block">
+<pre><code># Example: Simple NLI-based Fact Verification
+def verify_faithfulness(context, answer):
+    prompt = f"Given the context: '{context}', is the statement '{answer}' supported? Answer YES or NO."
+    return call_llm(prompt)</code></pre>
+</div>
+
+<h2>LLM-as-Judge</h2>
+<p>Use a strong LLM (like Claude) to evaluate outputs from another model:</p>
+<div class="code-block">
+<pre><code>judge_prompt = (
+    f"Rate the following response on a scale of 1-5 for each criterion:
+"
+    f"- Accuracy, Completeness, Clarity, Relevance
+
+"
+    f"Question: {question}
+Response: {response}
+
+"
+    f"Provide scores as JSON."
+)
+
+scores = call_llm(judge_prompt, model="claude-sonnet-4-20250514")</code></pre>
+</div>
+
+<h2>Pairwise Comparison</h2>
+<p>Compare two responses head-to-head instead of scoring individually:</p>
+<div class="code-block">
+<pre><code>compare_prompt = (
+    f"Which response better answers the question?
+"
+    f"Question: {question}
+"
+    f"Response A: {response_a}
+Response B: {response_b}
+"
+    f"Choose: A, B, or Tie. Explain your reasoning."
+)</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

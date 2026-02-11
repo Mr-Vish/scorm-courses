@@ -1,0 +1,232 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Async Operations and Batch Processing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Async Operations and Batch Processing</h1>
+
+<h2>Asynchronous Extraction with Instructor</h2>
+<p>Modern applications require non-blocking operations to handle multiple requests efficiently. Instructor fully supports Python's async/await pattern, allowing you to process multiple extractions concurrently without blocking your application.</p>
+
+<h3>Basic Async Usage</h3>
+<div class="code-block">
+<pre><code>import instructor
+import asyncio
+from openai import AsyncOpenAI
+from pydantic import BaseModel
+
+# Patch the async client
+client = instructor.from_openai(AsyncOpenAI())
+
+class Product(BaseModel):
+    name: str
+    category: str
+    price: float
+    in_stock: bool
+
+async def extract_product(description: str) -> Product:
+    return await client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_model=Product,
+        messages=[{"role": "user", "content": description}],
+    )
+
+# Extract multiple products concurrently
+async def main():
+    descriptions = [
+        "iPhone 15 Pro smartphone for $999, currently available",
+        "Sony WH-1000XM5 headphones at $399, out of stock",
+        "MacBook Pro M3 laptop priced at $1999, in stock"
+    ]
+    
+    # Process all descriptions concurrently
+    products = await asyncio.gather(*[
+        extract_product(desc) for desc in descriptions
+    ])
+    
+    for product in products:
+        print(f"{product.name}: ${product.price} - {'Available' if product.in_stock else 'Out of Stock'}")
+
+asyncio.run(main())</code></pre>
+</div>
+
+<h2>Batch Processing Strategies</h2>
+<p>When processing large volumes of data, choosing the right batch processing strategy is crucial for performance and cost optimization.</p>
+
+<h3>Strategy Comparison</h3>
+<table>
+    <tr><th>Strategy</th><th>Use Case</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td>Sequential Processing</td><td>Simple, low-volume tasks</td><td>Easy to implement, predictable</td><td>Slow for large datasets</td></tr>
+    <tr><td>Concurrent Async</td><td>Medium-volume, I/O bound</td><td>Fast, efficient resource usage</td><td>Rate limiting concerns</td></tr>
+    <tr><td>Iterable Extraction</td><td>Multiple items in one prompt</td><td>Cost-effective, single API call</td><td>Limited by context window</td></tr>
+    <tr><td>Parallel with Queue</td><td>High-volume production</td><td>Scalable, fault-tolerant</td><td>Complex implementation</td></tr>
+</table>
+
+<h2>Iterable Extraction for Batch Data</h2>
+<p>Instead of making separate API calls for each item, use iterable extraction to process multiple items in a single request:</p>
+
+<div class="code-block">
+<pre><code>from typing import Iterable
+
+class Contact(BaseModel):
+    name: str
+    email: str
+    phone: str
+    company: str
+
+# Extract multiple contacts from a single text
+text = """
+Meeting notes:
+- John Smith (john@acme.com, 555-0123) from Acme Corp
+- Sarah Johnson (sarah@techco.com, 555-0456) from TechCo
+- Mike Davis (mike@startup.io, 555-0789) from Startup Inc
+"""
+
+contacts: Iterable[Contact] = client.chat.completions.create_iterable(
+    model="gpt-4o-mini",
+    response_model=Contact,
+    messages=[{"role": "user", "content": text}],
+)
+
+for contact in contacts:
+    print(f"{contact.name} - {contact.email} ({contact.company})")</code></pre>
+</div>
+
+<h2>Rate Limiting and Throttling</h2>
+<p>When processing large batches, respect API rate limits to avoid errors and service disruptions:</p>
+
+<div class="code-block">
+<pre><code>import asyncio
+from asyncio import Semaphore
+
+class RateLimitedExtractor:
+    def __init__(self, max_concurrent: int = 5, delay: float = 0.1):
+        self.semaphore = Semaphore(max_concurrent)
+        self.delay = delay
+    
+    async def extract_with_limit(self, description: str) -> Product:
+        async with self.semaphore:
+            result = await extract_product(description)
+            await asyncio.sleep(self.delay)  # Throttle requests
+            return result
+
+# Usage
+extractor = RateLimitedExtractor(max_concurrent=10)
+products = await asyncio.gather(*[
+    extractor.extract_with_limit(desc) for desc in descriptions
+])</code></pre>
+</div>
+
+<h2>Error Handling in Batch Operations</h2>
+<p>Robust batch processing requires handling failures gracefully without losing all progress:</p>
+
+<div class="code-block">
+<pre><code>async def safe_extract(description: str, index: int) -> tuple[int, Product | None]:
+    try:
+        product = await extract_product(description)
+        return (index, product)
+    except Exception as e:
+        print(f"Failed to extract item {index}: {e}")
+        return (index, None)
+
+# Process with error handling
+results = await asyncio.gather(*[
+    safe_extract(desc, i) for i, desc in enumerate(descriptions)
+], return_exceptions=True)
+
+# Separate successful and failed extractions
+successful = [(i, p) for i, p in results if p is not None]
+failed = [(i, p) for i, p in results if p is None]
+
+print(f"Successful: {len(successful)}, Failed: {len(failed)}")</code></pre>
+</div>
+
+<h2>Streaming with Async</h2>
+<p>Combine async operations with streaming for real-time batch processing:</p>
+
+<div class="code-block">
+<pre><code>async def stream_extract(description: str):
+    async for partial in client.chat.completions.create_partial(
+        model="gpt-4o-mini",
+        response_model=Product,
+        messages=[{"role": "user", "content": description}],
+    ):
+        # Update UI or database with partial results
+        yield partial
+
+# Process multiple streams concurrently
+async def process_streams():
+    tasks = [stream_extract(desc) for desc in descriptions]
+    
+    for task in asyncio.as_completed(tasks):
+        async for partial_product in await task:
+            print(f"Partial: {partial_product.name}")</code></pre>
+</div>
+
+<h2>Production Batch Processing Pattern</h2>
+<p>A complete pattern for production-grade batch processing:</p>
+
+<div class="code-block">
+<pre><code>from dataclasses import dataclass
+from typing import List, Optional
+
+@dataclass
+class BatchResult:
+    successful: List[Product]
+    failed: List[tuple[str, Exception]]
+    total_time: float
+
+class ProductionBatchProcessor:
+    def __init__(self, max_concurrent: int = 10, max_retries: int = 3):
+        self.max_concurrent = max_concurrent
+        self.max_retries = max_retries
+        self.semaphore = Semaphore(max_concurrent)
+    
+    async def process_batch(self, descriptions: List[str]) -> BatchResult:
+        start_time = asyncio.get_event_loop().time()
+        successful = []
+        failed = []
+        
+        async def process_with_retry(desc: str):
+            for attempt in range(self.max_retries):
+                try:
+                    async with self.semaphore:
+                        product = await extract_product(desc)
+                        successful.append(product)
+                        return
+                except Exception as e:
+                    if attempt == self.max_retries - 1:
+                        failed.append((desc, e))
+                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
+        
+        await asyncio.gather(*[process_with_retry(d) for d in descriptions])
+        
+        total_time = asyncio.get_event_loop().time() - start_time
+        return BatchResult(successful, failed, total_time)
+
+# Usage
+processor = ProductionBatchProcessor(max_concurrent=20)
+result = await processor.process_batch(large_description_list)
+print(f"Processed {len(result.successful)} items in {result.total_time:.2f}s")</code></pre>
+</div>
+
+<h2>Best Practices for Batch Processing</h2>
+<ul>
+    <li><strong>Chunk Large Datasets:</strong> Process data in manageable chunks (100-1000 items)</li>
+    <li><strong>Implement Checkpointing:</strong> Save progress periodically to resume after failures</li>
+    <li><strong>Monitor Token Usage:</strong> Track API costs and optimize batch sizes accordingly</li>
+    <li><strong>Use Connection Pooling:</strong> Reuse HTTP connections for better performance</li>
+    <li><strong>Log Failures:</strong> Maintain detailed logs for debugging and retry logic</li>
+    <li><strong>Graceful Degradation:</strong> Continue processing even if some items fail</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

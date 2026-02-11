@@ -1,0 +1,350 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Framework Comparison: Spring AI vs LangChain4j</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Framework Comparison: Spring AI vs LangChain4j</h1>
+
+<h2>Philosophy and Design</h2>
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Spring AI</th>
+        <th>LangChain4j</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Design Philosophy</td>
+        <td>Spring-native, convention over configuration</td>
+        <td>Framework-agnostic, explicit configuration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Integration</td>
+        <td>Deep Spring Boot integration</td>
+        <td>Works with any Java framework</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Configuration</td>
+        <td>Auto-configuration via starters</td>
+        <td>Manual or Spring Boot starter</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Learning Curve</td>
+        <td>Easy for Spring developers</td>
+        <td>Moderate, LangChain concepts</td>
+    </tr>
+</table>
+
+<h2>Model Support Comparison</h2>
+<table>
+    <tr>
+        <th>Provider</th>
+        <th>Spring AI</th>
+        <th>LangChain4j</th>
+    </tr>
+    <tr>
+        <td class="rowheader">OpenAI</td>
+        <td>✓ Full support</td>
+        <td>✓ Full support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Anthropic</td>
+        <td>✓ Full support</td>
+        <td>✓ Full support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Azure OpenAI</td>
+        <td>✓ Full support</td>
+        <td>✓ Full support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">AWS Bedrock</td>
+        <td>✓ Full support</td>
+        <td>✓ Full support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Google Vertex AI</td>
+        <td>✓ Full support</td>
+        <td>✓ Full support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Ollama</td>
+        <td>✓ Full support</td>
+        <td>✓ Full support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hugging Face</td>
+        <td>Limited</td>
+        <td>✓ Full support</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Mistral AI</td>
+        <td>Limited</td>
+        <td>✓ Full support</td>
+    </tr>
+</table>
+
+<h2>API Style Comparison</h2>
+
+<h3>Spring AI Approach</h3>
+<div class="code-block">
+<pre><code>@RestController
+public class SpringAIController {
+    
+    private final ChatClient chatClient;
+    
+    public SpringAIController(ChatClient.Builder builder) {
+        this.chatClient = builder
+            .defaultSystem("You are a helpful assistant")
+            .build();
+    }
+    
+    @PostMapping("/chat")
+    public String chat(@RequestBody String message) {
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .content();
+    }
+}
+</code></pre>
+</div>
+
+<h3>LangChain4j Approach</h3>
+<div class="code-block">
+<pre><code>public interface Assistant {
+    String chat(String message);
+}
+
+@RestController
+public class LangChain4jController {
+    
+    private final Assistant assistant;
+    
+    public LangChain4jController() {
+        ChatLanguageModel model = OpenAiChatModel.builder()
+            .apiKey(System.getenv("OPENAI_API_KEY"))
+            .build();
+        
+        this.assistant = AiServices.create(Assistant.class, model);
+    }
+    
+    @PostMapping("/chat")
+    public String chat(@RequestBody String message) {
+        return assistant.chat(message);
+    }
+}
+</code></pre>
+</div>
+
+<h2>RAG Implementation Comparison</h2>
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Spring AI</th>
+        <th>LangChain4j</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Document Loading</td>
+        <td>DocumentReader interface</td>
+        <td>DocumentLoader interface</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Text Splitting</td>
+        <td>TokenTextSplitter</td>
+        <td>DocumentSplitter</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vector Stores</td>
+        <td>PgVector, Chroma, Pinecone, Weaviate</td>
+        <td>PgVector, Chroma, Pinecone, Weaviate, Qdrant</td>
+    </tr>
+    <tr>
+        <td class="rowheader">RAG Abstraction</td>
+        <td>QuestionAnswerAdvisor</td>
+        <td>EasyRAG module</td>
+    </tr>
+</table>
+
+<h2>Function Calling Comparison</h2>
+
+<h3>Spring AI</h3>
+<div class="code-block">
+<pre><code>@Component
+public class WeatherService {
+    
+    @Tool(description = "Get weather for a city")
+    public String getWeather(String city) {
+        return "Weather in " + city;
+    }
+}
+
+// Auto-registered via Spring
+ChatClient chatClient = builder
+    .defaultFunctions("getWeather")
+    .build();
+</code></pre>
+</div>
+
+<h3>LangChain4j</h3>
+<div class="code-block">
+<pre><code>public class WeatherTools {
+    
+    @Tool("Get weather for a city")
+    public String getWeather(String city) {
+        return "Weather in " + city;
+    }
+}
+
+// Explicit registration
+Assistant assistant = AiServices.builder(Assistant.class)
+    .chatLanguageModel(model)
+    .tools(new WeatherTools())
+    .build();
+</code></pre>
+</div>
+
+<h2>When to Choose Spring AI</h2>
+<ul>
+    <li><strong>Existing Spring Boot Applications:</strong> Seamless integration with Spring ecosystem</li>
+    <li><strong>Convention Over Configuration:</strong> Prefer auto-configuration and minimal setup</li>
+    <li><strong>Spring Expertise:</strong> Team is already familiar with Spring patterns</li>
+    <li><strong>Enterprise Features:</strong> Need Spring Security, Actuator, Cloud integration</li>
+    <li><strong>Rapid Development:</strong> Want to get started quickly with minimal boilerplate</li>
+</ul>
+
+<h2>When to Choose LangChain4j</h2>
+<ul>
+    <li><strong>Framework Flexibility:</strong> Not tied to Spring or want to use other frameworks</li>
+    <li><strong>LangChain Familiarity:</strong> Team knows LangChain patterns from Python</li>
+    <li><strong>Advanced Patterns:</strong> Need complex chains, agents, or custom workflows</li>
+    <li><strong>Model Variety:</strong> Require support for more niche model providers</li>
+    <li><strong>Explicit Control:</strong> Prefer explicit configuration over auto-configuration</li>
+</ul>
+
+<h2>Performance Considerations</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Spring AI</th>
+        <th>LangChain4j</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Startup Time</td>
+        <td>Slightly slower (Spring context)</td>
+        <td>Faster (minimal overhead)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Runtime Performance</td>
+        <td>Comparable</td>
+        <td>Comparable</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Memory Footprint</td>
+        <td>Higher (Spring framework)</td>
+        <td>Lower (minimal dependencies)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Scalability</td>
+        <td>Excellent (Spring Cloud)</td>
+        <td>Excellent (framework-agnostic)</td>
+    </tr>
+</table>
+
+<h2>Community and Ecosystem</h2>
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Spring AI</th>
+        <th>LangChain4j</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Maturity</td>
+        <td>Newer (2023)</td>
+        <td>More mature (2023, based on LangChain)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Documentation</td>
+        <td>Growing, Spring-style docs</td>
+        <td>Comprehensive, examples-focused</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Community</td>
+        <td>Spring community backing</td>
+        <td>Active, growing community</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Updates</td>
+        <td>Regular Spring release cycle</td>
+        <td>Frequent updates</td>
+    </tr>
+</table>
+
+<h2>Migration Considerations</h2>
+<p>Both frameworks can coexist in the same application:</p>
+
+<div class="code-block">
+<pre><code>@Configuration
+public class HybridAIConfig {
+    
+    // Spring AI for main application
+    @Bean
+    @Primary
+    public ChatClient springAIChatClient(ChatClient.Builder builder) {
+        return builder.build();
+    }
+    
+    // LangChain4j for specific use cases
+    @Bean
+    public Assistant langChain4jAssistant() {
+        ChatLanguageModel model = OpenAiChatModel.builder()
+            .apiKey(System.getenv("OPENAI_API_KEY"))
+            .build();
+        return AiServices.create(Assistant.class, model);
+    }
+}
+</code></pre>
+</div>
+
+<h2>Decision Matrix</h2>
+<table>
+    <tr>
+        <th>Requirement</th>
+        <th>Recommended Framework</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Spring Boot microservices</td>
+        <td>Spring AI</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Quarkus or Micronaut</td>
+        <td>LangChain4j</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Simple chat applications</td>
+        <td>Either (preference-based)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Complex agent workflows</td>
+        <td>LangChain4j</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Enterprise Spring applications</td>
+        <td>Spring AI</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Standalone Java applications</td>
+        <td>LangChain4j</td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

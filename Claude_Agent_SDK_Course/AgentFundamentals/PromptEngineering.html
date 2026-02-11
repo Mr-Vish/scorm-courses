@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Engineering for Agents</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Engineering for Agents</h1>
+
+<h2>Lesson Objectives</h2>
+<p>In this lesson, you will:</p>
+<ul>
+    <li>Learn prompt engineering techniques specific to agent systems</li>
+    <li>Understand how to craft effective system prompts for agents</li>
+    <li>Explore strategies for guiding agent behavior and decision-making</li>
+    <li>Learn how to handle common agent prompt challenges</li>
+</ul>
+
+<h2>Why Agent Prompts Are Different</h2>
+<p>Agent prompts differ from standard LLM prompts because they must:</p>
+
+<ul>
+    <li>Guide multi-step reasoning and planning</li>
+    <li>Instruct when and how to use tools</li>
+    <li>Define decision-making criteria</li>
+    <li>Establish error handling strategies</li>
+    <li>Set boundaries and constraints</li>
+    <li>Maintain consistency across multiple turns</li>
+</ul>
+
+<h2>System Prompt Structure for Agents</h2>
+
+<h3>1. Role and Identity</h3>
+<p>Define who the agent is and its core purpose:</p>
+
+<blockquote>
+You are a customer support agent for TechCorp. Your role is to help customers resolve technical issues, answer product questions, and process returns or exchanges when necessary.
+</blockquote>
+
+<h3>2. Capabilities and Tools</h3>
+<p>Explain what the agent can do and when to use each tool:</p>
+
+<blockquote>
+You have access to the following tools:
+- search_knowledge_base: Use this to find answers to technical questions
+- get_order_status: Use this to check the status of customer orders
+- process_refund: Use this only after confirming the issue warrants a refund
+
+Always search the knowledge base before escalating to a human agent.
+</blockquote>
+
+<h3>3. Constraints and Boundaries</h3>
+<p>Set clear limits on what the agent should and shouldn't do:</p>
+
+<blockquote>
+Constraints:
+- Never process refunds over $500 without manager approval
+- Do not share customer data with unauthorized parties
+- Escalate to human agent if customer is angry or issue is complex
+- Always verify customer identity before accessing account information
+</blockquote>
+
+<h3>4. Reasoning and Decision-Making</h3>
+<p>Guide how the agent should think through problems:</p>
+
+<blockquote>
+When handling a customer issue:
+1. First, understand the problem by asking clarifying questions
+2. Search the knowledge base for relevant solutions
+3. If a solution is found, explain it clearly to the customer
+4. If no solution exists, escalate to a human agent
+5. Always confirm the issue is resolved before ending the conversation
+</blockquote>
+
+<h3>5. Tone and Communication Style</h3>
+<p>Define how the agent should communicate:</p>
+
+<blockquote>
+Communication style:
+- Be friendly, professional, and empathetic
+- Use clear, simple language avoiding technical jargon
+- Acknowledge customer frustration and apologize for issues
+- Provide specific, actionable solutions
+- End conversations by asking if there's anything else you can help with
+</blockquote>
+
+<h2>Prompt Engineering Techniques for Agents</h2>
+
+<h3>Chain-of-Thought Prompting</h3>
+<p>Encourage the agent to think step-by-step:</p>
+
+<blockquote>
+Before taking any action, think through:
+1. What information do I have?
+2. What information do I need?
+3. Which tool should I use to get that information?
+4. What will I do with the result?
+</blockquote>
+
+<h3>Few-Shot Examples</h3>
+<p>Provide examples of desired behavior:</p>
+
+<blockquote>
+Example interaction:
+User: "My order hasn't arrived"
+Agent: Let me check that for you. First, I'll need your order number.
+User: "ORDER-12345"
+Agent: [uses get_order_status tool]
+Agent: I see your order is currently in transit and expected to arrive tomorrow. Would you like me to send you tracking information?
+</blockquote>
+
+<h3>Conditional Logic</h3>
+<p>Define decision trees for common scenarios:</p>
+
+<blockquote>
+If the customer reports a defective product:
+- If within 30 days of purchase: offer full refund or replacement
+- If 31-90 days: offer replacement only
+- If over 90 days: check warranty status
+- If no warranty: offer discount on new purchase
+</blockquote>
+
+<h3>Error Recovery Instructions</h3>
+<p>Guide the agent on handling failures:</p>
+
+<blockquote>
+If a tool call fails:
+1. Inform the user there was a temporary issue
+2. Try the tool call one more time
+3. If it fails again, apologize and escalate to a human agent
+4. Never expose technical error messages to the user
+</blockquote>
+
+<h2>Common Agent Prompt Patterns</h2>
+
+<h3>Research Agent Pattern</h3>
+<blockquote>
+You are a research assistant. When given a research question:
+1. Break it down into searchable sub-questions
+2. Search for information on each sub-question
+3. Synthesize findings into a coherent answer
+4. Cite sources for all claims
+5. Acknowledge limitations or gaps in available information
+</blockquote>
+
+<h3>Task Automation Pattern</h3>
+<blockquote>
+You are a workflow automation agent. When given a task:
+1. Confirm you understand the task requirements
+2. Plan the sequence of steps needed
+3. Execute each step, checking results before proceeding
+4. Handle errors gracefully by trying alternative approaches
+5. Provide a summary of what was accomplished
+</blockquote>
+
+<h3>Data Analysis Pattern</h3>
+<blockquote>
+You are a data analysis agent. When analyzing data:
+1. First, understand what question needs to be answered
+2. Query the database to get relevant data
+3. Perform appropriate statistical analysis
+4. Generate visualizations if helpful
+5. Interpret results in plain language
+6. Highlight key insights and recommendations
+</blockquote>
+
+<h2>Prompt Optimization Strategies</h2>
+
+<h3>Be Specific and Explicit</h3>
+<p><strong>Weak:</strong> "Be helpful to customers"</p>
+<p><strong>Strong:</strong> "Resolve customer issues within 3 tool calls when possible. If unable to resolve, escalate to human agent with a summary of steps taken."</p>
+
+<h3>Use Structured Formats</h3>
+<p>Organize prompts with clear sections, bullet points, and numbering to improve comprehension.</p>
+
+<h3>Test and Iterate</h3>
+<p>Evaluate agent behavior with real scenarios and refine prompts based on results.</p>
+
+<h3>Balance Flexibility and Control</h3>
+<p>Provide enough guidance without being overly prescriptive. Allow the agent to adapt to unexpected situations.</p>
+
+<h2>Handling Edge Cases in Prompts</h2>
+
+<h3>Ambiguous Requests</h3>
+<blockquote>
+If the user's request is unclear:
+- Ask specific clarifying questions
+- Don't make assumptions
+- Offer examples of what you can help with
+</blockquote>
+
+<h3>Out-of-Scope Requests</h3>
+<blockquote>
+If asked to do something outside your capabilities:
+- Politely explain what you cannot do
+- Suggest alternatives within your scope
+- Offer to connect the user with appropriate resources
+</blockquote>
+
+<h3>Conflicting Instructions</h3>
+<blockquote>
+If user instructions conflict with your constraints:
+- Prioritize safety and policy compliance
+- Explain why you cannot fulfill the request
+- Offer compliant alternatives
+</blockquote>
+
+<h2>Prompt Maintenance and Versioning</h2>
+
+<ul>
+    <li><strong>Version Control:</strong> Track changes to system prompts over time</li>
+    <li><strong>A/B Testing:</strong> Compare different prompt versions to measure effectiveness</li>
+    <li><strong>Feedback Integration:</strong> Update prompts based on agent performance and user feedback</li>
+    <li><strong>Documentation:</strong> Maintain clear documentation of prompt design decisions</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Agent prompts must guide multi-step reasoning, tool use, and decision-making</li>
+    <li>Effective system prompts include role definition, capabilities, constraints, reasoning guidance, and communication style</li>
+    <li>Chain-of-thought, few-shot examples, and conditional logic improve agent behavior</li>
+    <li>Prompts should be specific, structured, and tested iteratively</li>
+    <li>Handle edge cases explicitly to ensure robust agent behavior</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

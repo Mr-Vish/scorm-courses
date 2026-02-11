@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>4.4 Security Logging and Monitoring</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>4.4 Security Logging and Monitoring Failures</h1>
+
+<p>Insufficient logging and monitoring is a critical weakness that allows attackers to maintain their presence in a system for extended periods without being detected. Without effective logging and real-time monitoring, an organization may only become aware of a breach long after sensitive data has been exfiltrated.</p>
+
+<h2>What Should Be Logged?</h2>
+<p>A robust security logging strategy should capture events that indicate potential malicious activity:</p>
+<ul>
+    <li><strong>Authentication Events:</strong> Successful and failed login attempts, password changes, and multi-factor authentication successes or failures.</li>
+    <li><strong>Access Control Failures:</strong> Attempts by users to access resources they are not authorized for (e.g., HTTP 403 Forbidden).</li>
+    <li><strong>Input Validation Failures:</strong> Logs of rejected malicious payloads (e.g., SQL injection attempts blocked by a WAF).</li>
+    <li><strong>Administrative Actions:</strong> Changes to system configurations, user permissions, or security policies.</li>
+    <li><strong>Significant Errors:</strong> System crashes, unexpected exceptions, or service failures.</li>
+</ul>
+
+<h2>Logging Best Practices</h2>
+<ul>
+    <li><strong>Centralized Logging:</strong> Store logs in a dedicated, secure server that is separate from the application servers. This prevents attackers from deleting logs to hide their tracks.</li>
+    <li><strong>Standardized Format:</strong> Use a common format like JSON or Syslog to make it easier for automated tools (like SIEMs) to parse and analyze the data.</li>
+    <li><strong>Avoid Logging Sensitive Data:</strong> Never log passwords, session tokens, personally identifiable information (PII), or full credit card numbers.</li>
+    <li><strong>Log Integrity:</strong> Use digital signatures or write-once storage to ensure that logs cannot be tampered with.</li>
+</ul>
+
+<h2>Hands-on Example: Implementing Logging (Java Spring Boot)</h2>
+<p>Using a logging framework like SLF4J with Logback in Spring Boot:</p>
+<pre>
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class LoginController {
+    private static final Logger logger = LoggerFactory.getLogger(LoginController.class);
+
+    @PostMapping("/login")
+    public String login(@RequestParam String username, @RequestParam String password) {
+        if (isValidUser(username, password)) {
+            logger.info("Successful login for user: {}", username);
+            return "Login success";
+        } else {
+            // SECURITY LOGGING: Log the failed attempt with relevant context
+            logger.warn("FAILED login attempt for user: {} from IP: {}", username, getClientIP());
+            return "Login failed";
+        }
+    }
+
+    // ... helper methods
+}
+</pre>
+
+<h2>Monitoring and Alerting</h2>
+<p>Logging is only useful if it is actively monitored. Organizations should implement:</p>
+<ul>
+    <li><strong>Real-time Alerting:</strong> Configure alerts for critical events, such as a high frequency of failed logins from a single IP or a sudden spike in data exfiltration.</li>
+    <li><strong>SIEM (Security Information and Event Management):</strong> Use a SIEM platform (e.g., Splunk, ELK Stack, Azure Sentinel) to aggregate logs from multiple sources and perform complex correlation analysis.</li>
+    <li><strong>Incident Response Plan:</strong> Ensure there is a clear process for what to do when an alert is triggered.</li>
+</ul>
+
+<p>Effective logging and monitoring don't just help in responding to breaches—they also serve as a deterrent and provide invaluable data for forensic investigations.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

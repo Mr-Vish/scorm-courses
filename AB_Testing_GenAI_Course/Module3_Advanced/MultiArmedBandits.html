@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 3: Advanced Techniques - Multi-Armed Bandits and Adaptive Experimentation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Advanced Techniques and Best Practices</h1>
+<h2>Multi-Armed Bandits and Adaptive Experimentation</h2>
+
+<h2>Module Objectives</h2>
+<p>In this module, you will learn to:</p>
+<ul>
+    <li>Understand multi-armed bandit algorithms for adaptive experimentation</li>
+    <li>Implement guardrail metrics to prevent negative outcomes</li>
+    <li>Design production deployment strategies for GenAI experiments</li>
+    <li>Apply best practices for experiment documentation and decision-making</li>
+    <li>Balance exploration and exploitation in online learning systems</li>
+</ul>
+
+<h2>Limitations of Traditional A/B Testing</h2>
+
+<p>Traditional A/B testing follows a fixed-horizon approach: allocate traffic equally, wait for statistical significance, then choose the winner. While this methodology is statistically rigorous, it has significant limitations for GenAI applications:</p>
+
+<ul>
+    <li><strong>Regret Accumulation:</strong> If treatment is clearly superior after 1,000 users, traditional A/B testing continues sending 50% of users to the inferior control for the remaining 9,000 users</li>
+    <li><strong>Slow Adaptation:</strong> Cannot dynamically adjust to emerging patterns or changing user preferences</li>
+    <li><strong>Binary Outcomes:</strong> Produces a single winner, discarding information about when each variant performs best</li>
+    <li><strong>Fixed Duration:</strong> Requires waiting for predetermined sample size even when results are conclusive</li>
+</ul>
+
+<p>Multi-armed bandit (MAB) algorithms address these limitations by adaptively allocating more traffic to better-performing variants while continuing to explore alternatives.</p>
+
+<h2>Multi-Armed Bandit Framework</h2>
+
+<p>The multi-armed bandit problem is named after slot machines (one-armed bandits) in casinos. Imagine you face multiple slot machines, each with unknown payout rates. Your goal is to maximize total winnings by balancing:</p>
+
+<ul>
+    <li><strong>Exploitation:</strong> Playing the machine that currently appears best</li>
+    <li><strong>Exploration:</strong> Trying other machines to discover if they're actually better</li>
+</ul>
+
+<p>In GenAI experimentation, each "arm" represents a variant (e.g., different models, prompts, or configurations), and the "reward" is your success metric (e.g., user satisfaction, task completion).</p>
+
+<h3>Key Advantages for GenAI</h3>
+<ul>
+    <li>Automatically shifts traffic toward better-performing models</li>
+    <li>Reduces exposure to inferior variants</li>
+    <li>Adapts to changing conditions (e.g., model updates, shifting user preferences)</li>
+    <li>Provides continuous optimization rather than one-time decisions</li>
+</ul>
+
+<h2>Epsilon-Greedy Algorithm</h2>
+
+<p>The simplest MAB algorithm: with probability ε, explore randomly; otherwise, exploit the current best variant.</p>
+
+<div class="code-block">
+<pre><code>import random
+import numpy as np
+
+class EpsilonGreedy:
+    """Epsilon-greedy multi-armed bandit algorithm."""
+    
+    def __init__(self, n_variants, epsilon=0.1):
+        self.n_variants = n_variants
+        self.epsilon = epsilon
+        self.counts = np.zeros(n_variants)  # Number of times each variant was selected
+        self.values = np.zeros(n_variants)  # Average reward for each variant
+    
+    def select_variant(self):
+        """Select a variant using epsilon-greedy strategy."""
+        if random.random() < self.epsilon:
+            # Explore: choose randomly
+            return random.randint(0, self.n_variants - 1)
+        else:
+            # Exploit: choose best known variant
+            return np.argmax(self.values)
+    
+    def update(self, variant_id, reward):
+        """Update estimates based on observed reward."""
+        self.counts[variant_id] += 1
+        n = self.counts[variant_id]
+        
+        # Incremental average update
+        current_value = self.values[variant_id]
+        self.values[variant_id] = current_value + (reward - current_value) / n
+    
+    def get_best_variant(self):
+        """Return the variant with highest estimated value."""
+        return np.argmax(self.values)
+
+# Example usage
+bandit = EpsilonGreedy(n_variants=3, epsilon=0.1)
+
+for user in range(1000):
+    variant = bandit.select_variant()
+    # Show variant to user and collect reward (e.g., 1 for thumbs up, 0 for thumbs down)
+    reward = simulate_user_interaction(variant)
+    bandit.update(variant, reward)
+
+print(f"Best variant: {bandit.get_best_variant()}")
+print(f"Estimated values: {bandit.values}")</code></pre>
+</div>
+
+<h3>Epsilon-Greedy Parameters</h3>
+<table>
+    <tr>
+        <th>Epsilon Value</th>
+        <th>Behavior</th>
+        <th>Best For</th>
+    </tr>
+    <tr>
+        <td class="rowheader">ε = 0.0</td>
+        <td>Pure exploitation (no exploration)</td>
+        <td>When you're confident in current estimates</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ε = 0.1</td>
+        <td>10% exploration, 90% exploitation</td>
+        <td>Balanced approach for most scenarios</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ε = 0.3</td>
+        <td>30% exploration, 70% exploitation</td>
+        <td>High uncertainty or rapidly changing environments</td>
+    </tr>
+    <tr>
+        <td class="rowheader">ε = 1.0</td>
+        <td>Pure exploration (random selection)</td>
+        <td>Initial learning phase only</td>
+    </tr>
+</table>
+
+<h2>Thompson Sampling</h2>
+
+<p>A more sophisticated Bayesian approach that naturally balances exploration and exploitation by sampling from posterior distributions:</p>
+
+<div class="code-block">
+<pre><code>class ThompsonSampling:
+    """Thompson Sampling for Bernoulli bandits (binary rewards)."""
+    
+    def __init__(self, n_variants):
+        self.n_variants = n_variants
+        # Beta distribution parameters (successes + 1, failures + 1)
+        self.alpha = np.ones(n_variants)  # Successes + 1
+        self.beta = np.ones(n_variants)   # Failures + 1
+    
+    def select_variant(self):
+        """Select variant by sampling from posterior distributions."""
+        # Sample from Beta distribution for each variant
+        samples = [np.random.beta(self.alpha[i], self.beta[i]) 
+                  for i in range(self.n_variants)]
+        
+        # Select variant with highest sample
+        return np.argmax(samples)
+    
+    def update(self, variant_id, reward):
+        """Update posterior distribution based on observed reward."""
+        if reward == 1:
+            self.alpha[variant_id] += 1
+        else:
+            self.beta[variant_id] += 1
+    
+    def get_win_probabilities(self):
+        """Estimate probability each variant is best."""
+        # Monte Carlo estimation
+        n_samples = 10000
+        wins = np.zeros(self.n_variants)
+        
+        for _ in range(n_samples):
+            samples = [np.random.beta(self.alpha[i], self.beta[i]) 
+                      for i in range(self.n_variants)]
+            winner = np.argmax(samples)
+            wins[winner] += 1
+        
+        return wins / n_samples</code></pre>
+</div>
+
+<h3>Thompson Sampling Advantages</h3>
+<ul>
+    <li>Automatically balances exploration and exploitation without tuning parameters</li>
+    <li>Explores more when uncertain, exploits more when confident</li>
+    <li>Theoretically optimal regret bounds</li>
+    <li>Provides probability estimates that each variant is best</li>
+</ul>
+
+<h2>Upper Confidence Bound (UCB)</h2>
+
+<p>UCB algorithms select variants based on optimistic estimates, favoring variants with high uncertainty:</p>
+
+<div class="code-block">
+<pre><code>class UCB1:
+    """Upper Confidence Bound algorithm."""
+    
+    def __init__(self, n_variants):
+        self.n_variants = n_variants
+        self.counts = np.zeros(n_variants)
+        self.values = np.zeros(n_variants)
+        self.total_counts = 0
+    
+    def select_variant(self):
+        """Select variant with highest upper confidence bound."""
+        # Initially, try each variant once
+        for i in range(self.n_variants):
+            if self.counts[i] == 0:
+                return i
+        
+        # Calculate UCB for each variant
+        ucb_values = [
+            self.values[i] + np.sqrt(2 * np.log(self.total_counts) / self.counts[i])
+            for i in range(self.n_variants)
+        ]
+        
+        return np.argmax(ucb_values)
+    
+    def update(self, variant_id, reward):
+        """Update estimates."""
+        self.counts[variant_id] += 1
+        self.total_counts += 1
+        n = self.counts[variant_id]
+        self.values[variant_id] += (reward - self.values[variant_id]) / n</code></pre>
+</div>
+
+<h2>When to Use Bandits vs Traditional A/B Testing</h2>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Recommended Approach</th>
+        <th>Rationale</th>
+    </tr>
+    <tr>
+        <td class="rowheader">High-stakes decision with long-term impact</td>
+        <td>Traditional A/B Test</td>
+        <td>Need rigorous statistical validation before permanent change</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Continuous optimization of user experience</td>
+        <td>Multi-Armed Bandit</td>
+        <td>Minimize regret while learning optimal configuration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Testing fundamentally different approaches</td>
+        <td>Traditional A/B Test</td>
+        <td>Need clear winner with confidence intervals</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Personalization or contextual optimization</td>
+        <td>Contextual Bandit</td>
+        <td>Adapt to user segments or contexts dynamically</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Rapidly changing environment</td>
+        <td>Multi-Armed Bandit</td>
+        <td>Adapt quickly to shifting conditions</td>
+    </tr>
+</table>
+
+<h2>Contextual Bandits for GenAI</h2>
+
+<p>Contextual bandits extend MAB by considering user or request context when selecting variants. For GenAI, context might include:</p>
+
+<ul>
+    <li>User expertise level (novice vs expert)</li>
+    <li>Query complexity (simple vs complex)</li>
+    <li>Domain or topic area</li>
+    <li>Time of day or user location</li>
+    <li>Previous interaction history</li>
+</ul>
+
+<p><strong>Example:</strong> Use GPT-4 for complex technical queries but GPT-3.5 for simple questions, optimizing both quality and cost.</p>
+
+<div class="code-block">
+<pre><code>class ContextualBandit:
+    """Simple contextual bandit using context features."""
+    
+    def __init__(self, n_variants, n_features):
+        self.n_variants = n_variants
+        self.n_features = n_features
+        # Linear model weights for each variant
+        self.weights = [np.zeros(n_features) for _ in range(n_variants)]
+        self.alpha = 1.0  # Exploration parameter
+    
+    def select_variant(self, context):
+        """Select variant based on context features."""
+        context = np.array(context)
+        
+        # Calculate predicted reward + exploration bonus for each variant
+        scores = []
+        for i in range(self.n_variants):
+            predicted_reward = np.dot(self.weights[i], context)
+            exploration_bonus = self.alpha * np.linalg.norm(context)
+            scores.append(predicted_reward + exploration_bonus)
+        
+        return np.argmax(scores)
+    
+    def update(self, variant_id, context, reward):
+        """Update model based on observed reward."""
+        context = np.array(context)
+        # Gradient descent update
+        prediction = np.dot(self.weights[variant_id], context)
+        error = reward - prediction
+        self.weights[variant_id] += 0.01 * error * context</code></pre>
+</div>
+
+<h2>Hybrid Approach: Bandit-Informed A/B Testing</h2>
+
+<p>Combine the benefits of both approaches:</p>
+
+<ol>
+    <li><strong>Phase 1 (Exploration):</strong> Use multi-armed bandit for 1-2 weeks to quickly identify promising variants</li>
+    <li><strong>Phase 2 (Validation):</strong> Run traditional A/B test on top 2-3 variants with equal traffic for rigorous validation</li>
+    <li><strong>Phase 3 (Deployment):</strong> Deploy winner with confidence in statistical validity</li>
+</ol>
+
+<p>This approach reduces regret during exploration while maintaining statistical rigor for final decisions.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Multi-armed bandits adaptively allocate traffic to better-performing variants</li>
+    <li>Epsilon-greedy is simple but requires parameter tuning</li>
+    <li>Thompson Sampling automatically balances exploration and exploitation</li>
+    <li>UCB provides optimistic estimates that favor uncertain variants</li>
+    <li>Contextual bandits enable personalization based on user or request features</li>
+    <li>Choose bandits for continuous optimization, A/B tests for high-stakes decisions</li>
+    <li>Hybrid approaches combine benefits of both methodologies</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

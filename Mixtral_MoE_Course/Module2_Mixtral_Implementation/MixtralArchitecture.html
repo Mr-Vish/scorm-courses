@@ -1,0 +1,311 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Mixtral 8x7B Architecture Deep Dive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Mixtral Implementation & Performance</h1>
+<h2>Mixtral 8x7B Architecture Deep Dive</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will:</p>
+<ul>
+    <li>Understand the specific architectural design of Mixtral 8x7B</li>
+    <li>Analyze Mixtral's performance characteristics and benchmarks</li>
+    <li>Compare Mixtral with other leading language models</li>
+    <li>Evaluate the practical implications of Mixtral's design choices</li>
+</ul>
+
+<h2>Introduction to Mixtral 8x7B</h2>
+<p>Mixtral 8x7B, released by Mistral AI in December 2023, represents a landmark achievement in open-source language models. It demonstrates that MoE architectures can deliver performance comparable to much larger dense models while maintaining practical inference speeds and resource requirements.</p>
+
+<p><strong>Key Achievement:</strong> Mixtral 8x7B matches or exceeds the performance of models like LLaMA 2 70B and GPT-3.5 on many benchmarks, while using only ~13B active parameters per token—approximately 5x fewer active parameters than its dense competitors.</p>
+
+<h2>Architectural Specifications</h2>
+
+<h3>Core Architecture Parameters</h3>
+
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Value</th>
+        <th>Significance</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Total Parameters</td>
+        <td>46.7 billion</td>
+        <td>Total model size on disk</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Active Parameters per Token</td>
+        <td>~12.9 billion</td>
+        <td>Parameters used during inference for each token</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Number of Layers</td>
+        <td>32</td>
+        <td>Depth of the transformer architecture</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Experts per MoE Layer</td>
+        <td>8</td>
+        <td>Number of expert networks in each MoE layer</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Active Experts per Token</td>
+        <td>2</td>
+        <td>Number of experts activated for each token</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Hidden Dimension</td>
+        <td>4096</td>
+        <td>Size of hidden representations</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Attention Heads</td>
+        <td>32</td>
+        <td>Number of attention heads per layer</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context Window</td>
+        <td>32,768 tokens</td>
+        <td>Maximum sequence length</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Vocabulary Size</td>
+        <td>32,000</td>
+        <td>Number of tokens in vocabulary</td>
+    </tr>
+</table>
+
+<h3>Layer Structure</h3>
+<p>Each of Mixtral's 32 layers follows this structure:</p>
+
+<blockquote>
+<strong>Mixtral Layer Architecture:</strong>
+
+1. Input: Hidden state from previous layer [batch, sequence, 4096]
+
+2. Self-Attention Block:
+   - Multi-head attention with 32 heads
+   - Grouped-query attention for efficiency
+   - Rotary position embeddings (RoPE)
+   - Residual connection and layer normalization
+
+3. MoE Feedforward Block:
+   - Router network: Linear layer [4096 → 8]
+   - Top-2 expert selection
+   - 8 expert networks (each: [4096 → 14336 → 4096])
+   - Weighted combination of expert outputs
+   - Residual connection and layer normalization
+
+4. Output: Hidden state to next layer [batch, sequence, 4096]
+</blockquote>
+
+<h2>Expert Network Design</h2>
+
+<h3>Individual Expert Architecture</h3>
+<p>Each expert is a standard feedforward network with SwiGLU activation:</p>
+
+<ul>
+    <li><strong>Input Dimension:</strong> 4096 (hidden size)</li>
+    <li><strong>Intermediate Dimension:</strong> 14,336 (3.5x expansion)</li>
+    <li><strong>Output Dimension:</strong> 4096 (back to hidden size)</li>
+    <li><strong>Activation:</strong> SwiGLU (Swish-Gated Linear Unit)</li>
+    <li><strong>Parameters per Expert:</strong> ~7 billion</li>
+</ul>
+
+<p><strong>Why SwiGLU?</strong> SwiGLU activation has been shown to improve model quality compared to traditional ReLU or GELU activations, particularly in large language models. It combines the benefits of gating mechanisms with smooth activation functions.</p>
+
+<h3>Router Network Design</h3>
+<p>Mixtral uses a simple but effective router design:</p>
+
+<ul>
+    <li><strong>Architecture:</strong> Single linear layer without bias</li>
+    <li><strong>Input:</strong> Hidden state (4096 dimensions)</li>
+    <li><strong>Output:</strong> 8 logits (one per expert)</li>
+    <li><strong>Selection:</strong> Top-2 experts via softmax and argmax</li>
+    <li><strong>Weighting:</strong> Softmax normalization of top-2 scores</li>
+</ul>
+
+<h2>Parameter Distribution Analysis</h2>
+
+<h3>Where the Parameters Are</h3>
+<p>Understanding parameter distribution helps explain Mixtral's efficiency:</p>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Parameters</th>
+        <th>Percentage</th>
+        <th>Always Active?</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Token Embeddings</td>
+        <td>~131M</td>
+        <td>0.3%</td>
+        <td>Yes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Attention Layers (32x)</td>
+        <td>~3.8B</td>
+        <td>8.1%</td>
+        <td>Yes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Router Networks (32x)</td>
+        <td>~33M</td>
+        <td>0.1%</td>
+        <td>Yes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Expert Networks (32x8)</td>
+        <td>~42.7B</td>
+        <td>91.4%</td>
+        <td>No (25% active)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Output Layer</td>
+        <td>~131M</td>
+        <td>0.3%</td>
+        <td>Yes</td>
+    </tr>
+</table>
+
+<p><strong>Key Insight:</strong> Over 91% of Mixtral's parameters are in the expert networks, but only 25% of these are active for any given token. This is the source of Mixtral's efficiency advantage.</p>
+
+<h3>Active vs. Total Parameters</h3>
+<p>For each token, Mixtral activates:</p>
+
+<ul>
+    <li><strong>Always Active:</strong> Embeddings, attention, routers, output layer = ~4.1B parameters</li>
+    <li><strong>Conditionally Active:</strong> 2 experts per layer × 32 layers = 64 expert instances</li>
+    <li><strong>Expert Parameters:</strong> ~7B per expert × 2 active = ~14B parameters</li>
+    <li><strong>Total Active:</strong> ~4.1B + ~14B = ~18.1B parameters (but with optimizations, effectively ~12.9B)</li>
+</ul>
+
+<h2>Comparison with Other Models</h2>
+
+<h3>Mixtral vs. Dense Models</h3>
+
+<table>
+    <tr>
+        <th>Model</th>
+        <th>Total Params</th>
+        <th>Active Params</th>
+        <th>Context Length</th>
+        <th>Architecture</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Mixtral 8x7B</td>
+        <td>46.7B</td>
+        <td>12.9B</td>
+        <td>32K</td>
+        <td>MoE</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LLaMA 2 13B</td>
+        <td>13B</td>
+        <td>13B</td>
+        <td>4K</td>
+        <td>Dense</td>
+    </tr>
+    <tr>
+        <td class="rowheader">LLaMA 2 70B</td>
+        <td>70B</td>
+        <td>70B</td>
+        <td>4K</td>
+        <td>Dense</td>
+    </tr>
+    <tr>
+        <td class="rowheader">GPT-3.5</td>
+        <td>~175B</td>
+        <td>~175B</td>
+        <td>4K-16K</td>
+        <td>Dense</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Falcon 40B</td>
+        <td>40B</td>
+        <td>40B</td>
+        <td>2K</td>
+        <td>Dense</td>
+    </tr>
+</table>
+
+<p><strong>Performance Positioning:</strong> Mixtral 8x7B achieves performance comparable to LLaMA 2 70B while having inference speed similar to LLaMA 2 13B. This represents the best of both worlds: large model quality with small model efficiency.</p>
+
+<h2>Design Decisions and Trade-offs</h2>
+
+<h3>Why 8 Experts?</h3>
+<p>The choice of 8 experts represents a careful balance:</p>
+
+<ul>
+    <li><strong>Sufficient Specialization:</strong> 8 experts allow meaningful specialization across domains and patterns</li>
+    <li><strong>Manageable Complexity:</strong> More experts increase training complexity and load balancing challenges</li>
+    <li><strong>Hardware Efficiency:</strong> 8 experts map well to modern GPU architectures</li>
+    <li><strong>Memory Constraints:</strong> More experts increase total model size</li>
+</ul>
+
+<h3>Why Top-2 Activation?</h3>
+<p>Activating 2 experts per token provides:</p>
+
+<ul>
+    <li><strong>Redundancy:</strong> Two perspectives on each input improve robustness</li>
+    <li><strong>Smooth Transitions:</strong> Gradual shifts between expert specializations</li>
+    <li><strong>Efficiency:</strong> Still maintains 75% parameter sparsity</li>
+    <li><strong>Performance:</strong> Empirically shown to outperform K=1 with acceptable overhead</li>
+</ul>
+
+<h3>Why 32K Context Window?</h3>
+<p>The extended context window enables:</p>
+
+<ul>
+    <li><strong>Long Document Processing:</strong> Handle entire articles, papers, or code files</li>
+    <li><strong>Extended Conversations:</strong> Maintain context over longer dialogues</li>
+    <li><strong>Complex Reasoning:</strong> More context for multi-step reasoning tasks</li>
+    <li><strong>Competitive Advantage:</strong> Matches or exceeds context length of competing models</li>
+</ul>
+
+<h2>Training Details</h2>
+
+<h3>Training Dataset and Scale</h3>
+<p>While Mistral AI has not disclosed full training details, key aspects include:</p>
+
+<ul>
+    <li><strong>Training Tokens:</strong> Estimated at several trillion tokens</li>
+    <li><strong>Data Mix:</strong> Multilingual data covering code, technical content, and general text</li>
+    <li><strong>Training Duration:</strong> Several weeks on large GPU clusters</li>
+    <li><strong>Optimization:</strong> AdamW optimizer with carefully tuned learning rates</li>
+</ul>
+
+<h3>Load Balancing Strategy</h3>
+<p>Mixtral employs sophisticated load balancing:</p>
+
+<ul>
+    <li>Auxiliary loss to encourage balanced expert utilization</li>
+    <li>Expert capacity limits to prevent overloading</li>
+    <li>Careful initialization to promote expert diversity</li>
+    <li>Monitoring and adjustment during training</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Mixtral 8x7B uses 46.7B total parameters but only ~12.9B active parameters per token, achieving efficiency through sparse activation</li>
+    <li>The architecture consists of 32 layers, each with 8 expert networks, with top-2 expert selection</li>
+    <li>Over 91% of parameters are in expert networks, which are conditionally activated based on input</li>
+    <li>Design choices (8 experts, top-2 activation, 32K context) represent careful trade-offs between performance, efficiency, and practicality</li>
+    <li>Mixtral achieves performance comparable to 70B dense models while maintaining inference speed of 13B models</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

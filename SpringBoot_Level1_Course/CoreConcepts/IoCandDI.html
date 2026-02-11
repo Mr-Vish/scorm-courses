@@ -1,0 +1,260 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Core Concepts - IoC and DI</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Inversion of Control (IoC) and Dependency Injection (DI)</h1>
+
+<h2>Understanding Inversion of Control (IoC)</h2>
+<p><strong>Definition:</strong> Inversion of Control (IoC) is a design principle where the control of object creation and dependency management is transferred from the application code to an external framework or container. Instead of objects creating their own dependencies, the framework provides them.</p>
+
+<p><strong>Traditional Approach vs IoC:</strong></p>
+<blockquote>
+// Traditional approach - tight coupling<br/>
+public class OrderService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private EmailService emailService = new EmailService(); // Direct instantiation<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private PaymentService paymentService = new PaymentService();<br/>
+}<br/><br/>
+// IoC approach - loose coupling<br/>
+@Service<br/>
+public class OrderService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final EmailService emailService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final PaymentService paymentService;<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// Dependencies injected by Spring<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public OrderService(EmailService emailService, PaymentService paymentService) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.emailService = emailService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.paymentService = paymentService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h3>The IoC Container (Application Context)</h3>
+<p><strong>Definition:</strong> The IoC Container, also known as the Application Context in Spring, is the core component that manages the complete lifecycle of beans and their dependencies. It acts as a factory for creating, configuring, and managing objects.</p>
+
+<p><strong>Container Responsibilities:</strong></p>
+<ul>
+    <li><strong>Bean Instantiation:</strong> Creates instances of classes marked with stereotype annotations (@Component, @Service, etc.)</li>
+    <li><strong>Dependency Resolution:</strong> Identifies and injects required dependencies into beans</li>
+    <li><strong>Lifecycle Management:</strong> Manages bean creation, initialization, and destruction</li>
+    <li><strong>Configuration Processing:</strong> Processes annotations and configuration metadata</li>
+    <li><strong>Scope Management:</strong> Manages different bean scopes (singleton, prototype, request, session)</li>
+</ul>
+
+<h2>Dependency Injection (DI) Explained</h2>
+<p><strong>Definition:</strong> Dependency Injection is a specific implementation of IoC where dependencies are "injected" into an object rather than the object creating them itself. It's a technique for achieving loose coupling between classes and their dependencies.</p>
+
+<p><strong>Key Benefits:</strong></p>
+<ul>
+    <li><strong>Testability:</strong> Easy to substitute mock objects for testing</li>
+    <li><strong>Flexibility:</strong> Can easily change implementations without modifying dependent code</li>
+    <li><strong>Maintainability:</strong> Reduces code duplication and improves code organization</li>
+    <li><strong>Loose Coupling:</strong> Classes depend on interfaces rather than concrete implementations</li>
+</ul>
+
+<h2>Types of Dependency Injection</h2>
+
+<h3>1. Constructor Injection (Recommended)</h3>
+<p><strong>Definition:</strong> Dependencies are provided through the class constructor. This is the preferred method in Spring Boot as it ensures immutable dependencies and makes required dependencies explicit.</p>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Immutable dependencies (final fields)</li>
+    <li>Fail-fast behavior - missing dependencies cause startup failure</li>
+    <li>No need for @Autowired annotation (Spring 4.3+)</li>
+    <li>Better for testing - easy to create instances with mock dependencies</li>
+</ul>
+
+<blockquote>
+@Service<br/>
+public class UserService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final UserRepository userRepository;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final EmailService emailService;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// Constructor injection - no @Autowired needed<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public UserService(UserRepository userRepository, EmailService emailService) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.userRepository = userRepository;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.emailService = emailService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public User createUser(User user) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;User savedUser = userRepository.save(user);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;emailService.sendWelcomeEmail(savedUser);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return savedUser;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h3>2. Field Injection (Not Recommended)</h3>
+<p><strong>Definition:</strong> Dependencies are injected directly into fields using the @Autowired annotation. While convenient, it has several drawbacks.</p>
+
+<p><strong>Disadvantages:</strong></p>
+<ul>
+    <li>Makes testing difficult - requires Spring context or reflection</li>
+    <li>Violates immutability - fields cannot be final</li>
+    <li>Hidden dependencies - not clear what dependencies a class needs</li>
+    <li>Tight coupling to Spring framework</li>
+</ul>
+
+<blockquote>
+@Service<br/>
+public class ProductService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Autowired<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private ProductRepository productRepository; // Avoid this approach<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Autowired<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private InventoryService inventoryService;<br/>
+}
+</blockquote>
+
+<h3>3. Setter Injection (Optional Dependencies)</h3>
+<p><strong>Definition:</strong> Dependencies are injected through setter methods. Useful for optional dependencies or when you need to change dependencies at runtime.</p>
+
+<blockquote>
+@Service<br/>
+public class NotificationService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private EmailService emailService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private SmsService smsService; // Optional dependency<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Autowired<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public void setEmailService(EmailService emailService) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.emailService = emailService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Autowired(required = false)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public void setSmsService(SmsService smsService) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.smsService = smsService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Spring Stereotype Annotations</h2>
+<p><strong>Definition:</strong> Stereotype annotations are specialized @Component annotations that indicate the role of a class in the application architecture. They help organize code and provide semantic meaning.</p>
+
+<table>
+    <tr>
+        <th>Annotation</th>
+        <th>Layer</th>
+        <th>Purpose</th>
+        <th>Example Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">@Component</td>
+        <td>Generic</td>
+        <td>General-purpose Spring-managed component</td>
+        <td>Utility classes, configuration helpers</td>
+    </tr>
+    <tr>
+        <td class="rowheader">@Service</td>
+        <td>Business Logic</td>
+        <td>Contains core application business logic</td>
+        <td>UserService, OrderService, PaymentService</td>
+    </tr>
+    <tr>
+        <td class="rowheader">@Repository</td>
+        <td>Data Access</td>
+        <td>Interacts with databases or external data sources</td>
+        <td>UserRepository, ProductRepository</td>
+    </tr>
+    <tr>
+        <td class="rowheader">@Controller</td>
+        <td>Web Layer</td>
+        <td>Handles HTTP requests and returns views</td>
+        <td>Web page controllers for MVC applications</td>
+    </tr>
+    <tr>
+        <td class="rowheader">@RestController</td>
+        <td>API Layer</td>
+        <td>Handles HTTP requests and returns data (JSON/XML)</td>
+        <td>REST API endpoints</td>
+    </tr>
+</table>
+
+<h2>Bean Scopes</h2>
+<p><strong>Definition:</strong> Bean scope defines the lifecycle and visibility of a bean instance within the Spring container.</p>
+
+<h3>Common Bean Scopes:</h3>
+<ul>
+    <li><strong>Singleton (Default):</strong> One instance per Spring container - shared across the entire application</li>
+    <li><strong>Prototype:</strong> New instance created every time the bean is requested</li>
+    <li><strong>Request:</strong> One instance per HTTP request (web applications only)</li>
+    <li><strong>Session:</strong> One instance per HTTP session (web applications only)</li>
+</ul>
+
+<blockquote>
+@Service<br/>
+@Scope("singleton") // Default scope<br/>
+public class ConfigurationService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// Shared instance across application<br/>
+}<br/><br/>
+@Component<br/>
+@Scope("prototype")<br/>
+public class TaskProcessor {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// New instance for each injection<br/>
+}
+</blockquote>
+
+<h2>Real-World Example: E-commerce Order Processing</h2>
+<blockquote>
+// Service layer with business logic<br/>
+@Service<br/>
+public class OrderService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final OrderRepository orderRepository;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final PaymentService paymentService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final InventoryService inventoryService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final EmailService emailService;<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public OrderService(OrderRepository orderRepository,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PaymentService paymentService,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;InventoryService inventoryService,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EmailService emailService) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.orderRepository = orderRepository;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.paymentService = paymentService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.inventoryService = inventoryService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.emailService = emailService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public Order processOrder(Order order) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Check inventory<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inventoryService.reserveItems(order.getItems());<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Process payment<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;paymentService.processPayment(order.getPaymentInfo());<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Save order<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Order savedOrder = orderRepository.save(order);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Send confirmation<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;emailService.sendOrderConfirmation(savedOrder);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return savedOrder;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}<br/><br/>
+// Data access layer<br/>
+@Repository<br/>
+public class OrderRepository {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public Order save(Order order) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Database persistence logic<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}<br/><br/>
+// Web layer<br/>
+@RestController<br/>
+@RequestMapping("/api/orders")<br/>
+public class OrderController {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final OrderService orderService;<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public OrderController(OrderService orderService) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.orderService = orderService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@PostMapping<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public ResponseEntity&lt;Order&gt; createOrder(@RequestBody Order order) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Order processedOrder = orderService.processOrder(order);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return ResponseEntity.ok(processedOrder);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

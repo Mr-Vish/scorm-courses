@@ -1,0 +1,345 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Bias Mitigation Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Bias Mitigation Strategies</h1>
+
+<h3>Approaches to Reducing Bias</h3>
+<p>Once bias is detected, organizations must take action to mitigate it. Bias mitigation strategies can be applied at three stages: pre-processing (data), in-processing (model training), and post-processing (predictions). Each approach has strengths, limitations, and appropriate use cases.</p>
+
+<h3>Pre-Processing: Data-Level Interventions</h3>
+
+<h4>1. Data Collection and Augmentation</h4>
+<p><strong>Strategy:</strong> Collect additional data to balance representation across groups.</p>
+
+<p><strong>Implementation:</strong></p>
+<ul>
+    <li>Targeted data collection campaigns for underrepresented groups</li>
+    <li>Partnerships with organizations serving diverse populations</li>
+    <li>Synthetic data generation to supplement underrepresented groups</li>
+    <li>Data augmentation techniques (for images, text, etc.)</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+A facial recognition system initially trained on 80% light-skinned faces and 20% dark-skinned faces. The team:
+<ul>
+    <li>Collected 50,000 additional images of dark-skinned individuals</li>
+    <li>Balanced the dataset to 50/50 representation</li>
+    <li>Retrained the model, improving accuracy for dark-skinned faces from 78% to 94%</li>
+</ul>
+</blockquote>
+
+<p><strong>Advantages:</strong> Addresses root cause (data imbalance); improves model for all groups</p>
+<p><strong>Limitations:</strong> Time-consuming and expensive; may not be feasible for all groups</p>
+
+<h4>2. Reweighting</h4>
+<p><strong>Strategy:</strong> Assign higher weights to underrepresented groups during training.</p>
+
+<p><strong>Implementation:</strong></p>
+<ul>
+    <li>Calculate weights inversely proportional to group size</li>
+    <li>Apply weights during model training to emphasize minority groups</li>
+    <li>Adjust weights based on desired fairness-accuracy trade-off</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+Dataset composition: 70% Group A, 30% Group B<br/>
+Weights: Group A = 1.0, Group B = 2.33 (70/30)<br/>
+Effect: Model treats each Group B example as equivalent to 2.33 Group A examples
+</blockquote>
+
+<p><strong>Advantages:</strong> Simple to implement; doesn't require new data</p>
+<p><strong>Limitations:</strong> May reduce overall accuracy; doesn't address data quality issues</p>
+
+<h4>3. Resampling</h4>
+<p><strong>Strategy:</strong> Oversample minority groups or undersample majority groups.</p>
+
+<p><strong>Techniques:</strong></p>
+<table>
+    <tr>
+        <th>Technique</th>
+        <th>Description</th>
+        <th>When to Use</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Random Oversampling</td>
+        <td>Duplicate minority group examples</td>
+        <td>Simple baseline; risk of overfitting</td>
+    </tr>
+    <tr>
+        <td class="rowheader">SMOTE</td>
+        <td>Generate synthetic minority examples</td>
+        <td>Structured data; reduces overfitting risk</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Random Undersampling</td>
+        <td>Remove majority group examples</td>
+        <td>When majority group is very large</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Stratified Sampling</td>
+        <td>Ensure proportional representation</td>
+        <td>Creating balanced train/test splits</td>
+    </tr>
+</table>
+
+<p><strong>Advantages:</strong> Balances group representation; relatively simple</p>
+<p><strong>Limitations:</strong> Oversampling risks overfitting; undersampling discards data</p>
+
+<h4>4. Feature Engineering</h4>
+<p><strong>Strategy:</strong> Remove or modify features that introduce bias.</p>
+
+<p><strong>Approaches:</strong></p>
+<ul>
+    <li><strong>Remove proxy features:</strong> Eliminate features highly correlated with protected attributes (e.g., zip code as proxy for race)</li>
+    <li><strong>Fairness-aware feature transformation:</strong> Transform features to reduce correlation with protected attributes while preserving predictive power</li>
+    <li><strong>Add fairness-promoting features:</strong> Include features that help the model distinguish legitimate patterns from biased ones</li>
+</ul>
+
+<p><strong>Caution:</strong> Simply removing protected attributes (e.g., gender, race) does NOT eliminate bias if proxy features remain.</p>
+
+<h3>In-Processing: Model Training Interventions</h3>
+
+<h4>1. Fairness Constraints</h4>
+<p><strong>Strategy:</strong> Add fairness constraints to the model's optimization objective.</p>
+
+<p><strong>Implementation:</strong></p>
+<blockquote>
+Traditional objective: Minimize prediction error<br/>
+Fairness-constrained objective: Minimize prediction error SUBJECT TO fairness constraint<br/><br/>
+Example: Minimize error while ensuring true positive rates differ by no more than 5% across groups
+</blockquote>
+
+<p><strong>Advantages:</strong> Directly optimizes for fairness; mathematically principled</p>
+<p><strong>Limitations:</strong> May reduce overall accuracy; requires careful constraint tuning</p>
+
+<h4>2. Adversarial Debiasing</h4>
+<p><strong>Strategy:</strong> Train the model to make accurate predictions while preventing an adversary from predicting protected attributes from the model's internal representations.</p>
+
+<p><strong>How It Works:</strong></p>
+<ol>
+    <li>Main model learns to make predictions</li>
+    <li>Adversarial model tries to predict protected attributes from main model's hidden layers</li>
+    <li>Main model is penalized if adversary succeeds</li>
+    <li>Result: Model learns representations that are predictive but not correlated with protected attributes</li>
+</ol>
+
+<p><strong>Advantages:</strong> Removes bias from model representations; works with complex models</p>
+<p><strong>Limitations:</strong> Computationally expensive; requires careful hyperparameter tuning</p>
+
+<h4>3. Multi-Objective Optimization</h4>
+<p><strong>Strategy:</strong> Optimize for multiple objectives simultaneously (accuracy + fairness).</p>
+
+<p><strong>Approaches:</strong></p>
+<ul>
+    <li><strong>Weighted combination:</strong> Combine accuracy and fairness metrics with adjustable weights</li>
+    <li><strong>Pareto optimization:</strong> Find solutions that represent optimal trade-offs between objectives</li>
+    <li><strong>Lexicographic optimization:</strong> Prioritize objectives in order (e.g., first ensure minimum fairness, then maximize accuracy)</li>
+</ul>
+
+<h4>4. Group-Specific Models</h4>
+<p><strong>Strategy:</strong> Train separate models for different groups or use group-aware architectures.</p>
+
+<p><strong>Implementations:</strong></p>
+<ul>
+    <li><strong>Separate models:</strong> Train distinct models for each demographic group</li>
+    <li><strong>Group-specific layers:</strong> Shared base model with group-specific final layers</li>
+    <li><strong>Mixture of experts:</strong> Multiple models with learned routing based on input characteristics</li>
+</ul>
+
+<p><strong>Advantages:</strong> Can achieve high performance for all groups</p>
+<p><strong>Limitations:</strong> Requires sufficient data for each group; may be seen as discriminatory; maintenance complexity</p>
+
+<h3>Post-Processing: Prediction Adjustment</h3>
+
+<h4>1. Threshold Optimization</h4>
+<p><strong>Strategy:</strong> Use different decision thresholds for different groups to achieve fairness.</p>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<strong>Scenario:</strong> Loan approval model<br/>
+<strong>Original threshold:</strong> 0.7 for all applicants<br/>
+<strong>Observed bias:</strong> 15% approval rate for Group A, 8% for Group B (disparate impact ratio = 0.53)<br/><br/>
+<strong>Mitigation:</strong>
+<ul>
+    <li>Group A threshold: 0.7 (unchanged)</li>
+    <li>Group B threshold: 0.55 (lowered)</li>
+    <li>Result: 15% approval rate for both groups (disparate impact ratio = 1.0)</li>
+</ul>
+</blockquote>
+
+<p><strong>Advantages:</strong> Simple to implement; doesn't require retraining; easily adjustable</p>
+<p><strong>Limitations:</strong> May be legally problematic (explicit group-based treatment); doesn't address root causes</p>
+
+<h4>2. Calibration Adjustment</h4>
+<p><strong>Strategy:</strong> Adjust predicted probabilities to ensure calibration across groups.</p>
+
+<p><strong>Method:</strong></p>
+<ul>
+    <li>Measure calibration error for each group</li>
+    <li>Apply group-specific calibration functions</li>
+    <li>Ensure predicted probabilities match actual outcomes for all groups</li>
+</ul>
+
+<p><strong>Advantages:</strong> Improves probability estimates; maintains ranking of predictions</p>
+<p><strong>Limitations:</strong> Requires held-out calibration data; may not address other fairness metrics</p>
+
+<h4>3. Reject Option Classification</h4>
+<p><strong>Strategy:</strong> For predictions near the decision boundary, defer to human review or apply fairness-aware rules.</p>
+
+<p><strong>Implementation:</strong></p>
+<blockquote>
+<strong>Decision Rules:</strong>
+<ul>
+    <li>High confidence (p &gt; 0.8 or p &lt; 0.2): Accept model prediction</li>
+    <li>Medium confidence (0.2 ≤ p ≤ 0.8): Apply fairness-aware rules or human review</li>
+</ul>
+<strong>Fairness-aware rules:</strong> In the uncertain region, favor decisions that reduce fairness gaps
+</blockquote>
+
+<p><strong>Advantages:</strong> Focuses intervention on uncertain cases; maintains high confidence predictions</p>
+<p><strong>Limitations:</strong> Requires human review capacity; may not scale to high-volume applications</p>
+
+<h3>Organizational and Process Interventions</h3>
+
+<h4>1. Diverse Development Teams</h4>
+<p><strong>Strategy:</strong> Ensure teams building AI systems reflect the diversity of affected populations.</p>
+
+<p><strong>Benefits:</strong></p>
+<ul>
+    <li>Diverse perspectives identify potential biases earlier</li>
+    <li>Better understanding of how systems affect different communities</li>
+    <li>More creative solutions to fairness challenges</li>
+    <li>Increased trust from affected communities</li>
+</ul>
+
+<h4>2. Stakeholder Engagement</h4>
+<p><strong>Strategy:</strong> Involve affected communities in system design and evaluation.</p>
+
+<p><strong>Approaches:</strong></p>
+<ul>
+    <li>Community advisory boards</li>
+    <li>Participatory design workshops</li>
+    <li>User testing with diverse participants</li>
+    <li>Feedback mechanisms for reporting bias</li>
+</ul>
+
+<h4>3. Fairness Review Process</h4>
+<p><strong>Strategy:</strong> Establish formal review processes for AI systems.</p>
+
+<p><strong>Components:</strong></p>
+<table>
+    <tr>
+        <th>Review Stage</th>
+        <th>Activities</th>
+        <th>Reviewers</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Design Review</td>
+        <td>Assess problem formulation, data sources, fairness goals</td>
+        <td>Ethics team, domain experts, affected community representatives</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Pre-Deployment Review</td>
+        <td>Evaluate bias assessments, mitigation strategies, documentation</td>
+        <td>Fairness specialists, legal, compliance</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Ongoing Monitoring</td>
+        <td>Track production performance, investigate incidents</td>
+        <td>Operations team, fairness specialists</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Periodic Audit</td>
+        <td>Comprehensive fairness assessment (quarterly/annually)</td>
+        <td>Independent auditors, ethics board</td>
+    </tr>
+</table>
+
+<h3>Choosing Mitigation Strategies</h3>
+
+<p>Selection criteria for bias mitigation approaches:</p>
+
+<table>
+    <tr>
+        <th>Factor</th>
+        <th>Considerations</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Type of Bias</td>
+        <td>Data imbalance → pre-processing; model behavior → in-processing; outcome disparities → post-processing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Data Availability</td>
+        <td>Limited data → post-processing; abundant data → pre-processing or in-processing</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Accuracy Requirements</td>
+        <td>High accuracy needs → careful constraint tuning; some accuracy sacrifice acceptable → aggressive fairness constraints</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Legal Context</td>
+        <td>Some jurisdictions prohibit group-specific treatment; consult legal counsel</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Computational Resources</td>
+        <td>Limited resources → post-processing; ample resources → in-processing methods</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Interpretability Needs</td>
+        <td>High interpretability → threshold adjustment; complex models acceptable → adversarial debiasing</td>
+    </tr>
+</table>
+
+<h3>Documenting Mitigation in Model Cards</h3>
+
+<blockquote>
+<strong>Bias Mitigation Section Example:</strong><br/><br/>
+
+<strong>Identified Issues:</strong>
+<ul>
+    <li>6.2 percentage point accuracy gap between demographic groups</li>
+    <li>Disparate impact ratio of 0.76 (below 0.8 threshold)</li>
+</ul>
+
+<strong>Mitigation Strategies Implemented:</strong>
+<ol>
+    <li><strong>Data Augmentation:</strong> Collected 15,000 additional examples from underrepresented group, improving representation from 25% to 40%</li>
+    <li><strong>Reweighting:</strong> Applied inverse frequency weighting during training</li>
+    <li><strong>Threshold Optimization:</strong> Adjusted decision thresholds to achieve equal opportunity (true positive rate parity)</li>
+</ol>
+
+<strong>Results After Mitigation:</strong>
+<ul>
+    <li>Accuracy gap reduced to 2.1 percentage points</li>
+    <li>Disparate impact ratio improved to 0.89</li>
+    <li>Overall accuracy decreased by 1.3 percentage points (acceptable trade-off)</li>
+</ul>
+
+<strong>Ongoing Monitoring:</strong> Monthly fairness audits; quarterly model retraining with updated data
+</blockquote>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Bias mitigation strategies operate at three stages: pre-processing, in-processing, and post-processing</li>
+    <li>Pre-processing approaches address data imbalance through collection, reweighting, and resampling</li>
+    <li>In-processing methods incorporate fairness into model training through constraints and adversarial techniques</li>
+    <li>Post-processing adjusts predictions through threshold optimization and calibration</li>
+    <li>Organizational interventions include diverse teams, stakeholder engagement, and formal review processes</li>
+    <li>Strategy selection depends on bias type, data availability, accuracy requirements, and legal context</li>
+    <li>All mitigation efforts should be documented in model cards with quantified results</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

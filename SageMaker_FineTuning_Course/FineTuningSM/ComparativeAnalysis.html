@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>JumpStart vs. Custom Fine-Tuning Scripts</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Choosing Your Path: JumpStart vs. Custom Fine-Tuning</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>There are two primary ways to fine-tune Large Language Models on Amazon SageMaker: using the built-in <strong>JumpStart</strong> framework or writing <strong>Custom Training Scripts</strong> with the SageMaker Hugging Face Estimator. Both approaches have their place, and choosing the right one depends on your technical requirements, deadline, and the level of control you need.</p>
+
+<h2>2. SageMaker JumpStart: The "Fast Lane"</h2>
+<p>JumpStart is designed for speed and ease of use. It's the ideal choice when you want to use a popular model (like Llama 3) and don't need to make deep changes to the underlying training loop.</p>
+
+<h3>Pros of JumpStart</h3>
+<ul>
+    <li><strong>Zero Scripting:</strong> No need to write Python code for training or inference.</li>
+    <li><strong>Curated Models:</strong> AWS has already tested and optimized these models for SageMaker infrastructure.</li>
+    <li><strong>One-Click Deployment:</strong> Seamless transition from training to a production-ready endpoint.</li>
+    <li><strong>Safety built-in:</strong> Many JumpStart models include pre-configured safety scripts and moderation checks.</li>
+</ul>
+
+<h3>Cons of JumpStart</h3>
+<ul>
+    <li><strong>Limited Customization:</strong> You are restricted to the hyperparameters and data formats supported by the JumpStart script.</li>
+    <li><strong>Black Box:</strong> It can be harder to debug exactly what's happening inside the pre-built training container.</li>
+    <li><strong>Model Selection:</strong> Only models available in the JumpStart catalog can be used.</li>
+</ul>
+
+<h2>3. Custom Scripts: The "Expert Lane"</h2>
+<p>Writing your own training script using the <strong>SageMaker Hugging Face SDK</strong> gives you total control. This is the preferred method for researchers and specialized AI teams.</p>
+
+<h3>Pros of Custom Scripts</h3>
+<ul>
+    <li><strong>Full Flexibility:</strong> You can use any library (PEFT, DeepSpeed, BitsAndBytes) and any model from the Hugging Face Hub (hundreds of thousands of choices).</li>
+    <li><strong>Custom Logic:</strong> You can implement complex data loading, unique loss functions, or multi-stage training processes.</li>
+    <li><strong>Deep Debugging:</strong> Total visibility into every step of the training process, with easy integration of tools like Weights & Biases or TensorBoard.</li>
+</ul>
+
+<h3>Cons of Custom Scripts</h3>
+<ul>
+    <li><strong>Higher Complexity:</strong> Requires deep knowledge of PyTorch, Transformers, and SageMaker SDK.</li>
+    <li><strong>Engineering Overhead:</strong> You are responsible for writing the code, building the Docker environment (if custom), and ensuring the model loads correctly during inference.</li>
+    <li><strong>Longer Setup:</strong> It takes more time to get a custom script running correctly than it does to click "Fine-Tune" in JumpStart.</li>
+</ul>
+
+<h2>4. Comparison Summary</h2>
+<table>
+    <tr><th>Feature</th><th>SageMaker JumpStart</th><th>Custom HF Scripts</th></tr>
+    <tr><td>Technical Skill</td><td>Low / Medium</td><td>High</td></tr>
+    <tr><td>Time to First Model</td><td>Minutes</td><td>Hours / Days</td></tr>
+    <tr><td>Customizability</td><td>Limited</td><td>Infinite</td></tr>
+    <tr><td>Model Variety</td><td>Hundreds (Curated)</td><td>600,000+ (Any HF Model)</td></tr>
+    <tr><td>Pricing</td><td>Same (Instance cost)</td><td>Same (Instance cost)</td></tr>
+</table>
+
+<h2>5. When to Choose Which?</h2>
+<p><strong>Choose JumpStart if:</strong>
+    <ul>
+        <li>You want to quickly test if fine-tuning will improve your results.</li>
+        <li>You are using a standard model (Llama, Mistral) and standard instruction data.</li>
+        <li>You don't have a dedicated team of AI research engineers.</li>
+    </ul>
+</p>
+<p><strong>Choose Custom Scripts if:</strong>
+    <ul>
+        <li>You need to use a very new or specialized model not yet in JumpStart.</li>
+        <li>You are doing advanced research (e.g., custom PEFT methods or Multi-objective RLHF).</li>
+        <li>Your training data requires highly complex pre-processing not supported by standard scripts.</li>
+        <li>You need to deeply optimize for performance or cost beyond what JumpStart allows.</li>
+    </ul>
+</p>
+
+<h2>Conclusion</h2>
+<p>SageMaker is powerful because it doesn't force you into a single way of working. You can start with JumpStart to prove the value of fine-tuning, and then "graduate" to custom scripts as your requirements become more sophisticated. In our final module, we'll look at the future of generative AI on AWS.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

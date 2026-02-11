@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM07: Insecure Plugin Design</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM07: Insecure Plugin Design</h1>
+
+<p>Plugins are the "arms and legs" of an LLM, allowing it to interact with the external world (e.g., searching the web, sending emails, executing code). Insecure Plugin Design occurs when these plugins have insufficient access controls, perform dangerous actions without human verification, or are susceptible to injection attacks.</p>
+
+<h2>7.1 The "Agentic" Risk</h2>
+<p>When an LLM uses a plugin, it acts as an agent. If the plugin's API is poorly designed, an attacker can use prompt injection to cause the LLM to call the plugin with malicious parameters.</p>
+
+<h2>7.2 Common Plugin Vulnerabilities</h2>
+<ul>
+    <li><strong>Insufficient Input Validation:</strong> The plugin blindly trusts the parameters provided by the LLM. An attacker could inject malicious commands into these parameters (e.g., a "search" plugin that is vulnerable to SQL injection).</li>
+    <li><strong>Excessive Permissions:</strong> A plugin that only needs to read files has permission to delete them.</li>
+    <li><strong>Lack of Authentication/Authorization:</strong> The plugin's internal API is exposed without proper security, allowing unauthorized LLM calls or even direct access by an attacker.</li>
+    <li><strong>Executing Dangerous Actions Without HITL:</strong> A plugin that can transfer money or delete user accounts should NEVER be executed without explicit human approval.</li>
+</ul>
+
+<h2>7.3 Remediation Strategies</h2>
+<p>Securing plugins requires a "Security-by-Design" approach:
+<ul>
+    <li><strong>Strict Input Validation:</strong> Treating parameters from the LLM as untrusted user input. Using schemas to validate every parameter before the plugin executes.</li>
+    <li><strong>Principle of Least Privilege:</strong> Providing each plugin with the absolute minimum set of permissions needed for its task.</li>
+    <li><strong>Human-in-the-loop (HITL) for Side Effects:</strong> Requiring the user to manually review and approve any action that has a "side effect" in the physical or digital world (e.g., making a purchase, deleting data).</li>
+    <li><strong>Secure API Communication:</strong> Using strong authentication (like OAuth2 or API keys) for all communication between the LLM orchestration layer and the plugin.</li>
+    <li><strong>Sandboxing:</strong> Running plugins in isolated environments to prevent them from accessing unauthorized system resources.</li>
+</ul></p>
+
+<h2>7.4 Case Study: The Deletion Plugin</h2>
+<p>A "file management" plugin allowed an AI assistant to list and read files in a specific directory. However, the plugin's internal API included an undocumented "delete" endpoint for "testing purposes." An attacker used prompt injection to trick the AI into discovering and calling this endpoint, resulting in the loss of critical project files.</p>
+
+<p>By designing plugins with security at the forefront, you can empower your LLM application to interact with the world safely and effectively.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

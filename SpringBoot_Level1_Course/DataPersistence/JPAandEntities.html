@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Data Persistence - JPA and Entities</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring Data JPA and Entity Mapping</h1>
+
+<h2>What is JPA?</h2>
+<p>JPA (Java Persistence API) is the specification for managing relational data in Java applications. Spring Data JPA simplifies implementing JPA repositories.</p>
+
+<h2>Entity Mapping</h2>
+<p>We map Java objects to database tables using JPA annotations:</p>
+
+<h3>Basic Entity Example</h3>
+<blockquote>
+@Entity<br/>
+@Table(name = "todo_items")<br/>
+public class TodoItem {<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Id<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@GeneratedValue(strategy = GenerationType.IDENTITY)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private Long id;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Column(nullable = false)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private String title;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private String description;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Column(name = "is_completed")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private boolean completed = false;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@CreationTimestamp<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private LocalDateTime createdAt;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// Constructors, getters, and setters<br/>
+}
+</blockquote>
+
+<h2>Key JPA Annotations</h2>
+<table>
+    <tr>
+        <th>Annotation</th>
+        <th>Purpose</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td>@Entity</td>
+        <td>Marks class as JPA entity</td>
+        <td>@Entity</td>
+    </tr>
+    <tr>
+        <td>@Table</td>
+        <td>Specifies table name</td>
+        <td>@Table(name = "users")</td>
+    </tr>
+    <tr>
+        <td>@Id</td>
+        <td>Primary key field</td>
+        <td>@Id</td>
+    </tr>
+    <tr>
+        <td>@GeneratedValue</td>
+        <td>Auto-generated values</td>
+        <td>@GeneratedValue(strategy = GenerationType.IDENTITY)</td>
+    </tr>
+    <tr>
+        <td>@Column</td>
+        <td>Column mapping</td>
+        <td>@Column(nullable = false)</td>
+    </tr>
+</table>
+
+<h2>H2 Database Configuration</h2>
+<p>Configure H2 in-memory database in application.properties:</p>
+<blockquote>
+# H2 Configuration<br/>
+spring.h2.console.enabled=true<br/>
+spring.datasource.url=jdbc:h2:mem:testdb<br/>
+spring.datasource.driver-class-name=org.h2.Driver<br/>
+spring.datasource.username=sa<br/>
+spring.datasource.password=password<br/>
+<br/>
+# JPA/Hibernate Configuration<br/>
+spring.jpa.hibernate.ddl-auto=update<br/>
+spring.jpa.show-sql=true
+</blockquote>
+
+<h2>Repository Interface</h2>
+<p>Spring Data JPA provides automatic CRUD operations:</p>
+<blockquote>
+@Repository<br/>
+public interface TodoItemRepository extends JpaRepository&lt;TodoItem, Long&gt; {<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// Automatic methods: save(), findAll(), findById(), deleteById()<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// Custom derived queries<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;List&lt;TodoItem&gt; findByCompleted(boolean completed);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;List&lt;TodoItem&gt; findByTitleContaining(String title);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;Optional&lt;TodoItem&gt; findByIdAndCompleted(Long id, boolean completed);<br/>
+}
+</blockquote>
+
+<h2>Service Layer Implementation</h2>
+<blockquote>
+@Service<br/>
+@Transactional<br/>
+public class TodoItemService {<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private final TodoItemRepository repository;<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public TodoItemService(TodoItemRepository repository) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.repository = repository;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public TodoItem createTodo(TodoItem todo) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return repository.save(todo);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public List&lt;TodoItem&gt; getAllTodos() {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return repository.findAll();<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public Optional&lt;TodoItem&gt; getTodoById(Long id) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return repository.findById(id);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Core Concepts - Annotations</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Spring Boot Annotations</h1>
+
+<h2>What are Annotations?</h2>
+<p><strong>Definition:</strong> Annotations in Java are metadata that provide information about the program but are not part of the program itself. In Spring Boot, annotations are used to configure beans, define components, map HTTP requests, and inject dependencies without requiring XML configuration files.</p>
+
+<p>Annotations use the <code>@</code> symbol followed by the annotation name and can be applied to classes, methods, fields, or parameters. They help Spring Boot understand how to configure and wire your application components automatically.</p>
+
+<h2>Core Application Annotations</h2>
+
+<h3>@SpringBootApplication</h3>
+<p><strong>Definition:</strong> A convenience annotation that combines three essential Spring annotations into one. It serves as the entry point for Spring Boot applications.</p>
+<p><strong>Components:</strong></p>
+<ul>
+    <li><strong>@Configuration:</strong> Indicates that the class contains Spring configuration and can define beans using @Bean methods</li>
+    <li><strong>@EnableAutoConfiguration:</strong> Tells Spring Boot to automatically configure beans based on classpath dependencies</li>
+    <li><strong>@ComponentScan:</strong> Enables automatic discovery and registration of Spring components in the current package and sub-packages</li>
+</ul>
+<blockquote>
+@SpringBootApplication<br/>
+public class MyApplication {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public static void main(String[] args) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SpringApplication.run(MyApplication.class, args);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Web Layer Annotations</h2>
+
+<h3>@RestController</h3>
+<p><strong>Definition:</strong> A specialized version of @Controller that combines @Controller and @ResponseBody. It indicates that the class handles HTTP requests and returns data directly in the response body (typically JSON or XML) rather than rendering a view.</p>
+<blockquote>
+@RestController<br/>
+@RequestMapping("/api")<br/>
+public class UserController {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// All methods return data directly to HTTP response<br/>
+}
+</blockquote>
+
+<h3>@Controller</h3>
+<p><strong>Definition:</strong> Marks a class as a Spring MVC controller that handles HTTP requests and typically returns view names for rendering HTML pages.</p>
+
+<h3>@RequestMapping</h3>
+<p><strong>Definition:</strong> Maps HTTP requests to specific handler methods or classes. It can specify the URL path, HTTP method, request parameters, and headers.</p>
+<blockquote>
+@RequestMapping(value = "/users", method = RequestMethod.GET)<br/>
+public List&lt;User&gt; getAllUsers() {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;return userService.findAll();<br/>
+}
+</blockquote>
+
+<h2>HTTP Method-Specific Annotations</h2>
+<p><strong>Definition:</strong> Specialized annotations that combine @RequestMapping with specific HTTP methods for cleaner, more readable code.</p>
+<ul>
+    <li><strong>@GetMapping:</strong> Shortcut for @RequestMapping(method = RequestMethod.GET) - used for retrieving data</li>
+    <li><strong>@PostMapping:</strong> Shortcut for @RequestMapping(method = RequestMethod.POST) - used for creating new resources</li>
+    <li><strong>@PutMapping:</strong> Shortcut for @RequestMapping(method = RequestMethod.PUT) - used for updating existing resources</li>
+    <li><strong>@DeleteMapping:</strong> Shortcut for @RequestMapping(method = RequestMethod.DELETE) - used for deleting resources</li>
+    <li><strong>@PatchMapping:</strong> Shortcut for @RequestMapping(method = RequestMethod.PATCH) - used for partial updates</li>
+</ul>
+
+<blockquote>
+@GetMapping("/users/{id}")<br/>
+public User getUserById(@PathVariable Long id) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;return userService.findById(id);<br/>
+}<br/><br/>
+@PostMapping("/users")<br/>
+public User createUser(@RequestBody User user) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;return userService.save(user);<br/>
+}
+</blockquote>
+
+<h2>Dependency Injection Annotations</h2>
+
+<h3>@Autowired</h3>
+<p><strong>Definition:</strong> Enables automatic dependency injection by type. Spring automatically finds and injects the appropriate bean into the annotated field, constructor, or method parameter.</p>
+<blockquote>
+@Service<br/>
+public class UserController {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;@Autowired<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private UserService userService; // Field injection<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// Constructor injection (recommended)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public UserController(UserService userService) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.userService = userService;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Component Stereotype Annotations</h2>
+<p><strong>Definition:</strong> Annotations that mark classes as Spring-managed components with specific roles in the application architecture.</p>
+
+<h3>@Component</h3>
+<p><strong>Definition:</strong> Generic stereotype annotation that marks a class as a Spring-managed component. Other stereotype annotations are specializations of @Component.</p>
+
+<h3>@Service</h3>
+<p><strong>Definition:</strong> Marks a class as a service component that contains business logic. It's a specialization of @Component for the service layer.</p>
+<blockquote>
+@Service<br/>
+public class UserService {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public User findById(Long id) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Business logic implementation<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h3>@Repository</h3>
+<p><strong>Definition:</strong> Marks a class as a data access component (DAO). It's a specialization of @Component for the persistence layer and provides automatic exception translation.</p>
+<blockquote>
+@Repository<br/>
+public class UserRepository {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public User save(User user) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Data access logic<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Configuration and Property Annotations</h2>
+
+<h3>@Value</h3>
+<p><strong>Definition:</strong> Injects values from properties files, environment variables, or system properties into fields or method parameters.</p>
+<blockquote>
+@Value("${app.name:Default App}")<br/>
+private String appName; // Injects app.name property with default value<br/><br/>
+@Value("${server.port}")<br/>
+private int serverPort;
+</blockquote>
+
+<h3>@ConfigurationProperties</h3>
+<p><strong>Definition:</strong> Binds external configuration properties to a Java object, providing type-safe configuration binding for complex property structures.</p>
+<blockquote>
+@ConfigurationProperties(prefix = "app")<br/>
+@Component<br/>
+public class AppProperties {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private String name;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private String version;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;private Database database = new Database();<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;// getters and setters<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public static class Database {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;private String url;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;private String username;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// getters and setters<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+}
+</blockquote>
+
+<h2>Request Parameter Annotations</h2>
+<p><strong>Definition:</strong> Annotations used to extract data from HTTP requests in controller methods.</p>
+<ul>
+    <li><strong>@PathVariable:</strong> Extracts values from URI path segments</li>
+    <li><strong>@RequestParam:</strong> Extracts query parameters from the request URL</li>
+    <li><strong>@RequestBody:</strong> Binds the HTTP request body to a method parameter</li>
+    <li><strong>@RequestHeader:</strong> Extracts values from HTTP headers</li>
+</ul>
+
+<blockquote>
+@GetMapping("/users/{id}")<br/>
+public User getUser(@PathVariable Long id,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@RequestParam(defaultValue = "false") boolean includeDetails) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;return userService.findById(id, includeDetails);<br/>
+}<br/><br/>
+@PostMapping("/users")<br/>
+public User createUser(@RequestBody User user,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@RequestHeader("Authorization") String authToken) {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;return userService.create(user, authToken);<br/>
+}
+</blockquote>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

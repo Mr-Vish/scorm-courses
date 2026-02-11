@@ -1,0 +1,400 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cost Tracking and Token Management</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cost Tracking and Token Management</h1>
+
+<h2>The Economics of GenAI Applications</h2>
+<p>Unlike traditional software where infrastructure costs are relatively fixed, GenAI application costs scale directly with usage. A single viral feature or runaway agent loop can result in thousands of dollars in unexpected charges within hours.</p>
+
+<h2>Understanding Token-Based Pricing</h2>
+<p>Most LLM providers charge based on token consumption:</p>
+
+<table>
+    <tr><th>Provider</th><th>Model</th><th>Input Price</th><th>Output Price</th></tr>
+    <tr>
+        <td class="rowheader">Anthropic</td>
+        <td>Claude Sonnet 4</td>
+        <td>$3 / 1M tokens</td>
+        <td>$15 / 1M tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">OpenAI</td>
+        <td>GPT-4o</td>
+        <td>$2.50 / 1M tokens</td>
+        <td>$10 / 1M tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Google</td>
+        <td>Gemini 1.5 Pro</td>
+        <td>$1.25 / 1M tokens</td>
+        <td>$5 / 1M tokens</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Anthropic</td>
+        <td>Claude Haiku 3.5</td>
+        <td>$0.80 / 1M tokens</td>
+        <td>$4 / 1M tokens</td>
+    </tr>
+</table>
+
+<p><strong>Key Insight:</strong> Output tokens are typically 3-5x more expensive than input tokens. Verbose outputs significantly increase costs.</p>
+
+<h2>Implementing Cost Tracking</h2>
+
+<h3>Basic Cost Calculation</h3>
+<div class="code-block">
+<pre><code>class CostTracker:
+    # Pricing per 1M tokens (update regularly)
+    PRICING = {
+        "claude-sonnet-4-20250514": {
+            "input": 0.003,
+            "output": 0.015
+        },
+        "gpt-4o": {
+            "input": 0.0025,
+            "output": 0.010
+        },
+        "claude-haiku-3-5-20241022": {
+            "input": 0.0008,
+            "output": 0.004
+        }
+    }
+    
+    @staticmethod
+    def calculate_cost(model, input_tokens, output_tokens):
+        if model not in CostTracker.PRICING:
+            raise ValueError(f"Unknown model: {model}")
+        
+        pricing = CostTracker.PRICING[model]
+        input_cost = (input_tokens / 1_000_000) * pricing["input"]
+        output_cost = (output_tokens / 1_000_000) * pricing["output"]
+        
+        return {
+            "input_cost": input_cost,
+            "output_cost": output_cost,
+            "total_cost": input_cost + output_cost,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
+        }
+</code></pre>
+</div>
+
+<h3>Cost Tracking with Context</h3>
+<div class="code-block">
+<pre><code>import time
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class RequestCost:
+    timestamp: float
+    user_id: str
+    feature: str
+    model: str
+    input_tokens: int
+    output_tokens: int
+    total_cost: float
+    latency_ms: float
+    success: bool
+    error: Optional[str] = None
+
+class CostLogger:
+    def __init__(self, database):
+        self.db = database
+    
+    async def log_request(self, request_cost: RequestCost):
+        # Store in database for analysis
+        await self.db.insert("llm_costs", {
+            "timestamp": request_cost.timestamp,
+            "user_id": request_cost.user_id,
+            "feature": request_cost.feature,
+            "model": request_cost.model,
+            "input_tokens": request_cost.input_tokens,
+            "output_tokens": request_cost.output_tokens,
+            "total_cost": request_cost.total_cost,
+            "latency_ms": request_cost.latency_ms,
+            "success": request_cost.success,
+            "error": request_cost.error
+        })
+        
+        # Also send to metrics system
+        metrics.increment("llm.requests", tags={
+            "model": request_cost.model,
+            "feature": request_cost.feature,
+            "success": request_cost.success
+        })
+        metrics.histogram("llm.cost", request_cost.total_cost, tags={
+            "model": request_cost.model,
+            "feature": request_cost.feature
+        })
+
+# Usage
+async def tracked_llm_call(user_id, feature, prompt):
+    start_time = time.time()
+    
+    try:
+        response = await llm.generate(prompt)
+        
+        cost_info = CostTracker.calculate_cost(
+            model=response.model,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens
+        )
+        
+        await cost_logger.log_request(RequestCost(
+            timestamp=start_time,
+            user_id=user_id,
+            feature=feature,
+            model=response.model,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+            total_cost=cost_info["total_cost"],
+            latency_ms=(time.time() - start_time) * 1000,
+            success=True
+        ))
+        
+        return response
+        
+    except Exception as e:
+        await cost_logger.log_request(RequestCost(
+            timestamp=start_time,
+            user_id=user_id,
+            feature=feature,
+            model="unknown",
+            input_tokens=0,
+            output_tokens=0,
+            total_cost=0,
+            latency_ms=(time.time() - start_time) * 1000,
+            success=False,
+            error=str(e)
+        ))
+        raise
+</code></pre>
+</div>
+
+<h2>Cost Optimization Strategies</h2>
+
+<h3>1. Model Selection</h3>
+<p>Use the smallest model that meets quality requirements:</p>
+<ul>
+    <li><strong>Simple tasks:</strong> Claude Haiku, GPT-4o Mini (10x cheaper)</li>
+    <li><strong>Complex reasoning:</strong> Claude Sonnet, GPT-4o</li>
+    <li><strong>Specialized tasks:</strong> Claude Opus, GPT-4 (only when necessary)</li>
+</ul>
+
+<h3>2. Prompt Optimization</h3>
+<p>Reduce input token count without sacrificing quality:</p>
+<div class="code-block">
+<pre><code># Inefficient: 150 tokens
+prompt = """
+You are a helpful AI assistant. Your job is to help users with their questions.
+Please provide detailed, accurate, and helpful responses. Make sure to be polite
+and professional in all your interactions. If you don't know something, admit it.
+
+User question: What is the capital of France?
+"""
+
+# Efficient: 20 tokens
+prompt = "What is the capital of France?"
+
+# Cost savings: 87% reduction in input tokens
+</code></pre>
+</div>
+
+<h3>3. Output Length Control</h3>
+<p>Limit output tokens to prevent verbose responses:</p>
+<div class="code-block">
+<pre><code># Set appropriate max_tokens based on use case
+response = await client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=200,  # Limit for concise responses
+    messages=[{"role": "user", "content": prompt}]
+)
+
+# For longer content, use streaming and stop early if needed
+async for chunk in client.messages.stream(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1000,
+    messages=[{"role": "user", "content": prompt}]
+):
+    if should_stop_early(chunk):
+        break
+</code></pre>
+</div>
+
+<h3>4. Caching</h3>
+<p>Cache identical or similar requests:</p>
+<div class="code-block">
+<pre><code>import hashlib
+import json
+
+class LLMCache:
+    def __init__(self, redis_client):
+        self.redis = redis_client
+        self.ttl = 3600  # 1 hour
+    
+    def _cache_key(self, model, messages, temperature):
+        # Create deterministic key from request parameters
+        key_data = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature
+        }
+        key_str = json.dumps(key_data, sort_keys=True)
+        return f"llm_cache:{hashlib.sha256(key_str.encode()).hexdigest()}"
+    
+    async def get(self, model, messages, temperature):
+        key = self._cache_key(model, messages, temperature)
+        cached = await self.redis.get(key)
+        if cached:
+            return json.loads(cached)
+        return None
+    
+    async def set(self, model, messages, temperature, response):
+        key = self._cache_key(model, messages, temperature)
+        await self.redis.setex(
+            key,
+            self.ttl,
+            json.dumps(response)
+        )
+
+# Usage
+async def cached_llm_call(prompt):
+    # Check cache first
+    cached = await cache.get("claude-sonnet-4", [{"role": "user", "content": prompt}], 0.7)
+    if cached:
+        metrics.increment("llm.cache.hit")
+        return cached
+    
+    # Cache miss - make API call
+    metrics.increment("llm.cache.miss")
+    response = await llm.generate(prompt)
+    
+    # Store in cache
+    await cache.set("claude-sonnet-4", [{"role": "user", "content": prompt}], 0.7, response)
+    
+    return response
+</code></pre>
+</div>
+
+<h2>Budget Controls and Alerts</h2>
+
+<h3>Per-User Rate Limiting</h3>
+<div class="code-block">
+<pre><code>class UserRateLimiter:
+    def __init__(self, redis_client):
+        self.redis = redis_client
+    
+    async def check_limit(self, user_id, tier="free"):
+        limits = {
+            "free": {"requests": 100, "cost": 1.00},  # per day
+            "pro": {"requests": 1000, "cost": 10.00},
+            "enterprise": {"requests": 10000, "cost": 100.00}
+        }
+        
+        limit = limits.get(tier, limits["free"])
+        
+        # Check request count
+        key_requests = f"rate_limit:{user_id}:requests"
+        current_requests = await self.redis.incr(key_requests)
+        if current_requests == 1:
+            await self.redis.expire(key_requests, 86400)  # 24 hours
+        
+        if current_requests > limit["requests"]:
+            raise RateLimitError(f"Daily request limit exceeded: {limit['requests']}")
+        
+        # Check cost
+        key_cost = f"rate_limit:{user_id}:cost"
+        current_cost = float(await self.redis.get(key_cost) or 0)
+        
+        if current_cost > limit["cost"]:
+            raise RateLimitError(f"Daily cost limit exceeded: ${limit['cost']}")
+        
+        return True
+    
+    async def record_cost(self, user_id, cost):
+        key_cost = f"rate_limit:{user_id}:cost"
+        await self.redis.incrbyfloat(key_cost, cost)
+        await self.redis.expire(key_cost, 86400)
+</code></pre>
+</div>
+
+<h3>Cost Spike Detection</h3>
+<div class="code-block">
+<pre><code>class CostAnomalyDetector:
+    def __init__(self, alert_threshold=2.0):
+        self.alert_threshold = alert_threshold
+        self.baseline_window = 7  # days
+    
+    async def check_anomaly(self, current_cost):
+        # Get historical average
+        baseline = await self.get_baseline_cost()
+        
+        if current_cost > baseline * self.alert_threshold:
+            await self.send_alert(
+                severity="high",
+                message=f"Cost spike detected: ${current_cost:.2f} "
+                        f"(baseline: ${baseline:.2f})"
+            )
+    
+    async def get_baseline_cost(self):
+        # Calculate average daily cost over baseline window
+        query = """
+            SELECT AVG(daily_cost) as baseline
+            FROM (
+                SELECT DATE(timestamp) as date, SUM(total_cost) as daily_cost
+                FROM llm_costs
+                WHERE timestamp >= NOW() - INTERVAL '7 days'
+                GROUP BY DATE(timestamp)
+            ) daily_costs
+        """
+        result = await db.query(query)
+        return result[0]["baseline"]
+</code></pre>
+</div>
+
+<h2>Cost Dashboard Metrics</h2>
+<p>Essential metrics for your cost dashboard:</p>
+<ul>
+    <li><strong>Real-time burn rate:</strong> Current hourly/daily spend</li>
+    <li><strong>Cost by feature:</strong> Which features consume the most budget</li>
+    <li><strong>Cost by user segment:</strong> Free vs. paid user costs</li>
+    <li><strong>Cost per successful request:</strong> Exclude failed requests</li>
+    <li><strong>Token efficiency:</strong> Average tokens per request over time</li>
+    <li><strong>Model distribution:</strong> Percentage of requests to each model</li>
+    <li><strong>Cache hit rate:</strong> Percentage of requests served from cache</li>
+</ul>
+
+<h2>Real-World Cost Optimization Example</h2>
+<div class="code-block">
+<pre><code># Before optimization
+- Model: GPT-4 for all requests
+- Average input: 2000 tokens
+- Average output: 800 tokens
+- Requests per day: 10,000
+- Daily cost: $420
+
+# After optimization
+- Model: GPT-4o Mini for 70% of requests, GPT-4o for 30%
+- Average input: 1200 tokens (prompt optimization)
+- Average output: 500 tokens (max_tokens limits)
+- Caching: 20% cache hit rate
+- Requests per day: 10,000 (8,000 API calls after caching)
+- Daily cost: $85
+
+# Result: 80% cost reduction
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

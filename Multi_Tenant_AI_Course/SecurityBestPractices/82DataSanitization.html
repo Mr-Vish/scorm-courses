@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>8.2 Data Sanitization and PII Redaction</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>8.2 Data Sanitization and PII Redaction</h1>
+
+<p>A major risk in multi-tenant AI is the accidental inclusion of Personally Identifiable Information (PII) in prompts or fine-tuning datasets. This module discusses techniques for sanitizing data before it reaches the AI model.</p>
+
+<h2>What is PII?</h2>
+<p>Personally Identifiable Information is any data that can be used to identify a specific individual. Common examples include:
+<ul>
+    <li>Full names</li>
+    <li>Email addresses</li>
+    <li>Phone numbers</li>
+    <li>Social Security numbers</li>
+    <li>Credit card numbers</li>
+    <li>Home addresses</li>
+    <li>Medical records</li>
+</ul></p>
+
+<h2>Why Redact PII?</h2>
+<ol>
+    <li><strong>Compliance:</strong> Regulations like GDPR and HIPAA require strict protection of PII.</li>
+    <li><strong>Security:</strong> Reducing the sensitive data sent to third-party AI providers (like OpenAI or Anthropic).</li>
+    <li><strong>Trust:</strong> Demonstrating to your tenants that you take their privacy seriously.</li>
+</ol>
+
+<h2>Techniques for PII Redaction</h2>
+<ul>
+    <li><strong>Regex-based Matching:</strong> Using predefined patterns to find and replace common PII (e.g., email addresses). This is fast but often misses edge cases or complex formatting.</li>
+    <li><strong>Named Entity Recognition (NER):</strong> Using a specialized NLP model (like spaCy or a small BERT-based model) to identify names, organizations, and locations in the text. This is much more accurate than regex but more compute-intensive.</li>
+    <li><strong>Presidio (Microsoft):</strong> An open-source library that provides a comprehensive framework for PII identification and redaction.</li>
+</ul>
+
+<h2>The Redaction Workflow</h2>
+<ol>
+    <li><strong>Input Data:</strong> The tenant provides a prompt or a document.</li>
+    <li><strong>Identification:</strong> The system identifies all PII entities.</li>
+    <li><strong>Transformation:</strong> The PII is replaced with a placeholder (e.g., "[PERSON_NAME]") or a pseudonym.</li>
+    <li><strong>Processing:</strong> The sanitized text is sent to the LLM.</li>
+    <li><strong>Re-identification (Optional):</strong> If the response needs to include the original names, the system replaces the placeholders back with the original data before showing the response to the user.</li>
+</ol>
+
+<h2>Challenges and Limitations</h2>
+<p>Redaction is never 100% perfect. There is always a risk of "under-redaction" (missing PII) or "over-redaction" (replacing non-sensitive information, which can degrade the model's performance). Balancing accuracy and speed is a key challenge for any multi-tenant AI platform.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

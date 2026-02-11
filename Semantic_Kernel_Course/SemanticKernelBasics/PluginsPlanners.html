@@ -1,0 +1,100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Semantic Kernel - Plugins and Planners</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>The Power of Plugins and Planners</h1>
+
+<div class="content-section">
+<h2>1. Introduction</h2>
+<p>While an LLM is powerful, its knowledge is static and it cannot "do" anything in the real world. <strong>Plugins</strong> are the bridge that connects the model to external data and functionality. <strong>Planners</strong> are the "brain" that decides which plugins to use and in what order to solve a user's goal.</p>
+
+<h2>2. Understanding Plugins</h2>
+<p>In Semantic Kernel, a <strong>Plugin</strong> is a collection of functions. There are two main types:</p>
+
+<h3>A. Semantic Plugins (Prompt-based)</h3>
+<p>These are essentially "encapsulated prompts." They allow you to define a task in natural language, including parameters and descriptions. Semantic Kernel handles the orchestration of sending the prompt to the LLM and parsing the response.
+    <ul>
+        <li><strong>Example:</strong> A <code>SummarizePlugin</code> that takes a long block of text and returns a one-paragraph summary.</li>
+    </ul>
+</p>
+
+<h3>B. Native Plugins (Code-based)</h3>
+<p>These are standard functions written in Python or C#. They allow the model to interact with the real world—sending emails, querying databases, or performing complex mathematical calculations.
+    <ul>
+        <li><strong>Example:</strong> A <code>WeatherPlugin</code> that calls a REST API to get the current temperature in a specific city.</li>
+    </ul>
+</p>
+
+<div class="code-block">
+<pre><code># Creating a Native Plugin in Python
+class MathPlugin:
+    @kernel_function(
+        name="sqrt",
+        description="Calculates the square root of a number"
+    )
+    def square_root(self, number: float) -> float:
+        return math.sqrt(number)
+
+# Registering the plugin with the Kernel
+kernel.import_plugin(MathPlugin(), plugin_name="Math")</code></pre>
+</div>
+
+<h2>3. The Magic of Planners</h2>
+<p>If you have 100 different plugins, how do you know which one to call for a specific user request? You could write a massive "if-else" block, but that's not scalable. A <strong>Planner</strong> uses the LLM to automatically create a "plan" (a sequence of steps) to achieve a goal.</p>
+
+<h3>Types of Planners</h3>
+<ul>
+    <li><strong>Function Calling Stepwise Planner:</strong> The most modern and robust planner. It works iteratively: it picks a tool, executes it, looks at the result, and then decides the next step. This is much more reliable than "pre-planning" everything at once.</li>
+    <li><strong>Handlebars Planner:</strong> Uses the Handlebars templating language to create complex, multi-step plans that include loops and conditional logic.</li>
+    <li><strong>Sequential Planner (Legacy):</strong> Creates a fixed list of steps to be executed in order. While simpler, it is more prone to failure if one of the steps doesn't return the expected result.</li>
+</ul>
+
+<h2>4. How Planners Use Metadata</h2>
+<p>Planners rely heavily on the <strong>Names and Descriptions</strong> you provide for your plugins and functions. This is "Semantic Metadata."
+    <br /><br />
+    If you name a function <code>GetX()</code> with no description, the planner won't know when to use it. If you name it <code>GetStockPrice()</code> and give it the description <code>"Retrieves the current trading price of a stock symbol"</code>, the planner will know to call it when a user asks: "How much is Microsoft trading for?"
+</p>
+
+<h2>5. Managing Plan Execution</h2>
+<p>Executing a plan involves several steps:
+    <ol>
+        <li><strong>Goal Definition:</strong> The user provides a natural language goal.</li>
+        <li><strong>Plan Generation:</strong> The planner analyzes all available plugins and creates a JSON or Handlebars plan.</li>
+        <li><strong>Review (Optional but Recommended):</strong> In a responsible AI application, a human or a secondary safety filter reviews the plan before it is executed.</li>
+        <li><strong>Execution:</strong> The kernel executes the functions in the plan, passing data between them.</li>
+        <li><strong>Final Result:</strong> The output of the final function is returned to the user.</li>
+    </ol>
+</p>
+
+<h2>6. Best Practices for Plugins</h2>
+<ul>
+    <li><strong>Granularity:</strong> Keep functions small and focused on a single task. A function that does too much is harder for a planner to use correctly.</li>
+    <li><strong>Descriptions:</strong> Spend time writing clear, concise descriptions. This is the only way the planner knows how to use your code. Think of the description as the "UI" for the LLM.</li>
+    <li><strong>Error Handling:</strong> Native functions should handle exceptions gracefully and return meaningful error messages that the planner can use to "re-plan." If a tool fails, the agent should know <em>why</em>.</li>
+    <li><strong>State Management:</strong> Avoid maintaining internal state within a plugin; use the Kernel's <code>Context</code> or an external database. Agents should be as stateless as possible to ensure reliability.</li>
+</ul>
+
+<h2>7. Advanced Planner Strategies</h2>
+<p>As you build more complex systems, you may find that a single planner isn't enough.
+    <ul>
+        <li><strong>Stepwise Planning with Feedback:</strong> Use the Stepwise Planner to allow the agent to self-correct. If a tool output is unexpected, the planner can decide to call a different tool.</li>
+        <li><strong>Custom Planners:</strong> For very specific domains, you can write your own planner by creating a specialized Semantic Function that analyzes the available tools and returns a custom JSON execution plan.</li>
+        <li><strong>Restricting Plugins:</strong> To improve performance and accuracy, you can provide the planner with only a subset of available plugins that are relevant to the current user intent.</li>
+    </ul>
+</p>
+
+<h2>Conclusion</h2>
+<p>Plugins and Planners turn a simple chatbot into a powerful agent capable of solving real-world problems. By providing the model with specialized tools and the ability to strategize, you can build applications that are much more than the sum of their parts. In the next module, we'll explore how to give your agents a long-term memory.</p>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

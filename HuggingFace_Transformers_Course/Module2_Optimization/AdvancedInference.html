@@ -1,0 +1,320 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Advanced Inference Techniques</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Advanced Inference Techniques</h1>
+
+<h2>Batched Inference</h2>
+<p>Processing multiple inputs simultaneously improves throughput significantly:</p>
+
+<pre><code>from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+model = AutoModelForCausalLM.from_pretrained(
+    "gpt2",
+    torch_dtype=torch.float16,
+    device_map="auto"
+)
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+tokenizer.pad_token = tokenizer.eos_token
+
+# Batch processing
+prompts = [
+    "The future of AI is",
+    "Machine learning enables",
+    "Deep learning models"
+]
+
+# Tokenize with padding
+inputs = tokenizer(
+    prompts,
+    return_tensors="pt",
+    padding=True,
+    truncation=True
+).to(model.device)
+
+# Generate for all prompts at once
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=50,
+    pad_token_id=tokenizer.eos_token_id
+)
+
+# Decode results
+for i, output in enumerate(outputs):
+    text = tokenizer.decode(output, skip_special_tokens=True)
+    print(f"Prompt {i+1}: {text}\n")\n</code></pre>
+
+<h2>Dynamic Batching</h2>
+<p>Efficiently handle variable-length sequences in production:</p>
+
+<pre><code>def dynamic_batch_generate(prompts, model, tokenizer, max_batch_size=8):
+    """Process prompts in dynamic batches"""
+    results = []
+    
+    for i in range(0, len(prompts), max_batch_size):
+        batch = prompts[i:i + max_batch_size]
+        
+        inputs = tokenizer(
+            batch,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=512
+        ).to(model.device)
+        
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=100,
+                pad_token_id=tokenizer.pad_token_id
+            )
+        
+        batch_results = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        results.extend(batch_results)
+    
+    return results\n</code></pre>
+
+<h2>Compilation with torch.compile</h2>
+<p>PyTorch 2.0+ compilation provides significant speedups:</p>
+
+<pre><code>import torch
+from transformers import AutoModelForCausalLM
+
+model = AutoModelForCausalLM.from_pretrained(
+    "gpt2",
+    torch_dtype=torch.float16
+).to("cuda")
+
+# Compile the model
+model = torch.compile(model, mode="reduce-overhead")
+
+# First run is slow (compilation)
+# Subsequent runs are 1.5-3x faster
+
+# Compilation modes:
+# - "default": Balanced speed and compilation time
+# - "reduce-overhead": Maximum performance
+# - "max-autotune": Aggressive optimization (slow compilation)\n</code></pre>
+
+<h2>BetterTransformer Integration</h2>
+<pre><code>from transformers import AutoModelForCausalLM
+from optimum.bettertransformer import BetterTransformer
+
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+
+# Convert to BetterTransformer
+model = BetterTransformer.transform(model)
+
+# Benefits:
+# - 1.2-1.5x speedup
+# - Fused attention operations
+# - Lower memory usage
+# - No quality loss
+
+# Convert back if needed
+model = BetterTransformer.reverse(model)\n</code></pre>
+
+<h2>Speculative Decoding</h2>
+<p>Use a smaller draft model to speed up generation from a larger model:</p>
+
+<pre><code>from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Load target (large) and draft (small) models
+target_model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-70b-instruct",
+    torch_dtype=torch.float16,
+    device_map="auto"
+)
+
+draft_model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-8b-instruct",
+    torch_dtype=torch.float16,
+    device_map="auto"
+)
+
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3-70b-instruct")
+
+# Generate with speculative decoding
+outputs = target_model.generate(
+    input_ids,
+    assistant_model=draft_model,  # Use draft model for speculation
+    max_new_tokens=200
+)
+
+# Can provide 2-3x speedup with same quality\n</code></pre>
+
+<h2>Continuous Batching</h2>
+<p>Advanced technique for production serving:</p>
+
+<pre><code># Continuous batching allows:
+# - Adding new requests to in-flight batches
+# - Removing completed sequences
+# - Maximizing GPU utilization
+
+# Implemented in frameworks like:
+# - vLLM
+# - TGI (Text Generation Inference)
+# - TensorRT-LLM
+
+# Example conceptual flow:
+# 1. Batch starts with requests A, B, C
+# 2. Request B completes after 50 tokens
+# 3. Request D joins the batch
+# 4. Batch continues with A, C, D\n</code></pre>
+
+<h2>Caching Strategies</h2>
+<pre><code># Static KV Cache (default)
+outputs = model.generate(
+    input_ids,
+    max_new_tokens=100,
+    use_cache=True  # Cache keys and values
+)
+
+# For repeated prefixes, use prefix caching
+# Example: System prompts in chatbots
+system_prompt = "You are a helpful assistant."
+user_messages = ["Hello", "How are you?", "Tell me a joke"]
+
+# Cache system prompt embeddings
+system_inputs = tokenizer(system_prompt, return_tensors="pt")
+with torch.no_grad():
+    system_outputs = model(**system_inputs, use_cache=True)
+    past_key_values = system_outputs.past_key_values
+
+# Reuse for each user message
+for msg in user_messages:
+    user_inputs = tokenizer(msg, return_tensors="pt")
+    outputs = model.generate(
+        **user_inputs,
+        past_key_values=past_key_values,  # Reuse cached system prompt
+        max_new_tokens=50
+    )\n</code></pre>
+
+<h2>Mixed Precision Inference</h2>
+<pre><code>import torch
+
+# Automatic mixed precision
+with torch.cuda.amp.autocast():
+    outputs = model.generate(
+        input_ids,
+        max_new_tokens=100
+    )
+
+# Benefits:
+# - Faster computation
+# - Lower memory usage
+# - Automatic precision selection per operation\n</code></pre>
+
+<h2>Inference Optimization Checklist</h2>
+<table>
+    <tr>
+        <th>Technique</th>
+        <th>Speedup</th>
+        <th>Memory Impact</th>
+        <th>Complexity</th>
+    </tr>
+    <tr>
+        <td class="rowheader">FP16/BF16</td>
+        <td>1.5-2x</td>
+        <td>50% reduction</td>
+        <td>Very Easy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Flash Attention 2</td>
+        <td>2-3x</td>
+        <td>5-20x less for attention</td>
+        <td>Easy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">torch.compile</td>
+        <td>1.5-3x</td>
+        <td>Minimal</td>
+        <td>Easy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batched Inference</td>
+        <td>Linear with batch size</td>
+        <td>Increases with batch</td>
+        <td>Moderate</td>
+    </tr>
+    <tr>
+        <td class="rowheader">4-bit Quantization</td>
+        <td>1.5-2x</td>
+        <td>75% reduction</td>
+        <td>Easy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">BetterTransformer</td>
+        <td>1.2-1.5x</td>
+        <td>Slight reduction</td>
+        <td>Easy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Speculative Decoding</td>
+        <td>2-3x</td>
+        <td>Requires 2 models</td>
+        <td>Moderate</td>
+    </tr>
+</table>
+
+<h2>Production Inference Pipeline</h2>
+<pre><code>class OptimizedInferencePipeline:
+    def __init__(self, model_name):
+        # Load with all optimizations
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.bfloat16,
+            attn_implementation="flash_attention_2",
+            device_map="auto"
+        )
+        
+        # Compile for speed
+        self.model = torch.compile(self.model, mode="reduce-overhead")
+        
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+    
+    def generate_batch(self, prompts, max_new_tokens=100):
+        inputs = self.tokenizer(
+            prompts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True
+        ).to(self.model.device)
+        
+        with torch.no_grad(), torch.cuda.amp.autocast():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                use_cache=True,
+                pad_token_id=self.tokenizer.eos_token_id
+            )
+        
+        return self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+
+# Usage
+pipeline = OptimizedInferencePipeline("meta-llama/Llama-3-8b-instruct")
+results = pipeline.generate_batch(["Hello", "How are you?"])\n</code></pre>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Combine Techniques:</strong> Stack optimizations for maximum performance</li>
+    <li><strong>Profile First:</strong> Measure before and after optimization</li>
+    <li><strong>Use Batching:</strong> Always batch requests when possible</li>
+    <li><strong>Enable Compilation:</strong> torch.compile provides free speedups</li>
+    <li><strong>Monitor Latency:</strong> Track P50, P95, P99 latencies in production</li>
+    <li><strong>Test Quality:</strong> Verify optimizations don't degrade outputs</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

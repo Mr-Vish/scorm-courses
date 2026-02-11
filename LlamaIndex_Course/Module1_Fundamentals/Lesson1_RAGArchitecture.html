@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>RAG Architecture and Core Concepts</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 1: LlamaIndex Fundamentals</h1>
+<h2>Lesson 1: RAG Architecture and Core Concepts</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Understand the fundamental architecture of Retrieval-Augmented Generation (RAG) systems</li>
+    <li>Identify the core components of LlamaIndex and their roles in the data pipeline</li>
+    <li>Explain how RAG addresses the limitations of standalone LLMs</li>
+    <li>Recognize the difference between parametric and non-parametric knowledge in AI systems</li>
+</ul>
+
+<h3>Introduction to Retrieval-Augmented Generation</h3>
+<p>Retrieval-Augmented Generation represents a paradigm shift in how we build AI applications. Traditional Large Language Models (LLMs) rely exclusively on <strong>parametric knowledge</strong>—information encoded in the model's weights during training. While this approach enables impressive general-purpose capabilities, it suffers from critical limitations:</p>
+
+<ul>
+    <li><strong>Knowledge Cutoff:</strong> Models are frozen in time, lacking awareness of events or information after their training date</li>
+    <li><strong>Hallucination Risk:</strong> Without access to source material, models may generate plausible-sounding but factually incorrect information</li>
+    <li><strong>Domain Limitations:</strong> Models lack deep expertise in specialized or proprietary domains not well-represented in training data</li>
+    <li><strong>No Source Attribution:</strong> Responses cannot be traced back to verifiable sources, creating compliance and trust issues</li>
+    <li><strong>Update Challenges:</strong> Incorporating new information requires expensive retraining of the entire model</li>
+</ul>
+
+<p>RAG solves these problems by introducing <strong>non-parametric knowledge</strong>—external information retrieved dynamically at query time. Instead of relying solely on what the model "remembers" from training, RAG systems retrieve relevant context from a knowledge base and provide it to the LLM as part of the prompt. This architectural pattern enables AI applications that are both powerful and grounded in factual, up-to-date information.</p>
+
+<h3>The RAG Pipeline: A Conceptual Overview</h3>
+<p>The RAG architecture consists of two distinct phases: an <strong>indexing phase</strong> (offline) and a <strong>querying phase</strong> (online). Understanding this separation is crucial for designing efficient systems.</p>
+
+<h4>Indexing Phase (Offline)</h4>
+<p>The indexing phase prepares your data for efficient retrieval. This process occurs before any user queries and typically includes:</p>
+
+<ol>
+    <li><strong>Data Ingestion:</strong> Documents are loaded from various sources (PDFs, databases, APIs, web pages)</li>
+    <li><strong>Document Parsing:</strong> Content is extracted and structured, preserving important metadata</li>
+    <li><strong>Text Chunking:</strong> Large documents are split into smaller, semantically coherent segments called "nodes"</li>
+    <li><strong>Embedding Generation:</strong> Each chunk is converted into a high-dimensional vector representation that captures semantic meaning</li>
+    <li><strong>Index Construction:</strong> Vectors are organized into a searchable data structure optimized for similarity queries</li>
+    <li><strong>Metadata Enrichment:</strong> Additional information (source, date, category) is attached to enable filtering and attribution</li>
+</ol>
+
+<p>This phase is computationally intensive but only needs to be performed once per document (or when documents are updated). The resulting index serves as your application's knowledge base.</p>
+
+<h4>Querying Phase (Online)</h4>
+<p>The querying phase handles user requests in real-time:</p>
+
+<ol>
+    <li><strong>Query Processing:</strong> The user's question is analyzed and potentially transformed for better retrieval</li>
+    <li><strong>Query Embedding:</strong> The question is converted into the same vector space as the indexed documents</li>
+    <li><strong>Similarity Search:</strong> The system identifies the most relevant document chunks based on vector similarity</li>
+    <li><strong>Context Assembly:</strong> Retrieved chunks are organized and formatted for the LLM</li>
+    <li><strong>Prompt Construction:</strong> A prompt is built combining the user's question with retrieved context</li>
+    <li><strong>LLM Generation:</strong> The language model generates a response grounded in the provided context</li>
+    <li><strong>Response Synthesis:</strong> The final answer is formatted, potentially including source citations</li>
+</ol>
+
+<p>This phase must be highly optimized for latency, as users expect near-instantaneous responses.</p>
+
+<h3>LlamaIndex Architecture: Core Components</h3>
+<p>LlamaIndex provides a modular architecture where each component handles a specific aspect of the RAG pipeline. Understanding these components and their interactions is essential for effective system design.</p>
+
+<h4>1. Data Connectors (Readers)</h4>
+<p>Data connectors are responsible for ingesting information from diverse sources. LlamaIndex provides a rich ecosystem of readers through LlamaHub, supporting:</p>
+
+<ul>
+    <li><strong>File-Based Sources:</strong> PDF, DOCX, TXT, Markdown, HTML, CSV, JSON</li>
+    <li><strong>Database Systems:</strong> PostgreSQL, MySQL, MongoDB, Elasticsearch</li>
+    <li><strong>Cloud Storage:</strong> AWS S3, Google Cloud Storage, Azure Blob Storage</li>
+    <li><strong>APIs and Services:</strong> Notion, Confluence, Google Drive, Slack, GitHub</li>
+    <li><strong>Web Sources:</strong> Web scraping, RSS feeds, sitemaps</li>
+    <li><strong>Specialized Formats:</strong> Scientific papers (arXiv), legal documents, medical records</li>
+</ul>
+
+<p>Each reader understands the structure and semantics of its source format, extracting not just text but also metadata, relationships, and hierarchical information. This structured ingestion is critical for maintaining context and enabling advanced retrieval strategies.</p>
+
+<h4>2. Document and Node Abstractions</h4>
+<p>LlamaIndex uses two key abstractions to represent information:</p>
+
+<p><strong>Documents:</strong> Represent complete units of information (e.g., a full PDF file, a database record, a web page). Documents contain:</p>
+<ul>
+    <li>Raw text content</li>
+    <li>Metadata (source, author, date, category)</li>
+    <li>Relationships to other documents</li>
+    <li>Custom attributes specific to your domain</li>
+</ul>
+
+<p><strong>Nodes:</strong> Represent chunks or segments of documents optimized for retrieval. Nodes are the fundamental unit that gets embedded and indexed. Each node contains:</p>
+<ul>
+    <li>A text chunk (typically 256-1024 tokens)</li>
+    <li>Inherited metadata from the parent document</li>
+    <li>Relationships to other nodes (previous, next, parent, child)</li>
+    <li>An embedding vector representing its semantic content</li>
+</ul>
+
+<p>The document-to-node transformation is a critical design decision. Chunks that are too small lose context; chunks that are too large reduce retrieval precision. LlamaIndex provides sophisticated node parsers that balance these trade-offs.</p>
+
+<h4>3. Indexes: The Heart of Retrieval</h4>
+<p>Indexes are data structures that enable efficient similarity search over your document collection. LlamaIndex supports multiple index types, each optimized for different use cases:</p>
+
+<p><strong>VectorStoreIndex:</strong> The most common index type, storing embeddings in a vector database. Retrieval is based on cosine similarity or other distance metrics. Best for semantic search where you want to find conceptually similar content regardless of exact keyword matches.</p>
+
+<p><strong>SummaryIndex (List Index):</strong> Stores nodes sequentially without embeddings. During retrieval, all nodes are scanned. Useful when you need comprehensive coverage of all information rather than selective retrieval, such as generating summaries of entire document sets.</p>
+
+<p><strong>TreeIndex:</strong> Organizes nodes in a hierarchical tree structure where parent nodes contain summaries of their children. Enables multi-level retrieval strategies and is particularly effective for navigating large document collections with natural hierarchies.</p>
+
+<p><strong>KeywordTableIndex:</strong> Extracts keywords from each node and builds an inverted index. Retrieval is based on keyword matching rather than semantic similarity. Useful for exact-match scenarios or when combined with vector search in hybrid approaches.</p>
+
+<p><strong>KnowledgeGraphIndex:</strong> Extracts entities and relationships from text, building a graph structure. Enables relationship-based queries like "What companies did Person X work for?" or "How are Concept A and Concept B related?"</p>
+
+<h4>4. Retrievers: Fetching Relevant Context</h4>
+<p>Retrievers implement the logic for finding relevant nodes given a query. While indexes define the data structure, retrievers define the search strategy. LlamaIndex provides:</p>
+
+<ul>
+    <li><strong>Vector Retrievers:</strong> Find nodes with embeddings most similar to the query embedding</li>
+    <li><strong>Keyword Retrievers:</strong> Match based on keyword overlap (BM25 algorithm)</li>
+    <li><strong>Hybrid Retrievers:</strong> Combine multiple retrieval strategies and merge results</li>
+    <li><strong>Auto-Retrievers:</strong> Automatically select the best retrieval strategy based on query characteristics</li>
+</ul>
+
+<p>Retrievers can be configured with parameters like <code>similarity_top_k</code> (number of nodes to retrieve) and <code>similarity_cutoff</code> (minimum similarity threshold).</p>
+
+<h4>5. Query Engines: Orchestrating the Pipeline</h4>
+<p>Query engines coordinate the entire query process: retrieval, context assembly, prompt construction, and response generation. They provide a high-level interface that abstracts away the complexity of the underlying pipeline. Query engines handle:</p>
+
+<ul>
+    <li>Query preprocessing and transformation</li>
+    <li>Retrieval execution</li>
+    <li>Context ranking and filtering</li>
+    <li>Prompt template management</li>
+    <li>LLM invocation</li>
+    <li>Response post-processing</li>
+</ul>
+
+<h4>6. Response Synthesizers: Generating Answers</h4>
+<p>Response synthesizers determine how retrieved context is used to generate the final answer. Different synthesis modes offer trade-offs between quality, latency, and cost:</p>
+
+<ul>
+    <li><strong>Refine Mode:</strong> Iteratively refines the answer by processing each retrieved chunk sequentially</li>
+    <li><strong>Compact Mode:</strong> Concatenates as many chunks as possible into each LLM call to minimize API requests</li>
+    <li><strong>Tree Summarize:</strong> Builds a tree of summaries, ideal for comprehensive document summarization</li>
+    <li><strong>Simple Concatenate:</strong> Combines all context into a single prompt (limited by context window)</li>
+</ul>
+
+<h3>Why LlamaIndex? Positioning in the AI Ecosystem</h3>
+<p>LlamaIndex occupies a specific niche in the AI framework landscape. While LangChain provides general-purpose tools for building LLM applications, LlamaIndex specializes in the data ingestion, indexing, and retrieval aspects of RAG. Key differentiators include:</p>
+
+<ul>
+    <li><strong>Data-Centric Design:</strong> Every component is optimized for handling diverse data sources and formats</li>
+    <li><strong>Retrieval Sophistication:</strong> Advanced retrieval strategies including hybrid search, re-ranking, and query transformation</li>
+    <li><strong>Index Flexibility:</strong> Multiple index types for different use cases, not just vector search</li>
+    <li><strong>Production Focus:</strong> Built-in support for streaming, async operations, and observability</li>
+    <li><strong>Ecosystem Integration:</strong> Seamless integration with popular vector databases, LLM providers, and embedding models</li>
+</ul>
+
+<h3>Real-World Applications and Use Cases</h3>
+<p>Understanding where RAG and LlamaIndex excel helps in identifying appropriate use cases:</p>
+
+<p><strong>Enterprise Search and Knowledge Management:</strong> Organizations with large document repositories (policies, procedures, technical documentation) can build intelligent search systems that understand natural language queries and provide contextual answers with source citations.</p>
+
+<p><strong>Customer Support Automation:</strong> RAG systems can access product documentation, troubleshooting guides, and historical support tickets to provide accurate, context-aware responses to customer inquiries, reducing support costs while improving response quality.</p>
+
+<p><strong>Research and Analysis:</strong> Researchers can query vast collections of scientific papers, patents, or market research reports, with the system synthesizing insights across multiple sources and highlighting relevant passages.</p>
+
+<p><strong>Compliance and Legal:</strong> Legal teams can build systems that search through contracts, regulations, and case law, identifying relevant precedents and ensuring compliance with complex regulatory requirements.</p>
+
+<p><strong>Personalized Learning:</strong> Educational platforms can create adaptive learning assistants that retrieve relevant course materials, examples, and explanations tailored to individual student questions and learning contexts.</p>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>RAG combines the generative capabilities of LLMs with the factual grounding of external knowledge bases</li>
+    <li>The RAG pipeline consists of an offline indexing phase and an online querying phase</li>
+    <li>LlamaIndex provides modular components for data ingestion, indexing, retrieval, and response synthesis</li>
+    <li>Different index types serve different use cases: vector search for semantic similarity, keyword indexes for exact matching, knowledge graphs for relationship queries</li>
+    <li>LlamaIndex specializes in the data and retrieval aspects of RAG, complementing general-purpose frameworks like LangChain</li>
+    <li>RAG is particularly valuable for applications requiring up-to-date information, source attribution, and domain-specific knowledge</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

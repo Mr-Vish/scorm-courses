@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 3: Real-time Data Redaction and PII Masking</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Real-time Data Redaction and PII Masking</h1>
+
+<p>One of the primary security functions of a Private LLM Gateway is to prevent sensitive data—specifically Personally Identifiable Information (PII)—from being sent to external AI providers. This module explores the techniques and workflows for real-time data redaction.</p>
+
+<h2>3.1 The Redaction Pipeline</h2>
+<p>The gateway should scan every outgoing prompt for PII. The process typically follows these steps:
+<ol>
+    <li><strong>Identification:</strong> Detecting entities like names, emails, phone numbers, and Social Security numbers using NLP models (like spaCy or BERT) or regex.</li>
+    <li><strong>Masking/Anonymization:</strong> Replacing the PII with placeholders (e.g., <code>[PERSON_NAME]</code>, <code>[EMAIL_ADDRESS]</code>).</li>
+    <li><strong>Mapping (Optional):</strong> Maintaining a secure, internal map of placeholders to original values so the model's response can be "de-anonymized" before reaching the user.</li>
+    <li><strong>Verification:</strong> A final check to ensure no residual sensitive patterns remain in the sanitized prompt.</li>
+</ol></p>
+
+<h2>3.2 Leveraging Open Source: Microsoft Presidio</h2>
+<p>Microsoft Presidio is an industry-standard open-source library for PII identification and redaction. It provides:
+<ul>
+    <li><strong>Predefined Recognizers:</strong> Support for dozens of common PII types across multiple languages.</li>
+    <li><strong>Custom Recognizers:</strong> The ability to define your own rules for organization-specific sensitive data (e.g., internal project IDs or proprietary product names).</li>
+    <li><strong>Flexible Logic:</strong> Different redaction strategies, such as "replace with hash," "replace with entity type," or "masking first/last N characters."</li>
+</ul></p>
+
+<h2>3.3 Challenges in Real-time Redaction</h2>
+<ul>
+    <li><strong>Latency:</strong> Running complex NLP models for identification adds milliseconds (or even seconds) to the request time. Optimizing these models for speed is critical.</li>
+    <li><strong>False Positives:</strong> Redacting non-sensitive information (e.g., redacting "Apple" the fruit because it's also a company name). This can degrade the quality of the LLM's response.</li>
+    <li><strong>False Negatives:</strong> Missing PII because it's formatted in an unusual way or hidden within a complex sentence. This is the biggest security risk.</li>
+    <li><strong>Contextual Ambiguity:</strong> Information that is not PII on its own but becomes sensitive when combined with other data.</li>
+</ul>
+
+<h2>3.4 Redacting the Model's Output</h2>
+<p>While most focus is on the input, the model's output can also contain sensitive data (either leaked from the training set or inadvertently generated). The gateway should also scan the completion for PII and redact it before the user sees it, providing an extra layer of defense-in-depth.</p>
+
+<h2>3.5 Secure De-identification for Fine-tuning</h2>
+<p>If your organization fine-tunes models on internal data, that data must be rigorously de-identified before training. The gateway's redaction logic can be repurposed for this "batch" processing task, ensuring that your custom models are built on a safe and compliant foundation.</p>
+
+<p>By implementing robust, real-time data redaction, you enable your organization to leverage the power of external LLMs while maintaining full control over your most sensitive information.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

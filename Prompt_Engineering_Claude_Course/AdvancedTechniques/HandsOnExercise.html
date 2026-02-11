@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on: Building an AI Researcher</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on: Building an AI Researcher</h1>
+<div class="container">
+<h2>Hands-on Exercise: Building an AI News Researcher</h2>
+<p>In this final comprehensive exercise, you will apply everything you've learned to design a sophisticated AI News Researcher using Claude's most advanced features. This agent will be capable of searching the web, analyzing multiple long-form articles, and generating a professional research report in an interactive format.</p>
+
+<h3>The Goal</h3>
+<p>Your goal is to create a system prompt and a set of tool definitions for an agent that can take a broad topic (e.g., "The current state of solid-state battery technology") and produce a detailed, fact-checked report.</p>
+
+<h3>Step 1: Design the Persona</h3>
+<p>Start by creating a system prompt that establishes a high-level persona. Use the Persona Engineering principles we discussed. Your researcher should be objective, analytical, and highly organized.</p>
+<blockquote>
+"You are a Lead Technology Analyst for a premier research firm. Your specialty is synthesizing complex technical information into actionable intelligence for executive leadership. Your reports are known for their depth, clarity, and strict adherence to facts."
+</blockquote>
+
+<h3>Step 2: Define the Tools</h3>
+<p>Claude needs a way to get information. Define at least two tools:
+<ol>
+    <li><code>web_search(query)</code>: To find relevant news articles and papers.</li>
+    <li><code>fetch_url_content(url)</code>: To retrieve the full text of a specific article.</li>
+</ol>
+Ensure your JSON schemas are precise and include descriptions for all parameters.</p>
+
+<h3>Step 3: Leveraging Long Context and XML Tags</h3>
+<p>When you fetch content from multiple URLs, you might end up with 50,000+ words of text. Use Claude's long context window to process all of this at once. Structure the input using XML tags:</p>
+<blockquote>
+&lt;source_materials&gt;<br/>
+&lt;article url="..."&gt;...full text...&lt;/article&gt;<br/>
+&lt;article url="..."&gt;...full text...&lt;/article&gt;<br/>
+&lt;/source_materials&gt;
+</blockquote>
+
+<h3>Step 4: Implement Prompt Caching</h3>
+<p>If you are iterating on the report format or asking follow-up questions about the same set of articles, place a cache breakpoint after the <code>&lt;source_materials&gt;</code> tag. This will save significant time and cost during your research sessions.</p>
+
+<h3>Step 5: Output as an Artifact</h3>
+<p>Instruct Claude to provide the final report as a Markdown Artifact. This allows you to view the structured report separately from the research process. Ask for a specific structure: Executive Summary, Key Findings, Technological Hurdles, and Future Outlook.</p>
+
+<h3>Final Challenge</h3>
+<p>Once your agent is working, try adding a Vision component. Provide a screenshot of a technical chart related to your topic and ask the agent to incorporate the chart's data into the final report. How does this change the quality and depth of the analysis?</p>
+
+<h3>Reflect and Iterate</h3>
+<p>After running your agent, evaluate the results. Did it miss any key information? Was the tone appropriate? Use the Iterative Development cycle to refine your system prompt and tool descriptions until the output meets your high standards.</p>
+
+<p>Congratulations! You have now built a sophisticated, multi-modal, agentic workflow using the full power of Claude's advanced capabilities.</p>
+
+</div>
+</body>
+</html>

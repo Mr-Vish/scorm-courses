@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 5: Monitoring and Billing</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 5: Monitoring, Observability, and Billing</h1>
+
+<p>In a multi-tenant system, "visibility" is key. You need to know exactly how much each tenant is consuming, what their experience is like, and how much it's costing you to serve them. This module explores the tools and techniques for effective monitoring and billing.</p>
+
+<h2>5.1 Usage Tracking and Attribution</h2>
+<p>Unlike traditional SaaS where costs are relatively fixed (CPU/RAM), AI costs are highly variable based on token usage. Every single request must be attributed to a specific tenant and recorded.
+<ul>
+    <li><strong>Token Counting:</strong> Recording the number of input and output tokens for every request.</li>
+    <li><strong>Model-Specific Pricing:</strong> Handling different costs for different models (e.g., GPT-4 is more expensive than GPT-3.5).</li>
+    <li><strong>Aggregation:</strong> Summarizing usage at the hourly, daily, and monthly levels for billing purposes.</li>
+</ul></p>
+
+<h2>5.2 Monitoring the Tenant Experience</h2>
+<p>You need to monitor "Quality of Service" (QoS) for each tenant individually:
+<ul>
+    <li><strong>Per-tenant Latency:</strong> Is one tenant experiencing slower responses than others?</li>
+    <li><strong>Error Rates:</strong> Are some tenants hitting model limits or experiencing more frequent timeouts?</li>
+    <li><strong>Throughput:</strong> Monitoring the number of requests per second (RPS) or tokens per minute (TPM) for each tenant.</li>
+</ul></p>
+
+<h2>5.3 Cost Management and Unit Economics</h2>
+<p>Multi-tenant AI can be expensive. Monitoring your "Gross Margins" per tenant is essential:
+<ul>
+    <li><strong>Direct Costs:</strong> Tokens, GPU compute hours, storage.</li>
+    <li><strong>Indirect Costs:</strong> Infrastructure overhead, database management.</li>
+    <li><strong>Profitability Analysis:</strong> "Is Tenant A paying us more than they are costing us in API fees?"</li>
+</ul></p>
+
+<h2>5.4 Alerting and Guardrails</h2>
+<p>Implement proactive alerts to catch issues before they impact tenants or your bottom line:
+<ul>
+    <li><strong>Usage Spikes:</strong> "Alert me if Tenant B's usage increases by more than 500% in an hour." (Potential security breach or bug).</li>
+    <li><strong>Cost Thresholds:</strong> "Alert me if my total daily API spend exceeds $X."</li>
+    <li><strong>SLO Violations:</strong> "Alert me if 99th percentile latency exceeds 5 seconds for any tenant."</li>
+</ul></p>
+
+<h2>5.5 Implementing Billing Models</h2>
+<p>Common billing models for multi-tenant AI include:
+<ul>
+    <li><strong>Subscription (Flat Fee):</strong> Tenants pay a monthly fee for a certain level of access.</li>
+    <li><strong>Usage-based (Pay-as-you-go):</strong> Tenants pay for exactly what they use (per 1k tokens).</li>
+    <li><strong>Tiered Pricing:</strong> Different plans (Free, Pro, Enterprise) with different limits and feature sets.</li>
+    <li><strong>Hybrid:</strong> A base subscription fee plus overage charges for usage beyond a certain limit.</li>
+</ul></p>
+
+<p>Robust monitoring and billing are not just "back-office" functions; they are critical components of a successful and sustainable multi-tenant AI business.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

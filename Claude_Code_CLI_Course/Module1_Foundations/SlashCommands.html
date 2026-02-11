@@ -1,0 +1,478 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Command Structure and Slash Commands</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Command Structure and Slash Commands</h1>
+
+<h2>Understanding the Command Interface</h2>
+<p>While Claude Code CLI primarily operates through natural language conversation, it also provides structured commands called "slash commands" that offer quick access to specific functionality. Understanding both interaction modes—conversational and command-based—enables efficient and effective use of the tool.</p>
+
+<h3>Dual Interaction Paradigm</h3>
+<p>Claude Code CLI supports two complementary interaction styles:</p>
+
+<p><strong>Conversational Mode (Primary):</strong></p>
+<ul>
+    <li>Natural language requests and questions</li>
+    <li>Flexible expression of intent without memorizing syntax</li>
+    <li>Contextual understanding based on conversation history</li>
+    <li>Suitable for complex, multi-step tasks and exploration</li>
+</ul>
+
+<p><strong>Command Mode (Slash Commands):</strong></p>
+<ul>
+    <li>Structured commands with predictable behavior</li>
+    <li>Quick access to frequently used operations</li>
+    <li>Explicit control over specific functionality</li>
+    <li>Suitable for routine tasks and workflow integration</li>
+</ul>
+
+<h2>Slash Command Fundamentals</h2>
+<p>Slash commands are special instructions that begin with a forward slash (/) and trigger specific behaviors within Claude Code CLI. They provide a structured alternative to natural language for common operations.</p>
+
+<h3>Command Syntax Structure</h3>
+<p>Slash commands follow a consistent syntax pattern:</p>
+
+<blockquote>
+/command [arguments] [options]
+
+Examples:
+/help
+/review src/main.ts
+/clear --confirm
+</blockquote>
+
+<p><strong>Syntax Components:</strong></p>
+<ul>
+    <li><strong>Command Name:</strong> The primary action to perform (e.g., /help, /review)</li>
+    <li><strong>Arguments:</strong> Required or optional parameters (e.g., file paths, search terms)</li>
+    <li><strong>Options/Flags:</strong> Modifiers that change command behavior (e.g., --confirm, --verbose)</li>
+</ul>
+
+<h3>Command Discovery and Help</h3>
+<p>Claude Code CLI provides built-in mechanisms for discovering and learning about available commands:</p>
+
+<blockquote>
+# List all available slash commands
+/help
+
+# Get detailed help for a specific command
+/help review
+
+# Show command examples
+/help review --examples
+</blockquote>
+
+<h2>Core Slash Commands</h2>
+<p>The following slash commands provide essential functionality for common development tasks.</p>
+
+<h3>/help - Documentation and Guidance</h3>
+<p><strong>Purpose:</strong> Access documentation, command reference, and usage examples</p>
+
+<p><strong>Usage Patterns:</strong></p>
+<blockquote>
+# General help
+/help
+
+# Command-specific help
+/help [command-name]
+
+# Show examples
+/help [command-name] --examples
+
+# Search help topics
+/help --search "git operations"
+</blockquote>
+
+<p><strong>Use Cases:</strong></p>
+<ul>
+    <li>Learning available commands and their syntax</li>
+    <li>Understanding command options and parameters</li>
+    <li>Finding examples for specific tasks</li>
+    <li>Troubleshooting command usage issues</li>
+</ul>
+
+<h3>/review - Code Review and Analysis</h3>
+<p><strong>Purpose:</strong> Perform code review, identify issues, and suggest improvements</p>
+
+<p><strong>Usage Patterns:</strong></p>
+<blockquote>
+# Review specific file
+/review src/components/UserProfile.tsx
+
+# Review directory
+/review src/components/
+
+# Review with focus areas
+/review src/api/ --focus security,performance
+
+# Review recent changes
+/review --git-diff
+</blockquote>
+
+<p><strong>Review Aspects:</strong></p>
+<ul>
+    <li><strong>Code Quality:</strong> Identifies code smells, anti-patterns, and maintainability issues</li>
+    <li><strong>Security:</strong> Detects potential security vulnerabilities and unsafe practices</li>
+    <li><strong>Performance:</strong> Highlights performance bottlenecks and optimization opportunities</li>
+    <li><strong>Best Practices:</strong> Suggests adherence to language-specific conventions and patterns</li>
+    <li><strong>Documentation:</strong> Evaluates code documentation and suggests improvements</li>
+</ul>
+
+<h3>/clear - Context Management</h3>
+<p><strong>Purpose:</strong> Clear conversation history and reset context</p>
+
+<p><strong>Usage Patterns:</strong></p>
+<blockquote>
+# Clear conversation history
+/clear
+
+# Clear with confirmation prompt
+/clear --confirm
+
+# Clear and reset project index
+/clear --full
+</blockquote>
+
+<p><strong>When to Use:</strong></p>
+<ul>
+    <li>Starting a new task unrelated to previous conversation</li>
+    <li>Resolving context confusion or incorrect assumptions</li>
+    <li>Freeing up context window for new information</li>
+    <li>Troubleshooting unexpected behavior</li>
+</ul>
+
+<h3>/doctor - Diagnostic and Troubleshooting</h3>
+<p><strong>Purpose:</strong> Diagnose configuration issues and system health</p>
+
+<p><strong>Usage Patterns:</strong></p>
+<blockquote>
+# Run full diagnostic check
+/doctor
+
+# Check specific subsystem
+/doctor --check auth
+/doctor --check config
+/doctor --check permissions
+
+# Verbose output for debugging
+/doctor --verbose
+</blockquote>
+
+<p><strong>Diagnostic Checks:</strong></p>
+<ul>
+    <li><strong>Authentication:</strong> Verifies API key validity and connectivity</li>
+    <li><strong>Configuration:</strong> Validates configuration file syntax and values</li>
+    <li><strong>Permissions:</strong> Checks file system and command execution permissions</li>
+    <li><strong>Dependencies:</strong> Verifies required tools and libraries are available</li>
+    <li><strong>Performance:</strong> Identifies performance issues or bottlenecks</li>
+</ul>
+
+<h3>/diff - Change Comparison</h3>
+<p><strong>Purpose:</strong> Compare file versions and review changes</p>
+
+<p><strong>Usage Patterns:</strong></p>
+<blockquote>
+# Show git diff for current changes
+/diff
+
+# Compare specific files
+/diff src/old.ts src/new.ts
+
+# Show diff for specific commit
+/diff --commit abc123
+
+# Compare branches
+/diff --branch main feature/new-api
+</blockquote>
+
+<p><strong>Diff Analysis Capabilities:</strong></p>
+<ul>
+    <li>Highlights added, modified, and deleted lines</li>
+    <li>Explains the purpose and impact of changes</li>
+    <li>Identifies potential issues introduced by changes</li>
+    <li>Suggests improvements or alternative approaches</li>
+</ul>
+
+<h3>/test - Testing Operations</h3>
+<p><strong>Purpose:</strong> Run tests and analyze test results</p>
+
+<p><strong>Usage Patterns:</strong></p>
+<blockquote>
+# Run all tests
+/test
+
+# Run specific test file
+/test tests/user.test.ts
+
+# Run tests matching pattern
+/test --pattern "User*"
+
+# Run with coverage
+/test --coverage
+</blockquote>
+
+<p><strong>Test Analysis Features:</strong></p>
+<ul>
+    <li>Executes test suites and captures results</li>
+    <li>Analyzes test failures and suggests fixes</li>
+    <li>Evaluates test coverage and identifies gaps</li>
+    <li>Recommends additional test cases</li>
+</ul>
+
+<h3>/commit - Git Commit Assistance</h3>
+<p><strong>Purpose:</strong> Generate commit messages and manage git operations</p>
+
+<p><strong>Usage Patterns:</strong></p>
+<blockquote>
+# Generate commit message for staged changes
+/commit
+
+# Generate and commit automatically
+/commit --auto
+
+# Review changes before committing
+/commit --review
+
+# Generate conventional commit message
+/commit --conventional
+</blockquote>
+
+<p><strong>Commit Message Generation:</strong></p>
+<ul>
+    <li>Analyzes staged changes to understand modifications</li>
+    <li>Generates descriptive, conventional commit messages</li>
+    <li>Follows project-specific commit conventions</li>
+    <li>Includes relevant context and reasoning</li>
+</ul>
+
+<h2>Advanced Slash Commands</h2>
+<p>Beyond core commands, Claude Code CLI provides advanced commands for specialized tasks.</p>
+
+<h3>/refactor - Code Refactoring</h3>
+<p><strong>Purpose:</strong> Perform structured code refactoring operations</p>
+
+<blockquote>
+# Refactor specific function
+/refactor extractMethod src/utils.ts:45-67
+
+# Rename symbol across project
+/refactor rename OldClassName NewClassName
+
+# Apply design pattern
+/refactor applyPattern strategy src/payment/
+</blockquote>
+
+<h3>/explain - Code Explanation</h3>
+<p><strong>Purpose:</strong> Generate detailed explanations of code</p>
+
+<blockquote>
+# Explain specific file
+/explain src/algorithm.ts
+
+# Explain function or class
+/explain src/utils.ts:calculateTotal
+
+# Explain with diagrams
+/explain src/architecture/ --diagram
+</blockquote>
+
+<h3>/search - Codebase Search</h3>
+<p><strong>Purpose:</strong> Search codebase with semantic understanding</p>
+
+<blockquote>
+# Search for functionality
+/search "user authentication logic"
+
+# Search by pattern
+/search --regex "function.*User.*"
+
+# Search in specific directory
+/search "API calls" --path src/services/
+</blockquote>
+
+<h3>/generate - Code Generation</h3>
+<p><strong>Purpose:</strong> Generate boilerplate code and scaffolding</p>
+
+<blockquote>
+# Generate component
+/generate component UserProfile --type react
+
+# Generate test file
+/generate test src/utils.ts
+
+# Generate API endpoint
+/generate api /users --crud
+</blockquote>
+
+<h2>Command Composition and Chaining</h2>
+<p>Slash commands can be combined with natural language to create powerful workflows.</p>
+
+<h3>Sequential Command Execution</h3>
+<p>Multiple commands can be executed in sequence:</p>
+
+<blockquote>
+# Review, then test, then commit
+/review src/api/
+/test tests/api/
+/commit --auto
+</blockquote>
+
+<h3>Command with Natural Language Context</h3>
+<p>Commands can be enhanced with conversational context:</p>
+
+<blockquote>
+# Command with explanation
+/review src/payment.ts
+Focus on security vulnerabilities, especially around payment processing and data validation.
+
+# Command with follow-up
+/refactor extractMethod src/utils.ts:45-67
+Name the new method calculateDiscountedPrice and add JSDoc documentation.
+</blockquote>
+
+<h2>Custom Command Configuration</h2>
+<p>Projects can define custom slash commands for team-specific workflows.</p>
+
+<h3>Defining Custom Commands</h3>
+<p>Custom commands are defined in .claude/commands.json:</p>
+
+<blockquote>
+{
+  "commands": {
+    "/deploy-staging": {
+      "description": "Deploy to staging environment",
+      "steps": [
+        "npm run build",
+        "npm run test",
+        "git push staging main"
+      ]
+    },
+    "/check-quality": {
+      "description": "Run full quality checks",
+      "steps": [
+        "/test --coverage",
+        "/review src/ --focus security,performance",
+        "npm run lint"
+      ]
+    }
+  }
+}
+</blockquote>
+
+<h3>Command Aliases</h3>
+<p>Create shortcuts for frequently used command patterns:</p>
+
+<blockquote>
+{
+  "aliases": {
+    "/r": "/review",
+    "/t": "/test",
+    "/c": "/commit",
+    "/qa": "/check-quality"
+  }
+}
+</blockquote>
+
+<h2>Command Best Practices</h2>
+<p>Effective use of slash commands requires understanding when and how to use them appropriately.</p>
+
+<h3>When to Use Slash Commands</h3>
+<ul>
+    <li><strong>Routine Operations:</strong> Frequently performed tasks with predictable requirements</li>
+    <li><strong>Workflow Integration:</strong> Standardized steps in development workflows</li>
+    <li><strong>Quick Actions:</strong> Simple operations that don't require explanation</li>
+    <li><strong>Automation:</strong> Tasks that will be scripted or automated</li>
+</ul>
+
+<h3>When to Use Natural Language</h3>
+<ul>
+    <li><strong>Complex Requests:</strong> Multi-step tasks requiring decision-making</li>
+    <li><strong>Exploration:</strong> Investigating unfamiliar code or concepts</li>
+    <li><strong>Contextual Tasks:</strong> Operations requiring understanding of broader context</li>
+    <li><strong>Learning:</strong> When you're unsure of the exact approach needed</li>
+</ul>
+
+<h3>Combining Both Approaches</h3>
+<p>The most effective use of Claude Code CLI often combines both interaction modes:</p>
+
+<blockquote>
+# Start with natural language for context
+"I need to refactor the payment processing module to improve testability"
+
+# Use commands for specific operations
+/review src/payment/
+/refactor extractMethod src/payment/processor.ts:89-145
+/generate test src/payment/processor.ts
+
+# Return to natural language for guidance
+"Now help me update the integration tests to work with the refactored code"
+</blockquote>
+
+<h2>Command Output and Feedback</h2>
+<p>Understanding command output helps interpret results and take appropriate action.</p>
+
+<h3>Output Formats</h3>
+<p>Commands provide output in various formats:</p>
+
+<ul>
+    <li><strong>Text Summary:</strong> Human-readable description of results</li>
+    <li><strong>Structured Data:</strong> JSON or table format for programmatic use</li>
+    <li><strong>Diff Format:</strong> Side-by-side or unified diff for changes</li>
+    <li><strong>Interactive Prompts:</strong> Questions requiring user input</li>
+</ul>
+
+<h3>Status Indicators</h3>
+<p>Commands use consistent status indicators:</p>
+
+<table>
+    <tr>
+        <th>Indicator</th>
+        <th>Meaning</th>
+        <th>Action Required</th>
+    </tr>
+    <tr>
+        <td class="rowheader">✓ Success</td>
+        <td>Operation completed successfully</td>
+        <td>None, proceed to next step</td>
+    </tr>
+    <tr>
+        <td class="rowheader">⚠ Warning</td>
+        <td>Operation completed with concerns</td>
+        <td>Review warnings, may need attention</td>
+    </tr>
+    <tr>
+        <td class="rowheader">✗ Error</td>
+        <td>Operation failed</td>
+        <td>Address error before proceeding</td>
+    </tr>
+    <tr>
+        <td class="rowheader">? Prompt</td>
+        <td>User input required</td>
+        <td>Provide requested information</td>
+    </tr>
+</table>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Claude Code CLI supports both natural language conversation and structured slash commands</li>
+    <li>Slash commands provide quick access to common operations with predictable behavior</li>
+    <li>Core commands include /help, /review, /clear, /doctor, /diff, /test, and /commit</li>
+    <li>Advanced commands support refactoring, explanation, search, and code generation</li>
+    <li>Commands can be combined with natural language for powerful workflows</li>
+    <li>Custom commands and aliases enable team-specific workflow optimization</li>
+    <li>Effective use involves choosing the right interaction mode for each task</li>
+    <li>Command output uses consistent formats and status indicators for clarity</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

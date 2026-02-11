@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Document Remediation and Screen Reader Support</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Document Remediation and Screen Reader Support</h1>
+
+
+<h2>PDF and Document Remediation</h2>
+<p>Millions of PDFs and documents lack proper accessibility structure (headings, reading order, table markup). AI can automatically analyze and remediate these documents:</p>
+
+<h2>Common Document Accessibility Issues</h2>
+<table>
+    <tr><th>Issue</th><th>Impact</th><th>AI Remediation</th></tr>
+    <tr><td>Missing heading structure</td><td>Screen readers cannot navigate by section</td><td>LLM identifies heading hierarchy from content</td></tr>
+    <tr><td>Untagged tables</td><td>Table data is read as a flat list</td><td>Vision model identifies table structure and adds tags</td></tr>
+    <tr><td>Images without alt text</td><td>Images are invisible to screen readers</td><td>Vision model generates descriptive alt text</td></tr>
+    <tr><td>Poor reading order</td><td>Content is read in wrong sequence</td><td>Layout analysis determines correct reading order</td></tr>
+    <tr><td>Scanned documents</td><td>Text is an image, not searchable</td><td>OCR + LLM extracts and structures text</td></tr>
+</table>
+
+<h2>Automated Document Remediation Pipeline</h2>
+<div class="code-block">
+<pre><code>import fitz  # PyMuPDF
+from openai import OpenAI
+
+client = OpenAI()
+
+def remediate_pdf(pdf_path: str) -&gt; dict:
+    '''Analyze a PDF and generate accessibility remediation.'''
+    doc = fitz.open(pdf_path)
+    remediation = {"pages": []}
+
+    for page_num, page in enumerate(doc):
+        # Extract text and images
+        text = page.get_text()
+        images = page.get_images()
+
+        # Generate heading structure
+        heading_response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            response_format={"type": "json_object"},
+            messages=[{
+                "role": "user",
+                "content": (
+                    "Analyze this page text and identify the heading hierarchy. "
+                    "Return JSON: {"headings": [{"level": int, "text": str, "line": int}]}
+
+"
+                    f"Page text:
+{text}"
+                ),
+            }],
+        )
+
+        page_info = {
+            "page": page_num + 1,
+            "headings": json.loads(heading_response.choices[0].message.content),
+            "images_needing_alt": len(images),
+            "has_tables": "table" in text.lower() or "|" in text,
+        }
+        remediation["pages"].append(page_info)
+
+    return remediation</code></pre>
+</div>
+
+<h2>Simplification for Cognitive Accessibility</h2>
+<div class="code-block">
+<pre><code>def simplify_text(text: str, reading_level: str = "8th grade") -&gt; str:
+    '''Simplify text for cognitive accessibility.'''
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                f"Rewrite the following text at a {reading_level} reading level. "
+                "Use short sentences. Use common words. "
+                "Break complex ideas into simple steps. "
+                "Keep the same meaning and key information."
+            )},
+            {"role": "user", "content": text},
+        ],
+    )
+    return response.choices[0].message.content</code></pre>
+</div>
+
+<h2>WCAG 2.1 Compliance Checklist</h2>
+<table>
+    <tr><th>Guideline</th><th>Requirement</th><th>AI Assistance</th></tr>
+    <tr><td>1.1.1 Non-text Content</td><td>Alt text for all images</td><td>Auto-generate with vision models</td></tr>
+    <tr><td>1.2.1 Captions</td><td>Captions for audio/video</td><td>Auto-transcribe with Whisper</td></tr>
+    <tr><td>1.3.1 Info and Relationships</td><td>Semantic structure (headings, lists)</td><td>Auto-detect and tag structure</td></tr>
+    <tr><td>2.4.6 Headings and Labels</td><td>Descriptive headings</td><td>LLM suggests heading improvements</td></tr>
+    <tr><td>3.1.5 Reading Level</td><td>Content at lower secondary level</td><td>LLM simplifies complex text</td></tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>AI as assistant, not replacement:</strong> AI-generated alt text should be reviewed by humans, especially for critical content</li>
+    <li><strong>Test with real users:</strong> Involve people with disabilities in testing AI-generated accessibility features</li>
+    <li><strong>Progressive enhancement:</strong> Start with the highest-impact issues (images, headings) before addressing everything</li>
+    <li><strong>Maintain context:</strong> Provide page context to the AI so alt text and descriptions are relevant to the surrounding content</li>
+    <li><strong>Monitor quality:</strong> Regularly audit AI-generated accessibility content for accuracy and helpfulness</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

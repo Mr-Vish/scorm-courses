@@ -1,0 +1,506 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Monitoring and Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Monitoring and Optimization</h1>
+
+<h2>Agent Monitoring Strategy</h2>
+<p>Effective monitoring is essential for maintaining reliable, performant, and cost-effective AI agents in production. Monitor key metrics across performance, cost, quality, and user satisfaction dimensions.</p>
+
+<h3>Key Metrics to Track</h3>
+<table>
+<tr>
+<th>Category</th>
+<th>Metrics</th>
+<th>Target</th>
+</tr>
+<tr>
+<td class="rowheader">Performance</td>
+<td>Response time, throughput, error rate</td>
+<td>&lt;2s response, &gt;99% success</td>
+</tr>
+<tr>
+<td class="rowheader">Cost</td>
+<td>Token usage, API calls, compute costs</td>
+<td>Within budget, optimized usage</td>
+</tr>
+<tr>
+<td class="rowheader">Quality</td>
+<td>Accuracy, relevance, hallucination rate</td>
+<td>&gt;95% accuracy, &lt;1% hallucinations</td>
+</tr>
+<tr>
+<td class="rowheader">User Satisfaction</td>
+<td>Task completion, user ratings, escalations</td>
+<td>&gt;90% completion, &gt;4.5/5 rating</td>
+</tr>
+</table>
+
+<h2>Cloud Monitoring Integration</h2>
+<blockquote>
+from google.cloud import monitoring_v3
+from google.cloud import logging_v2
+import time
+
+class AgentMonitor:
+    """Monitor agent performance and costs."""
+    
+    def __init__(self, project_id: str):
+        self.project_id = project_id
+        self.metrics_client = monitoring_v3.MetricServiceClient()
+        self.logging_client = logging_v2.Client()
+        self.project_name = f"projects/{project_id}"
+    
+    def log_agent_interaction(self, agent_id: str, query: str, 
+                             response: str, duration_ms: float, 
+                             tokens_used: int):
+        """Log agent interaction."""
+        logger = self.logging_client.logger("agent-interactions")
+        
+        logger.log_struct({
+            "agent_id": agent_id,
+            "query": query,
+            "response": response,
+            "duration_ms": duration_ms,
+            "tokens_used": tokens_used,
+            "timestamp": time.time()
+        })
+    
+    def record_metric(self, metric_type: str, value: float, labels: dict):
+        """Record custom metric."""
+        series = monitoring_v3.TimeSeries()
+        series.metric.type = f"custom.googleapis.com/agent/{metric_type}"
+        series.resource.type = "global"
+        
+        for key, val in labels.items():
+            series.metric.labels[key] = val
+        
+        point = monitoring_v3.Point()
+        point.value.double_value = value
+        point.interval.end_time.seconds = int(time.time())
+        series.points = [point]
+        
+        self.metrics_client.create_time_series(
+            name=self.project_name,
+            time_series=[series]
+        )
+    
+    def get_error_rate(self, agent_id: str, hours: int = 1) -> float:
+        """Calculate error rate for agent."""
+        logger = self.logging_client.logger("agent-interactions")
+        
+        # Query logs for errors
+        filter_str = f'''
+            resource.type="global"
+            AND jsonPayload.agent_id="{agent_id}"
+            AND timestamp>="{hours}h"
+        '''
+        
+        total = 0
+        errors = 0
+        
+        for entry in logger.list_entries(filter_=filter_str):
+            total += 1
+            if "error" in entry.payload.get("response", "").lower():
+                errors += 1
+        
+        return (errors / total * 100) if total > 0 else 0
+
+# Use monitor
+monitor = AgentMonitor("my-project")
+monitor.log_agent_interaction(
+    agent_id="customer-support-v1",
+    query="What's my order status?",
+    response="Your order #12345 is shipped",
+    duration_ms=1250,
+    tokens_used=150
+)
+</blockquote>
+
+<h2>Performance Optimization</h2>
+
+<h3>Response Time Optimization</h3>
+<blockquote>
+# 1. Use faster models for simple tasks
+fast_llm = ChatVertexAI(model_name="gemini-1.5-flash")  # Faster
+complex_llm = ChatVertexAI(model_name="gemini-1.5-pro")  # More capable
+
+def route_by_complexity(query: str) -> str:
+    """Route to appropriate model based on complexity."""
+    complexity = assess_complexity(query)
+    
+    if complexity == "simple":
+        return fast_llm.invoke(query).content
+    else:
+        return complex_llm.invoke(query).content
+
+# 2. Implement caching
+from functools import lru_cache
+
+@lru_cache(maxsize=1000)
+def cached_agent_query(query: str) -> str:
+    """Cache common queries."""
+    return agent.query(input=query)["output"]
+
+# 3. Parallel tool execution
+import asyncio
+
+async def execute_tools_parallel(tools: List, inputs: List) -> List:
+    """Execute multiple tools in parallel."""
+    tasks = [tool.arun(input) for tool, input in zip(tools, inputs)]
+    return await asyncio.gather(*tasks)
+
+# 4. Reduce context window
+def trim_context(messages: List, max_tokens: int = 4000) -> List:
+    """Keep only recent relevant context."""
+    total_tokens = sum(count_tokens(msg) for msg in messages)
+    
+    if total_tokens <= max_tokens:
+        return messages
+    
+    # Keep system message and recent messages
+    return [messages[0]] + messages[-(max_tokens // 200):]
+</blockquote>
+
+<h3>Cost Optimization</h3>
+<blockquote>
+class CostOptimizedAgent:
+    """Agent with cost tracking and optimization."""
+    
+    def __init__(self):
+        self.total_cost = 0
+        self.token_costs = {
+            "gemini-1.5-pro": {"input": 0.00125, "output": 0.00375},
+            "gemini-1.5-flash": {"input": 0.000125, "output": 0.000375}
+        }
+    
+    def query_with_cost_tracking(self, query: str, model: str = "gemini-1.5-flash"):
+        """Execute query and track costs."""
+        llm = ChatVertexAI(model_name=model)
+        
+        # Count input tokens
+        input_tokens = count_tokens(query)
+        
+        # Execute query
+        response = llm.invoke(query)
+        
+        # Count output tokens
+        output_tokens = count_tokens(response.content)
+        
+        # Calculate cost
+        cost = (
+            input_tokens * self.token_costs[model]["input"] / 1000 +
+            output_tokens * self.token_costs[model]["output"] / 1000
+        )
+        
+        self.total_cost += cost
+        
+        return {
+            "response": response.content,
+            "cost": cost,
+            "total_cost": self.total_cost,
+            "tokens": {"input": input_tokens, "output": output_tokens}
+        }
+    
+    def get_cost_report(self) -> dict:
+        """Generate cost report."""
+        return {
+            "total_cost": self.total_cost,
+            "average_cost_per_query": self.total_cost / self.query_count if self.query_count > 0 else 0
+        }
+
+# Cost optimization strategies
+def optimize_prompt(prompt: str) -> str:
+    """Reduce prompt length while maintaining clarity."""
+    # Remove unnecessary words
+    # Use abbreviations where appropriate
+    # Eliminate redundancy
+    return optimized_prompt
+
+def use_prompt_caching(system_prompt: str):
+    """Cache system prompts to reduce costs."""
+    # Vertex AI caches prompts > 1024 tokens
+    # Reuse cached prompts across requests
+    pass
+</blockquote>
+
+<h2>Quality Monitoring</h2>
+<blockquote>
+class QualityMonitor:
+    """Monitor agent response quality."""
+    
+    def __init__(self):
+        self.evaluator_llm = ChatVertexAI(model_name="gemini-1.5-pro", temperature=0.1)
+    
+    def evaluate_response(self, query: str, response: str) -> dict:
+        """Evaluate response quality."""
+        
+        eval_prompt = f"""Evaluate this AI agent response:
+        
+        User Query: {query}
+        Agent Response: {response}
+        
+        Rate the response on:
+        1. Accuracy (1-5): Is the information correct?
+        2. Relevance (1-5): Does it address the query?
+        3. Completeness (1-5): Is it thorough?
+        4. Clarity (1-5): Is it easy to understand?
+        5. Hallucination (Yes/No): Does it contain false information?
+        
+        Return JSON format."""
+        
+        evaluation = self.evaluator_llm.invoke(eval_prompt)
+        scores = json.loads(evaluation.content)
+        
+        return scores
+    
+    def detect_hallucination(self, response: str, sources: List[str]) -> bool:
+        """Check if response contains hallucinations."""
+        
+        check_prompt = f"""Check if this response contains information not supported by the sources:
+        
+        Response: {response}
+        
+        Sources:
+        {chr(10).join(sources)}
+        
+        Answer Yes if hallucination detected, No otherwise."""
+        
+        result = self.evaluator_llm.invoke(check_prompt)
+        return "yes" in result.content.lower()
+    
+    def calculate_quality_score(self, evaluations: List[dict]) -> float:
+        """Calculate overall quality score."""
+        if not evaluations:
+            return 0.0
+        
+        avg_accuracy = sum(e["accuracy"] for e in evaluations) / len(evaluations)
+        avg_relevance = sum(e["relevance"] for e in evaluations) / len(evaluations)
+        avg_completeness = sum(e["completeness"] for e in evaluations) / len(evaluations)
+        avg_clarity = sum(e["clarity"] for e in evaluations) / len(evaluations)
+        
+        hallucination_rate = sum(1 for e in evaluations if e["hallucination"] == "Yes") / len(evaluations)
+        
+        quality_score = (
+            (avg_accuracy + avg_relevance + avg_completeness + avg_clarity) / 4 * 20
+        ) * (1 - hallucination_rate)
+        
+        return quality_score
+
+# Use quality monitor
+quality_monitor = QualityMonitor()
+evaluation = quality_monitor.evaluate_response(
+    query="What's the capital of France?",
+    response="The capital of France is Paris."
+)
+</blockquote>
+
+<h2>Alerting and Anomaly Detection</h2>
+<blockquote>
+from google.cloud import monitoring_v3
+
+class AgentAlerting:
+    """Set up alerts for agent issues."""
+    
+    def __init__(self, project_id: str):
+        self.project_id = project_id
+        self.alert_client = monitoring_v3.AlertPolicyServiceClient()
+    
+    def create_error_rate_alert(self, threshold: float = 5.0):
+        """Alert when error rate exceeds threshold."""
+        
+        alert_policy = monitoring_v3.AlertPolicy(
+            display_name="Agent Error Rate Alert",
+            conditions=[
+                monitoring_v3.AlertPolicy.Condition(
+                    display_name="Error rate > 5%",
+                    condition_threshold=monitoring_v3.AlertPolicy.Condition.MetricThreshold(
+                        filter='metric.type="custom.googleapis.com/agent/error_rate"',
+                        comparison=monitoring_v3.ComparisonType.COMPARISON_GT,
+                        threshold_value=threshold,
+                        duration={"seconds": 300}
+                    )
+                )
+            ],
+            notification_channels=[],  # Add notification channels
+            alert_strategy=monitoring_v3.AlertPolicy.AlertStrategy(
+                auto_close={"seconds": 3600}
+            )
+        )
+        
+        self.alert_client.create_alert_policy(
+            name=f"projects/{self.project_id}",
+            alert_policy=alert_policy
+        )
+    
+    def create_latency_alert(self, threshold_ms: float = 3000):
+        """Alert when response time exceeds threshold."""
+        # Similar implementation for latency monitoring
+        pass
+    
+    def create_cost_alert(self, daily_budget: float = 100.0):
+        """Alert when daily costs exceed budget."""
+        # Implementation for cost monitoring
+        pass
+</blockquote>
+
+<h2>A/B Testing</h2>
+<blockquote>
+import random
+
+class ABTestingFramework:
+    """A/B test different agent configurations."""
+    
+    def __init__(self):
+        self.variants = {}
+        self.results = {}
+    
+    def add_variant(self, name: str, agent, traffic_percentage: float):
+        """Add test variant."""
+        self.variants[name] = {
+            "agent": agent,
+            "traffic": traffic_percentage,
+            "metrics": {"queries": 0, "successes": 0, "avg_duration": 0}
+        }
+    
+    def route_request(self, query: str) -> str:
+        """Route request to variant based on traffic split."""
+        
+        # Select variant based on traffic percentage
+        rand = random.random() * 100
+        cumulative = 0
+        
+        for name, variant in self.variants.items():
+            cumulative += variant["traffic"]
+            if rand <= cumulative:
+                return self.execute_variant(name, query)
+        
+        # Default to first variant
+        return self.execute_variant(list(self.variants.keys())[0], query)
+    
+    def execute_variant(self, variant_name: str, query: str) -> str:
+        """Execute query on specific variant."""
+        variant = self.variants[variant_name]
+        
+        start_time = time.time()
+        try:
+            response = variant["agent"].query(input=query)
+            duration = time.time() - start_time
+            
+            # Update metrics
+            variant["metrics"]["queries"] += 1
+            variant["metrics"]["successes"] += 1
+            variant["metrics"]["avg_duration"] = (
+                (variant["metrics"]["avg_duration"] * (variant["metrics"]["queries"] - 1) + duration) /
+                variant["metrics"]["queries"]
+            )
+            
+            return response["output"]
+            
+        except Exception as e:
+            variant["metrics"]["queries"] += 1
+            raise e
+    
+    def get_results(self) -> dict:
+        """Get A/B test results."""
+        results = {}
+        
+        for name, variant in self.variants.items():
+            metrics = variant["metrics"]
+            results[name] = {
+                "success_rate": metrics["successes"] / metrics["queries"] if metrics["queries"] > 0 else 0,
+                "avg_duration": metrics["avg_duration"],
+                "total_queries": metrics["queries"]
+            }
+        
+        return results
+
+# Use A/B testing
+ab_test = ABTestingFramework()
+ab_test.add_variant("control", control_agent, traffic_percentage=50)
+ab_test.add_variant("experimental", experimental_agent, traffic_percentage=50)
+
+# Route traffic
+for query in test_queries:
+    response = ab_test.route_request(query)
+
+# Analyze results
+results = ab_test.get_results()
+</blockquote>
+
+<h2>Dashboard and Visualization</h2>
+<blockquote>
+# Create custom dashboard in Cloud Monitoring
+from google.cloud import monitoring_dashboard_v1
+
+def create_agent_dashboard(project_id: str):
+    """Create monitoring dashboard for agents."""
+    
+    client = monitoring_dashboard_v1.DashboardsServiceClient()
+    
+    dashboard = monitoring_dashboard_v1.Dashboard(
+        display_name="AI Agent Monitoring",
+        grid_layout=monitoring_dashboard_v1.GridLayout(
+            widgets=[
+                # Response time widget
+                monitoring_dashboard_v1.Widget(
+                    title="Average Response Time",
+                    xy_chart=monitoring_dashboard_v1.XyChart(
+                        data_sets=[
+                            monitoring_dashboard_v1.XyChart.DataSet(
+                                time_series_query=monitoring_dashboard_v1.TimeSeriesQuery(
+                                    time_series_filter=monitoring_dashboard_v1.TimeSeriesFilter(
+                                        filter='metric.type="custom.googleapis.com/agent/response_time"'
+                                    )
+                                )
+                            )
+                        ]
+                    )
+                ),
+                # Error rate widget
+                monitoring_dashboard_v1.Widget(
+                    title="Error Rate",
+                    xy_chart=monitoring_dashboard_v1.XyChart(
+                        data_sets=[
+                            monitoring_dashboard_v1.XyChart.DataSet(
+                                time_series_query=monitoring_dashboard_v1.TimeSeriesQuery(
+                                    time_series_filter=monitoring_dashboard_v1.TimeSeriesFilter(
+                                        filter='metric.type="custom.googleapis.com/agent/error_rate"'
+                                    )
+                                )
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+    )
+    
+    client.create_dashboard(
+        parent=f"projects/{project_id}",
+        dashboard=dashboard
+    )
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Comprehensive Monitoring:</strong> Track performance, cost, quality, and user satisfaction</li>
+<li><strong>Real-Time Alerts:</strong> Set up alerts for critical issues</li>
+<li><strong>Regular Reviews:</strong> Analyze metrics weekly to identify trends</li>
+<li><strong>Cost Optimization:</strong> Use appropriate models and implement caching</li>
+<li><strong>Quality Checks:</strong> Regularly evaluate response quality</li>
+<li><strong>A/B Testing:</strong> Test improvements before full rollout</li>
+<li><strong>Documentation:</strong> Document all metrics and thresholds</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

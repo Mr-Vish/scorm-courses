@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 5: Multi-model Orchestration Patterns</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 5: Advanced Patterns for Multi-model AI</h1>
+
+<p>Moving beyond simple request-response, this module explores advanced patterns for orchestrating multiple different models together to solve complex problems.</p>
+
+<h2>5.1 The "Router" Pattern</h2>
+<p>In this pattern, a small, fast "Router" model analyzes the user's intent and directs the query to the most appropriate specialized model.
+<ul>
+    <li><strong>Coding Query:</strong> Route to GPT-4o or Claude 3.5 Sonnet.</li>
+    <li><strong>Creative Writing:</strong> Route to Claude 3 Opus.</li>
+    <li><strong>Simple FAQ:</strong> Route to Llama 3 8B or GPT-4o-mini.</li>
+</ul></p>
+
+<h2>5.2 The "Ensemble" Pattern</h2>
+<p>For high-stakes tasks, you can send the same prompt to 3 different models simultaneously and then use a fourth "Judge" model to synthesize the best answer or resolve any contradictions. This significantly improves accuracy and reduces hallucinations.</p>
+
+<h2>5.3 The "Chaining" Pattern</h2>
+<p>Complex tasks are broken into a series of steps, where each step uses the most suitable model.
+<ol>
+    <li><strong>Step 1 (Extraction):</strong> A small model extracts key entities from a large text.</li>
+    <li><strong>Step 2 (Reasoning):</strong> A large model performs complex analysis on those entities.</li>
+    <li><strong>Step 3 (Formatting):</strong> A specialized model formats the final result as a clean JSON or a well-written email.</li>
+</ol></p>
+
+<h2>5.4 The "Generator-Verifier" Pattern</h2>
+<p>One model (the Generator) produces an initial answer, and a second model (the Verifier) specifically checks it for errors, biases, or security risks. The generator then refines the answer based on the verifier's feedback.</p>
+
+<h2>5.5 Implementing Orchestration with LiteLLM</h2>
+<p>LiteLLM provides the underlying infrastructure to call these different models with a single API, while higher-level frameworks like LangChain or AutoGen can be used to manage the logic of the chains and ensembles.</p>
+
+<p>By mastering these orchestration patterns, you can build AI systems that are greater than the sum of their individual models, achieving higher levels of performance, accuracy, and efficiency.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

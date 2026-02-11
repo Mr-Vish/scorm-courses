@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding GenAI Observability</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Understanding GenAI Observability</h1>
+
+<h2>The Unique Challenge of GenAI Systems</h2>
+<p>GenAI applications present unprecedented observability challenges compared to traditional software systems. Unlike deterministic applications where the same input always produces the same output, GenAI systems are <strong>non-deterministic black boxes</strong> that can produce different results for identical inputs.</p>
+
+<h2>Why Traditional Monitoring Falls Short</h2>
+<p>Traditional application monitoring focuses on metrics like CPU usage, memory consumption, and request latency. While these remain important, they fail to capture the unique characteristics of GenAI systems:</p>
+<ul>
+    <li><strong>Output Quality:</strong> Traditional metrics cannot measure whether an AI response is accurate, helpful, or appropriate</li>
+    <li><strong>Token Economics:</strong> Costs are directly tied to input/output token counts, not just request volume</li>
+    <li><strong>Multi-Step Workflows:</strong> AI agents may make dozens of LLM calls, tool invocations, and retrieval operations for a single user request</li>
+    <li><strong>Prompt Engineering Impact:</strong> Small changes to prompts can dramatically affect performance, cost, and quality</li>
+    <li><strong>Model Behavior:</strong> Models can hallucinate, refuse requests, or produce unsafe content unpredictably</li>
+</ul>
+
+<h2>The Three Pillars of GenAI Observability</h2>
+
+<div class="pillars-diagram" style="display: flex; justify-content: space-around; margin: 2rem 0; padding: 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px;">
+    <div class="pillar" style="flex: 1; margin: 0 1rem; text-align: center;">
+        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #F16F00 0%, #e91e63 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <span style="color: white; font-size: 2rem; font-weight: bold;">📊</span>
+        </div>
+        <h4 style="color: #F16F00; margin-bottom: 0.5rem;">Metrics</h4>
+        <p style="font-size: 0.9rem; color: #495057;">Quantitative measurements tracked over time</p>
+    </div>
+    <div class="pillar" style="flex: 1; margin: 0 1rem; text-align: center;">
+        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #e91e63 0%, #9c27b0 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <span style="color: white; font-size: 2rem; font-weight: bold;">📝</span>
+        </div>
+        <h4 style="color: #e91e63; margin-bottom: 0.5rem;">Logs</h4>
+        <p style="font-size: 0.9rem; color: #495057;">Structured records of discrete events</p>
+    </div>
+    <div class="pillar" style="flex: 1; margin: 0 1rem; text-align: center;">
+        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <span style="color: white; font-size: 2rem; font-weight: bold;">🔍</span>
+        </div>
+        <h4 style="color: #9c27b0; margin-bottom: 0.5rem;">Traces</h4>
+        <p style="font-size: 0.9rem; color: #495057;">End-to-end request flow visibility</p>
+    </div>
+</div>
+
+<h3>1. Metrics - Quantitative Measurements</h3>
+<p>Numerical data that tracks system performance and behavior over time:</p>
+<ul>
+    <li>Latency metrics (time to first token, total response time)</li>
+    <li>Token usage (input tokens, output tokens, total tokens per request)</li>
+    <li>Cost metrics (dollars per request, cost per user, cost per feature)</li>
+    <li>Quality scores (user ratings, automated evaluation metrics)</li>
+    <li>Error rates (API failures, timeout rates, guardrail triggers)</li>
+</ul>
+
+<h3>2. Logs - Event Records</h3>
+<p>Structured records of discrete events that occur in your system:</p>
+<ul>
+    <li>Request metadata (model used, temperature, max tokens)</li>
+    <li>Error details and stack traces</li>
+    <li>Guardrail trigger events and safety violations</li>
+    <li>Tool invocation results</li>
+    <li>User feedback and ratings</li>
+</ul>
+
+<h3>3. Traces - Request Flows</h3>
+<p>End-to-end visibility into how a single request flows through your system:</p>
+<ul>
+    <li>Complete request lifecycle from user input to final response</li>
+    <li>All LLM calls made during processing</li>
+    <li>Retrieval operations (vector database queries, document fetches)</li>
+    <li>Tool and function calls executed by AI agents</li>
+    <li>Timing breakdown for each operation</li>
+</ul>
+
+<h2>Key Observability Metrics for GenAI</h2>
+<table>
+    <tr><th>Category</th><th>Metrics</th><th>Why It Matters</th></tr>
+    <tr>
+        <td class="rowheader">Latency</td>
+        <td>Time to first token (TTFT), total response time, P95/P99 latency</td>
+        <td>Directly impacts user experience and perceived responsiveness</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost</td>
+        <td>Tokens per request, cost per conversation, daily/monthly spend</td>
+        <td>Controls operational expenses and enables budget forecasting</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Quality</td>
+        <td>User feedback scores, automated eval metrics, error rates</td>
+        <td>Measures output accuracy and usefulness for continuous improvement</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Usage</td>
+        <td>Requests per user, peak times, model distribution, feature adoption</td>
+        <td>Enables capacity planning and resource allocation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Safety</td>
+        <td>Guardrail triggers, content moderation flags, policy violations</td>
+        <td>Ensures compliance and mitigates risks from harmful outputs</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Reliability</td>
+        <td>API error rates, timeout frequency, retry counts, fallback usage</td>
+        <td>Tracks system stability and identifies infrastructure issues</td>
+    </tr>
+</table>
+
+<h2>Real-World Observability Scenarios</h2>
+
+<h3>Scenario 1: Cost Spike Investigation</h3>
+<p>Your daily GenAI costs suddenly triple. Without observability, you're blind. With proper monitoring, you can:</p>
+<ul>
+    <li>Identify which users or features are driving the increase</li>
+    <li>Detect runaway agent loops making hundreds of LLM calls</li>
+    <li>Find prompts that generate unexpectedly long outputs</li>
+    <li>Compare token usage across different model versions</li>
+</ul>
+
+<h3>Scenario 2: Quality Degradation</h3>
+<p>User complaints increase about incorrect AI responses. Observability enables you to:</p>
+<ul>
+    <li>Correlate quality drops with specific prompt changes or model updates</li>
+    <li>Analyze traces to identify where in multi-step workflows errors occur</li>
+    <li>Review logged inputs and outputs to understand failure patterns</li>
+    <li>Compare evaluation metrics before and after changes</li>
+</ul>
+
+<h3>Scenario 3: Latency Issues</h3>
+<p>Users report slow response times. Tracing reveals:</p>
+<ul>
+    <li>Which operation in your workflow is the bottleneck</li>
+    <li>Whether delays are from LLM API calls, retrieval, or tool execution</li>
+    <li>If certain prompts or input lengths cause slower responses</li>
+    <li>Whether caching could improve performance</li>
+</ul>
+
+<h2>Observability vs. Monitoring</h2>
+<p>While often used interchangeably, these terms have distinct meanings:</p>
+<ul>
+    <li><strong>Monitoring:</strong> Tracking known failure modes and predefined metrics (e.g., "alert if error rate exceeds 5%")</li>
+    <li><strong>Observability:</strong> The ability to understand system behavior by examining outputs, even for unknown failure modes</li>
+</ul>
+<p>GenAI systems require true observability because their failure modes are often unpredictable and emergent.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Monitoring and Observability</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Monitoring and Observability</h1>
+
+<h2>Why Monitor LangChain Applications?</h2>
+<p>Monitoring provides visibility into your LLM application's performance, costs, and quality. It helps identify issues, optimize performance, and ensure reliable operation in production.</p>
+
+<h2>Key Metrics to Track</h2>
+<table>
+<tr>
+<th>Metric</th>
+<th>Purpose</th>
+<th>Target</th>
+</tr>
+<tr>
+<td class="rowheader">Latency</td>
+<td>Response time</td>
+<td>&lt; 2 seconds for user-facing apps</td>
+</tr>
+<tr>
+<td class="rowheader">Token Usage</td>
+<td>Cost tracking</td>
+<td>Within budget limits</td>
+</tr>
+<tr>
+<td class="rowheader">Error Rate</td>
+<td>Reliability</td>
+<td>&lt; 1%</td>
+</tr>
+<tr>
+<td class="rowheader">Success Rate</td>
+<td>Quality</td>
+<td>&gt; 95%</td>
+</tr>
+<tr>
+<td class="rowheader">Cache Hit Rate</td>
+<td>Efficiency</td>
+<td>&gt; 30%</td>
+</tr>
+</table>
+
+<h2>Tracking Token Usage</h2>
+<blockquote>
+from langchain.callbacks import get_openai_callback
+
+with get_openai_callback() as cb:
+    result = chain.invoke({"topic": "AI"})
+    
+    print(f"Total Tokens: {cb.total_tokens}")
+    print(f"Prompt Tokens: {cb.prompt_tokens}")
+    print(f"Completion Tokens: {cb.completion_tokens}")
+    print(f"Total Cost (USD): ${cb.total_cost:.4f}")
+</blockquote>
+
+<h2>Custom Callbacks</h2>
+<blockquote>
+from langchain.callbacks.base import BaseCallbackHandler
+from datetime import datetime
+
+class MetricsCallback(BaseCallbackHandler):
+    def __init__(self):
+        self.start_time = None
+        self.metrics = []
+    
+    def on_chain_start(self, serialized, inputs, **kwargs):
+        self.start_time = datetime.now()
+    
+    def on_chain_end(self, outputs, **kwargs):
+        duration = (datetime.now() - self.start_time).total_seconds()
+        self.metrics.append({
+            "duration": duration,
+            "timestamp": datetime.now().isoformat()
+        })
+        print(f"Chain completed in {duration:.2f}s")
+    
+    def on_chain_error(self, error, **kwargs):
+        print(f"Chain error: {error}")
+
+# Use the callback
+callback = MetricsCallback()
+result = chain.invoke(
+    {"topic": "AI"},
+    config={"callbacks": [callback]}
+)
+</blockquote>
+
+<h2>LangSmith Integration</h2>
+<blockquote>
+import os
+
+# Enable LangSmith tracing
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = "your-api-key"
+os.environ["LANGCHAIN_PROJECT"] = "my-project"
+
+# All chain invocations are now automatically traced
+result = chain.invoke({"topic": "machine learning"})
+</blockquote>
+
+<h2>Logging Chain Execution</h2>
+<blockquote>
+import logging
+from langchain.callbacks import StdOutCallbackHandler
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+handler = StdOutCallbackHandler()
+result = chain.invoke(
+    {"topic": "AI"},
+    config={"callbacks": [handler]}
+)
+</blockquote>
+
+<h2>Performance Monitoring</h2>
+<blockquote>
+import time
+
+class PerformanceMonitor:
+    def __init__(self):
+        self.metrics = []
+    
+    def track_invocation(self, chain, input_data):
+        start = time.time()
+        try:
+            result = chain.invoke(input_data)
+            duration = time.time() - start
+            self.metrics.append({
+                "success": True,
+                "duration": duration,
+                "input_length": len(str(input_data))
+            })
+            return result
+        except Exception as e:
+            duration = time.time() - start
+            self.metrics.append({
+                "success": False,
+                "duration": duration,
+                "error": str(e)
+            })
+            raise
+    
+    def get_stats(self):
+        if not self.metrics:
+            return {}
+        
+        successes = [m for m in self.metrics if m["success"]]
+        failures = [m for m in self.metrics if not m["success"]]
+        
+        return {
+            "total_requests": len(self.metrics),
+            "success_rate": len(successes) / len(self.metrics),
+            "avg_duration": sum(m["duration"] for m in successes) / len(successes) if successes else 0,
+            "error_rate": len(failures) / len(self.metrics)
+        }
+
+monitor = PerformanceMonitor()
+result = monitor.track_invocation(chain, {"topic": "AI"})
+print(monitor.get_stats())
+</blockquote>
+
+<h2>Prometheus Metrics</h2>
+<blockquote>
+from prometheus_client import Counter, Histogram, start_http_server
+
+# Define metrics
+request_count = Counter('langchain_requests_total', 'Total requests')
+request_duration = Histogram('langchain_request_duration_seconds', 'Request duration')
+error_count = Counter('langchain_errors_total', 'Total errors')
+
+def invoke_with_metrics(chain, input_data):
+    request_count.inc()
+    
+    with request_duration.time():
+        try:
+            result = chain.invoke(input_data)
+            return result
+        except Exception as e:
+            error_count.inc()
+            raise
+
+# Start metrics server
+start_http_server(8000)
+</blockquote>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Track All Invocations:</strong> Monitor every chain execution</li>
+<li><strong>Set Up Alerts:</strong> Get notified of errors and performance issues</li>
+<li><strong>Use Structured Logging:</strong> Include context and metadata</li>
+<li><strong>Monitor Costs:</strong> Track token usage and API expenses</li>
+<li><strong>Analyze Trends:</strong> Look for patterns in failures and slowdowns</li>
+<li><strong>User Feedback:</strong> Collect and analyze user satisfaction</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

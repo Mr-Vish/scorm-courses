@@ -1,0 +1,402 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Optimization and Troubleshooting</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Optimization and Troubleshooting</h1>
+
+<h2>Performance Optimization</h2>
+
+<h3>Latency Optimization Strategies</h3>
+<table>
+    <tr><th>Strategy</th><th>Impact</th><th>Implementation Complexity</th></tr>
+    <tr>
+        <td class="rowheader">Streaming Responses</td>
+        <td>Reduces perceived latency by 50-70%</td>
+        <td>Low - API support required</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Prompt Caching</td>
+        <td>Reduces TTFT by 80% for cached prompts</td>
+        <td>Medium - requires cache management</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Parallel Tool Calls</td>
+        <td>Reduces total time by 40-60% for multi-tool workflows</td>
+        <td>Medium - requires async implementation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Smaller Models</td>
+        <td>2-3x faster response times</td>
+        <td>Low - may impact quality</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Request Batching</td>
+        <td>Increases throughput by 3-5x</td>
+        <td>High - requires queue management</td>
+    </tr>
+</table>
+
+<h3>Streaming Implementation</h3>
+<div class="code-block">
+<pre><code>async def stream_response(prompt):
+    async with client.messages.stream(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    ) as stream:
+        async for chunk in stream:
+            if chunk.type == "content_block_delta":
+                # Send chunk to user immediately
+                yield chunk.delta.text
+                
+                # Track metrics
+                metrics.increment("streaming.chunks_sent")
+        
+        # Log final usage
+        final_message = await stream.get_final_message()
+        log_token_usage(final_message.usage)
+</code></pre>
+</div>
+
+<h3>Parallel Tool Execution</h3>
+<div class="code-block">
+<pre><code>import asyncio
+
+async def execute_tools_parallel(tool_calls):
+    # Instead of sequential execution
+    # for tool in tool_calls:
+    #     result = await execute_tool(tool)
+    
+    # Execute all tools concurrently
+    tasks = [execute_tool(tool) for tool in tool_calls]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # Handle any failures
+    for i, result in enumerate(results):
+        if isinstance(result, Exception):
+            logger.error(f"Tool {tool_calls[i].name} failed: {result}")
+            results[i] = {"error": str(result)}
+    
+    return results
+</code></pre>
+</div>
+
+<h2>Cost Optimization</h2>
+
+<h3>Intelligent Model Routing</h3>
+<p>Route requests to the most cost-effective model that meets quality requirements:</p>
+
+<div class="code-block">
+<pre><code>class ModelRouter:
+    def __init__(self):
+        self.models = {
+            "simple": {"name": "claude-haiku-3-5", "cost": 0.001, "quality": 3},
+            "standard": {"name": "claude-sonnet-4", "cost": 0.003, "quality": 4},
+            "complex": {"name": "claude-opus-4", "cost": 0.015, "quality": 5}
+        }
+    
+    def classify_complexity(self, prompt):
+        # Simple heuristics
+        word_count = len(prompt.split())
+        has_code = "```" in prompt or "def " in prompt
+        has_reasoning = any(word in prompt.lower() 
+                          for word in ["analyze", "compare", "explain why"])
+        
+        if word_count > 500 or has_reasoning:
+            return "complex"
+        elif word_count > 100 or has_code:
+            return "standard"
+        else:
+            return "simple"
+    
+    async def route_request(self, prompt):
+        complexity = self.classify_complexity(prompt)
+        model_config = self.models[complexity]
+        
+        logger.info(f"Routing to {model_config['name']} (complexity: {complexity})")
+        
+        return await llm.generate(
+            prompt,
+            model=model_config["name"]
+        )
+</code></pre>
+</div>
+
+<h3>Prompt Compression</h3>
+<p>Reduce token count without losing information:</p>
+
+<div class="code-block">
+<pre><code>class PromptCompressor:
+    @staticmethod
+    def compress_context(documents, max_tokens=2000):
+        # Extract key sentences using extractive summarization
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        
+        sentences = []
+        for doc in documents:
+            sentences.extend(doc.split('. '))
+        
+        # Score sentences by TF-IDF
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(sentences)
+        scores = tfidf_matrix.sum(axis=1).A1
+        
+        # Select top sentences
+        top_indices = scores.argsort()[-10:][::-1]
+        compressed = '. '.join([sentences[i] for i in sorted(top_indices)])
+        
+        return compressed
+    
+    @staticmethod
+    def remove_redundancy(text):
+        # Remove repeated phrases
+        lines = text.split('\n')
+        unique_lines = []
+        seen = set()
+        
+        for line in lines:
+            normalized = line.strip().lower()
+            if normalized and normalized not in seen:
+                unique_lines.append(line)
+                seen.add(normalized)
+        
+        return '\n'.join(unique_lines)
+</code></pre>
+</div>
+
+<h2>Common Issues and Solutions</h2>
+
+<h3>Issue 1: Intermittent Timeouts</h3>
+<p><strong>Symptoms:</strong> Random requests timeout, no clear pattern</p>
+<p><strong>Investigation:</strong></p>
+<div class="code-block">
+<pre><code># Check timeout distribution
+SELECT 
+    DATE_TRUNC('hour', timestamp) as hour,
+    COUNT(*) as timeout_count,
+    AVG(input_tokens) as avg_input_tokens
+FROM llm_logs
+WHERE error LIKE '%timeout%'
+GROUP BY hour
+ORDER BY hour DESC;
+
+# Check if specific prompts cause timeouts
+SELECT 
+    LEFT(prompt_hash, 8) as prompt_id,
+    COUNT(*) as occurrences,
+    AVG(input_tokens) as avg_tokens
+FROM llm_logs
+WHERE error LIKE '%timeout%'
+GROUP BY prompt_hash
+HAVING COUNT(*) > 5;
+</code></pre>
+</div>
+
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Increase timeout threshold for complex requests</li>
+    <li>Implement retry logic with exponential backoff</li>
+    <li>Use streaming to avoid timeouts on long responses</li>
+    <li>Split large prompts into smaller chunks</li>
+</ul>
+
+<h3>Issue 2: Cost Spike</h3>
+<p><strong>Symptoms:</strong> Sudden increase in daily costs</p>
+<p><strong>Investigation:</strong></p>
+<div class="code-block">
+<pre><code># Find top cost contributors
+SELECT 
+    user_id,
+    feature,
+    COUNT(*) as requests,
+    SUM(total_tokens) as total_tokens,
+    SUM(cost) as total_cost
+FROM llm_logs
+WHERE timestamp >= NOW() - INTERVAL '24 hours'
+GROUP BY user_id, feature
+ORDER BY total_cost DESC
+LIMIT 20;
+
+# Check for runaway agent loops
+SELECT 
+    request_id,
+    COUNT(*) as llm_calls,
+    SUM(cost) as total_cost
+FROM llm_logs
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+GROUP BY request_id
+HAVING COUNT(*) > 10
+ORDER BY llm_calls DESC;
+</code></pre>
+</div>
+
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Implement per-user rate limits</li>
+    <li>Add maximum iteration limits for agents</li>
+    <li>Enable caching for repeated requests</li>
+    <li>Switch to cheaper models for high-volume features</li>
+</ul>
+
+<h3>Issue 3: Quality Degradation</h3>
+<p><strong>Symptoms:</strong> User ratings drop, increased complaints</p>
+<p><strong>Investigation:</strong></p>
+<div class="code-block">
+<pre><code># Compare quality before/after deployment
+SELECT 
+    DATE(timestamp) as date,
+    AVG(user_rating) as avg_rating,
+    AVG(eval_score) as avg_eval_score,
+    COUNT(*) as sample_size
+FROM evaluations
+WHERE timestamp >= NOW() - INTERVAL '14 days'
+GROUP BY date
+ORDER BY date;
+
+# Check if specific prompts have low quality
+SELECT 
+    feature,
+    AVG(user_rating) as avg_rating,
+    COUNT(*) as ratings_count
+FROM llm_logs
+WHERE user_rating IS NOT NULL
+    AND timestamp >= NOW() - INTERVAL '7 days'
+GROUP BY feature
+HAVING COUNT(*) > 100
+ORDER BY avg_rating ASC;
+</code></pre>
+</div>
+
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Rollback recent prompt changes</li>
+    <li>Review and update few-shot examples</li>
+    <li>Increase temperature for more creative responses</li>
+    <li>Add quality checks before returning responses</li>
+</ul>
+
+<h3>Issue 4: High Latency</h3>
+<p><strong>Symptoms:</strong> Slow response times, user complaints</p>
+<p><strong>Investigation:</strong></p>
+<div class="code-block">
+<pre><code># Analyze latency breakdown using traces
+SELECT 
+    span_name,
+    AVG(duration_ms) as avg_duration,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration_ms) as p95_duration,
+    COUNT(*) as span_count
+FROM traces
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+GROUP BY span_name
+ORDER BY avg_duration DESC;
+
+# Check if specific operations are slow
+SELECT 
+    operation_type,
+    AVG(latency_ms) as avg_latency,
+    COUNT(*) as count
+FROM llm_logs
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+GROUP BY operation_type
+ORDER BY avg_latency DESC;
+</code></pre>
+</div>
+
+<p><strong>Solutions:</strong></p>
+<ul>
+    <li>Enable streaming for immediate feedback</li>
+    <li>Parallelize independent operations</li>
+    <li>Cache frequently requested data</li>
+    <li>Use faster models for latency-sensitive features</li>
+    <li>Optimize retrieval queries (reduce top_k)</li>
+</ul>
+
+<h2>Troubleshooting Workflow</h2>
+
+<h3>Step 1: Reproduce the Issue</h3>
+<ul>
+    <li>Find request ID from user report or logs</li>
+    <li>Retrieve full trace for that request</li>
+    <li>Attempt to reproduce with same inputs</li>
+</ul>
+
+<h3>Step 2: Isolate the Root Cause</h3>
+<ul>
+    <li>Check each span in the trace for errors or delays</li>
+    <li>Review logs for error messages and stack traces</li>
+    <li>Compare with successful requests</li>
+    <li>Check external dependencies (LLM API, database, cache)</li>
+</ul>
+
+<h3>Step 3: Implement Fix</h3>
+<ul>
+    <li>Apply targeted fix based on root cause</li>
+    <li>Add regression test to prevent recurrence</li>
+    <li>Update monitoring to detect similar issues earlier</li>
+</ul>
+
+<h3>Step 4: Verify Resolution</h3>
+<ul>
+    <li>Test fix in staging environment</li>
+    <li>Deploy to production with monitoring</li>
+    <li>Confirm metrics return to normal</li>
+    <li>Document issue and resolution</li>
+</ul>
+
+<h2>Optimization Checklist</h2>
+<ul>
+    <li>☐ Implement caching for repeated requests</li>
+    <li>☐ Use streaming for long responses</li>
+    <li>☐ Route simple requests to cheaper models</li>
+    <li>☐ Parallelize independent operations</li>
+    <li>☐ Compress prompts to reduce token count</li>
+    <li>☐ Set appropriate max_tokens limits</li>
+    <li>☐ Enable prompt caching for system messages</li>
+    <li>☐ Implement rate limiting per user</li>
+    <li>☐ Add circuit breakers for external dependencies</li>
+    <li>☐ Monitor and optimize slow traces</li>
+</ul>
+
+<h2>Performance Benchmarking</h2>
+<p>Regularly benchmark your system to track improvements:</p>
+
+<div class="code-block">
+<pre><code>class PerformanceBenchmark:
+    async def run_benchmark(self, test_prompts):
+        results = []
+        
+        for prompt in test_prompts:
+            start = time.time()
+            
+            response = await llm.generate(prompt)
+            
+            latency = (time.time() - start) * 1000
+            
+            results.append({
+                "prompt_length": len(prompt),
+                "response_length": len(response),
+                "latency_ms": latency,
+                "tokens": response.usage.total_tokens,
+                "cost": calculate_cost(response.usage)
+            })
+        
+        return {
+            "avg_latency": np.mean([r["latency_ms"] for r in results]),
+            "p95_latency": np.percentile([r["latency_ms"] for r in results], 95),
+            "avg_cost": np.mean([r["cost"] for r in results]),
+            "total_tokens": sum([r["tokens"] for r in results])
+        }
+</code></pre>
+</div>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

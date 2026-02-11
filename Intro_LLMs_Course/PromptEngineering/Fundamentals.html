@@ -1,0 +1,366 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Prompt Engineering Fundamentals</title>
+    <meta charset="UTF-8">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Prompt Engineering Fundamentals</h1>
+
+<h2>What is Prompt Engineering?</h2>
+<p>Prompt engineering is the practice of designing and refining inputs (prompts) to elicit desired outputs from Large Language Models. It's the most accessible and cost-effective way to customize LLM behavior without fine-tuning or retraining.</p>
+
+<p>A well-crafted prompt can dramatically improve output quality, accuracy, and relevance. Poor prompts lead to vague, incorrect, or unhelpful responses.</p>
+
+<h2>Core Principles of Effective Prompts</h2>
+<table>
+    <tr><th>Principle</th><th>Description</th><th>Example</th></tr>
+    <tr>
+        <td class="rowheader">Clarity</td>
+        <td>Be specific and unambiguous about what you want</td>
+        <td>❌ "Tell me about dogs" ✅ "List 5 characteristics of Golden Retrievers"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Context</td>
+        <td>Provide relevant background information</td>
+        <td>❌ "Fix this code" ✅ "Fix this Python function that should sort a list but returns None"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Constraints</td>
+        <td>Specify format, length, style requirements</td>
+        <td>❌ "Summarize this" ✅ "Summarize this article in 3 bullet points, max 50 words each"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Examples</td>
+        <td>Show examples of desired output format</td>
+        <td>Provide 2-3 input-output examples before the actual task</td>
+    </tr>
+</table>
+
+<h2>Prompting Techniques</h2>
+
+<h3>1. Zero-Shot Prompting</h3>
+<p>Asking the model to perform a task without any examples.</p>
+<blockquote>
+<pre>
+Prompt: "Classify the sentiment of this review as positive, negative, or neutral:
+'The product arrived late but the quality exceeded my expectations.'"
+
+Response: "Neutral - The review contains both negative (late arrival) 
+and positive (quality exceeded expectations) elements, balancing out to neutral."
+</pre>
+</blockquote>
+
+<h3>2. Few-Shot Prompting</h3>
+<p>Providing examples to guide the model's response format and style.</p>
+<blockquote>
+<pre>
+Prompt: "Extract the product name and price from these descriptions:
+
+Description: 'The iPhone 15 Pro is available for $999'
+Output: {"product": "iPhone 15 Pro", "price": 999}
+
+Description: 'Get the Samsung Galaxy S24 for only $799'
+Output: {"product": "Samsung Galaxy S24", "price": 799}
+
+Description: 'The new MacBook Air M3 starts at $1,199'
+Output:"
+
+Response: {"product": "MacBook Air M3", "price": 1199}
+</pre>
+</blockquote>
+
+<h3>3. Chain-of-Thought (CoT) Prompting</h3>
+<p>Encouraging the model to show its reasoning process step-by-step.</p>
+<blockquote>
+<pre>
+Prompt: "Solve this problem step by step:
+A store has 45 apples. They sell 60% of them in the morning and 
+half of the remaining in the afternoon. How many apples are left?
+
+Let's think through this step by step:"
+
+Response:
+"Step 1: Calculate morning sales
+- 60% of 45 = 0.6 × 45 = 27 apples sold
+
+Step 2: Calculate remaining after morning
+- 45 - 27 = 18 apples remaining
+
+Step 3: Calculate afternoon sales
+- Half of 18 = 18 ÷ 2 = 9 apples sold
+
+Step 4: Calculate final remaining
+- 18 - 9 = 9 apples left
+
+Answer: 9 apples remain."
+</pre>
+</blockquote>
+
+<h3>4. Role-Based Prompting</h3>
+<p>Assigning a specific role or persona to the model.</p>
+<blockquote>
+<pre>
+Prompt: "You are an experienced Python developer reviewing code. 
+Analyze this function for bugs and suggest improvements:
+
+def calculate_average(numbers):
+    total = 0
+    for num in numbers:
+        total += num
+    return total / len(numbers)"
+
+Response: "As a Python developer, I see a critical bug:
+
+Bug: Division by zero error if 'numbers' is empty.
+
+Improvements:
+1. Add empty list check
+2. Use built-in sum() for cleaner code
+3. Add type hints
+4. Add docstring
+
+Improved version:
+def calculate_average(numbers: list[float]) -> float:
+    '''Calculate average of numbers in a list.'''
+    if not numbers:
+        raise ValueError('Cannot calculate average of empty list')
+    return sum(numbers) / len(numbers)"
+</pre>
+</blockquote>
+
+<h3>5. Structured Output Prompting</h3>
+<p>Requesting responses in specific formats like JSON, XML, or tables.</p>
+<blockquote>
+<pre>
+Prompt: "Extract information from this text and return as JSON:
+'John Smith, age 35, works as a Software Engineer at TechCorp in Seattle.'
+
+Return format:
+{
+  "name": "",
+  "age": 0,
+  "occupation": "",
+  "company": "",
+  "location": ""
+}"
+
+Response:
+{
+  "name": "John Smith",
+  "age": 35,
+  "occupation": "Software Engineer",
+  "company": "TechCorp",
+  "location": "Seattle"
+}
+</pre>
+</blockquote>
+
+<h2>Advanced Prompting Strategies</h2>
+
+<h3>Prompt Chaining</h3>
+<p>Breaking complex tasks into multiple sequential prompts.</p>
+<blockquote>
+<pre>
+# Step 1: Research
+Prompt 1: "List the top 5 programming languages for web development in 2024"
+
+# Step 2: Analysis
+Prompt 2: "For each language from the previous list, explain one key advantage"
+
+# Step 3: Recommendation
+Prompt 3: "Based on the advantages, recommend the best choice for a beginner"
+</pre>
+</blockquote>
+
+<h3>Self-Consistency</h3>
+<p>Generating multiple responses and selecting the most consistent answer.</p>
+<blockquote>
+<pre>
+# Generate 5 responses to the same reasoning problem
+# Select the answer that appears most frequently
+# Useful for math, logic, and factual questions
+</pre>
+</blockquote>
+
+<h3>ReAct (Reasoning + Acting)</h3>
+<p>Combining reasoning with actions (tool use) in an iterative loop.</p>
+<blockquote>
+<pre>
+Task: "What's the current weather in the capital of Japan?"
+
+Thought: I need to find the capital of Japan first
+Action: search("capital of Japan")
+Observation: Tokyo is the capital of Japan
+
+Thought: Now I need to get the weather for Tokyo
+Action: get_weather("Tokyo")
+Observation: 18°C, partly cloudy
+
+Answer: The current weather in Tokyo (capital of Japan) is 18°C and partly cloudy.
+</pre>
+</blockquote>
+
+<h2>Prompt Optimization Techniques</h2>
+<table>
+    <tr><th>Technique</th><th>Purpose</th><th>Example</th></tr>
+    <tr>
+        <td class="rowheader">Instruction Positioning</td>
+        <td>Place key instructions at the beginning or end</td>
+        <td>Start with "You must respond in JSON format" or end with "Remember: JSON only"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Delimiter Usage</td>
+        <td>Separate different parts of the prompt clearly</td>
+        <td>Use ###, ---, or XML tags to mark sections</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Negative Prompting</td>
+        <td>Specify what NOT to do</td>
+        <td>"Do not include personal opinions or speculation"</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Temperature Tuning</td>
+        <td>Adjust creativity vs. determinism</td>
+        <td>0.0 for factual tasks, 0.7-1.0 for creative tasks</td>
+    </tr>
+</table>
+
+<h2>Common Pitfalls and Solutions</h2>
+
+<h3>Pitfall 1: Vague Instructions</h3>
+<blockquote>
+<pre>
+❌ Bad: "Write about AI"
+✅ Good: "Write a 200-word explanation of how neural networks learn, 
+suitable for high school students with no prior AI knowledge"
+</pre>
+</blockquote>
+
+<h3>Pitfall 2: Overloading Context</h3>
+<blockquote>
+<pre>
+❌ Bad: Including entire 50-page document in prompt
+✅ Good: Summarize document first, then ask specific questions about summary
+</pre>
+</blockquote>
+
+<h3>Pitfall 3: Ambiguous Constraints</h3>
+<blockquote>
+<pre>
+❌ Bad: "Make it short"
+✅ Good: "Limit response to 100 words or 3 bullet points"
+</pre>
+</blockquote>
+
+<h3>Pitfall 4: Ignoring Model Limitations</h3>
+<blockquote>
+<pre>
+❌ Bad: Asking for real-time data or personal opinions
+✅ Good: Acknowledge knowledge cutoff, use RAG for current data
+</pre>
+</blockquote>
+
+<h2>Prompt Templates for Common Tasks</h2>
+
+<h3>Summarization Template</h3>
+<blockquote>
+<pre>
+Summarize the following [document type] in [number] [format]:
+
+[DOCUMENT]
+{text}
+[/DOCUMENT]
+
+Focus on: [key aspects]
+Target audience: [audience]
+Tone: [formal/casual/technical]
+</pre>
+</blockquote>
+
+<h3>Code Generation Template</h3>
+<blockquote>
+<pre>
+Write a [language] [function/class] that:
+- [requirement 1]
+- [requirement 2]
+- [requirement 3]
+
+Include:
+- Type hints/annotations
+- Error handling
+- Docstring/comments
+- Example usage
+</pre>
+</blockquote>
+
+<h3>Data Extraction Template</h3>
+<blockquote>
+<pre>
+Extract the following information from the text below:
+- [field 1]
+- [field 2]
+- [field 3]
+
+Text: {input_text}
+
+Return as JSON with keys: [list keys]
+If information is not found, use null.
+</pre>
+</blockquote>
+
+<h2>Testing and Iteration</h2>
+<p>Effective prompt engineering is iterative:</p>
+<ol>
+    <li><strong>Start Simple:</strong> Begin with a basic prompt</li>
+    <li><strong>Test:</strong> Run on multiple examples</li>
+    <li><strong>Analyze Failures:</strong> Identify where outputs fall short</li>
+    <li><strong>Refine:</strong> Add clarity, examples, or constraints</li>
+    <li><strong>Repeat:</strong> Continue until consistent quality achieved</li>
+</ol>
+
+<h2>Measuring Prompt Quality</h2>
+<table>
+    <tr><th>Metric</th><th>Description</th><th>How to Measure</th></tr>
+    <tr>
+        <td class="rowheader">Accuracy</td>
+        <td>Correctness of information</td>
+        <td>Compare against ground truth, expert review</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Consistency</td>
+        <td>Similar inputs produce similar outputs</td>
+        <td>Test with variations of same query</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Relevance</td>
+        <td>Output addresses the actual question</td>
+        <td>Human evaluation, relevance scoring</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Format Compliance</td>
+        <td>Follows specified structure</td>
+        <td>Automated validation (JSON schema, regex)</td>
+    </tr>
+</table>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Prompt engineering is the most accessible way to customize LLM behavior</li>
+    <li>Clear, specific prompts with context and examples yield better results</li>
+    <li>Different techniques (zero-shot, few-shot, CoT) suit different tasks</li>
+    <li>Structured output prompting ensures consistent, parseable responses</li>
+    <li>Prompt chaining breaks complex tasks into manageable steps</li>
+    <li>Iterative testing and refinement are essential for optimal prompts</li>
+    <li>Measure quality through accuracy, consistency, relevance, and format compliance</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

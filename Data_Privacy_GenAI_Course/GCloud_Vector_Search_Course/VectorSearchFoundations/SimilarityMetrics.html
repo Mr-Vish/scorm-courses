@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Similarity Metrics and Distance Functions</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Similarity Metrics and Distance Functions</h1>
+
+<h2>Measuring Vector Similarity</h2>
+<p>Once data is represented as vectors, we need mathematical functions to measure how similar or different vectors are. The choice of similarity metric significantly impacts search quality and performance.</p>
+
+<h2>Common Distance Metrics</h2>
+
+<h3>1. Cosine Similarity</h3>
+<p>Measures the cosine of the angle between two vectors, ranging from -1 (opposite) to 1 (identical). Most commonly used for text embeddings.</p>
+
+<div class="code-block">
+<pre><code>import numpy as np
+
+def cosine_similarity(v1, v2):
+    """Calculate cosine similarity between two vectors"""
+    dot_product = np.dot(v1, v2)
+    norm_v1 = np.linalg.norm(v1)
+    norm_v2 = np.linalg.norm(v2)
+    return dot_product / (norm_v1 * norm_v2)
+
+# Example
+vec1 = np.array([1.0, 2.0, 3.0])
+vec2 = np.array([2.0, 4.0, 6.0])  # Scaled version of vec1
+
+similarity = cosine_similarity(vec1, vec2)
+print(f"Cosine Similarity: {similarity}")  # Output: 1.0 (identical direction)
+</code></pre>
+</div>
+
+<h3>2. Dot Product Distance</h3>
+<p>For normalized vectors, dot product is equivalent to cosine similarity but computationally faster. Vertex AI Vector Search optimizes for this metric.</p>
+
+<div class="code-block">
+<pre><code>def dot_product_distance(v1, v2):
+    """Calculate dot product (assumes normalized vectors)"""
+    return np.dot(v1, v2)
+
+# Normalize vectors first
+v1_normalized = v1 / np.linalg.norm(v1)
+v2_normalized = v2 / np.linalg.norm(v2)
+
+distance = dot_product_distance(v1_normalized, v2_normalized)
+print(f"Dot Product Distance: {distance}")
+</code></pre>
+</div>
+
+<h3>3. Euclidean Distance (L2)</h3>
+<p>Measures the straight-line distance between two points in vector space. Useful when magnitude matters.</p>
+
+<div class="code-block">
+<pre><code>def euclidean_distance(v1, v2):
+    """Calculate Euclidean (L2) distance"""
+    return np.sqrt(np.sum((v1 - v2) ** 2))
+
+# Example
+vec_a = np.array([1.0, 2.0, 3.0])
+vec_b = np.array([4.0, 5.0, 6.0])
+
+distance = euclidean_distance(vec_a, vec_b)
+print(f"Euclidean Distance: {distance:.3f}")  # Output: 5.196
+</code></pre>
+</div>
+
+<h3>4. Manhattan Distance (L1)</h3>
+<p>Sum of absolute differences across all dimensions. Less sensitive to outliers than Euclidean distance.</p>
+
+<div class="code-block">
+<pre><code>def manhattan_distance(v1, v2):
+    """Calculate Manhattan (L1) distance"""
+    return np.sum(np.abs(v1 - v2))
+
+distance = manhattan_distance(vec_a, vec_b)
+print(f"Manhattan Distance: {distance}")  # Output: 9.0
+</code></pre>
+</div>
+
+<h2>Comparison of Distance Metrics</h2>
+<table>
+    <tr>
+        <th>Metric</th>
+        <th>Range</th>
+        <th>Computation</th>
+        <th>Best For</th>
+        <th>Vertex AI Support</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Cosine Similarity</td>
+        <td>-1 to 1</td>
+        <td>Moderate</td>
+        <td>Text embeddings, direction matters</td>
+        <td>Yes (via DOT_PRODUCT)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Dot Product</td>
+        <td>Unbounded</td>
+        <td>Fast</td>
+        <td>Normalized vectors, high performance</td>
+        <td>Yes (DOT_PRODUCT_DISTANCE)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Euclidean (L2)</td>
+        <td>0 to ∞</td>
+        <td>Moderate</td>
+        <td>Magnitude matters, spatial data</td>
+        <td>Yes (SQUARED_L2_DISTANCE)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Manhattan (L1)</td>
+        <td>0 to ∞</td>
+        <td>Fast</td>
+        <td>High-dimensional sparse data</td>
+        <td>No (use custom implementation)</td>
+    </tr>
+</table>
+
+<h2>Choosing the Right Metric</h2>
+
+<h3>For Text Embeddings</h3>
+<p>Use <strong>Cosine Similarity</strong> or <strong>Dot Product</strong> (with normalized vectors). Text embeddings from models like text-embedding-004 are typically normalized, making dot product the most efficient choice.</p>
+
+<h3>For Image Embeddings</h3>
+<p>Use <strong>Euclidean Distance</strong> when comparing visual features where magnitude represents intensity or presence of features.</p>
+
+<h3>For Recommendation Systems</h3>
+<p>Use <strong>Dot Product</strong> to capture both similarity and magnitude, allowing popular items to rank higher.</p>
+
+<h2>Practical Example: Comparing Metrics</h2>
+<div class="code-block">
+<pre><code>from vertexai.language_models import TextEmbeddingModel
+import numpy as np
+
+model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+
+# Generate embeddings for comparison
+query = "cloud computing services"
+documents = [
+    "AWS provides scalable cloud infrastructure",
+    "Machine learning model training",
+    "Google Cloud Platform offers compute resources"
+]
+
+query_emb = np.array(model.get_embeddings([query])[0].values)
+doc_embs = [np.array(model.get_embeddings([doc])[0].values) for doc in documents]
+
+# Compare using different metrics
+print("Similarity Scores:\n")
+for i, doc_emb in enumerate(doc_embs):
+    cosine = cosine_similarity(query_emb, doc_emb)
+    euclidean = euclidean_distance(query_emb, doc_emb)
+    
+    print(f"Document {i+1}: {documents[i]}")
+    print(f"  Cosine Similarity: {cosine:.4f}")
+    print(f"  Euclidean Distance: {euclidean:.4f}\n")
+
+# Output shows Document 1 and 3 are most similar to the query
+</code></pre>
+</div>
+
+<h2>Performance Considerations</h2>
+
+<h3>Computational Complexity</h3>
+<table>
+    <tr>
+        <th>Operation</th>
+        <th>Time Complexity</th>
+        <th>Notes</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Dot Product</td>
+        <td>O(d)</td>
+        <td>Fastest, highly optimized in hardware</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cosine Similarity</td>
+        <td>O(d) + normalization</td>
+        <td>Requires computing vector norms</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Euclidean Distance</td>
+        <td>O(d) + sqrt</td>
+        <td>Square root operation adds overhead</td>
+    </tr>
+</table>
+<p><em>where d = number of dimensions</em></p>
+
+<h3>Optimization Tip: Pre-normalize Vectors</h3>
+<div class="code-block">
+<pre><code># Normalize embeddings once during indexing
+def normalize_embeddings(embeddings):
+    """Normalize vectors to unit length"""
+    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+    return embeddings / norms
+
+# Store normalized embeddings
+normalized_embs = normalize_embeddings(doc_embs)
+
+# Now dot product equals cosine similarity (faster!)
+similarity = np.dot(query_emb, normalized_embs[0])
+</code></pre>
+</div>
+
+<h2>Distance vs Similarity</h2>
+<p>Understanding the relationship between distance and similarity:</p>
+<ul>
+    <li><strong>Similarity:</strong> Higher values indicate more similar vectors (e.g., cosine similarity: 1 = identical)</li>
+    <li><strong>Distance:</strong> Lower values indicate more similar vectors (e.g., Euclidean distance: 0 = identical)</li>
+    <li>Conversion: <code>similarity = 1 / (1 + distance)</code> or <code>distance = 1 - similarity</code></li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Cosine similarity and dot product are preferred for text embeddings due to their focus on direction rather than magnitude</li>
+<li>Euclidean distance is better when the magnitude of vectors carries meaningful information</li>
+<li>Pre-normalizing vectors allows using dot product instead of cosine similarity for better performance</li>
+<li>Vertex AI Vector Search supports DOT_PRODUCT_DISTANCE and SQUARED_L2_DISTANCE natively</li>
+<li>The choice of metric should align with your embedding model and use case requirements</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

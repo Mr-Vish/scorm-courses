@@ -1,0 +1,330 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Understanding the Model Context Protocol</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Understanding the Model Context Protocol</h1>
+
+<h2>Module Objectives</h2>
+<p>By the end of this module, you will be able to:</p>
+<ul>
+    <li>Explain the purpose and value proposition of the Model Context Protocol</li>
+    <li>Identify the core architectural components and their responsibilities</li>
+    <li>Describe the three fundamental primitives: Tools, Resources, and Prompts</li>
+    <li>Understand the communication flow between hosts, clients, and servers</li>
+    <li>Recognize appropriate use cases for MCP implementations</li>
+</ul>
+
+<h2>What Is the Model Context Protocol?</h2>
+
+<p>The <strong>Model Context Protocol (MCP)</strong> is an open standard developed by Anthropic that defines a universal interface for connecting AI applications to external data sources, tools, and services. Released as an open specification, MCP addresses a fundamental challenge in the AI ecosystem: the lack of standardization in how AI models interact with the world beyond their training data.</p>
+
+<p>Think of MCP as the <strong>USB-C port for AI</strong> - just as USB-C provides a universal connector for physical devices, MCP provides a universal protocol for AI integrations. Before USB-C, every device required its own proprietary connector. Similarly, before MCP, every AI application required custom integration code for each data source or tool it needed to access.</p>
+
+<h3>The Problem MCP Solves</h3>
+
+<p>Modern AI applications face several critical challenges:</p>
+
+<ul>
+    <li><strong>Integration Fragmentation:</strong> Each AI platform (Claude, ChatGPT, custom LLM applications) requires different integration approaches, forcing developers to build and maintain multiple implementations of the same functionality</li>
+    <li><strong>Security Complexity:</strong> Without standardized patterns, developers implement ad-hoc security measures that may be inconsistent or incomplete</li>
+    <li><strong>Maintenance Burden:</strong> Custom integrations require ongoing maintenance as both AI platforms and integrated systems evolve</li>
+    <li><strong>Limited Reusability:</strong> Integration code written for one AI application cannot be reused with another, leading to duplicated effort</li>
+    <li><strong>Scalability Issues:</strong> As organizations adopt multiple AI tools, the number of custom integrations grows exponentially</li>
+</ul>
+
+<h3>The MCP Solution</h3>
+
+<p>MCP addresses these challenges through:</p>
+
+<ul>
+    <li><strong>Standardized Protocol:</strong> A well-defined specification that all MCP-compatible applications can implement</li>
+    <li><strong>Separation of Concerns:</strong> Clear boundaries between AI hosts, integration logic, and backend systems</li>
+    <li><strong>Security by Design:</strong> Built-in patterns for authentication, authorization, and capability declaration</li>
+    <li><strong>Composability:</strong> Ability to connect multiple MCP servers to a single AI application, each providing different capabilities</li>
+    <li><strong>Future-Proof Architecture:</strong> As new AI platforms emerge, they can adopt MCP without requiring changes to existing servers</li>
+</ul>
+
+<h2>Core Architectural Components</h2>
+
+<p>The MCP architecture consists of four primary components that work together to enable AI-to-system integration:</p>
+
+<h3>1. MCP Host</h3>
+
+<p>The <strong>Host</strong> is the AI application that wants to use external tools and data. Examples include:</p>
+
+<ul>
+    <li>Claude Desktop application</li>
+    <li>IDE extensions (VS Code, JetBrains)</li>
+    <li>Custom AI-powered applications</li>
+    <li>AI agent frameworks</li>
+</ul>
+
+<p><strong>Host Responsibilities:</strong></p>
+<ul>
+    <li>Managing the lifecycle of MCP client connections</li>
+    <li>Presenting available tools and resources to the AI model</li>
+    <li>Requesting user consent for sensitive operations</li>
+    <li>Handling responses from MCP servers</li>
+    <li>Providing the user interface for AI interactions</li>
+</ul>
+
+<h3>2. MCP Client</h3>
+
+<p>The <strong>Client</strong> is a component within the host that maintains a 1:1 connection with an MCP server. The host can manage multiple clients simultaneously, each connected to a different server.</p>
+
+<p><strong>Client Responsibilities:</strong></p>
+<ul>
+    <li>Establishing and maintaining the connection to an MCP server</li>
+    <li>Serializing requests according to the MCP protocol specification</li>
+    <li>Deserializing responses from the server</li>
+    <li>Handling connection errors and retries</li>
+    <li>Managing the request-response lifecycle</li>
+</ul>
+
+<p><strong>Important:</strong> As a developer building MCP servers, you typically don't implement the client - it's provided by the host application. Your focus is on the server side.</p>
+
+<h3>3. MCP Server</h3>
+
+<p>The <strong>Server</strong> is the component you will build in this course. It exposes capabilities (tools, resources, prompts) to AI applications via the MCP protocol.</p>
+
+<p><strong>Server Responsibilities:</strong></p>
+<ul>
+    <li>Declaring available tools, resources, and prompts</li>
+    <li>Validating incoming requests</li>
+    <li>Executing tool operations safely</li>
+    <li>Retrieving and formatting resource data</li>
+    <li>Handling errors gracefully</li>
+    <li>Implementing security and access control</li>
+</ul>
+
+<p><strong>Server Characteristics:</strong></p>
+<ul>
+    <li>Stateless or stateful depending on requirements</li>
+    <li>Can be local (running on the same machine as the host) or remote (accessible over network)</li>
+    <li>Written in any language that supports the MCP protocol (TypeScript, Python, Go, etc.)</li>
+    <li>Focused on a specific domain or capability set</li>
+</ul>
+
+<h3>4. Transport Layer</h3>
+
+<p>The <strong>Transport</strong> defines how messages are exchanged between client and server. MCP supports two primary transport mechanisms:</p>
+
+<ul>
+    <li><strong>stdio (Standard Input/Output):</strong> For local servers running as subprocesses</li>
+    <li><strong>SSE (Server-Sent Events):</strong> For remote servers accessible over HTTP</li>
+</ul>
+
+<p>The transport layer is abstracted away by MCP SDKs, allowing you to focus on business logic rather than communication details.</p>
+
+<h2>MCP Primitives: The Building Blocks</h2>
+
+<p>MCP defines three fundamental primitives that servers can expose. Understanding these primitives is essential for designing effective MCP integrations.</p>
+
+<h3>1. Tools</h3>
+
+<p><strong>Tools</strong> are actions that the AI can execute. They represent operations that modify state, retrieve dynamic data, or interact with external systems.</p>
+
+<p><strong>Tool Characteristics:</strong></p>
+<ul>
+    <li>Have a unique name and description</li>
+    <li>Define an input schema (what parameters they accept)</li>
+    <li>Return structured results</li>
+    <li>Can have side effects (create, update, delete operations)</li>
+    <li>Require explicit invocation by the AI</li>
+</ul>
+
+<p><strong>Tool Examples:</strong></p>
+<table>
+    <tr>
+        <th>Tool Name</th>
+        <th>Purpose</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">query_database</td>
+        <td>Execute SQL queries</td>
+        <td>AI retrieves customer data to answer questions</td>
+    </tr>
+    <tr>
+        <td class="rowheader">send_email</td>
+        <td>Send email messages</td>
+        <td>AI drafts and sends follow-up emails</td>
+    </tr>
+    <tr>
+        <td class="rowheader">create_ticket</td>
+        <td>Create support tickets</td>
+        <td>AI logs issues in ticketing system</td>
+    </tr>
+    <tr>
+        <td class="rowheader">search_documents</td>
+        <td>Search document repository</td>
+        <td>AI finds relevant documentation</td>
+    </tr>
+</table>
+
+<h3>2. Resources</h3>
+
+<p><strong>Resources</strong> are data that the AI can read. They represent static or semi-static information that provides context to the AI model.</p>
+
+<p><strong>Resource Characteristics:</strong></p>
+<ul>
+    <li>Identified by URI (e.g., file:///path/to/file, db://table/record)</li>
+    <li>Have a MIME type (text/plain, application/json, etc.)</li>
+    <li>Can be listed and discovered</li>
+    <li>Read-only from the AI's perspective</li>
+    <li>May support subscriptions for change notifications</li>
+</ul>
+
+<p><strong>Resource Examples:</strong></p>
+<table>
+    <tr>
+        <th>Resource URI</th>
+        <th>Content</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">file:///docs/api.md</td>
+        <td>API documentation</td>
+        <td>AI references API docs when generating code</td>
+    </tr>
+    <tr>
+        <td class="rowheader">config://app/settings</td>
+        <td>Application configuration</td>
+        <td>AI understands current system configuration</td>
+    </tr>
+    <tr>
+        <td class="rowheader">db://users/schema</td>
+        <td>Database schema</td>
+        <td>AI generates accurate SQL queries</td>
+    </tr>
+    <tr>
+        <td class="rowheader">git://repo/README</td>
+        <td>Repository README</td>
+        <td>AI understands project context</td>
+    </tr>
+</table>
+
+<h3>3. Prompts</h3>
+
+<p><strong>Prompts</strong> are reusable prompt templates that can be invoked by users or the AI. They encapsulate common workflows or analysis patterns.</p>
+
+<p><strong>Prompt Characteristics:</strong></p>
+<ul>
+    <li>Have a name and description</li>
+    <li>Can accept arguments to customize behavior</li>
+    <li>Return formatted prompt text</li>
+    <li>May include embedded resources or tool calls</li>
+    <li>Provide consistency across repeated tasks</li>
+</ul>
+
+<p><strong>Prompt Examples:</strong></p>
+<table>
+    <tr>
+        <th>Prompt Name</th>
+        <th>Purpose</th>
+        <th>Use Case</th>
+    </tr>
+    <tr>
+        <td class="rowheader">code_review</td>
+        <td>Review code changes</td>
+        <td>Standardized code review workflow</td>
+    </tr>
+    <tr>
+        <td class="rowheader">bug_analysis</td>
+        <td>Analyze bug reports</td>
+        <td>Consistent bug triage process</td>
+    </tr>
+    <tr>
+        <td class="rowheader">data_summary</td>
+        <td>Summarize datasets</td>
+        <td>Generate data analysis reports</td>
+    </tr>
+    <tr>
+        <td class="rowheader">security_audit</td>
+        <td>Security assessment</td>
+        <td>Standardized security review</td>
+    </tr>
+</table>
+
+<h2>Communication Flow</h2>
+
+<p>Understanding how messages flow through the MCP architecture is crucial for effective server development:</p>
+
+<p><strong>Typical Interaction Sequence:</strong></p>
+
+<ol>
+    <li><strong>Initialization:</strong> Host launches MCP server (stdio) or connects to remote server (SSE)</li>
+    <li><strong>Capability Discovery:</strong> Client requests list of available tools, resources, and prompts from server</li>
+    <li><strong>Capability Presentation:</strong> Host presents available capabilities to the AI model</li>
+    <li><strong>User Interaction:</strong> User provides input to the AI</li>
+    <li><strong>AI Decision:</strong> AI determines which tools or resources to use</li>
+    <li><strong>Tool Invocation:</strong> Client sends tool execution request to server</li>
+    <li><strong>Server Processing:</strong> Server validates request, executes operation, returns result</li>
+    <li><strong>Response Integration:</strong> AI incorporates tool result into its response</li>
+    <li><strong>User Presentation:</strong> Host displays AI response to user</li>
+</ol>
+
+<h2>Why MCP Matters for Enterprise</h2>
+
+<p>MCP provides significant value for enterprise AI adoption:</p>
+
+<h3>Standardization Benefits</h3>
+<ul>
+    <li><strong>Reduced Development Time:</strong> Build once, use with multiple AI platforms</li>
+    <li><strong>Consistent Security:</strong> Standardized patterns for authentication and authorization</li>
+    <li><strong>Easier Maintenance:</strong> Updates to MCP servers benefit all connected AI applications</li>
+    <li><strong>Vendor Independence:</strong> Not locked into a single AI platform's integration approach</li>
+</ul>
+
+<h3>Security and Governance</h3>
+<ul>
+    <li><strong>Explicit Capabilities:</strong> Servers declare exactly what they can do</li>
+    <li><strong>User Consent:</strong> Hosts can require approval for sensitive operations</li>
+    <li><strong>Audit Trail:</strong> All AI-to-system interactions can be logged</li>
+    <li><strong>Access Control:</strong> Fine-grained control over what AI can access</li>
+</ul>
+
+<h3>Composability and Scale</h3>
+<ul>
+    <li><strong>Modular Architecture:</strong> Each server focuses on specific capabilities</li>
+    <li><strong>Mix and Match:</strong> Combine multiple servers for complex workflows</li>
+    <li><strong>Team Collaboration:</strong> Different teams can build servers for their domains</li>
+    <li><strong>Ecosystem Growth:</strong> Leverage community-built MCP servers</li>
+</ul>
+
+<h2>Real-World Use Cases</h2>
+
+<p>MCP enables a wide range of enterprise AI applications:</p>
+
+<ul>
+    <li><strong>Customer Support:</strong> AI agents that can query CRM systems, create tickets, and access knowledge bases</li>
+    <li><strong>Development Tools:</strong> AI assistants that understand codebases, run tests, and deploy applications</li>
+    <li><strong>Data Analysis:</strong> AI that can query databases, generate reports, and visualize data</li>
+    <li><strong>Document Management:</strong> AI that searches, summarizes, and organizes enterprise documents</li>
+    <li><strong>DevOps Automation:</strong> AI that monitors systems, diagnoses issues, and executes remediation</li>
+    <li><strong>Business Intelligence:</strong> AI that analyzes metrics, identifies trends, and generates insights</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>MCP is an open standard for connecting AI applications to external systems</li>
+    <li>The architecture consists of Hosts, Clients, Servers, and Transport layers</li>
+    <li>Three primitives (Tools, Resources, Prompts) provide different types of capabilities</li>
+    <li>MCP enables standardization, security, and composability in AI integrations</li>
+    <li>Enterprise adoption benefits from reduced development time and consistent patterns</li>
+</ul>
+
+<p><strong>Next:</strong> In the following pages, we'll explore transport layers and protocol primitives in greater detail.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

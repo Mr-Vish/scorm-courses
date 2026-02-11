@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 2: Text-to-SQL Architecture</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Designing Robust Text-to-SQL Pipelines</h1>
+
+<p>The "Text-to-SQL" component is the engine of most natural language analytics systems. It is responsible for translating a user's natural language question into a syntactically correct and semantically accurate SQL query that can be executed against a database.</p>
+
+<h2>2.1 The Text-to-SQL Workflow</h2>
+<p>A typical Text-to-SQL pipeline involves several key stages:</p>
+<ol>
+    <li><strong>Schema Linking:</strong> The system must identify which tables and columns in the database are relevant to the user's question. This often involves providing a subset of the database schema (metadata) to the LLM.</li>
+    <li><strong>Query Generation:</strong> The LLM generates a SQL query based on the user's question and the provided schema.</li>
+    <li><strong>Validation:</strong> Before execution, the query is checked for syntax errors and potential security risks (like SQL injection).</li>
+    <li><strong>Execution:</strong> The query is run against the database, and the results are fetched.</li>
+    <li><strong>Explanation:</strong> The system provides a natural language explanation of how it reached the answer, often including the SQL query itself for transparency.</li>
+</ol>
+
+<h2>2.2 Schema Prompting Strategies</h2>
+<p>Providing the entire database schema to an LLM is often impossible due to context window limits and can lead to confusion. Effective schema prompting involves:
+<ul>
+    <li><strong>Schema Selection:</strong> Using a separate "router" step to identify only the most relevant tables for a given query.</li>
+    <li><strong>Descriptive Metadata:</strong> Providing comments and examples of the data contained in each column to help the model understand its purpose.</li>
+    <li><strong>DDL (Data Definition Language) Snippets:</strong> Providing the <code>CREATE TABLE</code> statements to the model, which clearly define the column names, types, and relationships (foreign keys).</li>
+</ul></p>
+
+<h2>2.3 Few-shot Prompting for SQL</h2>
+<p>Providing a few examples of (Question, SQL Query) pairs can significantly improve the model's accuracy, especially for complex or industry-specific queries.
+<pre><code>Question: Who are our top 5 customers by total spend?
+SQL: SELECT customer_name, SUM(amount) FROM sales GROUP BY customer_name ORDER BY SUM(amount) DESC LIMIT 5;
+
+Question: How many products were sold in each category last month?
+SQL: ...</code></pre></p>
+
+<h2>2.4 Handling Ambiguity and Errors</h2>
+<p>Natural language is inherently ambiguous. A good Text-to-SQL system should:
+<ul>
+    <li><strong>Ask for Clarification:</strong> If a query could be interpreted in multiple ways, the system should ask the user to clarify their intent.</li>
+    <li><strong>Graceful Error Handling:</strong> If a query fails to execute, the system should provide a clear error message and attempt to "self-correct" based on the database error.</li>
+</ul></p>
+
+<h2>2.5 The Role of "Golden" SQL Datasets</h2>
+<p>To measure the performance of your Text-to-SQL pipeline, you need a "Golden Dataset" of questions and their corresponding correct SQL queries. This allows you to perform automated testing and identify areas where the model is struggling.</p>
+
+<p>By mastering these Text-to-SQL architectural patterns, you can build natural language interfaces that are not only powerful but also reliable and accurate across a wide range of database structures and query types.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Quantization: Best Practices</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Quantization: Best Practices</h1>
+<div class="container">
+<h2>Quantization Best Practices and Common Pitfalls</h2>
+<p>Quantizing a model is both an art and a science. To get the best results, you need to follow proven best practices and be aware of the common traps that can ruin your model's performance.</p>
+
+<h3>Best Practice 1: Start with the Best Base Model</h3>
+<p>Quantization will not make a bad model good. In fact, it will only make a good model slightly worse. Always start with the highest-quality base model available (like Llama 3 or Mistral). A 4-bit version of a great model is almost always better than a 16-bit version of a mediocre model.</p>
+
+<h3>Best Practice 2: Choose the Right Bit-Width for the Task</h3>
+<ul>
+    <li><strong>8-bit:</strong> For high-stakes applications where accuracy is paramount and you have enough memory.</li>
+    <li><strong>4-bit:</strong> The "Gold Standard" for most users. Offers the best balance of size, speed, and intelligence.</li>
+    <li><strong>3-bit and below:</strong> For extreme memory constraints or when running on very weak hardware. Be prepared for a noticeable drop in "reasoning" capability.</li>
+</ul>
+
+<h3>Best Practice 3: Use Representative Calibration Data</h3>
+<p>If you are using a PTQ method like GPTQ or AWQ, the "calibration data" you provide is crucial. It should be representative of the actual prompts the model will see in the real world. If you only calibrate on English text, the model's performance on other languages or code might suffer after quantization.</p>
+
+<h3>Best Practice 4: Verify with Multiple Benchmarks</h3>
+<p>Don't just trust a single "perplexity" score. Test your quantized model on several different benchmarks (e.g., MMLU for general knowledge, GSM8K for math, and HumanEval for code). This will give you a more complete picture of what the model can and cannot do.</p>
+
+<h3>Common Pitfall 1: Ignoring the Tokenizer</h3>
+<p>The tokenizer is just as important as the model weights. When you download a quantized model, ensure you are using the exact same tokenizer that was used during the model's training. Using the wrong tokenizer will lead to gibberish output.</p>
+
+<h3>Common Pitfall 2: Over-Quantizing Small Models</h3>
+<p>Large models (70B+) are very robust to quantization. Small models (under 7B) are much more "fragile." A 4-bit 7B model will often lose a higher percentage of its intelligence than a 4-bit 70B model. For small models, consider staying at 6-bit or 8-bit.</p>
+
+<h3>Common Pitfall 3: Not Testing 'Edge Case' Capabilities</h3>
+<p>Quantization often "breaks" the model's performance on edge cases before it affects common tasks. Test your model's ability to follow complex negative constraints, generate valid JSON, and handle rare languages. These are often the first things to degrade.</p>
+
+<h3>Summary Checklist</h3>
+<ul>
+    <li>[ ] Did I choose the right quantization method (PTQ vs. QAT) for my needs?</li>
+    <li>[ ] Is my calibration dataset diverse and representative?</li>
+    <li>[ ] Have I tested the model on at least three different benchmarks?</li>
+    <li>[ ] Is the inference speedup actually visible on my target hardware?</li>
+    <li>[ ] Have I verified that the tokenizer and model configuration are correct?</li>
+</ul>
+
+<p>By following these guidelines, you can ensure that your quantized models are not just small and fast, but also smart and reliable. Happy quantizing!</p>
+
+</div>
+</body>
+</html>

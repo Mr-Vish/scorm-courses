@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Guardrails and Safety Mechanisms</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Guardrails and Safety Mechanisms</h1>
+
+<h2>Module Objectives</h2>
+<p>In this lesson, you will:</p>
+<ul>
+    <li>Understand the importance of guardrails in production agents</li>
+    <li>Learn different types of safety mechanisms</li>
+    <li>Implement rate limiting and resource controls</li>
+    <li>Design fail-safe behaviors for agents</li>
+</ul>
+
+<h2>Why Guardrails Matter</h2>
+<p>Production agents need guardrails to prevent:</p>
+
+<ul>
+    <li><strong>Infinite Loops:</strong> Agent gets stuck repeating actions</li>
+    <li><strong>Excessive Costs:</strong> Uncontrolled API calls drain budget</li>
+    <li><strong>Harmful Actions:</strong> Agent performs dangerous operations</li>
+    <li><strong>Data Leaks:</strong> Sensitive information exposed inappropriately</li>
+    <li><strong>System Abuse:</strong> Agent overwhelms external services</li>
+    <li><strong>Unpredictable Behavior:</strong> Agent acts outside intended scope</li>
+</ul>
+
+<h2>Types of Guardrails</h2>
+
+<h3>1. Iteration Limits</h3>
+<p>Prevent infinite loops by capping agent turns:</p>
+
+<blockquote>
+max_iterations = 25
+
+if iteration_count > max_iterations:
+    return "Task too complex, escalating to human"
+</blockquote>
+
+<p><strong>Typical Limits:</strong></p>
+<ul>
+    <li>Simple tasks: 5-10 iterations</li>
+    <li>Medium tasks: 10-20 iterations</li>
+    <li>Complex tasks: 20-30 iterations</li>
+</ul>
+
+<h3>2. Token Budgets</h3>
+<p>Control costs by limiting token usage:</p>
+
+<blockquote>
+max_tokens_per_request = 4000
+max_total_tokens = 50000
+
+if total_tokens_used > max_total_tokens:
+    stop_agent()
+    notify_admin()
+</blockquote>
+
+<h3>3. Time Limits</h3>
+<p>Prevent agents from running indefinitely:</p>
+
+<table>
+    <tr>
+        <th>Timeout Type</th>
+        <th>Typical Value</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Tool Timeout</td>
+        <td>5-30 seconds</td>
+        <td>Individual tool execution limit</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Turn Timeout</td>
+        <td>30-60 seconds</td>
+        <td>Single agent reasoning cycle</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Session Timeout</td>
+        <td>5-30 minutes</td>
+        <td>Total conversation duration</td>
+    </tr>
+</table>
+
+<h3>4. Tool Allowlists</h3>
+<p>Restrict which tools agents can use:</p>
+
+<blockquote>
+allowed_tools = ["search_database", "get_user_info", "send_email"]
+
+if requested_tool not in allowed_tools:
+    return "Tool not authorized for this agent"
+</blockquote>
+
+<h3>5. Input Validation</h3>
+<p>Verify tool parameters before execution:</p>
+
+<blockquote>
+def validate_email_tool(params):
+    if not is_valid_email(params['to']):
+        raise ValidationError("Invalid email address")
+    if len(params['body']) > 10000:
+        raise ValidationError("Email body too long")
+    if contains_sensitive_data(params['body']):
+        raise ValidationError("Cannot send sensitive data")
+</blockquote>
+
+<h3>6. Output Filtering</h3>
+<p>Sanitize agent responses before returning to users:</p>
+
+<ul>
+    <li>Remove internal system information</li>
+    <li>Redact sensitive data (API keys, passwords)</li>
+    <li>Filter inappropriate content</li>
+    <li>Validate response format</li>
+</ul>
+
+<h2>Rate Limiting Strategies</h2>
+
+<h3>Per-User Rate Limits</h3>
+<blockquote>
+max_requests_per_minute = 10
+max_requests_per_hour = 100
+
+if user_requests_this_minute > max_requests_per_minute:
+    return "Rate limit exceeded, please wait"
+</blockquote>
+
+<h3>Per-Tool Rate Limits</h3>
+<blockquote>
+expensive_tool_limits = {
+    "external_api_call": 5 per minute,
+    "database_write": 10 per minute,
+    "email_send": 20 per hour
+}
+</blockquote>
+
+<h3>Adaptive Rate Limiting</h3>
+<ul>
+    <li>Increase limits for trusted users</li>
+    <li>Decrease limits if abuse detected</li>
+    <li>Adjust based on system load</li>
+</ul>
+
+<h2>Safety Mechanisms</h2>
+
+<h3>Confirmation for Destructive Actions</h3>
+<blockquote>
+Before executing:
+- delete_record
+- send_payment
+- cancel_order
+- modify_permissions
+
+Agent must:
+1. Explain what will happen
+2. Request explicit user confirmation
+3. Wait for approval
+4. Execute only if confirmed
+</blockquote>
+
+<h3>Dry Run Mode</h3>
+<p>Test agent behavior without actual execution:</p>
+
+<blockquote>
+if dry_run_mode:
+    log_action("Would execute: delete_file(path)")
+    return "Dry run: File would be deleted"
+else:
+    delete_file(path)
+    return "File deleted"
+</blockquote>
+
+<h3>Audit Logging</h3>
+<p>Record all agent actions for review:</p>
+
+<blockquote>
+Log Entry:
+- timestamp: "2024-01-15T10:30:00Z"
+- user_id: "user_123"
+- agent_id: "agent_456"
+- action: "send_email"
+- parameters: {"to": "user@example.com", "subject": "..."}
+- result: "success"
+- cost: 0.002 tokens
+</blockquote>
+
+<h3>Circuit Breakers</h3>
+<p>Stop agent if error rate exceeds threshold:</p>
+
+<blockquote>
+if error_rate > 50% over last 10 requests:
+    circuit_breaker_open = True
+    stop_accepting_requests()
+    alert_operations_team()
+    
+After cooldown period:
+    circuit_breaker_half_open = True
+    allow_limited_requests()
+    
+If requests succeed:
+    circuit_breaker_closed = True
+    resume_normal_operation()
+</blockquote>
+
+<h2>Scope Limitations</h2>
+
+<h3>Domain Restrictions</h3>
+<blockquote>
+Customer Support Agent:
+- CAN: Answer questions, look up orders, process returns
+- CANNOT: Access employee data, modify pricing, change policies
+</blockquote>
+
+<h3>Data Access Controls</h3>
+<ul>
+    <li><strong>Row-Level Security:</strong> Agent sees only authorized records</li>
+    <li><strong>Column-Level Security:</strong> Sensitive fields hidden</li>
+    <li><strong>Time-Based Access:</strong> Historical data may be restricted</li>
+</ul>
+
+<h3>Action Permissions</h3>
+<blockquote>
+Permission Matrix:
+- read_data: All agents
+- write_data: Authorized agents only
+- delete_data: Requires admin approval
+- external_api: Requires explicit grant
+</blockquote>
+
+<h2>Fail-Safe Behaviors</h2>
+
+<h3>Graceful Degradation</h3>
+<p>When systems fail, provide reduced functionality:</p>
+
+<blockquote>
+If primary_database unavailable:
+    Use cached_data (may be stale)
+    Inform user of limitation
+    Log incident for investigation
+</blockquote>
+
+<h3>Default Deny</h3>
+<p>When uncertain, err on the side of caution:</p>
+
+<blockquote>
+If action_safety_unclear:
+    Do not execute
+    Request human review
+    Explain why approval needed
+</blockquote>
+
+<h3>Escalation Triggers</h3>
+<ul>
+    <li>Agent confidence below threshold</li>
+    <li>User explicitly requests human</li>
+    <li>Sensitive operation detected</li>
+    <li>Unusual pattern detected</li>
+    <li>Error rate exceeds limit</li>
+</ul>
+
+<h2>Monitoring and Alerts</h2>
+
+<h3>Key Metrics to Track</h3>
+<ul>
+    <li><strong>Success Rate:</strong> Percentage of tasks completed successfully</li>
+    <li><strong>Average Iterations:</strong> How many turns agents typically need</li>
+    <li><strong>Tool Usage:</strong> Which tools are called most frequently</li>
+    <li><strong>Error Rate:</strong> Percentage of failed operations</li>
+    <li><strong>Cost Per Session:</strong> Token usage and API costs</li>
+    <li><strong>Response Time:</strong> How long agents take to respond</li>
+</ul>
+
+<h3>Alert Conditions</h3>
+<blockquote>
+Alert if:
+- Error rate > 10%
+- Average cost > $1 per session
+- Response time > 30 seconds
+- Iteration count > 20
+- Unusual tool usage pattern
+- Security violation detected
+</blockquote>
+
+<h2>Best Practices for Production Guardrails</h2>
+
+<ul>
+    <li><strong>Start Restrictive:</strong> Begin with tight limits, loosen based on data</li>
+    <li><strong>Layer Defenses:</strong> Multiple guardrails provide redundancy</li>
+    <li><strong>Monitor Continuously:</strong> Track metrics in real-time</li>
+    <li><strong>Test Thoroughly:</strong> Verify guardrails work as intended</li>
+    <li><strong>Document Limits:</strong> Make constraints clear to users</li>
+    <li><strong>Provide Feedback:</strong> Explain why actions were blocked</li>
+    <li><strong>Review Regularly:</strong> Adjust limits based on usage patterns</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Guardrails prevent infinite loops, excessive costs, harmful actions, and unpredictable behavior</li>
+    <li>Essential guardrails include iteration limits, token budgets, timeouts, and tool allowlists</li>
+    <li>Rate limiting controls resource usage per user, per tool, and system-wide</li>
+    <li>Safety mechanisms include confirmations for destructive actions, dry run mode, and audit logging</li>
+    <li>Fail-safe behaviors ensure agents degrade gracefully and default to safe actions when uncertain</li>
+    <li>Continuous monitoring and alerting enable rapid response to issues</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

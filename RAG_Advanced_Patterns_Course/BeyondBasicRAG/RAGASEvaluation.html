@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: RAGAS Evaluation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: RAGAS Evaluation</h1>
+<div class="container">
+<h2>RAGAS: Evaluating RAG Pipelines with AI</h2>
+<p>Evaluating a RAG system is much harder than evaluating a simple classifier. You have to measure the quality of the retrieval, the quality of the generation, and the relationship between them. <strong>RAGAS</strong> (RAG Assessment) is a popular framework that uses LLMs to automatically calculate key metrics for RAG evaluation.</p>
+
+<h3>The RAGAS Metrics: The 'RAG Triad'</h3>
+<p>RAGAS focuses on three core relationships, often called the RAG Triad:</p>
+<ol>
+    <li><strong>Faithfulness (Groundedness):</strong> Does the answer actually come from the retrieved context? If the model makes up information not in the context, its faithfulness score will be low.
+        <ul>
+            <li>Calculated by: Extracting claims from the answer and checking if each claim is supported by the context.</li>
+        </ul>
+    </li>
+    <li><strong>Answer Relevance:</strong> Does the answer actually address the user's question? A model might be faithful to the context but still fail to answer the specific question asked.
+        <ul>
+            <li>Calculated by: Generating several potential questions from the answer and measuring their similarity to the original user query.</li>
+        </ul>
+    </li>
+    <li><strong>Context Precision:</strong> Are the retrieved documents actually relevant to the question? This measures the quality of your retrieval engine.
+        <ul>
+            <li>Calculated by: Using an LLM to evaluate the relevance of each document in the retrieved set.</li>
+        </ul>
+    </li>
+</ol>
+
+<h3>Additional Metrics</h3>
+<ul>
+    <li><strong>Context Recall:</strong> Does the retrieved context contain all the information needed to answer the question? This is measured against a "Golden Answer" if available.</li>
+    <li><strong>Answer Semantic Similarity:</strong> How close is the model's answer to the "ideal" human-written answer?</li>
+    <li><strong>Answer Correctness:</strong> A combination of semantic similarity and factual overlap with a reference answer.</li>
+</ul>
+
+<h3>Why Use LLM-as-a-Judge?</h3>
+<p>Traditional metrics like BLEU or ROUGE (which look for word overlap) are terrible for evaluating RAG. An AI can give a perfect answer that uses completely different words than the reference. RAGAS uses the semantic understanding of a powerful model (like Claude 3.5 Sonnet) to act as a "Judge," providing much more human-like evaluations.</p>
+
+<h3>The RAGAS Workflow</h3>
+<ol>
+    <li><strong>Prepare a Dataset:</strong> Create a set of questions (and ideally, ideal answers).</li>
+    <li><strong>Run the Pipeline:</strong> For each question, record the Query, the Retrieved Context, and the Generated Answer.</li>
+    <li><strong>Evaluate:</strong> Pass these three components to the RAGAS framework, which calls an LLM to calculate the scores.</li>
+    <li><strong>Analyze:</strong> Identify where your pipeline is weak. (e.g., "Our faithfulness is high, but our context precision is low—we need to improve our search engine.")</li>
+</ol>
+
+<h3>Benefits of RAGAS</h3>
+<ul>
+    <li><strong>Automated and Scalable:</strong> You can evaluate thousands of queries without needing a human to read every single one.</li>
+    <li><strong>Quantitative Insights:</strong> Provides clear numerical scores that allow you to track improvements over time and compare different RAG configurations.</li>
+    <li><strong>Diagnostic Power:</strong> The different metrics help you pinpoint exactly where in the pipeline the failure is occurring.</li>
+</ul>
+
+<h3>Limitations of RAGAS</h3>
+<ul>
+    <li><strong>Cost:</strong> Running RAGAS on a large dataset can be expensive as it requires many LLM calls.</li>
+    <li><strong>Judge Bias:</strong> The model acting as the Judge might have its own biases or make mistakes in its evaluation.</li>
+    <li><strong>Requirement for High-Quality Reference:</strong> Some metrics require a "Golden Answer," which can be time-consuming to create.</li>
+</ul>
+
+<h3>Summary</h3>
+<p>RAGAS has transformed RAG development from a "trial-and-error" process into a rigorous engineering discipline. By using AI to evaluate AI, we can build RAG systems that are not only powerful but also provably reliable and faithful to their sources.</p>
+
+</div>
+</body>
+</html>

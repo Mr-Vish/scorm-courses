@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Evaluation and Deployment</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Evaluation and Deployment</h1>
+<div class="container">
+<h2>Evaluating and Deploying Spring AI RAG Applications</h2>
+<p>Building a RAG application is only half the battle. To ensure it is ready for production, you must evaluate its performance rigorously and deploy it using a stable, scalable infrastructure. Spring AI, combined with the broader Spring Boot ecosystem, provides excellent support for both.</p>
+
+<h3>Evaluating RAG Quality</h3>
+<p>In Spring AI, evaluation is typically done using an <strong>Evaluation Model</strong> (often a more powerful LLM like Claude 3.5 Sonnet).
+<ul>
+    <li><strong>Faithfulness:</strong> Does the answer come from the retrieved context?</li>
+    <li><strong>Relevancy:</strong> Does the answer address the question?</li>
+    <li><strong>Correctness:</strong> Is the answer factually correct compared to a reference answer?</li>
+</ul>
+Spring AI provides a set of <code>Evaluator</code> implementations that can automate these checks. You can run these evaluations as part of your CI/CD pipeline or even as a periodic "sanity check" in production.</p>
+
+<h3>Monitoring and Observability</h3>
+<p>Because Spring AI is built on top of Spring Boot, you get world-class monitoring out of the box through <strong>Spring Boot Actuator</strong> and <strong>Micrometer</strong>.
+<ul>
+    <li><strong>Traceability:</strong> Use <strong>Spring Cloud Sleuth</strong> or <strong>OpenTelemetry</strong> to trace a single user request through the retrieval, transformation, and generation steps. This is invaluable for debugging "slow" or "wrong" answers.</li>
+    <li><strong>Metrics:</strong> Track the number of tokens used, the latency of LLM calls, and the hit/miss rates of your vector store search.</li>
+    <li><strong>Logging:</strong> Log all prompts and responses (securely!) to identify patterns of user behavior and potential edge cases where the AI fails.</li>
+</ul></p>
+
+<h3>Deploying to the Cloud</h3>
+<p>Spring AI applications are just Spring Boot applications, meaning they can be deployed anywhere:
+<ol>
+    <li><strong>Kubernetes:</strong> Use Spring Boot's native support for Docker and Kubernetes to deploy your AI service as a set of scalable containers.</li>
+    <li><strong>Serverless (AWS Lambda / Azure Functions):</strong> For low-traffic applications, you can use <strong>Spring Cloud Function</strong> to deploy your RAG logic as a serverless function, paying only for what you use.</li>
+    <li><strong>PaaS (Heroku / Google Cloud Run):</strong> Fast and easy deployment with built-in scaling and monitoring.</li>
+</ol></p>
+
+<h3>Scaling Your Vector Store</h3>
+<p>As your data grows, you'll need to scale your <code>VectorStore</code>.
+<ul>
+    <li><strong>Read Replicas:</strong> If you have high search volume, add read replicas to your PGVector database.</li>
+    <li><strong>Sharding:</strong> For truly massive datasets, use a distributed vector store like Pinecone or Milvus.</li>
+    <li><strong>Caching:</strong> Use a standard Spring <code>@Cacheable</code> on your search methods for frequently asked questions.</li>
+</ul></p>
+
+<h3>Security Considerations</h3>
+<ul>
+    <li><strong>API Key Management:</strong> Never hardcode your Anthropic or OpenAI keys. Use <strong>Spring Cloud Config</strong> or <strong>Vault</strong> to store them securely.</li>
+    <li><strong>Prompt Injection Defense:</strong> Use the multi-layered defense strategies (Input Filtering, Output Verification) implemented as Spring AI Advisors.</li>
+    <li><strong>Data Privacy:</strong> Ensure that sensitive data is filtered or anonymized before being sent to an external LLM provider.</li>
+</ul>
+
+<h3>Summary</h3>
+<p>Spring AI's integration with the Spring Boot ecosystem makes it the ideal choice for building "Enterprise-Ready" AI. By leveraging the framework's support for evaluation, observability, and secure deployment, you can move your RAG applications from a developer's laptop to a global production environment with confidence.</p>
+
+</div>
+</body>
+</html>

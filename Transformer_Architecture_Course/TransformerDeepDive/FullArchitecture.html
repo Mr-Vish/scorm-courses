@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Full Transformer Architecture and Optimizations</title>
+    <style type="text/css" media="screen">
+        @import url( ../shared/style.css );
+    </style>
+    <script src="../shared/scormfunctions.js" type="text/javascript"></script>
+    <script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+
+<h1>Full Transformer Architecture and Optimizations</h1>
+
+<h2>Overview of the Transformer Architecture</h2>
+<p>
+The transformer architecture is a modular, stackable design composed of repeated layers
+that progressively transform token representations. Unlike earlier sequence models,
+transformers rely entirely on attention and feed-forward computation.
+</p>
+
+<p>
+Modern LLMs may contain dozens to hundreds of transformer blocks, each contributing to
+the model’s reasoning, memory, and abstraction capabilities.
+</p>
+
+<h2>Transformer Block Architecture</h2>
+<p>
+Each transformer layer follows a consistent structure:
+</p>
+
+<ol>
+<li>
+<strong>Multi-Head Self-Attention:</strong>
+Allows each token to incorporate contextual information from the entire sequence.
+</li>
+
+<li>
+<strong>Layer Normalization:</strong>
+Stabilizes training by normalizing activations and gradients.
+</li>
+
+<li>
+<strong>Feed-Forward Network:</strong>
+Applies non-linear transformations independently to each token.
+</li>
+
+<li>
+<strong>Residual Connections:</strong>
+Enable deep networks by preserving gradient flow.
+</li>
+</ol>
+
+<h2>Residual Connections and Stability</h2>
+<p>
+Residual connections are critical for training deep transformers. Without them, gradients
+would vanish or explode across hundreds of layers.
+</p>
+
+<p>
+By adding the input of each sub-layer to its output, residual connections allow the network
+to learn incremental refinements rather than complete transformations.
+</p>
+
+<h2>Layer Normalization Strategies</h2>
+<p>
+Two common normalization placements exist:
+</p>
+
+<ul>
+<li>Pre-norm: Normalization before attention and FFN</li>
+<li>Post-norm: Normalization after sub-layers</li>
+</ul>
+
+<p>
+Most modern LLMs use pre-norm architectures for improved stability at scale.
+</p>
+
+<h2>Feed-Forward Networks</h2>
+<p>
+The feed-forward network expands each token representation into a higher-dimensional space
+and then projects it back. This enables complex non-linear transformations.
+</p>
+
+<p>
+Although applied independently per token, FFNs account for a large portion of model
+parameters and compute.
+</p>
+
+<h2>Positional Encoding</h2>
+<p>
+Because attention is permutation-invariant, transformers require explicit positional
+information.
+</p>
+
+<table>
+<tr><th>Method</th><th>Characteristics</th></tr>
+<tr><td>Sinusoidal</td><td>Deterministic, extrapolates</td></tr>
+<tr><td>Learned</td><td>Flexible but length-bound</td></tr>
+<tr><td>RoPE</td><td>Relative, rotation-based</td></tr>
+<tr><td>ALiBi</td><td>Linear bias, no parameters</td></tr>
+</table>
+
+<h2>KV Cache and Autoregressive Decoding</h2>
+<p>
+During generation, transformers reuse previously computed key and value vectors via a KV
+cache. This avoids recomputing attention over the entire sequence for every new token.
+</p>
+
+<p>
+KV caching reduces per-token computation from quadratic to linear time but introduces
+significant memory overhead.
+</p>
+
+<h2>Memory Trade-offs</h2>
+<p>
+KV cache size grows with:
+</p>
+
+<ul>
+<li>Sequence length</li>
+<li>Number of layers</li>
+<li>Hidden dimension</li>
+<li>Number of attention heads</li>
+</ul>
+
+<p>
+Efficient cache management is therefore essential for high-throughput inference.
+</p>
+
+<h2>Modern Attention Optimizations</h2>
+<table>
+<tr><th>Optimization</th><th>Purpose</th></tr>
+<tr><td>Flash Attention</td><td>Reduce memory IO</td></tr>
+<tr><td>Grouped Query Attention</td><td>Reduce KV size</td></tr>
+<tr><td>Sliding Window Attention</td><td>Limit context</td></tr>
+<tr><td>Sparse Attention</td><td>Reduce compute</td></tr>
+<tr><td>Ring Attention</td><td>Multi-GPU scaling</td></tr>
+</table>
+
+<h2>Decoder-Only vs Encoder-Decoder</h2>
+<p>
+Decoder-only models dominate generative tasks due to simplicity and scalability.
+Encoder-decoder models remain useful for structured transformations.
+</p>
+
+<h2>Inference-Time Optimizations</h2>
+<ul>
+<li>Quantization</li>
+<li>Speculative decoding</li>
+<li>Batching and caching</li>
+<li>Kernel fusion</li>
+</ul>
+
+<h2>Architectural Trade-offs</h2>
+<p>
+Every optimization introduces trade-offs between memory, latency, throughput, and model
+quality. Architects must choose designs aligned with workload characteristics.
+</p>
+
+<h2>Conclusion</h2>
+<p>
+The transformer architecture is a carefully balanced system of attention, normalization,
+and optimization techniques. Mastery of its full design is essential for building,
+deploying, and scaling modern generative AI systems.
+</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Production Deployment Strategies</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 3: Production Deployment & Optimization</h1>
+<h2>Production Deployment Strategies</h2>
+
+<h3>Module Objectives</h3>
+<p>In this module, you will:</p>
+<ul>
+    <li>Understand production deployment architectures for MoE models</li>
+    <li>Learn optimization techniques for inference performance</li>
+    <li>Explore operational considerations and best practices</li>
+    <li>Evaluate trade-offs in deployment decisions</li>
+</ul>
+
+<h2>Production Readiness Considerations</h2>
+<p>Deploying Mixtral in production requires careful planning across multiple dimensions. Unlike experimental deployments, production systems must handle real user traffic with strict requirements for reliability, performance, and cost-efficiency.</p>
+
+<h3>Key Production Requirements</h3>
+
+<table>
+    <tr>
+        <th>Requirement</th>
+        <th>Target</th>
+        <th>Impact</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Availability</td>
+        <td>99.9%+ uptime</td>
+        <td>Requires redundancy and failover</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Latency (P95)</td>
+        <td>&lt;2 seconds</td>
+        <td>Affects user experience</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Throughput</td>
+        <td>Varies by use case</td>
+        <td>Determines infrastructure scale</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cost Efficiency</td>
+        <td">Minimize cost per token</td>
+        <td>Affects business viability</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Scalability</td>
+        <td>Handle 10x traffic spikes</td>
+        <td>Requires elastic infrastructure</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Observability</td>
+        <td>Real-time monitoring</td>
+        <td>Enables rapid issue detection</td>
+    </tr>
+</table>
+
+<h2>Deployment Architecture Patterns</h2>
+
+<h3>Pattern 1: Single-Instance Deployment</h3>
+<p>Simplest architecture for low-to-moderate traffic:</p>
+
+<blockquote>
+<strong>Architecture:</strong>
+- Single server with 1-2 GPUs
+- Load balancer (optional)
+- Request queue for overflow
+- Health monitoring
+
+<strong>Characteristics:</strong>
+- Throughput: 30-60 tokens/second
+- Concurrent users: 5-15
+- Latency: Low (single hop)
+- Cost: $3,000-6,000/month
+- Complexity: Low
+
+<strong>Best For:</strong>
+- Internal tools
+- Proof of concept
+- Development/staging environments
+- Small-scale applications
+</blockquote>
+
+<h3>Pattern 2: Replicated Deployment</h3>
+<p>Multiple independent instances for higher availability:</p>
+
+<blockquote>
+<strong>Architecture:</strong>
+- 3-5 independent model instances
+- Load balancer distributing requests
+- Shared request queue
+- Centralized monitoring
+
+<strong>Characteristics:</strong>
+- Throughput: 90-300 tokens/second
+- Concurrent users: 30-100
+- Latency: Low to moderate
+- Cost: $9,000-30,000/month
+- Complexity: Moderate
+
+<strong>Best For:</strong>
+- Production applications
+- Customer-facing services
+- High availability requirements
+- Predictable traffic patterns
+</blockquote>
+
+<h3>Pattern 3: Distributed Deployment</h3>
+<p>Large-scale architecture for enterprise applications:</p>
+
+<blockquote>
+<strong>Architecture:</strong>
+- Multiple clusters across regions
+- Intelligent routing and load balancing
+- Auto-scaling based on demand
+- Comprehensive observability stack
+
+<strong>Characteristics:</strong>
+- Throughput: 500+ tokens/second
+- Concurrent users: 200+
+- Latency: Varies by region
+- Cost: $50,000+/month
+- Complexity: High
+
+<strong>Best For:</strong>
+- Enterprise-scale applications
+- Global services
+- Multi-tenant platforms
+- Mission-critical systems
+</blockquote>
+
+<h2>Infrastructure Components</h2>
+
+<h3>Compute Layer</h3>
+
+<p><strong>GPU Selection Criteria:</strong></p>
+
+<table>
+    <tr>
+        <th>GPU</th>
+        <th>Memory</th>
+        <th>Performance</th>
+        <th>Cost/Performance</th>
+        <th>Recommendation</th>
+    </tr>
+    <tr>
+        <td class="rowheader">A100 80GB</td>
+        <td>80GB</td>
+        <td>Excellent</td>
+        <td>Good</td>
+        <td>Best for production</td>
+    </tr>
+    <tr>
+        <td class="rowheader">A100 40GB</td>
+        <td>40GB</td>
+        <td>Very Good</td>
+        <td>Good</td>
+        <td>Requires 2+ for FP16</td>
+    </tr>
+    <tr>
+        <td class="rowheader">H100</td>
+        <td>80GB</td>
+        <td>Outstanding</td>
+        <td>Moderate</td>
+        <td>Best performance, higher cost</td>
+    </tr>
+    <tr>
+        <td class="rowheader">V100 32GB</td>
+        <td>32GB</td>
+        <td>Good</td>
+        <td>Excellent</td>
+        <td>Budget option, requires 4+</td>
+    </tr>
+    <tr>
+        <td class="rowheader">L40S</td>
+        <td>48GB</td>
+        <td>Good</td>
+        <td>Very Good</td>
+        <td>Emerging option</td>
+    </tr>
+</table>
+
+<p><strong>CPU and Memory:</strong></p>
+<ul>
+    <li><strong>CPU:</strong> 16-32 cores for request handling and preprocessing</li>
+    <li><strong>System RAM:</strong> 128-256GB for buffering and expert offloading</li>
+    <li><strong>Storage:</strong> NVMe SSD for fast model loading (500GB+)</li>
+    <li><strong>Network:</strong> 10Gbps+ for distributed deployments</li>
+</ul>
+
+<h3>Networking Layer</h3>
+
+<p><strong>Load Balancing:</strong></p>
+<ul>
+    <li><strong>Layer 7 (Application):</strong> Content-based routing, SSL termination</li>
+    <li><strong>Health Checks:</strong> Regular probes to detect failures</li>
+    <li><strong>Session Affinity:</strong> Route related requests to same instance</li>
+    <li><strong>Rate Limiting:</strong> Protect against abuse and overload</li>
+</ul>
+
+<p><strong>API Gateway:</strong></p>
+<ul>
+    <li>Authentication and authorization</li>
+    <li>Request validation and transformation</li>
+    <li>Usage tracking and billing</li>
+    <li>Caching for common requests</li>
+</ul>
+
+<h3>Storage Layer</h3>
+
+<p><strong>Model Storage:</strong></p>
+<ul>
+    <li><strong>Object Storage:</strong> S3, GCS, or Azure Blob for model weights</li>
+    <li><strong>Local Cache:</strong> Fast SSD cache on inference nodes</li>
+    <li><strong>Version Control:</strong> Track model versions and enable rollback</li>
+    <li><strong>Replication:</strong> Distribute models across regions</li>
+</ul>
+
+<p><strong>Data Storage:</strong></p>
+<ul>
+    <li><strong>Request Logs:</strong> Store inputs/outputs for debugging and analysis</li>
+    <li><strong>Metrics:</strong> Time-series database for performance metrics</li>
+    <li><strong>User Data:</strong> Conversation history and context</li>
+</ul>
+
+<h2>Deployment Workflows</h2>
+
+<h3>Initial Deployment Process</h3>
+
+<blockquote>
+<strong>Step 1: Environment Preparation</strong>
+- Provision GPU infrastructure
+- Install CUDA, drivers, and dependencies
+- Configure networking and security
+
+<strong>Step 2: Model Deployment</strong>
+- Download and verify model weights
+- Apply quantization if needed
+- Load model into inference framework
+- Warm up model with test requests
+
+<strong>Step 3: Service Configuration</strong>
+- Configure load balancer
+- Set up health checks
+- Configure auto-scaling policies
+- Enable monitoring and logging
+
+<strong>Step 4: Validation</strong>
+- Run integration tests
+- Perform load testing
+- Validate latency and throughput
+- Test failover scenarios
+
+<strong>Step 5: Production Cutover</strong>
+- Gradual traffic migration
+- Monitor key metrics
+- Maintain rollback capability
+- Document deployment
+</blockquote>
+
+<h3>Continuous Deployment</h3>
+
+<p><strong>Blue-Green Deployment:</strong></p>
+<ul>
+    <li>Maintain two identical environments (blue and green)</li>
+    <li>Deploy new version to inactive environment</li>
+    <li>Test thoroughly before switching traffic</li>
+    <li>Instant rollback by switching back</li>
+</ul>
+
+<p><strong>Canary Deployment:</strong></p>
+<ul>
+    <li>Route small percentage of traffic to new version</li>
+    <li>Monitor metrics and error rates</li>
+    <li>Gradually increase traffic if successful</li>
+    <li>Quick rollback if issues detected</li>
+</ul>
+
+<h2>High Availability Design</h2>
+
+<h3>Redundancy Strategies</h3>
+
+<p><strong>Instance-Level Redundancy:</strong></p>
+<ul>
+    <li>Run multiple model instances</li>
+    <li>Distribute across availability zones</li>
+    <li>Automatic failover on instance failure</li>
+    <li>Health monitoring and auto-recovery</li>
+</ul>
+
+<p><strong>Regional Redundancy:</strong></p>
+<ul>
+    <li>Deploy in multiple geographic regions</li>
+    <li>Route users to nearest region</li>
+    <li>Failover to backup region on outage</li>
+    <li>Data replication across regions</li>
+</ul>
+
+<h3>Failure Scenarios and Mitigation</h3>
+
+<table>
+    <tr>
+        <th>Failure Type</th>
+        <th>Impact</th>
+        <th>Mitigation</th>
+        <th>Recovery Time</th>
+    </tr>
+    <tr>
+        <td class="rowheader">GPU Failure</td>
+        <td>Instance unavailable</td>
+        <td>Automatic failover to healthy instance</td>
+        <td>&lt;1 minute</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Node Failure</td>
+        <td>All instances on node lost</td>
+        <td>Load balancer redirects traffic</td>
+        <td>&lt;2 minutes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Network Partition</td>
+        <td>Region isolated</td>
+        <td>Route to backup region</td>
+        <td>&lt;5 minutes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Model Corruption</td>
+        <td>Incorrect outputs</td>
+        <td>Rollback to previous version</td>
+        <td>&lt;10 minutes</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Overload</td>
+        <td>High latency, timeouts</td>
+        <td>Auto-scaling, request queuing</td>
+        <td>&lt;5 minutes</td>
+    </tr>
+</table>
+
+<h2>Scaling Strategies</h2>
+
+<h3>Vertical Scaling</h3>
+<p>Increasing resources of existing instances:</p>
+
+<ul>
+    <li><strong>Advantages:</strong> Simple, no architecture changes, lower latency</li>
+    <li><strong>Limitations:</strong> Hardware limits, single point of failure, expensive</li>
+    <li><strong>When to Use:</strong> Initial deployment, predictable load, cost-effective at small scale</li>
+</ul>
+
+<h3>Horizontal Scaling</h3>
+<p>Adding more instances:</p>
+
+<ul>
+    <li><strong>Advantages:</strong> Unlimited scaling, high availability, cost-effective at scale</li>
+    <li><strong>Challenges:</strong> Complexity, load balancing, state management</li>
+    <li><strong>When to Use:</strong> Production systems, variable load, high availability requirements</li>
+</ul>
+
+<h3>Auto-Scaling Policies</h3>
+
+<blockquote>
+<strong>Metric-Based Scaling:</strong>
+- Scale up when GPU utilization > 80% for 5 minutes
+- Scale up when request queue length > 20
+- Scale down when utilization < 30% for 15 minutes
+- Maintain minimum 2 instances for availability
+
+<strong>Schedule-Based Scaling:</strong>
+- Increase capacity during business hours
+- Reduce capacity during off-peak times
+- Pre-scale for known traffic spikes
+- Gradual scaling to avoid disruption
+
+<strong>Predictive Scaling:</strong>
+- Use historical patterns to predict demand
+- Pre-emptively scale before traffic increases
+- Machine learning-based forecasting
+- Reduces latency during traffic spikes
+</blockquote>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Production deployment requires careful consideration of availability, latency, throughput, and cost requirements</li>
+    <li>Architecture patterns range from single-instance (simple, low cost) to distributed (complex, high scale)</li>
+    <li>Infrastructure components include compute (GPUs), networking (load balancers), and storage (model weights, logs)</li>
+    <li>High availability requires redundancy at instance and regional levels with automatic failover</li>
+    <li>Scaling strategies include vertical (more resources) and horizontal (more instances) with auto-scaling policies</li>
+    <li>Deployment workflows should include validation, gradual rollout, and rollback capabilities</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

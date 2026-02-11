@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Context Management and Multi-Turn Conversations</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Context Management and Multi-Turn Conversations</h1>
+
+<h2>Understanding Context in AI Applications</h2>
+<p>Context management is essential for building conversational AI applications. Genkit provides mechanisms to maintain conversation history, manage context windows, and optimize token usage across multiple interactions.</p>
+
+<h2>Building Multi-Turn Conversations</h2>
+<div class="code-block">
+<pre><code>interface ConversationMessage {
+  role: 'user' | 'model' | 'system';
+  content: string;
+}
+
+const chatFlow = ai.defineFlow({
+  name: 'chat',
+  inputSchema: z.object({
+    message: z.string(),
+    history: z.array(z.object({
+      role: z.enum(['user', 'model', 'system']),
+      content: z.string()
+    })).default([])
+  }),
+  outputSchema: z.object({
+    response: z.string(),
+    updatedHistory: z.array(z.object({
+      role: z.enum(['user', 'model', 'system']),
+      content: z.string()
+    }))
+  })
+}, async (input) => {
+  const messages = [
+    ...input.history,
+    { role: 'user' as const, content: input.message }
+  ];
+  
+  const { output } = await ai.generate({
+    messages,
+    output: { schema: z.object({ response: z.string() }) }
+  });
+  
+  const updatedHistory = [
+    ...messages,
+    { role: 'model' as const, content: output.response }
+  ];
+  
+  return {
+    response: output.response,
+    updatedHistory
+  };
+});
+</code></pre>
+</div>
+
+<h2>Context Window Management</h2>
+<p>Different models have different context window limits. Manage context to stay within limits:</p>
+
+<div class="code-block">
+<pre><code>function truncateHistory(
+  history: ConversationMessage[],
+  maxTokens: number
+): ConversationMessage[] {
+  // Simple token estimation (4 chars ≈ 1 token)
+  const estimateTokens = (text: string) => Math.ceil(text.length / 4);
+  
+  let totalTokens = 0;
+  const truncated: ConversationMessage[] = [];
+  
+  // Keep most recent messages
+  for (let i = history.length - 1; i >= 0; i--) {
+    const tokens = estimateTokens(history[i].content);
+    if (totalTokens + tokens > maxTokens) break;
+    
+    truncated.unshift(history[i]);
+    totalTokens += tokens;
+  }
+  
+  return truncated;
+}
+
+const contextAwareChatFlow = ai.defineFlow({
+  name: 'contextAwareChat',
+  inputSchema: z.object({
+    message: z.string(),
+    history: z.array(z.object({
+      role: z.enum(['user', 'model', 'system']),
+      content: z.string()
+    }))
+  }),
+  outputSchema: z.object({ response: z.string() })
+}, async (input) => {
+  // Truncate history to fit context window
+  const truncatedHistory = truncateHistory(input.history, 4000);
+  
+  const messages = [
+    ...truncatedHistory,
+    { role: 'user' as const, content: input.message }
+  ];
+  
+  const { output } = await ai.generate({
+    model: gemini15Flash, // 1M token context window
+    messages,
+    output: { schema: z.object({ response: z.string() }) }
+  });
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Conversation Summarization</h2>
+<p>Summarize long conversations to maintain context while reducing tokens:</p>
+
+<div class="code-block">
+<pre><code>const summarizeConversationFlow = ai.defineFlow({
+  name: 'summarizeConversation',
+  inputSchema: z.object({
+    history: z.array(z.object({
+      role: z.enum(['user', 'model']),
+      content: z.string()
+    }))
+  }),
+  outputSchema: z.object({ summary: z.string() })
+}, async (input) => {
+  const conversationText = input.history
+    .map(msg => `${msg.role}: ${msg.content}`)
+    .join('\n');
+  
+  const { output } = await ai.generate({
+    prompt: `Summarize this conversation, preserving key context:
+
+${conversationText}
+
+Provide a concise summary that captures:
+- Main topics discussed
+- Important decisions or conclusions
+- Unresolved questions or action items`,
+    output: { schema: z.object({ summary: z.string() }) }
+  });
+  
+  return output;
+});
+
+// Use summary as context
+const chatWithSummaryFlow = ai.defineFlow({
+  name: 'chatWithSummary',
+  inputSchema: z.object({
+    message: z.string(),
+    recentHistory: z.array(z.object({
+      role: z.enum(['user', 'model']),
+      content: z.string()
+    })),
+    conversationSummary: z.string().optional()
+  }),
+  outputSchema: z.object({ response: z.string() })
+}, async (input) => {
+  const messages = [];
+  
+  if (input.conversationSummary) {
+    messages.push({
+      role: 'system' as const,
+      content: `Previous conversation summary: ${input.conversationSummary}`
+    });
+  }
+  
+  messages.push(...input.recentHistory);
+  messages.push({ role: 'user' as const, content: input.message });
+  
+  const { output } = await ai.generate({
+    messages,
+    output: { schema: z.object({ response: z.string() }) }
+  });
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Session Management</h2>
+<div class="code-block">
+<pre><code>interface ChatSession {
+  sessionId: string;
+  userId: string;
+  history: ConversationMessage[];
+  createdAt: Date;
+  lastActivity: Date;
+}
+
+class SessionManager {
+  private sessions: Map<string, ChatSession> = new Map();
+  
+  createSession(userId: string): string {
+    const sessionId = crypto.randomUUID();
+    this.sessions.set(sessionId, {
+      sessionId,
+      userId,
+      history: [],
+      createdAt: new Date(),
+      lastActivity: new Date()
+    });
+    return sessionId;
+  }
+  
+  getSession(sessionId: string): ChatSession | undefined {
+    return this.sessions.get(sessionId);
+  }
+  
+  updateSession(sessionId: string, history: ConversationMessage[]): void {
+    const session = this.sessions.get(sessionId);
+    if (session) {
+      session.history = history;
+      session.lastActivity = new Date();
+    }
+  }
+  
+  cleanupOldSessions(maxAgeHours: number = 24): void {
+    const now = new Date();
+    for (const [sessionId, session] of this.sessions) {
+      const ageHours = (now.getTime() - session.lastActivity.getTime()) / (1000 * 60 * 60);
+      if (ageHours > maxAgeHours) {
+        this.sessions.delete(sessionId);
+      }
+    }
+  }
+}
+
+const sessionManager = new SessionManager();
+
+const sessionChatFlow = ai.defineFlow({
+  name: 'sessionChat',
+  inputSchema: z.object({
+    sessionId: z.string(),
+    message: z.string()
+  }),
+  outputSchema: z.object({ response: z.string() })
+}, async (input) => {
+  const session = sessionManager.getSession(input.sessionId);
+  if (!session) {
+    throw new Error('Session not found');
+  }
+  
+  const messages = [
+    ...session.history,
+    { role: 'user' as const, content: input.message }
+  ];
+  
+  const { output } = await ai.generate({
+    messages,
+    output: { schema: z.object({ response: z.string() }) }
+  });
+  
+  const updatedHistory = [
+    ...messages,
+    { role: 'model' as const, content: output.response }
+  ];
+  
+  sessionManager.updateSession(input.sessionId, updatedHistory);
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Context Injection Strategies</h2>
+
+<h3>System Context</h3>
+<div class="code-block">
+<pre><code>const contextualChatFlow = ai.defineFlow({
+  name: 'contextualChat',
+  inputSchema: z.object({
+    message: z.string(),
+    userProfile: z.object({
+      name: z.string(),
+      preferences: z.array(z.string()),
+      language: z.string()
+    })
+  }),
+  outputSchema: z.object({ response: z.string() })
+}, async (input) => {
+  const systemContext = `User Profile:
+- Name: ${input.userProfile.name}
+- Preferences: ${input.userProfile.preferences.join(', ')}
+- Language: ${input.userProfile.language}
+
+Tailor your responses to this user's preferences and communicate in their language.`;
+  
+  const { output } = await ai.generate({
+    messages: [
+      { role: 'system', content: systemContext },
+      { role: 'user', content: input.message }
+    ],
+    output: { schema: z.object({ response: z.string() }) }
+  });
+  
+  return output;
+});
+</code></pre>
+</div>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Monitor Token Usage:</strong> Track context window consumption</li>
+    <li><strong>Implement Truncation:</strong> Remove old messages when approaching limits</li>
+    <li><strong>Use Summarization:</strong> Compress long conversations while preserving context</li>
+    <li><strong>Clean Up Sessions:</strong> Remove inactive sessions to save memory</li>
+    <li><strong>Provide System Context:</strong> Set behavior and constraints upfront</li>
+    <li><strong>Test Edge Cases:</strong> Verify behavior with very long conversations</li>
+    <li><strong>Consider Model Limits:</strong> Different models have different context windows</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

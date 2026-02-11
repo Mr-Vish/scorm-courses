@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Model Card Components and Structure</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Model Card Components and Structure</h1>
+
+<h3>Understanding the Standard Model Card Template</h3>
+<p>While model cards can be customized for specific contexts, a standard structure has emerged based on the original Google research and subsequent industry adoption. This structure ensures consistency and completeness across different models and organizations.</p>
+
+<h3>The Eight Core Sections</h3>
+<p>A comprehensive model card typically includes eight essential sections:</p>
+
+<h4>1. Model Details</h4>
+<p>This section provides basic identification and metadata about the model.</p>
+
+<p><strong>Purpose:</strong> Enable quick identification and version tracking</p>
+
+<p><strong>Key Information to Include:</strong></p>
+<ul>
+    <li><strong>Model Name and Version:</strong> Clear, descriptive name with version number (e.g., "CustomerSentimentClassifier-v2.3")</li>
+    <li><strong>Model Type:</strong> Architecture and approach (e.g., "Fine-tuned BERT", "Random Forest Classifier", "Convolutional Neural Network")</li>
+    <li><strong>Release Date:</strong> When this version was released</li>
+    <li><strong>Organization/Owner:</strong> Who developed and maintains the model</li>
+    <li><strong>License:</strong> Usage rights and restrictions (e.g., "MIT License", "Internal Use Only", "Apache 2.0")</li>
+    <li><strong>Contact Information:</strong> How to reach the model owners for questions or issues</li>
+    <li><strong>Citation:</strong> How to cite the model in academic or technical contexts</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<strong>Model Name:</strong> MedicalImageClassifier-v1.2<br/>
+<strong>Type:</strong> ResNet-50 Convolutional Neural Network<br/>
+<strong>Released:</strong> March 15, 2024<br/>
+<strong>Owner:</strong> HealthTech AI Research Lab<br/>
+<strong>License:</strong> Research Use Only - Not for Clinical Deployment<br/>
+<strong>Contact:</strong> ai-models@healthtech.example.com<br/>
+<strong>Base Model:</strong> ImageNet pre-trained ResNet-50
+</blockquote>
+
+<h4>2. Intended Use</h4>
+<p>This critical section defines what the model should and should not be used for.</p>
+
+<p><strong>Purpose:</strong> Prevent misuse and set appropriate expectations</p>
+
+<p><strong>Key Information to Include:</strong></p>
+<ul>
+    <li><strong>Primary Use Cases:</strong> Specific scenarios the model was designed for</li>
+    <li><strong>Intended Users:</strong> Who should use this model (e.g., "Healthcare professionals with radiology training")</li>
+    <li><strong>Out-of-Scope Uses:</strong> Explicitly state what the model should NOT be used for</li>
+    <li><strong>Deployment Context:</strong> Where and how the model should be deployed</li>
+    <li><strong>Decision Support vs. Automation:</strong> Whether the model should make autonomous decisions or support human decision-making</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<strong>Primary Use:</strong> Assist radiologists in identifying potential pneumonia cases in chest X-rays as a second-opinion tool<br/><br/>
+<strong>Intended Users:</strong> Licensed radiologists and medical imaging specialists in hospital settings<br/><br/>
+<strong>Out-of-Scope Uses:</strong>
+<ul>
+    <li>NOT for autonomous diagnosis without physician review</li>
+    <li>NOT for use with CT scans or MRI images (trained only on X-rays)</li>
+    <li>NOT for pediatric patients (trained on adult data only)</li>
+    <li>NOT for screening asymptomatic populations</li>
+    <li>NOT for use in veterinary medicine</li>
+</ul>
+</blockquote>
+
+<h4>3. Training Data</h4>
+<p>Transparency about training data is essential for understanding model behavior and limitations.</p>
+
+<p><strong>Purpose:</strong> Enable users to assess whether the model is appropriate for their data and use case</p>
+
+<p><strong>Key Information to Include:</strong></p>
+<ul>
+    <li><strong>Data Sources:</strong> Where the training data came from</li>
+    <li><strong>Data Size:</strong> Number of examples, time period covered</li>
+    <li><strong>Data Characteristics:</strong> Demographics, geographic distribution, temporal coverage</li>
+    <li><strong>Preprocessing:</strong> How data was cleaned, filtered, or transformed</li>
+    <li><strong>Labeling Methodology:</strong> How labels were created (human annotation, automated, etc.)</li>
+    <li><strong>Known Gaps:</strong> What's missing or underrepresented in the training data</li>
+    <li><strong>Privacy Measures:</strong> How personally identifiable information was handled</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<strong>Source:</strong> 50,000 chest X-rays from 15 hospitals across North America (2018-2023)<br/>
+<strong>Demographics:</strong> 52% male, 48% female; Age range 18-85 (median 54)<br/>
+<strong>Labels:</strong> Annotated by board-certified radiologists; each image reviewed by 2 radiologists with adjudication for disagreements<br/>
+<strong>Preprocessing:</strong> Images normalized to 512x512 pixels; DICOM metadata removed for privacy<br/>
+<strong>Known Gaps:</strong> Limited representation of patients under 18; underrepresentation of certain ethnic groups; primarily from urban hospital settings
+</blockquote>
+
+<h4>4. Evaluation Data and Metrics</h4>
+<p>This section documents how the model's performance was measured.</p>
+
+<p><strong>Purpose:</strong> Provide evidence of model performance and enable comparison with alternatives</p>
+
+<p><strong>Key Information to Include:</strong></p>
+<ul>
+    <li><strong>Test Set Description:</strong> Size and characteristics of evaluation data</li>
+    <li><strong>Metrics Used:</strong> Which performance measures were calculated (accuracy, precision, recall, F1, AUC, etc.)</li>
+    <li><strong>Overall Performance:</strong> Aggregate results across the test set</li>
+    <li><strong>Disaggregated Performance:</strong> Results broken down by demographic groups, data subsets, or use cases</li>
+    <li><strong>Comparison Baselines:</strong> How the model compares to existing solutions or human performance</li>
+    <li><strong>Confidence Intervals:</strong> Statistical uncertainty in performance estimates</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<strong>Test Set:</strong> 10,000 X-rays (separate from training data) from 5 hospitals not included in training<br/><br/>
+<strong>Overall Performance:</strong>
+<ul>
+    <li>Accuracy: 92.3% (95% CI: 91.8-92.8%)</li>
+    <li>Sensitivity (Recall): 89.5%</li>
+    <li>Specificity: 94.1%</li>
+    <li>AUC-ROC: 0.947</li>
+</ul>
+<strong>Comparison:</strong> Human radiologist average sensitivity: 87.2%; specificity: 92.8%<br/>
+<strong>Note:</strong> Model performs as second-opinion tool, not replacement for human expertise
+</blockquote>
+
+<h4>5. Quantitative Analysis</h4>
+<p>Detailed performance breakdowns reveal where the model excels and where it struggles.</p>
+
+<p><strong>Purpose:</strong> Identify performance disparities and inform appropriate use</p>
+
+<p><strong>Key Information to Include:</strong></p>
+<ul>
+    <li><strong>Performance by Subgroup:</strong> Results for different demographic groups, geographic regions, or data characteristics</li>
+    <li><strong>Error Analysis:</strong> Common failure modes and error patterns</li>
+    <li><strong>Edge Cases:</strong> Performance on unusual or challenging examples</li>
+    <li><strong>Fairness Metrics:</strong> Measures of performance parity across groups</li>
+    <li><strong>Confidence Calibration:</strong> Whether the model's confidence scores are reliable</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<strong>Performance by Age Group:</strong>
+<table>
+    <tr><th>Age Range</th><th>Accuracy</th><th>Sensitivity</th><th>Sample Size</th></tr>
+    <tr><td>18-40</td><td>91.2%</td><td>87.8%</td><td>2,000</td></tr>
+    <tr><td>41-65</td><td>93.1%</td><td>90.2%</td><td>5,000</td></tr>
+    <tr><td>66+</td><td>91.8%</td><td>89.1%</td><td>3,000</td></tr>
+</table>
+<strong>Common Errors:</strong> Model shows reduced accuracy on images with medical devices present (pacemakers, chest tubes); accuracy drops to 85.3% in these cases
+</blockquote>
+
+<h4>6. Ethical Considerations</h4>
+<p>This section addresses potential harms, biases, and societal impacts.</p>
+
+<p><strong>Purpose:</strong> Ensure responsible deployment and use</p>
+
+<p><strong>Key Information to Include:</strong></p>
+<ul>
+    <li><strong>Potential Harms:</strong> Who might be negatively affected and how</li>
+    <li><strong>Bias Assessment:</strong> Known biases and their sources</li>
+    <li><strong>Fairness Considerations:</strong> How fairness was defined and measured</li>
+    <li><strong>Privacy Implications:</strong> Data privacy risks and mitigation measures</li>
+    <li><strong>Environmental Impact:</strong> Carbon footprint of training and deployment</li>
+    <li><strong>Mitigation Strategies:</strong> Steps taken to address identified concerns</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<strong>Identified Bias:</strong> Model shows 3.2% lower sensitivity for female patients compared to male patients, potentially due to anatomical differences and training data composition<br/><br/>
+<strong>Mitigation:</strong> Implemented gender-specific confidence thresholds; ongoing data collection to balance training set<br/><br/>
+<strong>Privacy:</strong> Model trained on de-identified data; does not store patient information; complies with HIPAA requirements<br/><br/>
+<strong>Potential Harm:</strong> False negatives could delay treatment; false positives could lead to unnecessary procedures. Model should always be used with physician oversight
+</blockquote>
+
+<h4>7. Limitations</h4>
+<p>Honest documentation of what the model cannot do is as important as documenting what it can do.</p>
+
+<p><strong>Purpose:</strong> Set realistic expectations and prevent inappropriate use</p>
+
+<p><strong>Key Information to Include:</strong></p>
+<ul>
+    <li><strong>Technical Limitations:</strong> Constraints on input data, processing requirements, latency</li>
+    <li><strong>Performance Boundaries:</strong> Conditions under which performance degrades</li>
+    <li><strong>Known Failure Modes:</strong> Specific scenarios where the model fails</li>
+    <li><strong>Generalization Limits:</strong> Contexts where the model may not generalize</li>
+    <li><strong>Temporal Limitations:</strong> How model performance may degrade over time</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<ul>
+    <li>Requires high-quality X-ray images (minimum 512x512 resolution); performance degrades significantly with lower quality images</li>
+    <li>Trained on data from 2018-2023; may not perform well on images from significantly different time periods or equipment</li>
+    <li>Not validated for use with portable X-ray machines or bedside imaging</li>
+    <li>Performance not evaluated for patients with multiple concurrent lung conditions</li>
+    <li>Model may become less accurate as pneumonia presentation patterns evolve or new variants emerge</li>
+</ul>
+</blockquote>
+
+<h4>8. Recommendations and Maintenance</h4>
+<p>Guidance for ongoing use and updates.</p>
+
+<p><strong>Purpose:</strong> Ensure the model remains effective and appropriate over time</p>
+
+<p><strong>Key Information to Include:</strong></p>
+<ul>
+    <li><strong>Deployment Recommendations:</strong> Best practices for implementation</li>
+    <li><strong>Monitoring Guidance:</strong> What metrics to track in production</li>
+    <li><strong>Update Schedule:</strong> How often the model will be retrained or updated</li>
+    <li><strong>Feedback Mechanisms:</strong> How users can report issues or provide feedback</li>
+    <li><strong>Decommissioning Criteria:</strong> When the model should be retired</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<blockquote>
+<strong>Deployment:</strong> Integrate as decision support tool in PACS system; ensure radiologist review of all predictions<br/>
+<strong>Monitoring:</strong> Track prediction distribution, confidence scores, and physician override rates monthly<br/>
+<strong>Updates:</strong> Model will be retrained quarterly with new data; major version updates annually<br/>
+<strong>Feedback:</strong> Report issues to ai-feedback@healthtech.example.com; critical safety issues escalated within 24 hours
+</blockquote>
+
+<h3>Diagram Suggestion: Model Card Structure Flowchart</h3>
+<p><em>Visual representation showing the eight sections and their relationships, with arrows indicating information flow from Model Details → Intended Use → Training Data → Evaluation → Quantitative Analysis → Ethical Considerations → Limitations → Recommendations</em></p>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Model cards follow a standardized eight-section structure for consistency</li>
+    <li>Each section serves a specific purpose and audience</li>
+    <li>Completeness and honesty are more important than making the model look perfect</li>
+    <li>Effective model cards balance technical detail with accessibility</li>
+    <li>Documentation should be specific and actionable, not generic</li>
+    <li>Model cards are living documents that should be updated as models evolve</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

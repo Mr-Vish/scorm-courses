@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Index Selection and Optimization Strategies</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 2: Advanced Indexing and Retrieval Strategies</h1>
+<h2>Lesson 3: Index Selection and Optimization Strategies</h2>
+
+<h3>Learning Objectives</h3>
+<ul>
+    <li>Evaluate different index types and their optimal use cases</li>
+    <li>Understand vector database selection criteria and trade-offs</li>
+    <li>Analyze index optimization techniques for performance and cost</li>
+    <li>Recognize strategies for maintaining and updating indexes</li>
+</ul>
+
+<h3>Index Types Revisited: Strategic Selection</h3>
+<p>Choosing the right index type is a foundational architectural decision that impacts retrieval quality, system performance, and operational costs. While VectorStoreIndex is the most common choice, understanding when alternative indexes excel enables more sophisticated system designs.</p>
+
+<h4>VectorStoreIndex: The Semantic Search Workhorse</h4>
+<p><strong>Architecture:</strong> Stores document embeddings in a vector database optimized for similarity search. Retrieval is based on cosine similarity or other distance metrics between query and document embeddings.</p>
+
+<p><strong>Optimal Use Cases:</strong></p>
+<ul>
+    <li>General-purpose semantic search where conceptual similarity matters more than exact matches</li>
+    <li>Large document collections (thousands to millions of documents)</li>
+    <li>Queries that may be phrased differently than source documents</li>
+    <li>Applications requiring fast, scalable retrieval</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>May miss exact keyword matches if not combined with hybrid search</li>
+    <li>Requires embedding generation for all documents (computational cost)</li>
+    <li>Storage costs for high-dimensional vectors</li>
+    <li>Retrieval quality depends on embedding model quality</li>
+</ul>
+
+<h4>SummaryIndex (List Index): Comprehensive Coverage</h4>
+<p><strong>Architecture:</strong> Stores nodes in a simple list without embeddings. During retrieval, all nodes are scanned sequentially.</p>
+
+<p><strong>Optimal Use Cases:</strong></p>
+<ul>
+    <li>Small document collections where scanning all content is feasible</li>
+    <li>Summarization tasks requiring comprehensive coverage of all information</li>
+    <li>When you need to ensure no relevant information is missed</li>
+    <li>Prototyping and testing before implementing vector search</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>Doesn't scale to large collections (linear scan is slow)</li>
+    <li>No selectivity—all content is always retrieved</li>
+    <li>High LLM costs if all nodes are sent for synthesis</li>
+</ul>
+
+<h4>TreeIndex: Hierarchical Navigation</h4>
+<p><strong>Architecture:</strong> Organizes nodes in a tree structure where parent nodes contain summaries of their children. Retrieval can navigate from root to leaves, selecting relevant branches at each level.</p>
+
+<p><strong>Optimal Use Cases:</strong></p>
+<ul>
+    <li>Documents with natural hierarchical structure (books with chapters, technical manuals with sections)</li>
+    <li>Multi-level summarization (executive summary → detailed analysis)</li>
+    <li>When you want to provide context at different granularities</li>
+    <li>Exploratory search where users drill down from broad to specific</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>Complex to build and maintain</li>
+    <li>Requires additional LLM calls to generate summaries</li>
+    <li>May miss relevant information if early pruning is too aggressive</li>
+</ul>
+
+<h4>KeywordTableIndex: Exact Match Retrieval</h4>
+<p><strong>Architecture:</strong> Extracts keywords from each node and builds an inverted index mapping keywords to nodes. Retrieval matches query keywords against the index.</p>
+
+<p><strong>Optimal Use Cases:</strong></p>
+<ul>
+    <li>Technical documentation with specific terminology</li>
+    <li>Product catalogs with unique identifiers</li>
+    <li>Legal or compliance documents where exact phrase matching is critical</li>
+    <li>Complementing vector search in hybrid approaches</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>Misses semantically similar content with different wording</li>
+    <li>Keyword extraction quality impacts retrieval effectiveness</li>
+    <li>Doesn't understand context or intent</li>
+</ul>
+
+<h4>KnowledgeGraphIndex: Relationship-Based Retrieval</h4>
+<p><strong>Architecture:</strong> Extracts entities and relationships from text, building a graph structure. Retrieval can traverse relationships to answer complex queries.</p>
+
+<p><strong>Optimal Use Cases:</strong></p>
+<ul>
+    <li>Queries about relationships: "Who worked with whom?" "What companies are connected to this person?"</li>
+    <li>Multi-hop reasoning: "What technologies does Company A use that are also used by Company B?"</li>
+    <li>Domains with rich entity relationships (social networks, organizational structures, supply chains)</li>
+</ul>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+    <li>Entity extraction quality is critical and challenging</li>
+    <li>Complex to build and maintain</li>
+    <li>May not capture nuanced information that doesn't fit entity-relationship model</li>
+</ul>
+
+<h3>Vector Database Selection: Infrastructure Decisions</h3>
+<p>Vector databases are specialized systems optimized for storing and searching high-dimensional vectors. Choosing the right vector database impacts performance, scalability, and operational complexity.</p>
+
+<h4>Key Selection Criteria</h4>
+<p><strong>Performance Characteristics:</strong></p>
+<ul>
+    <li><strong>Query Latency:</strong> How fast can the database return results? Critical for user-facing applications.</li>
+    <li><strong>Indexing Speed:</strong> How quickly can new vectors be added? Important for frequently updated corpora.</li>
+    <li><strong>Throughput:</strong> How many concurrent queries can the system handle? Essential for high-traffic applications.</li>
+</ul>
+
+<p><strong>Scalability:</strong></p>
+<ul>
+    <li><strong>Horizontal Scaling:</strong> Can the database distribute across multiple nodes for larger datasets?</li>
+    <li><strong>Vector Capacity:</strong> What's the maximum number of vectors supported?</li>
+    <li><strong>Dimension Limits:</strong> What embedding dimensions are supported?</li>
+</ul>
+
+<p><strong>Feature Set:</strong></p>
+<ul>
+    <li><strong>Metadata Filtering:</strong> Can you filter by metadata before or during vector search?</li>
+    <li><strong>Hybrid Search:</strong> Does the database support combining vector and keyword search?</li>
+    <li><strong>Multi-Tenancy:</strong> Can you isolate data for different users or organizations?</li>
+    <li><strong>CRUD Operations:</strong> How easily can you update or delete vectors?</li>
+</ul>
+
+<p><strong>Operational Considerations:</strong></p>
+<ul>
+    <li><strong>Deployment Model:</strong> Self-hosted, managed cloud service, or embedded library?</li>
+    <li><strong>Cost Structure:</strong> Storage costs, query costs, compute costs</li>
+    <li><strong>Maintenance Burden:</strong> How much operational expertise is required?</li>
+    <li><strong>Ecosystem Integration:</strong> How well does it integrate with your existing stack?</li>
+</ul>
+
+<h4>Popular Vector Database Options</h4>
+<p><strong>Pinecone:</strong> Fully managed cloud service. Excellent performance and ease of use. Best for teams wanting minimal operational burden. Higher cost but lower engineering overhead.</p>
+
+<p><strong>Weaviate:</strong> Open-source with cloud option. Strong hybrid search capabilities. Good balance of features and flexibility. Supports GraphQL API.</p>
+
+<p><strong>Qdrant:</strong> Open-source, Rust-based. Excellent performance and rich filtering capabilities. Good for self-hosted deployments requiring high performance.</p>
+
+<p><strong>Chroma:</strong> Embedded database, runs in-process. Perfect for prototyping and small-scale applications. Minimal setup, but limited scalability.</p>
+
+<p><strong>FAISS:</strong> Facebook's library for efficient similarity search. Not a full database, but excellent for research and custom implementations. Requires more engineering effort.</p>
+
+<p><strong>Milvus:</strong> Open-source, highly scalable. Designed for billion-scale vector search. Best for very large deployments with dedicated infrastructure teams.</p>
+
+<h3>Index Optimization Techniques</h3>
+
+<h4>Dimensionality Reduction</h4>
+<p>High-dimensional embeddings (e.g., 3072 dimensions) provide rich representations but increase storage and computation costs. Dimensionality reduction techniques compress embeddings while preserving most semantic information:</p>
+
+<p><strong>Principal Component Analysis (PCA):</strong> Projects vectors onto lower-dimensional space preserving maximum variance. Can reduce dimensions by 50-75% with minimal quality loss.</p>
+
+<p><strong>Matryoshka Embeddings:</strong> Modern embedding models trained to be "nestable"—you can truncate to smaller dimensions (e.g., use first 512 of 1536 dimensions) with graceful quality degradation.</p>
+
+<p><strong>Product Quantization:</strong> Compresses vectors by clustering and representing each cluster with a centroid. Dramatically reduces storage (8-32x compression) with acceptable quality trade-offs.</p>
+
+<h4>Index Partitioning and Sharding</h4>
+<p>For very large corpora, partition indexes by logical boundaries:</p>
+
+<ul>
+    <li><strong>Temporal Partitioning:</strong> Separate indexes for different time periods. Query recent index first, fall back to historical if needed.</li>
+    <li><strong>Categorical Partitioning:</strong> Separate indexes for different document types or departments. Route queries to relevant partition.</li>
+    <li><strong>Geographic Partitioning:</strong> Distribute indexes across regions for lower latency and data sovereignty.</li>
+</ul>
+
+<h4>Caching Strategies</h4>
+<p><strong>Query Result Caching:</strong> Cache results for common queries. Particularly effective for FAQ-style applications with repetitive queries.</p>
+
+<p><strong>Embedding Caching:</strong> Cache query embeddings to avoid re-embedding identical or similar queries.</p>
+
+<p><strong>Node Caching:</strong> Cache frequently retrieved nodes to reduce database load.</p>
+
+<h3>Index Maintenance and Updates</h3>
+
+<h4>Incremental Updates</h4>
+<p>As documents are added, modified, or deleted, indexes must be updated:</p>
+
+<p><strong>Append-Only Updates:</strong> New documents are simply added to the index. Fast but doesn't handle modifications or deletions.</p>
+
+<p><strong>Upsert Operations:</strong> Update existing documents or insert if new. Requires unique document identifiers.</p>
+
+<p><strong>Soft Deletes:</strong> Mark documents as deleted without removing from index. Filter out during retrieval. Simpler but wastes storage.</p>
+
+<p><strong>Hard Deletes:</strong> Actually remove vectors from index. More complex but reclaims storage.</p>
+
+<h4>Reindexing Strategies</h4>
+<p>Sometimes full reindexing is necessary (e.g., changing embedding models, updating chunking strategy):</p>
+
+<p><strong>Blue-Green Deployment:</strong> Build new index alongside old one. Switch traffic once new index is ready. Zero downtime but requires double storage temporarily.</p>
+
+<p><strong>Rolling Updates:</strong> Gradually migrate documents from old to new index. More complex but lower resource requirements.</p>
+
+<p><strong>Scheduled Maintenance:</strong> Rebuild indexes during low-traffic periods. Simpler but requires downtime.</p>
+
+<h4>Index Quality Monitoring</h4>
+<p>Continuously monitor index health:</p>
+
+<ul>
+    <li><strong>Retrieval Quality Metrics:</strong> Track precision, recall, and user satisfaction over time</li>
+    <li><strong>Coverage Metrics:</strong> Ensure all documents are properly indexed</li>
+    <li><strong>Freshness Metrics:</strong> Monitor lag between document updates and index updates</li>
+    <li><strong>Performance Metrics:</strong> Track query latency, throughput, and error rates</li>
+</ul>
+
+<h3>Key Takeaways</h3>
+<ul>
+    <li>Different index types serve different use cases; VectorStoreIndex is most common but not always optimal</li>
+    <li>Vector database selection involves trade-offs between performance, scalability, features, and operational complexity</li>
+    <li>Optimization techniques like dimensionality reduction and caching can significantly reduce costs</li>
+    <li>Index partitioning enables scaling to very large corpora</li>
+    <li>Robust update and maintenance strategies are essential for production systems</li>
+    <li>Continuous monitoring ensures index quality and performance over time</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Flows and Structured Generation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Flows and Structured Generation</h1>
+
+
+<h2>Defining Flows</h2>
+<div class="code-block">
+<pre><code>import { z } from 'zod';
+
+const summarizeFlow = ai.defineFlow(
+  {
+    name: 'summarize',
+    inputSchema: z.object({ text: z.string(), maxLength: z.number() }),
+    outputSchema: z.object({ summary: z.string(), keyPoints: z.array(z.string()) })
+  },
+  async (input) => {
+    const { output } = await ai.generate({
+      prompt: `Summarize in ${input.maxLength} words: ${input.text}`,
+      output: { schema: z.object({
+        summary: z.string(),
+        keyPoints: z.array(z.string())
+      })}
+    });
+    return output;
+  }
+);</code></pre>
+</div>
+
+<h2>Structured Output</h2>
+<p>Genkit uses <strong>Zod schemas</strong> to enforce structured output from LLMs. The framework handles JSON extraction and validation automatically.</p>
+
+<h2>Observability</h2>
+<p>Every flow execution is automatically traced with:</p>
+<ul>
+    <li>Input/output logging</li>
+    <li>LLM call details (model, tokens, latency)</li>
+    <li>Tool execution traces</li>
+    <li>Error tracking with stack traces</li>
+</ul>
+
+<h2>Deployment</h2>
+<p>Deploy flows as Firebase Cloud Functions or any Node.js hosting:</p>
+<div class="code-block">
+<pre><code>import { onFlow } from '@genkit-ai/firebase/functions';
+
+export const summarize = onFlow(ai, summarizeFlow);</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

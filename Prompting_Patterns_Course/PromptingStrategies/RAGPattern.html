@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Pattern: Retrieval-Augmented Generation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Pattern: Retrieval-Augmented Generation</h1>
+<div class="container">
+<h2>Retrieval-Augmented Generation (RAG) as a Pattern</h2>
+<p>Retrieval-Augmented Generation, or RAG, is a powerful architectural pattern that combines the creative power of a Large Language Model with the accuracy and grounding of an external knowledge base. Instead of relying solely on its internal training data, the model "retrieves" relevant documents and uses them as "context" to generate its response.</p>
+
+<h3>The Problem: The 'Knowledge Cutoff' and Hallucination</h3>
+<p>LLMs have a "knowledge cutoff"—they don't know about events that happened after they were trained. Furthermore, they can sometimes "hallucinate" or make up facts when they are unsure of the answer. RAG solves both of these problems by giving the model access to up-to-date, authoritative information.</p>
+
+<h3>The Core RAG Workflow</h3>
+<p>The RAG pattern typically involves three main steps:</p>
+<ol>
+    <li><strong>Retrieval:</strong> When a user asks a question, the system searches a vector database or another knowledge source for documents that are semantically related to the query.</li>
+    <li><strong>Augmentation:</strong> The retrieved documents are "stuffed" into the prompt along with the user's original question. This gives the model a set of "facts" to work with.</li>
+    <li><strong>Generation:</strong> The model generates a response based *only* on the provided context. It is explicitly told: "Use only the information in the provided documents to answer the question. If the answer isn't there, say you don't know."</li>
+</ol>
+
+<h3>Why RAG is a 'Prompting' Pattern</h3>
+<p>While RAG involves infrastructure (databases, search engines), the "secret sauce" is in the prompt. How you structure the retrieved context and what instructions you give the model determine the quality of the grounded response.</p>
+<ul>
+    <li><strong>The Role of XML Tags:</strong> Using tags like <code>&lt;context&gt;</code> or <code>&lt;documents&gt;</code> helps the model distinguish its own knowledge from the retrieved data.</li>
+    <li><strong>Source Attribution:</strong> A good RAG prompt asks the model to cite its sources. "Based on Document [1]..." This makes the answer verifiable.</li>
+    <li><strong>Handling Missing Info:</strong> The prompt must tell the model what to do if the retrieved data is insufficient. This prevents the model from falling back on its internal (and potentially outdated) knowledge.</li>
+</ul>
+
+<h3>Benefits of RAG</h3>
+<ul>
+    <li><strong>Factuality:</strong> Significantly reduces hallucinations by grounding the AI in real data.</li>
+    <li><strong>Freshness:</strong> The AI can answer questions about today's news or your private company documents.</li>
+    <li><strong>Customizability:</strong> You can "specialize" a general-purpose model for any domain (medical, legal, technical) just by changing the documents you provide.</li>
+    <li><strong>Verifiability:</strong> By providing citations, RAG allows humans to "fact-check" the AI's response.</li>
+</ul>
+
+<h3>RAG vs. Fine-Tuning</h3>
+<p>Fine-tuning involves retraining the model on new data, which is expensive, slow, and hard to update. RAG is "dynamic"—you can update your knowledge base every second, and the model will immediately have access to the new information without any retraining.</p>
+
+<h3>Practical Exercise: Designing a RAG Prompt</h3>
+<p>Create a prompt for a customer support bot that uses RAG. Your prompt should:
+1. Define a "Helpful Support Agent" persona.
+2. Provide a section for <code>&lt;retrieved_kb_articles&gt;</code>.
+3. Instruct the model to cite the article title in its response.
+4. Tell the model to offer to "escalate to a human" if the answer is not in the articles.</p>
+
+<h3>Limitations of Basic RAG</h3>
+<ul>
+    <li><strong>Retrieval Quality:</strong> If your search engine returns irrelevant documents, the LLM's response will also be poor.</li>
+    <li><strong>Context Window Limits:</strong> You can only fit a limited number of documents into the prompt. (Though this is less of an issue with Claude's 200k window).</li>
+    <li><strong>Complex Reasoning:</strong> Basic RAG struggles when the answer requires synthesizing information from many different documents at once.</li>
+</ul>
+
+<p>In conclusion, RAG is the most important pattern for building production-grade LLM applications. It transforms the AI from a creative but unreliable storyteller into a grounded, authoritative, and up-to-date expert.</p>
+
+</div>
+</body>
+</html>

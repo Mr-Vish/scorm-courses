@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 7: Advanced Topics - Noisy Neighbors</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>7.1 The "Noisy Neighbor" Problem and Fair Scheduling</h1>
+
+<p>One of the most significant challenges in shared-resource multi-tenant systems is the "Noisy Neighbor" effect. This occurs when one tenant's excessive resource consumption (e.g., high-volume API calls or complex, long-running prompts) negatively impacts the performance and availability of the system for other tenants.</p>
+
+<h2>Understanding the Impact</h2>
+<p>In an AI context, a noisy neighbor can cause:
+<ul>
+    <li><strong>Increased Latency:</strong> Queues for GPU inference time grow longer, leading to slower response times for everyone.</li>
+    <li><strong>Resource Exhaustion:</strong> Shared memory (KV cache) or GPU memory becomes full, causing requests from other tenants to fail with "Out of Memory" (OOM) errors.</li>
+    <li><strong>Rate Limit Exhaustion:</strong> If you are using a third-party API (like OpenAI) with a global rate limit, one tenant's spike can cause your entire application to be throttled.</li>
+</ul></p>
+
+<h2>Fair Scheduling Strategies</h2>
+<p>To mitigate the noisy neighbor problem, you must implement a "Fair Scheduler" that manages how requests from different tenants are processed.
+<ul>
+    <li><strong>Weighted Fair Queuing (WFQ):</strong> Giving each tenant a "weight" based on their subscription tier. A "Premium" tenant's requests are prioritized over a "Free" tenant's, but the free tenant is still guaranteed a minimum amount of resources so they are not completely starved.</li>
+    <li><strong>Request Interleaving:</strong> Instead of processing all requests from one tenant in a batch, the scheduler alternates between tenants (e.g., Tenant A request 1, Tenant B request 1, Tenant C request 1, then Tenant A request 2...).</li>
+    <li><strong>Token-based Admission Control:</strong> Limiting not just the number of requests, but the total number of *tokens* a tenant can process in a given window. This is more accurate since a single 32k token request is much more expensive than ten 100-token requests.</li>
+</ul></p>
+
+<h2>Implementing Hard Guardrails</h2>
+<ul>
+    <li><strong>Per-tenant Quotas:</strong> Setting strict maximum limits on requests per minute (RPM) and tokens per minute (TPM).</li>
+    <li><strong>Resource Isolation at the Inference Level:</strong> Using technologies like NVIDIA's Multi-Instance GPU (MIG) to physically partition a single GPU into multiple smaller, isolated instances. Each instance can be dedicated to a specific tenant or group of tenants, providing hardware-level isolation.</li>
+    <li><strong>Circuit Breakers:</strong> If a tenant's error rate spikes or they consistently hit their limits, a "circuit breaker" can temporarily block their requests to protect the rest of the system.</li>
+</ul>
+
+<h2>Monitoring for Noisy Neighbors</h2>
+<p>Effective detection requires granular telemetry:
+<ul>
+    <li><strong>P99 Latency per Tenant:</strong> Monitoring the tail latency for each tenant to see if specific users are suffering more than others.</li>
+    <li><strong>Token Consumption Heatmaps:</strong> Visualizing usage patterns across your entire tenant base to identify outliers.</li>
+    <li><strong>GPU Utilization per Tenant:</strong> Attributing hardware usage back to the requesting tenant (challenging but possible with modern observability tools).</li>
+</ul></p>
+
+<p>Solving the noisy neighbor problem is an ongoing process of tuning and refinement. By implementing fair scheduling and robust guardrails, you can provide a consistent and reliable experience for all your tenants, regardless of their size or usage patterns.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

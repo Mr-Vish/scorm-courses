@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Introduction to LangGraph</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Introduction to LangGraph</h1>
+
+
+<h2>What Is LangGraph?</h2>
+<p>LangGraph is a framework for building <strong>stateful, multi-step AI workflows</strong> as directed graphs. Unlike simple chains, LangGraph supports cycles, conditional branching, and persistent state.</p>
+
+<h2>Core Concepts</h2>
+<ul>
+    <li><strong>Nodes:</strong> Functions that process state (LLM calls, tool use, logic)</li>
+    <li><strong>Edges:</strong> Connections between nodes (sequential or conditional)</li>
+    <li><strong>State:</strong> Shared data that flows through the graph and persists across steps</li>
+    <li><strong>Checkpointing:</strong> Save and resume graph execution at any point</li>
+</ul>
+
+<h2>Basic Graph Example</h2>
+<div class="code-block">
+<pre><code>from langgraph.graph import StateGraph, END
+from typing import TypedDict
+
+class AgentState(TypedDict):
+    messages: list
+    next_action: str
+
+def call_model(state):
+    response = llm.invoke(state["messages"])
+    return {"messages": state["messages"] + [response]}
+
+def should_continue(state):
+    if state["messages"][-1].tool_calls:
+        return "tools"
+    return END
+
+graph = StateGraph(AgentState)
+graph.add_node("agent", call_model)
+graph.add_node("tools", execute_tools)
+graph.add_edge("tools", "agent")
+graph.add_conditional_edges("agent", should_continue)
+graph.set_entry_point("agent")
+
+app = graph.compile()</code></pre>
+</div>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

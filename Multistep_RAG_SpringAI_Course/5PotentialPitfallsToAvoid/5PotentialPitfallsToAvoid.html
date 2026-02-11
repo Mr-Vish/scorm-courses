@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>5. Potential Pitfalls and How to Avoid Them</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>5. Potential Pitfalls and How to Avoid Them</h1>
+
+<p>While multi-step RAG is powerful, it is also prone to several common pitfalls that can degrade its performance or lead to unexpected behavior. Understanding these risks is essential for building a production-ready system.</p>
+
+<h2>1. The "Infinite Loop" Agent</h2>
+<p>When using an agentic approach, there is a risk that the agent gets stuck in a loop—repeatedly searching for the same information or trying the same tool with different parameters without ever reaching a final answer.
+<ul>
+    <li><strong>The Fix:</strong> Always implement a maximum number of iterations (e.g., 5 or 10 steps) and a timeout for the entire process. If the agent doesn't reach an answer within these limits, return a graceful failure message.</li>
+</ul></p>
+
+<h2>2. Context Window Overflow</h2>
+<p>In a multi-step process, you might retrieve more information than the LLM's context window can handle. This is especially true if you are using iterative retrieval or returning large parent documents.
+<ul>
+    <li><strong>The Fix:</strong> Monitor the token count of your context and implement a truncation or summarization strategy if it exceeds a safe threshold. Use models with larger context windows (like GPT-4o or Claude 3.5) for the final synthesis step.</li>
+</ul></p>
+
+<h2>3. Fragile Query Transformation</h2>
+<p>If your query expansion or rewriting step is not robust, it can actually make retrieval *worse* by adding irrelevant or misleading search terms.
+<ul>
+    <li><strong>The Fix:</strong> Use high-quality few-shot examples to guide the query transformation step. Regularly evaluate the expanded queries to ensure they are actually improving retrieval recall.</li>
+</ul></p>
+
+<h2>4. Escalating Latency and Cost</h2>
+<p>Every additional step in a multi-step pipeline adds both time and money. It is easy to build a system that is incredibly accurate but too slow or too expensive to be useful.
+<ul>
+    <li><strong>The Fix:</strong> Profile your pipeline to identify the most expensive and slowest steps. Use smaller, faster models for intermediate tasks (like query expansion or classification) and save the most capable models for the final generation. Implement parallel processing wherever possible.</li>
+</ul></p>
+
+<h2>5. Over-reliance on "LLM-as-a-Judge"</h2>
+<p>While using an LLM to evaluate your RAG pipeline is powerful, the judge model itself can be biased or make mistakes.
+<ul>
+    <li><strong>The Fix:</strong> Regularly perform "human-in-the-loop" audits of your evaluation scores. Don't rely blindly on the automated metrics; use them as a guide alongside human review and real user feedback.</li>
+</ul></p>
+
+<h2>6. Poor Chunking and Ingestion</h2>
+<p>No amount of multi-step reasoning can fix a RAG system if the underlying data ingestion is flawed. If chunks are too small, too large, or poorly delimited, the retrieval step will struggle.
+<ul>
+    <li><strong>The Fix:</strong> Experiment with different chunking strategies (e.g., semantic chunking or recursive character splitting) and document structures. Ensure you are capturing and utilizing metadata effectively during the ingestion process.</li>
+</ul></p>
+
+<p>By being aware of these potential pitfalls and implementing the appropriate safeguards, you can build multi-step RAG systems that are robust, efficient, and provide immense value to your users.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

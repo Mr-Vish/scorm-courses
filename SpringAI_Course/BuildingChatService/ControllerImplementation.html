@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Building the AI Controller</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Building the AI Controller</h1>
+
+<h2>The AiController Class</h2>
+<p>This class defines a REST endpoint that accepts a message and uses the injected ChatClient to get a response from the AI model.</p>
+
+<blockquote>
+package com.example.aidemo;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class AiController {
+
+    private final ChatClient chatClient;
+
+    /**
+     * Spring Boot automatically configures and injects the ChatClient based
+     * on the dependency and properties.
+     */
+    public AiController(ChatClient.Builder chatClientBuilder) {
+        // Build the ChatClient instance using the injected builder
+        this.chatClient = chatClientBuilder.build();
+    }
+
+    @GetMapping("/generate")
+    public String generate(@RequestParam(value = "message", defaultValue = "Tell me a short, friendly joke.") String message) {
+        
+        // Use the fluent API to define the prompt and call the model
+        return chatClient.prompt()
+                .user(message) // Set the user's input message
+                .call()        // Execute the call to the AI model
+                .content();    // Extract the plain text content from the response
+    }
+}
+</blockquote>
+
+<h2>Understanding the Code</h2>
+
+<h3>@RestController Annotation</h3>
+<p>Marks this class as a REST controller, combining @Controller and @ResponseBody. All methods return data directly rather than view names.</p>
+
+<h3>Constructor Injection</h3>
+<p>The <strong>ChatClient.Builder</strong> is automatically injected by Spring Boot. We use it to build our ChatClient instance. This follows Spring's dependency injection pattern.</p>
+
+<h3>@GetMapping Annotation</h3>
+<p>Maps HTTP GET requests to the <strong>/generate</strong> endpoint. This makes our AI service accessible via a simple URL.</p>
+
+<h3>@RequestParam</h3>
+<p>Extracts the "message" parameter from the query string. If not provided, it uses the default value "Tell me a short, friendly joke."</p>
+
+<h2>The Fluent API in Action</h2>
+<p>The ChatClient uses a fluent, builder-style API:</p>
+
+<table>
+    <tr>
+        <th>Method</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td class="rowheader">prompt()</td>
+        <td>Starts building a new prompt request</td>
+    </tr>
+    <tr>
+        <td class="rowheader">user(message)</td>
+        <td>Sets the user's input message as the prompt</td>
+    </tr>
+    <tr>
+        <td class="rowheader">call()</td>
+        <td>Executes the API call to the AI model</td>
+    </tr>
+    <tr>
+        <td class="rowheader">content()</td>
+        <td>Extracts the plain text content from the response</td>
+    </tr>
+</table>
+
+<h2>Running and Testing</h2>
+
+<h3>Step 1: Run Your Application</h3>
+<p>Start your Spring Boot application using your IDE or command line:</p>
+<blockquote>
+mvn spring-boot:run
+</blockquote>
+
+<h3>Step 2: Test the Endpoint</h3>
+<p>Open your browser or use curl to test:</p>
+<blockquote>
+http://localhost:8080/generate?message=Explain%20Spring%20AI%20in%20one%20sentence
+</blockquote>
+
+<h3>Expected Response</h3>
+<p>You should receive a text response from the AI model explaining Spring AI in one sentence. The exact response will vary based on the model's generation.</p>
+
+<h2>Error Handling</h2>
+<p>In production applications, you should add proper error handling:</p>
+<ul>
+    <li>Handle API rate limits</li>
+    <li>Catch network exceptions</li>
+    <li>Validate input parameters</li>
+    <li>Log errors appropriately</li>
+    <li>Return meaningful error messages to clients</li>
+</ul>
+
+<h2>Customization Options</h2>
+<p>You can customize the ChatClient behavior:</p>
+<ul>
+    <li><strong>Temperature:</strong> Control randomness of responses (0.0 to 1.0)</li>
+    <li><strong>Max Tokens:</strong> Limit the length of responses</li>
+    <li><strong>System Prompts:</strong> Set the AI's behavior and personality</li>
+    <li><strong>Model Selection:</strong> Choose specific model versions (GPT-3.5, GPT-4, etc.)</li>
+</ul>
+
+<script type="text/javascript">
+// No promotional content
+</script>
+</body>
+</html>

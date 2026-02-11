@@ -1,0 +1,446 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>LLM API Integration Patterns</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>LLM API Integration Patterns</h1>
+
+<h2>Multi-Provider LLM Integration</h2>
+<p>Building GenAI applications that support multiple LLM providers increases flexibility and reduces vendor lock-in. Both Gradio and Streamlit can integrate with various LLM APIs.</p>
+
+<h2>OpenAI Integration</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+
+client = OpenAI(api_key="your-api-key")
+
+def chat_openai(message, history, model, temperature):
+    '''Chat using OpenAI models.'''
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    stream = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=temperature,
+        stream=True
+    )
+    
+    partial_response = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            partial_response += chunk.choices[0].delta.content
+            yield partial_response
+
+with gr.Blocks() as demo:
+    model = gr.Dropdown(
+        ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+        value="gpt-4o-mini",
+        label="Model"
+    )
+    temperature = gr.Slider(0, 2, 0.7, label="Temperature")
+    
+    gr.ChatInterface(
+        fn=chat_openai,
+        additional_inputs=[model, temperature]
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Anthropic Claude Integration</h2>
+<blockquote>
+import gradio as gr
+from anthropic import Anthropic
+
+client = Anthropic(api_key="your-api-key")
+
+def chat_claude(message, history, model, max_tokens):
+    '''Chat using Anthropic Claude models.'''
+    messages = []
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    partial_response = ""
+    
+    with client.messages.stream(
+        model=model,
+        max_tokens=max_tokens,
+        messages=messages
+    ) as stream:
+        for text in stream.text_stream:
+            partial_response += text
+            yield partial_response
+
+with gr.Blocks() as demo:
+    model = gr.Dropdown(
+        ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-haiku-20240307"],
+        value="claude-3-5-sonnet-20241022",
+        label="Model"
+    )
+    max_tokens = gr.Slider(100, 4000, 1000, label="Max Tokens")
+    
+    gr.ChatInterface(
+        fn=chat_claude,
+        additional_inputs=[model, max_tokens]
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Google Gemini Integration</h2>
+<blockquote>
+import gradio as gr
+import google.generativeai as genai
+
+genai.configure(api_key="your-api-key")
+
+def chat_gemini(message, history, model_name, temperature):
+    '''Chat using Google Gemini models.'''
+    model = genai.GenerativeModel(model_name)
+    
+    # Build chat history
+    chat = model.start_chat(history=[])
+    
+    for user_msg, assistant_msg in history:
+        chat.history.append({"role": "user", "parts": [user_msg]})
+        chat.history.append({"role": "model", "parts": [assistant_msg]})
+    
+    # Stream response
+    response = chat.send_message(
+        message,
+        generation_config=genai.types.GenerationConfig(
+            temperature=temperature
+        ),
+        stream=True
+    )
+    
+    partial_response = ""
+    for chunk in response:
+        partial_response += chunk.text
+        yield partial_response
+
+with gr.Blocks() as demo:
+    model = gr.Dropdown(
+        ["gemini-1.5-pro", "gemini-1.5-flash"],
+        value="gemini-1.5-flash",
+        label="Model"
+    )
+    temperature = gr.Slider(0, 2, 0.7, label="Temperature")
+    
+    gr.ChatInterface(
+        fn=chat_gemini,
+        additional_inputs=[model, temperature]
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Unified Multi-Provider Interface</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+from anthropic import Anthropic
+import google.generativeai as genai
+
+class LLMProvider:
+    '''Unified interface for multiple LLM providers.'''
+    
+    def __init__(self):
+        self.openai_client = OpenAI(api_key="openai-key")
+        self.anthropic_client = Anthropic(api_key="anthropic-key")
+        genai.configure(api_key="google-key")
+    
+    def chat(self, provider, model, message, history, temperature):
+        '''Route to appropriate provider.'''
+        if provider == "OpenAI":
+            return self._chat_openai(model, message, history, temperature)
+        elif provider == "Anthropic":
+            return self._chat_anthropic(model, message, history, temperature)
+        elif provider == "Google":
+            return self._chat_google(model, message, history, temperature)
+    
+    def _chat_openai(self, model, message, history, temperature):
+        messages = [{"role": "system", "content": "You are a helpful assistant."}]
+        for user_msg, assistant_msg in history:
+            messages.append({"role": "user", "content": user_msg})
+            messages.append({"role": "assistant", "content": assistant_msg})
+        messages.append({"role": "user", "content": message})
+        
+        stream = self.openai_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=temperature,
+            stream=True
+        )
+        
+        partial_response = ""
+        for chunk in stream:
+            if chunk.choices[0].delta.content:
+                partial_response += chunk.choices[0].delta.content
+                yield partial_response
+    
+    def _chat_anthropic(self, model, message, history, temperature):
+        messages = []
+        for user_msg, assistant_msg in history:
+            messages.append({"role": "user", "content": user_msg})
+            messages.append({"role": "assistant", "content": assistant_msg})
+        messages.append({"role": "user", "content": message})
+        
+        partial_response = ""
+        with self.anthropic_client.messages.stream(
+            model=model,
+            max_tokens=1000,
+            messages=messages,
+            temperature=temperature
+        ) as stream:
+            for text in stream.text_stream:
+                partial_response += text
+                yield partial_response
+    
+    def _chat_google(self, model, message, history, temperature):
+        gemini_model = genai.GenerativeModel(model)
+        chat = gemini_model.start_chat(history=[])
+        
+        for user_msg, assistant_msg in history:
+            chat.history.append({"role": "user", "parts": [user_msg]})
+            chat.history.append({"role": "model", "parts": [assistant_msg]})
+        
+        response = chat.send_message(
+            message,
+            generation_config=genai.types.GenerationConfig(temperature=temperature),
+            stream=True
+        )
+        
+        partial_response = ""
+        for chunk in response:
+            partial_response += chunk.text
+            yield partial_response
+
+# Create interface
+llm_provider = LLMProvider()
+
+def chat_unified(message, history, provider, model, temperature):
+    return llm_provider.chat(provider, model, message, history, temperature)
+
+with gr.Blocks() as demo:
+    gr.Markdown("# Multi-Provider LLM Chat")
+    
+    with gr.Row():
+        provider = gr.Dropdown(
+            ["OpenAI", "Anthropic", "Google"],
+            value="OpenAI",
+            label="Provider"
+        )
+        model = gr.Dropdown(
+            ["gpt-4o-mini", "claude-3-5-sonnet-20241022", "gemini-1.5-flash"],
+            value="gpt-4o-mini",
+            label="Model"
+        )
+        temperature = gr.Slider(0, 2, 0.7, label="Temperature")
+    
+    gr.ChatInterface(
+        fn=chat_unified,
+        additional_inputs=[provider, model, temperature]
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Error Handling and Fallback Strategies</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+import time
+
+client = OpenAI()
+
+def chat_with_retry(message, history, max_retries=3):
+    '''Chat with automatic retry and exponential backoff.'''
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    for attempt in range(max_retries):
+        try:
+            stream = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                stream=True,
+                timeout=30
+            )
+            
+            partial_response = ""
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    partial_response += chunk.choices[0].delta.content
+                    yield partial_response
+            
+            return  # Success
+            
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff
+                yield f"Error occurred, retrying in {wait_time}s... (Attempt {attempt + 1}/{max_retries})"
+                time.sleep(wait_time)
+            else:
+                yield f"Failed after {max_retries} attempts. Error: {str(e)}"
+
+demo = gr.ChatInterface(
+    fn=chat_with_retry,
+    title="Robust Chat with Retry Logic"
+)
+
+demo.launch()
+</blockquote>
+
+<h2>Token Counting and Cost Tracking</h2>
+<blockquote>
+import gradio as gr
+from openai import OpenAI
+import tiktoken
+
+client = OpenAI()
+
+def count_tokens(text, model="gpt-4o-mini"):
+    '''Count tokens in text.'''
+    encoding = tiktoken.encoding_for_model(model)
+    return len(encoding.encode(text))
+
+def chat_with_cost_tracking(message, history, model):
+    '''Track token usage and estimated costs.'''
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+    
+    messages.append({"role": "user", "content": message})
+    
+    # Count input tokens
+    input_text = " ".join([m["content"] for m in messages])
+    input_tokens = count_tokens(input_text, model)
+    
+    stream = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        stream=True
+    )
+    
+    partial_response = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            partial_response += chunk.choices[0].delta.content
+            yield partial_response
+    
+    # Count output tokens
+    output_tokens = count_tokens(partial_response, model)
+    
+    # Calculate cost (example rates)
+    cost_per_1k_input = 0.00015  # $0.15 per 1M tokens
+    cost_per_1k_output = 0.0006  # $0.60 per 1M tokens
+    
+    total_cost = (input_tokens * cost_per_1k_input / 1000) + \
+                 (output_tokens * cost_per_1k_output / 1000)
+    
+    yield f"{partial_response}\n\n---\nTokens: {input_tokens} in, {output_tokens} out | Cost: ${total_cost:.6f}"
+
+with gr.Blocks() as demo:
+    model = gr.Dropdown(
+        ["gpt-4o", "gpt-4o-mini"],
+        value="gpt-4o-mini",
+        label="Model"
+    )
+    
+    gr.ChatInterface(
+        fn=chat_with_cost_tracking,
+        additional_inputs=[model],
+        title="Chat with Cost Tracking"
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>LangChain Integration</h2>
+<blockquote>
+import gradio as gr
+from langchain_openai import ChatOpenAI
+from langchain.schema import HumanMessage, AIMessage, SystemMessage
+
+def chat_with_langchain(message, history, model, temperature):
+    '''Use LangChain for LLM interactions.'''
+    llm = ChatOpenAI(
+        model=model,
+        temperature=temperature,
+        streaming=True
+    )
+    
+    messages = [SystemMessage(content="You are a helpful assistant.")]
+    
+    for user_msg, assistant_msg in history:
+        messages.append(HumanMessage(content=user_msg))
+        messages.append(AIMessage(content=assistant_msg))
+    
+    messages.append(HumanMessage(content=message))
+    
+    partial_response = ""
+    for chunk in llm.stream(messages):
+        partial_response += chunk.content
+        yield partial_response
+
+with gr.Blocks() as demo:
+    model = gr.Dropdown(
+        ["gpt-4o", "gpt-4o-mini"],
+        value="gpt-4o-mini",
+        label="Model"
+    )
+    temperature = gr.Slider(0, 2, 0.7, label="Temperature")
+    
+    gr.ChatInterface(
+        fn=chat_with_langchain,
+        additional_inputs=[model, temperature],
+        title="LangChain Integration"
+    )
+
+demo.launch()
+</blockquote>
+
+<h2>Best Practices for LLM Integration</h2>
+<ul>
+    <li><strong>Use Environment Variables:</strong> Store API keys securely, never hardcode them</li>
+    <li><strong>Implement Retry Logic:</strong> Handle transient failures with exponential backoff</li>
+    <li><strong>Set Timeouts:</strong> Prevent hanging requests with appropriate timeout values</li>
+    <li><strong>Track Token Usage:</strong> Monitor costs and implement usage limits</li>
+    <li><strong>Cache Responses:</strong> Cache identical requests to reduce API calls</li>
+    <li><strong>Handle Rate Limits:</strong> Implement rate limiting to stay within API quotas</li>
+    <li><strong>Validate Inputs:</strong> Sanitize user inputs before sending to LLM APIs</li>
+    <li><strong>Stream Responses:</strong> Always use streaming for better user experience</li>
+    <li><strong>Log Interactions:</strong> Keep logs for debugging and analytics</li>
+    <li><strong>Provide Fallbacks:</strong> Have backup providers or error messages</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

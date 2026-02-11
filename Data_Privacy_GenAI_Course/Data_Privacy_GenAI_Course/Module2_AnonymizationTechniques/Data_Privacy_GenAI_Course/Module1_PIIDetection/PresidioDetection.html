@@ -1,0 +1,410 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Automated PII Detection with Presidio</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Automated PII Detection with Presidio</h1>
+
+<h2>Introduction to Microsoft Presidio</h2>
+<p>Microsoft Presidio is an open-source framework for PII detection and anonymization. It provides:</p>
+<ul>
+    <li><strong>Pre-built recognizers</strong> for 50+ PII entity types</li>
+    <li><strong>Multi-language support</strong> (English, Spanish, German, French, etc.)</li>
+    <li><strong>Customizable detection</strong> with regex patterns and ML models</li>
+    <li><strong>Flexible anonymization</strong> strategies (redaction, masking, encryption)</li>
+    <li><strong>Production-ready</strong> with high performance and accuracy</li>
+</ul>
+
+<h2>Installation and Setup</h2>
+<div class="code-block">
+<pre><code># Install Presidio components
+pip install presidio-analyzer presidio-anonymizer
+
+# For enhanced NER (Named Entity Recognition)
+pip install spacy
+python -m spacy download en_core_web_lg
+
+# Optional: For additional language support
+python -m spacy download es_core_news_md  # Spanish
+python -m spacy download de_core_news_md  # German
+</code></pre>
+</div>
+
+<h2>Basic PII Detection</h2>
+<div class="code-block">
+<pre><code>from presidio_analyzer import AnalyzerEngine
+
+# Initialize the analyzer
+analyzer = AnalyzerEngine()
+
+# Sample text with PII
+text = """
+My name is Sarah Johnson and my email is sarah.j@company.com.
+You can reach me at (555) 123-4567. My SSN is 123-45-6789.
+I live at 456 Oak Avenue, Seattle, WA 98101.
+"""
+
+# Analyze text for PII
+results = analyzer.analyze(
+    text=text,
+    language="en"
+)
+
+# Display detected entities
+for result in results:
+    print(f"Entity: {result.entity_type}")
+    print(f"  Text: {text[result.start:result.end]}")
+    print(f"  Confidence: {result.score:.2f}")
+    print(f"  Position: {result.start}-{result.end}")
+    print()
+
+# Output:
+# Entity: PERSON
+#   Text: Sarah Johnson
+#   Confidence: 0.85
+#   Position: 11-25
+#
+# Entity: EMAIL_ADDRESS
+#   Text: sarah.j@company.com
+#   Confidence: 1.00
+#   Position: 43-62
+#
+# Entity: PHONE_NUMBER
+#   Text: (555) 123-4567
+#   Confidence: 0.75
+#   Position: 84-98
+#
+# Entity: US_SSN
+#   Text: 123-45-6789
+#   Confidence: 0.85
+#   Position: 110-121
+#
+# Entity: LOCATION
+#   Text: 456 Oak Avenue, Seattle, WA 98101
+#   Confidence: 0.70
+#   Position: 135-169
+</code></pre>
+</div>
+
+<h2>Supported Entity Types</h2>
+<table>
+    <tr>
+        <th>Category</th>
+        <th>Entity Types</th>
+        <th>Detection Method</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Personal</td>
+        <td>PERSON, DATE_TIME, AGE, TITLE</td>
+        <td>NER (spaCy)</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Contact</td>
+        <td>EMAIL_ADDRESS, PHONE_NUMBER, URL</td>
+        <td>Regex patterns</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Location</td>
+        <td>LOCATION, US_DRIVER_LICENSE, UK_NHS</td>
+        <td>NER + Regex</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Financial</td>
+        <td>CREDIT_CARD, IBAN_CODE, CRYPTO, US_BANK_NUMBER</td>
+        <td>Regex + Checksum validation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Government IDs</td>
+        <td>US_SSN, US_PASSPORT, SG_NRIC_FIN, AU_ABN</td>
+        <td>Regex + Format validation</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Medical</td>
+        <td>MEDICAL_LICENSE, US_ITIN</td>
+        <td>Regex patterns</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Digital</td>
+        <td>IP_ADDRESS, NRP (National Registry Person)</td>
+        <td>Regex patterns</td>
+    </tr>
+</table>
+
+<h2>Filtering by Entity Type</h2>
+<div class="code-block">
+<pre><code># Detect only specific entity types
+critical_entities = [
+    "US_SSN",
+    "CREDIT_CARD",
+    "EMAIL_ADDRESS",
+    "PHONE_NUMBER"
+]
+
+results = analyzer.analyze(
+    text=text,
+    entities=critical_entities,
+    language="en"
+)
+
+# Only SSN, credit cards, emails, and phone numbers will be detected
+</code></pre>
+</div>
+
+<h2>Adjusting Detection Sensitivity</h2>
+<div class="code-block">
+<pre><code># Set minimum confidence threshold
+results = analyzer.analyze(
+    text=text,
+    language="en",
+    score_threshold=0.8  # Only return results with 80%+ confidence
+)
+
+# Filter results by confidence
+high_confidence = [r for r in results if r.score >= 0.9]
+medium_confidence = [r for r in results if 0.7 <= r.score < 0.9]
+low_confidence = [r for r in results if r.score < 0.7]
+
+print(f"High confidence detections: {len(high_confidence)}")
+print(f"Medium confidence detections: {len(medium_confidence)}")
+print(f"Low confidence detections: {len(low_confidence)}")
+</code></pre>
+</div>
+
+<h2>Handling False Positives and Negatives</h2>
+
+<h3>Common False Positives</h3>
+<ul>
+    <li><strong>Names:</strong> "Apple" detected as PERSON (company name)</li>
+    <li><strong>Dates:</strong> "May 2024" detected as DATE_TIME (month name)</li>
+    <li><strong>Numbers:</strong> "123-45-6789" in documentation examples</li>
+    <li><strong>Addresses:</strong> "123 Main Street" in fictional scenarios</li>
+</ul>
+
+<h3>Mitigation Strategies</h3>
+<div class="code-block">
+<pre><code># Strategy 1: Use allow lists for known non-PII
+allow_list = ["Apple Inc.", "Microsoft", "Amazon"]
+
+def is_allowed(text, entity_type):
+    if entity_type == "PERSON":
+        return text in allow_list
+    return False
+
+# Filter results
+filtered_results = [
+    r for r in results 
+    if not is_allowed(text[r.start:r.end], r.entity_type)
+]
+
+# Strategy 2: Context-aware detection
+# Check surrounding words for context clues
+def has_pii_context(text, start, end):
+    context_window = 50
+    context_start = max(0, start - context_window)
+    context_end = min(len(text), end + context_window)
+    context = text[context_start:context_end].lower()
+    
+    # Look for indicators of real PII
+    pii_indicators = ["my", "his", "her", "customer", "patient", "employee"]
+    return any(indicator in context for indicator in pii_indicators)
+
+# Strategy 3: Combine with business logic
+# Example: Validate SSN format and checksum
+def validate_ssn(ssn):
+    # Remove hyphens
+    ssn_digits = ssn.replace("-", "")
+    
+    # Check format
+    if len(ssn_digits) != 9 or not ssn_digits.isdigit():
+        return False
+    
+    # Check for invalid patterns
+    invalid_patterns = ["000", "666", "900-999"]
+    if ssn_digits[:3] in invalid_patterns:
+        return False
+    
+    return True
+</code></pre>
+</div>
+
+<h2>Multi-Language Support</h2>
+<div class="code-block">
+<pre><code># Spanish text detection
+spanish_text = """
+Mi nombre es María García y mi correo es maria.garcia@empresa.com.
+Mi número de teléfono es +34 612 34 56 78.
+"""
+
+results_es = analyzer.analyze(
+    text=spanish_text,
+    language="es"
+)
+
+# German text detection
+german_text = """
+Mein Name ist Hans Müller und meine E-Mail ist hans.mueller@firma.de.
+Meine Telefonnummer ist +49 30 12345678.
+"""
+
+results_de = analyzer.analyze(
+    text=german_text,
+    language="de"
+)
+</code></pre>
+</div>
+
+<h2>Batch Processing for Performance</h2>
+<div class="code-block">
+<pre><code>from typing import List, Dict
+import concurrent.futures
+
+class BatchPIIDetector:
+    def __init__(self, max_workers=4):
+        self.analyzer = AnalyzerEngine()
+        self.max_workers = max_workers
+    
+    def analyze_batch(self, texts: List[str]) -> List[Dict]:
+        """Process multiple texts in parallel"""
+        results = []
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all analysis tasks
+            future_to_text = {
+                executor.submit(self.analyzer.analyze, text, "en"): i 
+                for i, text in enumerate(texts)
+            }
+            
+            # Collect results
+            for future in concurrent.futures.as_completed(future_to_text):
+                text_index = future_to_text[future]
+                try:
+                    analysis_results = future.result()
+                    results.append({
+                        "index": text_index,
+                        "text": texts[text_index],
+                        "entities": analysis_results
+                    })
+                except Exception as e:
+                    results.append({
+                        "index": text_index,
+                        "text": texts[text_index],
+                        "error": str(e)
+                    })
+        
+        return sorted(results, key=lambda x: x["index"])
+
+# Usage
+detector = BatchPIIDetector(max_workers=8)
+texts = [
+    "John Smith's email is john@example.com",
+    "Call me at 555-1234",
+    "My SSN is 123-45-6789"
+]
+
+batch_results = detector.analyze_batch(texts)
+for result in batch_results:
+    print(f"Text {result['index']}: {len(result.get('entities', []))} entities found")
+</code></pre>
+</div>
+
+<h2>Integration with GenAI Pipelines</h2>
+<div class="code-block">
+<pre><code>class PIIAwareGenAI:
+    def __init__(self, llm_client):
+        self.analyzer = AnalyzerEngine()
+        self.llm_client = llm_client
+    
+    def safe_generate(self, user_prompt: str) -> dict:
+        """Generate LLM response with PII detection"""
+        
+        # Step 1: Detect PII in user prompt
+        pii_results = self.analyzer.analyze(
+            text=user_prompt,
+            language="en"
+        )
+        
+        # Step 2: Check for critical PII
+        critical_pii = [
+            r for r in pii_results 
+            if r.entity_type in ["US_SSN", "CREDIT_CARD", "US_PASSPORT"]
+        ]
+        
+        if critical_pii:
+            return {
+                "status": "blocked",
+                "message": "Critical PII detected. Please remove sensitive information.",
+                "detected_types": [r.entity_type for r in critical_pii]
+            }
+        
+        # Step 3: Proceed with LLM call (with redaction if needed)
+        response = self.llm_client.generate(user_prompt)
+        
+        # Step 4: Scan LLM output for PII
+        output_pii = self.analyzer.analyze(
+            text=response,
+            language="en"
+        )
+        
+        return {
+            "status": "success",
+            "response": response,
+            "input_pii_count": len(pii_results),
+            "output_pii_count": len(output_pii)
+        }
+</code></pre>
+</div>
+
+<h2>Performance Considerations</h2>
+<table>
+    <tr>
+        <th>Optimization</th>
+        <th>Impact</th>
+        <th>Trade-off</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Limit entity types</td>
+        <td>30-50% faster</td>
+        <td>May miss some PII categories</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Increase score threshold</td>
+        <td>10-20% faster</td>
+        <td>More false negatives</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Use smaller spaCy model</td>
+        <td>2-3x faster</td>
+        <td>Lower NER accuracy</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Batch processing</td>
+        <td>3-5x throughput</td>
+        <td>Higher memory usage</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Cache analyzer instance</td>
+        <td>Eliminates startup overhead</td>
+        <td>Memory overhead</td>
+    </tr>
+</table>
+
+<h2>Best Practices</h2>
+<ul>
+    <li><strong>Initialize once:</strong> Create AnalyzerEngine at application startup, not per request</li>
+    <li><strong>Set appropriate thresholds:</strong> Balance false positives vs. false negatives based on risk tolerance</li>
+    <li><strong>Monitor performance:</strong> Track detection latency and adjust batch sizes accordingly</li>
+    <li><strong>Log detections:</strong> Maintain audit logs of PII detections for compliance</li>
+    <li><strong>Regular updates:</strong> Keep Presidio and spaCy models updated for improved accuracy</li>
+    <li><strong>Test with real data:</strong> Validate detection accuracy with production-like samples</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

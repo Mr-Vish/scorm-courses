@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Hands-on Exercise: Building a Resilient AI Proxy</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Hands-on Exercise: Building a Resilient Multi-model AI Proxy</h1>
+
+<p>In this exercise, you will set up a LiteLLM Proxy server, configure multiple models with fallbacks, and test the proxy's resilience by simulating an API failure.</p>
+
+<h2>Step 1: Install and Initialize</h2>
+<p>Install the LiteLLM library and the proxy dependencies.</p>
+<pre><code>pip install 'litellm[proxy]'</code></pre>
+
+<h2>Step 2: Create the Configuration</h2>
+<p>Create a file named <code>proxy_config.yaml</code>. We'll set up a primary model (OpenAI) and a fallback (Anthropic via OpenRouter).</p>
+<pre><code>model_list:
+  - model_name: my-smart-model
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: sk-your-openai-key
+  - model_name: my-smart-model
+    litellm_params:
+      model: openrouter/anthropic/claude-3.5-sonnet
+      api_key: sk-your-openrouter-key
+
+litellm_settings:
+  set_verbose: True
+  num_retries: 3</code></pre>
+
+<h2>Step 3: Start the Proxy</h2>
+<p>In your terminal, start the proxy server:</p>
+<pre><code>litellm --config proxy_config.yaml</code></pre>
+<p>The proxy should now be running on <code>http://0.0.0.0:4000</code>.</p>
+
+<h2>Step 4: Test the Proxy</h2>
+<p>Create a Python script named <code>test_proxy.py</code> to send a request to your "virtual" model.</p>
+<pre><code>from openai import OpenAI
+
+client = OpenAI(
+    api_key="anything", # The proxy handles the real keys
+    base_url="http://0.0.0.0:4000"
+)
+
+response = client.chat.completions.create(
+    model="my-smart-model",
+    messages=[{"role": "user", "content": "Explain multi-model orchestration in one sentence."}]
+)
+
+print(f"Response: {response.choices[0].message.content}")</code></pre>
+
+<h2>Step 5: Verify Fallback Resilience</h2>
+<p>To test the fallback, temporarily provide an invalid API key for the primary model in your <code>proxy_config.yaml</code>. Restart the proxy and run <code>test_proxy.py</code> again. You should see in the proxy logs that it successfully failed over to the Anthropic model via OpenRouter, and the user script still received a successful response.</p>
+
+<h2>Challenge: Add a Budget and Usage Limit</h2>
+<ol>
+    <li>Modify the <code>proxy_config.yaml</code> to add a global daily budget.</li>
+    <li>Create a virtual key via the proxy's admin UI or API with a specific token limit.</li>
+    <li>Test that the proxy blocks requests once the limit is exceeded.</li>
+</ol>
+
+<p>By completing this exercise, you've built the foundation for a high-availability, enterprise-grade AI gateway.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

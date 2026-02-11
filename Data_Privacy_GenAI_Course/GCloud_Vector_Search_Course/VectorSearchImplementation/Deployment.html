@@ -1,0 +1,342 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Deploying Indexes and Managing Endpoints</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Deploying Indexes and Managing Endpoints</h1>
+
+<h2>Understanding Index Endpoints</h2>
+<p>An index endpoint is a deployed service that receives query requests and returns nearest neighbors. Think of it as the serving layer that makes your index queryable. A single endpoint can host multiple deployed indexes, enabling A/B testing and blue-green deployments.</p>
+
+<h2>Creating an Index Endpoint</h2>
+<div class="code-block">
+<pre><code>from google.cloud import aiplatform
+
+aiplatform.init(project="my-project", location="us-central1")
+
+# Create a public endpoint
+endpoint = aiplatform.MatchingEngineIndexEndpoint.create(
+    display_name="production-search-endpoint",
+    description="Production endpoint for semantic search",
+    public_endpoint_enabled=True,
+    labels={"env": "prod", "team": "ml"}
+)
+
+print(f"Endpoint created: {endpoint.resource_name}")
+print(f"Public endpoint domain: {endpoint.public_endpoint_domain_name}")
+</code></pre>
+</div>
+
+<h2>Public vs Private Endpoints</h2>
+<table>
+    <tr>
+        <th>Type</th>
+        <th>Access</th>
+        <th>Use Case</th>
+        <th>Security</th>
+    </tr>
+    <tr>
+        <td class="rowheader">Public Endpoint</td>
+        <td>Internet-accessible with authentication</td>
+        <td>External applications, mobile apps</td>
+        <td>Requires API key or OAuth token</td>
+    </tr>
+    <tr>
+        <td class="rowheader">Private Endpoint (VPC)</td>
+        <td>Only from within VPC network</td>
+        <td>Internal services, microservices</td>
+        <td>Network-level isolation</td>
+    </tr>
+</table>
+
+<h2>Deploying an Index to an Endpoint</h2>
+<div class="code-block">
+<pre><code># Get the index you created earlier
+index = aiplatform.MatchingEngineIndex(
+    index_name="projects/123/locations/us-central1/indexes/456"
+)
+
+# Deploy index to endpoint
+deployed_index = endpoint.deploy_index(
+    index=index,
+    deployed_index_id="product_search_v1",
+    
+    # Machine configuration
+    machine_type="e2-standard-16",
+    min_replica_count=2,
+    max_replica_count=10,
+    
+    # Auto-scaling configuration
+    enable_access_logging=True,
+    
+    # Deployment metadata
+    display_name="Product Search V1"
+)
+
+print(f"Index deployed successfully")
+print(f"Deployed index ID: {deployed_index.deployed_index_id}")
+</code></pre>
+</div>
+
+<h2>Machine Type Selection</h2>
+<table>
+    <tr>
+        <th>Machine Type</th>
+        <th>vCPUs</th>
+        <th>Memory</th>
+        <th>Best For</th>
+        <th>Cost (Relative)</th>
+    </tr>
+    <tr>
+        <td class="rowheader">e2-standard-2</td>
+        <td>2</td>
+        <td>8 GB</td>
+        <td>Development, small indexes</td>
+        <td>$</td>
+    </tr>
+    <tr>
+        <td class="rowheader">e2-standard-16</td>
+        <td>16</td>
+        <td>64 GB</td>
+        <td>Production, medium indexes (1-10M vectors)</td>
+        <td>$$$</td>
+    </tr>
+    <tr>
+        <td class="rowheader">e2-highmem-16</td>
+        <td>16</td>
+        <td>128 GB</td>
+        <td>Large indexes (10-50M vectors)</td>
+        <td>$$$$</td>
+    </tr>
+    <tr>
+        <td class="rowheader">n1-standard-32</td>
+        <td>32</td>
+        <td>120 GB</td>
+        <td>Very large indexes (&gt;50M vectors)</td>
+        <td>$$$$$</td>
+    </tr>
+</table>
+
+<h2>Auto-Scaling Configuration</h2>
+<p>Configure replicas to automatically scale based on traffic:</p>
+
+<div class="code-block">
+<pre><code># Deploy with auto-scaling
+deployed_index = endpoint.deploy_index(
+    index=index,
+    deployed_index_id="autoscale_v1",
+    machine_type="e2-standard-16",
+    
+    # Auto-scaling bounds
+    min_replica_count=2,   # Always maintain 2 replicas
+    max_replica_count=10,  # Scale up to 10 during peak traffic
+    
+    # Scaling triggers automatically based on:
+    # - CPU utilization
+    # - Query latency
+    # - Request queue depth
+)
+
+# Typical scaling behavior:
+# - Scale up: 2-3 minutes to add new replica
+# - Scale down: 10-15 minutes after traffic decreases
+</code></pre>
+</div>
+
+<h2>Deployment Time and Readiness</h2>
+<div class="code-block">
+<pre><code>import time
+
+# Deploy index (non-blocking)
+deployed_index = endpoint.deploy_index(
+    index=index,
+    deployed_index_id="search_v1",
+    machine_type="e2-standard-16",
+    min_replica_count=2
+)
+
+# Monitor deployment progress
+print("Deploying index...")
+while True:
+    endpoint = endpoint.refresh()
+    deployed_indexes = endpoint.deployed_indexes
+    
+    if deployed_indexes:
+        status = deployed_indexes[0]
+        print(f"Status: {status.state}")
+        
+        if status.state == "DEPLOYED":
+            print("Index is ready to serve queries!")
+            break
+    
+    time.sleep(30)  # Check every 30 seconds
+
+# Typical deployment times:
+# - Small index (< 1M vectors): 5-10 minutes
+# - Medium index (1-10M vectors): 10-20 minutes
+# - Large index (> 10M vectors): 20-40 minutes
+</code></pre>
+</div>
+
+<h2>Managing Multiple Deployed Indexes</h2>
+<p>A single endpoint can host multiple indexes for A/B testing or versioning:</p>
+
+<div class="code-block">
+<pre><code># Deploy multiple versions to the same endpoint
+endpoint.deploy_index(
+    index=index_v1,
+    deployed_index_id="search_v1",
+    machine_type="e2-standard-16",
+    min_replica_count=2
+)
+
+endpoint.deploy_index(
+    index=index_v2,
+    deployed_index_id="search_v2",
+    machine_type="e2-standard-16",
+    min_replica_count=1  # Canary deployment
+)
+
+# Query specific version
+results_v1 = endpoint.find_neighbors(
+    deployed_index_id="search_v1",
+    queries=[query_embedding],
+    num_neighbors=10
+)
+
+results_v2 = endpoint.find_neighbors(
+    deployed_index_id="search_v2",
+    queries=[query_embedding],
+    num_neighbors=10
+)
+
+# Compare results and gradually shift traffic to v2
+</code></pre>
+</div>
+
+<h2>Blue-Green Deployment Strategy</h2>
+<blockquote>
+<strong>Step 1:</strong> Deploy new index version (green) alongside existing version (blue)
+
+<strong>Step 2:</strong> Test green deployment with small percentage of traffic
+
+<strong>Step 3:</strong> Gradually shift traffic from blue to green
+
+<strong>Step 4:</strong> Once validated, undeploy blue version
+
+<strong>Step 5:</strong> Green becomes the new blue for next deployment
+</blockquote>
+
+<div class="code-block">
+<pre><code># Blue-green deployment example
+# Current: blue_v1 serving 100% traffic
+
+# Deploy green version
+endpoint.deploy_index(
+    index=index_v2,
+    deployed_index_id="green_v2",
+    machine_type="e2-standard-16",
+    min_replica_count=2
+)
+
+# Test green with 10% traffic (application-level routing)
+# If successful, shift 50%, then 100%
+
+# Once green is stable, undeploy blue
+endpoint.undeploy_index(deployed_index_id="blue_v1")
+
+# Rename green to blue for next cycle
+</code></pre>
+</div>
+
+<h2>Monitoring Endpoint Health</h2>
+<div class="code-block">
+<pre><code>from google.cloud import monitoring_v3
+
+# Query Cloud Monitoring for endpoint metrics
+client = monitoring_v3.MetricServiceClient()
+project_name = f"projects/{project_id}"
+
+# Key metrics to monitor:
+metrics = [
+    "aiplatform.googleapis.com/prediction/online/latency",
+    "aiplatform.googleapis.com/prediction/online/error_count",
+    "aiplatform.googleapis.com/prediction/online/prediction_count",
+    "aiplatform.googleapis.com/prediction/online/cpu/utilization"
+]
+
+# Set up alerts for:
+# - Latency > 50ms (p99)
+# - Error rate > 1%
+# - CPU utilization > 80%
+</code></pre>
+</div>
+
+<h2>Updating Deployed Indexes</h2>
+<p>Update index configuration without redeployment:</p>
+
+<div class="code-block">
+<pre><code># Mutate deployed index (change replica count)
+endpoint.mutate_deployed_index(
+    deployed_index_id="search_v1",
+    min_replica_count=5,  # Scale up for expected traffic
+    max_replica_count=20
+)
+
+# Update takes effect in 2-5 minutes
+# No downtime during scaling operations
+</code></pre>
+</div>
+
+<h2>Undeploying Indexes</h2>
+<div class="code-block">
+<pre><code># Undeploy index from endpoint
+endpoint.undeploy_index(deployed_index_id="search_v1")
+
+# This stops serving traffic and releases compute resources
+# The index itself remains available for redeployment
+# Typical undeploy time: 5-10 minutes
+</code></pre>
+</div>
+
+<h2>Cost Optimization Strategies</h2>
+<ul>
+<li><strong>Right-size machine types:</strong> Start with e2-standard-16, scale up only if needed</li>
+<li><strong>Minimize replicas during low traffic:</strong> Use min_replica_count=1 for dev/staging</li>
+<li><strong>Undeploy unused indexes:</strong> Remove old versions after successful deployments</li>
+<li><strong>Use private endpoints:</strong> Avoid public endpoint costs if only internal access needed</li>
+<li><strong>Regional deployment:</strong> Deploy in regions closest to users to reduce latency and egress costs</li>
+</ul>
+
+<h2>Production Deployment Checklist</h2>
+<ul>
+<li>✓ Enable access logging for debugging and monitoring</li>
+<li>✓ Set appropriate min/max replica counts for expected traffic</li>
+<li>✓ Configure Cloud Monitoring alerts for latency and errors</li>
+<li>✓ Test endpoint with sample queries before production traffic</li>
+<li>✓ Document deployed_index_id naming convention for team</li>
+<li>✓ Set up blue-green deployment process for zero-downtime updates</li>
+<li>✓ Implement retry logic in client applications</li>
+<li>✓ Configure VPC Service Controls for private endpoints</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Index endpoints are the serving layer that makes indexes queryable via API</li>
+<li>Choose between public endpoints (internet-accessible) and private endpoints (VPC-only) based on security requirements</li>
+<li>Machine type selection depends on index size and query volume; e2-standard-16 is suitable for most production workloads</li>
+<li>Auto-scaling automatically adjusts replica count based on traffic, with 2-3 minute scale-up time</li>
+<li>Blue-green deployments enable zero-downtime index updates and safe rollbacks</li>
+<li>Monitor key metrics (latency, error rate, CPU utilization) to ensure optimal performance</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

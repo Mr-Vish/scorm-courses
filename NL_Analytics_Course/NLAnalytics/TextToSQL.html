@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Text-to-SQL Generation</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Text-to-SQL Generation</h1>
+
+
+<h2>Natural Language to SQL</h2>
+<p>Text-to-SQL allows non-technical users to query databases using natural language. The LLM translates questions like "What were our top 10 customers by revenue last quarter?" into executable SQL queries.</p>
+
+<h2>Architecture</h2>
+<ol>
+    <li><strong>Schema extraction:</strong> Provide the database schema (tables, columns, types, relationships) to the LLM</li>
+    <li><strong>NL parsing:</strong> The LLM interprets the user's natural language question</li>
+    <li><strong>SQL generation:</strong> The LLM produces a SQL query that answers the question</li>
+    <li><strong>Validation:</strong> Validate the generated SQL (syntax check, permission check, cost estimation)</li>
+    <li><strong>Execution:</strong> Run the validated query against the database</li>
+    <li><strong>Presentation:</strong> Format results as a table or chart</li>
+</ol>
+
+<h2>Implementation</h2>
+<div class="code-block">
+<pre><code>from openai import OpenAI
+import json
+
+client = OpenAI()
+
+# Database schema context
+SCHEMA = '''
+Tables:
+- orders (id INT, customer_id INT, total DECIMAL, created_at TIMESTAMP, status VARCHAR)
+- customers (id INT, name VARCHAR, email VARCHAR, segment VARCHAR, region VARCHAR)
+- products (id INT, name VARCHAR, category VARCHAR, price DECIMAL)
+- order_items (order_id INT, product_id INT, quantity INT, unit_price DECIMAL)
+
+Relationships:
+- orders.customer_id -&gt; customers.id
+- order_items.order_id -&gt; orders.id
+- order_items.product_id -&gt; products.id
+'''
+
+def text_to_sql(question: str) -&gt; str:
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": (
+                "You are a SQL expert. Generate a SQL query to answer the user's question. "
+                "Use only the tables and columns defined in the schema. "
+                "Return ONLY the SQL query, no explanations.
+
+"
+                f"Schema:
+{SCHEMA}"
+            )},
+            {"role": "user", "content": question},
+        ],
+    )
+    return response.choices[0].message.content.strip()
+
+sql = text_to_sql("What are the top 5 product categories by revenue this year?")
+# SELECT p.category, SUM(oi.quantity * oi.unit_price) as revenue
+# FROM order_items oi
+# JOIN products p ON oi.product_id = p.id
+# JOIN orders o ON oi.order_id = o.id
+# WHERE o.created_at &gt;= DATE_TRUNC('year', CURRENT_DATE)
+# GROUP BY p.category
+# ORDER BY revenue DESC
+# LIMIT 5</code></pre>
+</div>
+
+<h2>Safety Measures</h2>
+<table>
+    <tr><th>Risk</th><th>Mitigation</th></tr>
+    <tr><td>SQL injection from LLM output</td><td>Use read-only database connections, parameterized queries where possible</td></tr>
+    <tr><td>Expensive queries</td><td>Set query timeout, EXPLAIN before executing, limit result size</td></tr>
+    <tr><td>Unauthorized data access</td><td>Apply row-level security, restrict schema visibility per user role</td></tr>
+    <tr><td>Data modification</td><td>Block INSERT, UPDATE, DELETE - allow SELECT only</td></tr>
+    <tr><td>Hallucinated columns</td><td>Parse and validate column names against actual schema before execution</td></tr>
+</table>
+
+<h2>Improving Accuracy</h2>
+<ul>
+    <li><strong>Few-shot examples:</strong> Include 3-5 example question-SQL pairs in the prompt for your specific schema</li>
+    <li><strong>Column descriptions:</strong> Add human-readable descriptions to column names (e.g., "mrr" means "Monthly Recurring Revenue")</li>
+    <li><strong>Sample values:</strong> Include a few example values for enum-like columns to avoid hallucination</li>
+    <li><strong>Query validation:</strong> Parse generated SQL and verify all referenced tables and columns exist</li>
+    <li><strong>Error retry:</strong> If the SQL fails, send the error message back to the LLM for correction</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

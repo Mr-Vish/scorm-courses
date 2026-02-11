@@ -1,0 +1,314 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>AWS GenAI Service Pricing and Cost Analysis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>AWS GenAI Service Pricing and Cost Analysis</h1>
+
+<h2>Comprehensive AWS GenAI Service Landscape</h2>
+<p>AWS offers multiple pathways for deploying GenAI applications, each with distinct pricing models, capabilities, and cost implications. Understanding these options enables architects to select the most cost-effective approach for specific requirements.</p>
+
+<h3>Primary AWS GenAI Services</h3>
+<ul>
+<li><strong>Amazon Bedrock:</strong> Fully managed service providing API access to foundation models from multiple providers</li>
+<li><strong>Amazon SageMaker:</strong> Comprehensive ML platform supporting custom model deployment and fine-tuning</li>
+<li><strong>AWS Lambda with Bedrock:</strong> Serverless integration for event-driven GenAI applications</li>
+<li><strong>Amazon Q:</strong> Specialized AI assistant for business applications and code generation</li>
+</ul>
+
+<h2>Amazon Bedrock Pricing Deep Dive</h2>
+<p>Amazon Bedrock represents the most straightforward path to GenAI deployment, offering pay-per-use access to leading foundation models without infrastructure management. Understanding Bedrock's pricing nuances is essential for cost-effective implementation.</p>
+
+<h3>On-Demand Pricing Model</h3>
+<p>Bedrock's default pricing model charges per token with no upfront commitments or minimum fees. This consumption-based approach provides flexibility but requires careful monitoring to prevent cost overruns.</p>
+
+<table>
+<tr>
+<th>Model Family</th>
+<th>Provider</th>
+<th>Input ($/1M tokens)</th>
+<th>Output ($/1M tokens)</th>
+<th>Typical Use Cases</th>
+</tr>
+<tr>
+<td class="rowheader">Claude 3.5 Sonnet</td>
+<td>Anthropic</td>
+<td>$3.00</td>
+<td>$15.00</td>
+<td>General purpose, balanced quality/cost</td>
+</tr>
+<tr>
+<td class="rowheader">Claude 3.5 Haiku</td>
+<td>Anthropic</td>
+<td>$0.80</td>
+<td>$4.00</td>
+<td>High-volume, speed-critical applications</td>
+</tr>
+<tr>
+<td class="rowheader">Claude 3 Opus</td>
+<td>Anthropic</td>
+<td>$15.00</td>
+<td>$75.00</td>
+<td>Complex reasoning, research, analysis</td>
+</tr>
+<tr>
+<td class="rowheader">Titan Text Express</td>
+<td>Amazon</td>
+<td>$0.20</td>
+<td>$0.60</td>
+<td>Cost-sensitive, high-volume workloads</td>
+</tr>
+<tr>
+<td class="rowheader">Titan Text Lite</td>
+<td>Amazon</td>
+<td>$0.15</td>
+<td>$0.20</td>
+<td>Simple classification, extraction</td>
+</tr>
+<tr>
+<td class="rowheader">Jurassic-2 Ultra</td>
+<td>AI21 Labs</td>
+<td>$18.80</td>
+<td>$18.80</td>
+<td>Specialized language tasks</td>
+</tr>
+<tr>
+<td class="rowheader">Command R+</td>
+<td>Cohere</td>
+<td>$3.00</td>
+<td>$15.00</td>
+<td>RAG-optimized applications</td>
+</tr>
+</table>
+
+<h3>Provisioned Throughput Pricing</h3>
+<p>For predictable, high-volume workloads, Bedrock offers Provisioned Throughput - a capacity reservation model that provides dedicated model access at reduced per-token costs.</p>
+
+<p><strong>Provisioned Throughput Characteristics:</strong></p>
+<ul>
+<li>Hourly commitment for dedicated model capacity</li>
+<li>Guaranteed throughput and latency</li>
+<li>Lower per-token costs for high-volume usage</li>
+<li>Minimum commitment periods (1 month or 6 months)</li>
+<li>Cost-effective when utilization exceeds 40-60% of capacity</li>
+</ul>
+
+<p><strong>Cost Comparison Example (Claude 3.5 Sonnet):</strong></p>
+<ul>
+<li>On-Demand: $3.00 input / $15.00 output per 1M tokens</li>
+<li>Provisioned Throughput: ~$8.00/hour for dedicated capacity</li>
+<li>Break-even: Processing ~500K input + 100K output tokens per hour</li>
+</ul>
+
+<h3>Batch Processing Pricing</h3>
+<p>Bedrock's Batch API offers significant discounts for non-real-time workloads that can tolerate processing delays of up to 24 hours.</p>
+
+<ul>
+<li><strong>Discount:</strong> 50% reduction compared to on-demand pricing</li>
+<li><strong>Processing Time:</strong> Up to 24 hours</li>
+<li><strong>Ideal For:</strong> Document analysis, content generation, data enrichment</li>
+<li><strong>Limitations:</strong> No streaming, delayed results, batch size limits</li>
+</ul>
+
+<h2>Amazon SageMaker GenAI Pricing</h2>
+<p>SageMaker provides greater control and customization options but introduces infrastructure costs alongside model inference charges.</p>
+
+<h3>SageMaker Inference Endpoints</h3>
+<p>When deploying foundation models on SageMaker, costs include:</p>
+
+<table>
+<tr>
+<th>Cost Component</th>
+<th>Pricing Model</th>
+<th>Typical Cost Range</th>
+</tr>
+<tr>
+<td class="rowheader">Instance Hours</td>
+<td>Per-hour compute charges</td>
+<td>$1.00 - $30.00+ per hour depending on instance type</td>
+</tr>
+<tr>
+<td class="rowheader">Model Inference</td>
+<td>Per-request or per-token</td>
+<td>Varies by model and deployment</td>
+</tr>
+<tr>
+<td class="rowheader">Storage</td>
+<td>Per GB-month</td>
+<td>$0.023 per GB-month (EBS)</td>
+</tr>
+<tr>
+<td class="rowheader">Data Transfer</td>
+<td>Per GB transferred</td>
+<td>$0.09 per GB (outbound)</td>
+</tr>
+</table>
+
+<h3>SageMaker JumpStart Models</h3>
+<p>SageMaker JumpStart provides pre-configured foundation models with simplified deployment. Pricing follows standard SageMaker instance-based charging:</p>
+
+<ul>
+<li><strong>ml.g5.xlarge:</strong> $1.41/hour - suitable for smaller models and development</li>
+<li><strong>ml.g5.12xlarge:</strong> $8.10/hour - production workloads for medium models</li>
+<li><strong>ml.p4d.24xlarge:</strong> $32.77/hour - large models requiring significant compute</li>
+</ul>
+
+<p><strong>Cost Consideration:</strong> Unlike Bedrock's pay-per-token model, SageMaker instances incur costs continuously while running, regardless of utilization. This makes SageMaker more cost-effective only for consistently high-volume workloads.</p>
+
+<h2>Comparative Cost Analysis</h2>
+<p>Selecting between Bedrock and SageMaker requires analyzing your specific usage patterns and requirements.</p>
+
+<h3>Bedrock vs. SageMaker Cost Scenarios</h3>
+
+<p><strong>Scenario 1: Low-Volume Application (1,000 requests/day)</strong></p>
+<ul>
+<li><strong>Bedrock (Claude Sonnet):</strong> ~$50-100/month (pay only for actual usage)</li>
+<li><strong>SageMaker (ml.g5.xlarge, 24/7):</strong> ~$1,015/month (continuous instance costs)</li>
+<li><strong>Winner:</strong> Bedrock by 90%+ cost savings</li>
+</ul>
+
+<p><strong>Scenario 2: High-Volume Application (1M requests/day)</strong></p>
+<ul>
+<li><strong>Bedrock (On-Demand):</strong> ~$50,000-100,000/month depending on token consumption</li>
+<li><strong>Bedrock (Provisioned):</strong> ~$30,000-60,000/month with capacity commitment</li>
+<li><strong>SageMaker (ml.g5.12xlarge cluster):</strong> ~$20,000-40,000/month with optimized utilization</li>
+<li><strong>Winner:</strong> SageMaker or Provisioned Bedrock depending on specific patterns</li>
+</ul>
+
+<h3>Decision Framework</h3>
+<table>
+<tr>
+<th>Choose Bedrock When...</th>
+<th>Choose SageMaker When...</th>
+</tr>
+<tr>
+<td>Variable or unpredictable workloads</td>
+<td>Consistent, high-volume traffic</td>
+</tr>
+<tr>
+<td>Rapid prototyping and development</td>
+<td>Custom model fine-tuning required</td>
+</tr>
+<tr>
+<td>Multiple models needed for different tasks</td>
+<td>Single model with specialized requirements</td>
+</tr>
+<tr>
+<td>Minimal infrastructure management desired</td>
+<td>Full control over deployment needed</td>
+</tr>
+<tr>
+<td>Sporadic usage patterns</td>
+<td>24/7 production workloads</td>
+</tr>
+</table>
+
+<h2>Additional AWS GenAI Cost Factors</h2>
+
+<h3>Data Transfer Costs</h3>
+<p>Often overlooked, data transfer charges can significantly impact total GenAI costs, especially for applications processing large documents or images.</p>
+
+<ul>
+<li><strong>Inbound data transfer:</strong> Free (data into AWS)</li>
+<li><strong>Outbound data transfer:</strong> $0.09/GB (first 10TB/month)</li>
+<li><strong>Inter-region transfer:</strong> $0.02/GB (between AWS regions)</li>
+<li><strong>CloudFront distribution:</strong> $0.085/GB (content delivery)</li>
+</ul>
+
+<h3>Storage Costs for GenAI Applications</h3>
+<p>GenAI applications often require storage for prompts, responses, embeddings, and training data:</p>
+
+<ul>
+<li><strong>S3 Standard:</strong> $0.023/GB-month - ideal for active data</li>
+<li><strong>S3 Intelligent-Tiering:</strong> $0.023/GB-month + monitoring fees - automatic cost optimization</li>
+<li><strong>S3 Glacier:</strong> $0.004/GB-month - archival storage for historical data</li>
+<li><strong>DynamoDB:</strong> $0.25/GB-month - structured data and metadata</li>
+</ul>
+
+<h3>Vector Database Costs</h3>
+<p>RAG applications require vector storage for embeddings, introducing additional infrastructure costs:</p>
+
+<ul>
+<li><strong>OpenSearch Service:</strong> $0.12-0.24/hour per node + storage</li>
+<li><strong>RDS with pgvector:</strong> Instance costs + $0.115/GB-month storage</li>
+<li><strong>Pinecone (third-party):</strong> $0.096/GB-month + query costs</li>
+</ul>
+
+<h2>Cost Monitoring and Visibility</h2>
+<p>Effective cost management requires comprehensive monitoring and alerting capabilities.</p>
+
+<h3>AWS Cost Explorer for GenAI</h3>
+<p>Cost Explorer provides visibility into GenAI spending patterns:</p>
+<ul>
+<li>Filter by service (Bedrock, SageMaker) to isolate GenAI costs</li>
+<li>Group by API operation to identify expensive operations</li>
+<li>Analyze trends to detect cost anomalies</li>
+<li>Create custom reports for stakeholder communication</li>
+</ul>
+
+<h3>CloudWatch Metrics for GenAI</h3>
+<p>Monitor operational metrics that correlate with costs:</p>
+<ul>
+<li><strong>Invocation count:</strong> Total requests to GenAI services</li>
+<li><strong>Token consumption:</strong> Input and output token volumes</li>
+<li><strong>Model latency:</strong> Response times affecting user experience</li>
+<li><strong>Error rates:</strong> Failed requests that waste resources</li>
+</ul>
+
+<h3>Budget Alerts and Guardrails</h3>
+<p>Implement proactive cost controls:</p>
+<ul>
+<li>Set AWS Budgets with alerts at 50%, 80%, and 100% thresholds</li>
+<li>Configure CloudWatch alarms for unusual spending patterns</li>
+<li>Implement application-level rate limiting to prevent runaway costs</li>
+<li>Use AWS Service Quotas to cap maximum spending</li>
+</ul>
+
+<h2>Real-World Cost Case Studies</h2>
+
+<h3>Case Study 1: Customer Support Chatbot</h3>
+<p><strong>Requirements:</strong> 50,000 conversations/day, average 8 turns per conversation</p>
+<p><strong>Initial Implementation:</strong> Claude 3.5 Sonnet with full conversation history</p>
+<ul>
+<li>Monthly cost: $18,000</li>
+<li>Primary driver: Growing conversation context</li>
+</ul>
+<p><strong>Optimized Implementation:</strong> Claude 3.5 Haiku with summarized history</p>
+<ul>
+<li>Monthly cost: $4,200</li>
+<li>Savings: 77% reduction</li>
+</ul>
+
+<h3>Case Study 2: Document Analysis Pipeline</h3>
+<p><strong>Requirements:</strong> Process 10,000 documents/day, average 5,000 tokens each</p>
+<p><strong>Initial Implementation:</strong> Bedrock on-demand, real-time processing</p>
+<ul>
+<li>Monthly cost: $12,000</li>
+</ul>
+<p><strong>Optimized Implementation:</strong> Bedrock Batch API with overnight processing</p>
+<ul>
+<li>Monthly cost: $6,000</li>
+<li>Savings: 50% reduction</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>AWS offers multiple GenAI deployment options with vastly different cost structures</li>
+<li>Bedrock provides simplicity and pay-per-use pricing ideal for variable workloads</li>
+<li>SageMaker offers control and potential cost savings for consistent, high-volume applications</li>
+<li>Hidden costs like data transfer, storage, and vector databases can significantly impact total cost of ownership</li>
+<li>Comprehensive monitoring and alerting are essential for preventing cost overruns</li>
+<li>Real-world optimization often achieves 50-80% cost reductions through strategic service selection and configuration</li>
+</ul>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

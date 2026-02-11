@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Module 4: Cost Tracking and Optimization</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Module 4: Monitoring and Optimizing Your AI Spend</h1>
+
+<p>AI costs can grow rapidly and unpredictably. Effective cost management requires granular visibility into usage and the ability to implement hard limits and optimizations. LiteLLM and OpenRouter provide powerful tools for this.</p>
+
+<h2>4.1 Real-time Cost Tracking</h2>
+<p>OpenRouter provides a detailed dashboard showing your spend per model and per day. LiteLLM goes a step further by calculating the cost of *every single request* in real-time based on the token count and the specific model's pricing.</p>
+
+<h2>4.2 Implementing Budgets and Quotas</h2>
+<p>Using the LiteLLM Proxy, you can set budgets for individual users, teams, or applications.
+<ul>
+    <li><strong>Daily/Monthly Budgets:</strong> "Stop allowing requests from Key X if it has spent more than $50 today."</li>
+    <li><strong>Token Quotas:</strong> "Limit User Y to 1 million tokens per month."</li>
+    <li><strong>Tiered Access:</strong> Providing different models based on the user's budget tier (e.g., Free users get Haiku, Pro users get Sonnet).</li>
+</ul></p>
+
+<h2>4.3 Optimization Strategies</h2>
+<ol>
+    <li><strong>Model Routing (The "Smart Router"):</strong> Automatically route simple queries (like "Hello") to a cheap model (GPT-4o-mini) and reserve expensive models (GPT-4o) for complex reasoning tasks.</li>
+    <li><strong>Prompt Caching:</strong> Many providers (Anthropic, OpenAI) now offer discounted pricing for cached prompts. LiteLLM can help manage and utilize these caches.</li>
+    <li><strong>Response Caching:</strong> Using a global cache (like Redis) to store and reuse responses for identical queries across different users, reducing both cost and latency.</li>
+    <li><strong>Negative Constraints:</strong> Explicitly instructing the model to be concise to reduce the number of output tokens.</li>
+</ol>
+
+<h2>4.4 Cost Attribution and Chargebacks</h2>
+<p>For large organizations, it is essential to know which department is spending the money. LiteLLM allows you to tag every request with metadata (e.g., <code>project_id</code>, <code>team_id</code>), making it easy to create internal "chargeback" reports.</p>
+
+<h2>4.5 OpenRouter's Pricing Advantage</h2>
+<p>Because OpenRouter aggregates many different providers for the same model, it can often find the lowest current price. It acts as a "clearinghouse" for LLM capacity, ensuring you always get a competitive rate.</p>
+
+<p>By making cost tracking a first-class citizen in your AI architecture, you can build sustainable and profitable AI-powered products and services.</p>
+
+<script type="text/javascript">
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+    <title>Cloud Gemini API in Android Apps</title>
+    <style type="text/css" media="screen">
+		@import url( ../shared/style.css );
+	</style>
+	<script src="../shared/scormfunctions.js" type="text/javascript"></script>
+	<script src="../shared/contentfunctions.js" type="text/javascript"></script>
+</head>
+<body>
+<h1>Cloud Gemini API in Android Apps</h1>
+
+
+<h2>Using the Gemini API in Android</h2>
+<p>For tasks requiring more capability than Gemini Nano, use the cloud Gemini API:</p>
+<div class="code-block">
+<pre><code>// build.gradle.kts
+dependencies {
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+}
+
+// Initialize with API key
+val generativeModel = GenerativeModel(
+    modelName = "gemini-1.5-flash",
+    apiKey = BuildConfig.GEMINI_API_KEY
+)</code></pre>
+</div>
+
+<h2>Multi-Modal Input from Camera</h2>
+<div class="code-block">
+<pre><code>// Capture image and analyze with Gemini
+val bitmap = cameraController.takePicture()
+val image = content { image(bitmap) }
+
+val response = generativeModel.generateContent(
+    content {
+        image(bitmap)
+        text("Identify the plant in this photo and describe its care requirements")
+    }
+)
+
+textView.text = response.text</code></pre>
+</div>
+
+<h2>Streaming Responses in UI</h2>
+<div class="code-block">
+<pre><code>// Stream response token by token
+lifecycleScope.launch {
+    val responseStream = generativeModel.generateContentStream(prompt)
+    responseStream.collect { chunk ->
+        textView.append(chunk.text)
+    }
+}</code></pre>
+</div>
+
+<h2>ML Kit + Gemini Hybrid Approach</h2>
+<p>Combine ML Kit for specialized tasks with Gemini for reasoning:</p>
+<ul>
+    <li><strong>ML Kit Text Recognition + Gemini:</strong> OCR extracts text, Gemini interprets meaning</li>
+    <li><strong>ML Kit Object Detection + Gemini:</strong> Detect objects first, then describe with Gemini</li>
+    <li><strong>ML Kit Translation + Gemini:</strong> Translate text, then generate culturally appropriate responses</li>
+    <li><strong>ML Kit Face Detection + Gemini:</strong> Detect faces, then generate accessibility descriptions</li>
+</ul>
+
+<h2>Best Practices for Mobile AI</h2>
+<ul>
+    <li>Use Gemini Nano for latency-sensitive, simple tasks (autocomplete, quick summaries)</li>
+    <li>Use cloud API for complex reasoning, multi-modal, and long-form generation</li>
+    <li>Implement proper error handling for network failures when using cloud API</li>
+    <li>Cache responses when appropriate to reduce API calls and improve UX</li>
+    <li>Never hardcode API keys - use BuildConfig or encrypted preferences</li>
+</ul>
+
+
+<script type="text/javascript">
+</script>
+</body>
+</html>
